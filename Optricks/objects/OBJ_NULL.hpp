@@ -36,5 +36,5 @@ public:
 	}
 };
 
-
+OBJ_NULL* NULLV = new OBJ_NULL();
 #endif /* OBJ_NULL_HPP_ */

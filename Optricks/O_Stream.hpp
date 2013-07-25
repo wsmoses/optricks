@@ -817,15 +817,30 @@ Expression* operatorCheck(Stream* f, Expression* exp, char endWith){
 	char tchar = f->peek();
 	if(tchar=='['){
 				f->read();
-				E_ARR* toReturn = new E_ARR();
+				std::vector<Expression*> stack;
 				Expression* temp = getNextExpression(f,endWith);
-				while(temp->getToken()!=T_EOF){
-					((E_ARR*)toReturn)->values.push_back(temp);
+				if(temp){
+					//TODO HANDLE APPEND OPERATORS
+					f->error("Append operators not implemented yet");
+				}
+				while(true){
+					stack.push_back(temp);
 					bool comma = true;
 					while(!f->done){
+						f->trim(endWith);
 						char t = f->peek();
-						if(t==',' || t==':' || t==';')
-							toReturn->values.push_back(new E_SEP(f->read()));
+						if(t==',' || t==':'){
+							f->read();
+							if(t==','){
+								if(stack.size()==1)
+								exp = new E_INDEXER(exp,stack.pop_back());
+								else if(stack.size())
+							}
+							else{
+							toReturn->values.push_back(new E_SEP(t));
+							}
+
+						}
 						else if(t==']'){
 							comma = false;
 							break;
