@@ -810,6 +810,48 @@ String getNextOperator(Stream* f, char endWith){
 
 Expression* getNextExpression(Stream* f, char endWith,bool opCheck=true);
 //TODO implement
+
+Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& stack){
+	if(stack.size()==0){
+		//TODO HANDLE APPEND OPERATORS
+		f->error("Append operators not implemented yet",true);
+	}
+	if(stack.size()==1 && stack[0]->getToken()!=T_SEP){
+		Expression* temp = stack[0];
+		stack.clear();
+		return new E_INDEXER(toIndex,temp);
+	}
+	else{
+		//TODO allow for a[::,2] or a[:,:]
+		Expression* start = NULLV, *end=NULLV,*step=NULLV;
+		unsigned int pos = 0, spos = 0;
+		while(stack.size()>spos){
+			if(stack[spos]->getToken()==T_SEP){
+				pos++;
+				spos++;
+			}
+			else{
+				switch(pos){
+					case 0:
+						start = stack[spos];
+						break;
+					case 1:
+						end = stack[spos];
+						break;
+					case 2:
+						step = stack[spos];
+						break;
+					default:
+						f->error("stack not empty when parsing slice");
+				}
+				spos++;
+			}
+		}
+		stack.clear();
+		return new E_INDEXER(toIndex,new OBJ_SLICE(start,end,step));
+	}
+}
+
 Expression* operatorCheck(Stream* f, Expression* exp, char endWith){
 	if(f->done || f->trim(endWith)){
 		return exp;
@@ -818,13 +860,7 @@ Expression* operatorCheck(Stream* f, Expression* exp, char endWith){
 	if(tchar=='['){
 				f->read();
 				std::vector<Expression*> stack;
-				Expression* temp = getNextExpression(f,endWith);
-				if(temp){
-					//TODO HANDLE APPEND OPERATORS
-					f->error("Append operators not implemented yet");
-				}
 				while(true){
-					stack.push_back(temp);
 					bool comma = true;
 					while(!f->done){
 						f->trim(endWith);
@@ -832,12 +868,10 @@ Expression* operatorCheck(Stream* f, Expression* exp, char endWith){
 						if(t==',' || t==':'){
 							f->read();
 							if(t==','){
-								if(stack.size()==1)
-								exp = new E_INDEXER(exp,stack.pop_back());
-								else if(stack.size())
+								exp = getIndex(f, exp,stack);
 							}
 							else{
-							toReturn->values.push_back(new E_SEP(t));
+							stack.push_back(new E_SEP(t));
 							}
 
 						}
@@ -849,12 +883,12 @@ Expression* operatorCheck(Stream* f, Expression* exp, char endWith){
 					}
 					if(f->trim(endWith)) f->error("Uncompleted '[' index",true);
 					if(!comma) break;
-					temp = getNextExpression(f,endWith);
+					stack.push_back(getNextExpression(f,endWith));
 				}
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
 				char te;
 				if((te = f->read())!=']') f->error("Cannot end '[' array with "+te,true);
-				return operatorCheck(f, new E_INDEXER(exp, toReturn), endWith);
+				return operatorCheck(f, getIndex(f, exp, stack), endWith);
 	}
 	else if(tchar=='('){
 		//TODO parse function args,  cannot do getNextExpression

@@ -12,9 +12,9 @@
 class E_INDEXER : public Expression{
 public:
 	Expression* array;
-	E_ARR* index;
+	Expression* index;
 	E_INDEXER() {};
-	E_INDEXER(Expression* t, E_ARR* ar) : array(t), index(ar){
+	E_INDEXER(Expression* t, Expression* ind) : array(t), index(ind){
 	}
 	~E_INDEXER(){
 		delete array;
@@ -31,10 +31,7 @@ public:
 		if(readByte(f, &c)) return true;
 		if(c!=T_INDEXER ) return true;
 		if(readExpression(f, &array)) return true;
-		Expression* e;
-		if(readExpression(f, &e)) return true;
-		if(e->getToken()!=T_ARR) return true;
-		index = (E_ARR*)e;
+		if(readExpression(f, &index)) return true;
 		return false;
 	};
 	Token getToken(){

@@ -33,7 +33,7 @@ enum Token {
 	T_LOOKUP = 21,
 	T_SLICE = 22,
 	T_NULL = 23,
-	T_INDEXER = 47
+	T_INDEXER = 24
 };
 
 #endif /* O_TOKEN_HPP_ */
