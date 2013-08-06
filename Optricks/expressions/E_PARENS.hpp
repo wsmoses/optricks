@@ -1,35 +1,23 @@
 #ifndef E_PARENS_HPP_
 #define E_PARENS_HPP_
-#include "../O_Expression.hpp"
+#include "../constructs/Expression.hpp"
 
 class E_PARENS : public Expression{
 public:
 	Expression* inner;
-	E_PARENS(Expression* t) : inner(t) { };
-	E_PARENS(){
-	};
-	~E_PARENS(){
-		delete inner;
-	};
-	bool writeBinary(FILE* f){
-		writeByte(f, T_PARENS);
-		if(inner->writeBinary(f)) return true;
-		return false;
-	};
-	bool readBinary(FILE* f){
-		byte c;
-		if(readByte(f, &c)) return true;
-		if(c!=T_PARENS ) return true;
-		if(readExpression(f, &inner)) return true;
-		return false;
-	};
-	Token getToken(){
+	E_PARENS(Expression* t) : Expression(t->returnType), inner(t) { };
+	const Token getToken() const override{
 		return T_PARENS;
 	};
-	ostream& write(ostream& f){
-		f << "E_PARENS(";
-		inner->write(f);
-		return f << ")";
+	oobject* evaluate() override {
+		return inner->evaluate();
+	}
+	//TODO verify that this is valid and does not call order of ops again
+	Expression* simplify() override{
+		return inner->simplify();
+	}
+	void write (ostream& f,String b="") const override{
+		f  << "(" << inner << ")";
 	}
 };
 

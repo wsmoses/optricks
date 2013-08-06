@@ -7,31 +7,27 @@
 
 #ifndef E_EXT_HPP_
 #define E_EXT_HPP_
-#include "../O_Expression.hpp"
+#include "../constructs/Expression.hpp"
 
-class E_EXT : public Expression{
+class E_EXT : public Statement{
 public:
 	String value;
-	E_EXT(){};
-	E_EXT(String a){value = a;};
-	~E_EXT() {};
-	bool writeBinary(FILE* f){
-		if(writeByte(f,T_EXT)) return true;
-		if(writeString(f, value)) return true;
-		return false;
-	}
-	bool readBinary(FILE* f){
-		byte c;
-		if(readByte(f,&c)) return true;
-		if(c!=T_EXT ) return true;
-		if(readString(f,&value)) return true;
-		return false;
-	}
-	Token getToken(){
+	E_EXT(String a){value = a;}
+	const Token getToken() const override{
 		return T_EXT;
 	}
-	ostream& write(ostream& f){
-		return f << "E_EXT('" << value << "')";
+	void write(ostream& f,String a) const override{
+		f << "extern " << value;
+	}
+
+	void* evaluate(Jump& jump) override{
+		//TODO implement
+		cerr << "Extern not implemented";
+		exit(0);
+		return VOID;
+	}
+	Statement* simplify(Jump& jump) override{
+		return this;
 	}
 };
 

@@ -2,23 +2,7 @@
 #ifndef O_IO_HPP_
 #define O_IO_HPP_
 #include "O_Token.hpp"
-#include <sstream>
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-
-#define cout std::cout
-#define cin std::cin
-#define cerr std::cerr
-#define flush std::flush
-#define endl std::endl << flush
-#define String std::string
-#define ostream std::ostream
-#define char int
-#define byte unsigned short
+#include "containers/settings.hpp"
 
 
 bool writeByte(FILE* f, byte a){

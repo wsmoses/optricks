@@ -8,8 +8,8 @@
 #ifndef E_BINOP_HPP_
 #define E_BINOP_HPP_
 
-#include "../O_Expression.hpp"
-
+#include "../constructs/Expression.hpp"
+#include "../primitives/oobjectproto.hpp"
 byte precedence(String tmp){
 	if (tmp == "." || tmp==":" || tmp=="::" || tmp == "->"){
 		return 0;
@@ -70,37 +70,24 @@ byte precedence(String tmp){
 	return 255;
 }
 
-class BinaryOperator : public Expression{
+class E_BINOP : public Expression{
 	public:
-		Token getToken(){ return T_BINOP; }
+		const Token getToken() const override{ return T_BINOP; }
 		Expression *left, *right;
-		BinaryOperator(String o, Expression* a, Expression* b): left(a), right(b), operation(o){};
 		String operation;
+		E_BINOP(String o, Expression* a, Expression* b): Expression(objectClass),
+				left(a), right(b), operation(o)
+				{};//possible refinement of return type
 
-		bool writeBinary(FILE* f){
-			return writeByte(f, T_BINOP);
-			if(writeString(f, operation)) return true;
-			if(left->writeBinary(f)) return true;
-			if(right->writeBinary(f)) return true;
-			return false;
-		}
-		bool readBinary(FILE* f){
-			byte c;
-			if(readByte(f,&c)) return true;
-			if(c!=T_BINOP) return true;
-			if(readString(f, &operation)) return true;
-			if(readExpression(f, &left)) return true;
-			if(readExpression(f, &right)) return true;
-			return false;
-		}
+
 		//TODO CHECK IF WORKS
 		Expression* fixOrderOfOperations(){
 			Expression* tl = left;
 			Expression* tr = right;
-			BinaryOperator* self = this;
+			E_BINOP* self = this;
 			while(true){
 				if(tl->getToken()==T_BINOP){
-					BinaryOperator* l = (BinaryOperator*)(tl);
+					E_BINOP* l = (E_BINOP*)(tl);
 					if(precedence(l->operation) > precedence(self->operation)){
 						self->left = l->right;
 						tr = l->right = self;
@@ -112,7 +99,7 @@ class BinaryOperator : public Expression{
 
 			while(true){
 				if(tr->getToken()==T_BINOP){
-					BinaryOperator* r = (BinaryOperator*)(tr);
+					E_BINOP* r = (E_BINOP*)(tr);
 					if(precedence(r->operation) > precedence(self->operation)){
 						self->right = r->left;
 						tl = r->left = self;
@@ -123,11 +110,54 @@ class BinaryOperator : public Expression{
 			}
 			return self;
 		}
-		ostream& write(ostream& f){
-			f << "E_Binop('" << operation << "', ";
-			left->write(f);
-			f << ", ";
-			return right->write(f) << ")";
+		oobject* combine(oobject* a, oobject* b){
+			//TODO allow other data types
+			if(operation=="+") 		return *a + b;
+			if(operation=="+=") 	return *a += b;
+			if(operation=="-") 		return *a - b;
+			if(operation=="-=")		return *a-=b;
+			if(operation=="*") 		return *a * b;
+			if(operation=="*=") 	return *a *= b;
+			if(operation=="/") 		return *a / b;
+			if(operation=="/=") 	return *a /= b;
+			if(operation=="^") 		return *a ^ b;
+			if(operation=="^=") 	return *a ^= b;
+			if(operation=="%") 		return *a % b;
+			if(operation=="%=") 	return *a %= b;
+			if(operation=="!=") 	return *a != b;
+			if(operation=="==") 	return *a == b;
+			if(operation=="<") 		return *a < b;
+			if(operation=="<=") 	return *a <= b;
+			if(operation==">") 		return *a > b;
+			if(operation==">=") 	return *a >= b;
+			if(operation=="|") 		return *a | b;
+			if(operation=="|=") 	return *a |= b;
+			if(operation=="||") 	return *a || b;
+			if(operation=="&") 		return *a & b;
+			if(operation=="&=") 	return *a &= b;
+			if(operation=="&&") 	return *a && b;
+			if(operation=="=") 		return *a = b;
+			if(operation=="<<") 	return *a << b;
+			if(operation==">>") 	return *a >> b;
+			if(operation=="<<=") 	return *a <<= b;
+			if(operation==">>=") 	return *a >>= b;
+			else{
+				cerr << "Operation not allowed by language";
+				exit(1);
+			}
+		}
+		Expression* simplify() override{
+			Expression* a = left->simplify();
+			Expression* b = right->simplify();
+			if(a->getToken()==T_OOBJECT && b->getToken()==T_OOBJECT)
+				return combine((oobject*)a,(oobject*)b);
+			else return new E_BINOP(operation,a,b);
+		}
+		oobject* evaluate() override{
+			return combine(left->evaluate(),right->evaluate());
+		}
+		void write(ostream& f,String s="") const override{
+			f << left << operation << right;
 		}
 };
 

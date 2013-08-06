@@ -3,25 +3,11 @@
  *
  *  Created on: Apr 12, 2013
  *      Author: wmoses
- */
+
 
 #ifndef O_EXPRESSION_HPP_
 #define O_EXPRESSION_HPP_
 
-class Expression{
-	public:
-//		virtual ~Expression() = 0;
-		/* Returns true if there is an error */
-		virtual bool writeBinary(FILE* f) = 0;
-		/* Returns true if there is an error */
-		virtual bool readBinary(FILE* f) = 0;
-		virtual Token getToken() = 0;
-		virtual ostream& write(ostream& f) = 0;
-};
-
-inline ostream& operator<<(ostream& os, Expression* a){
-	return a->write(os);
-}
 
 bool readExpression(FILE* f,Expression** error);
 
@@ -29,7 +15,7 @@ bool readExpression(FILE* f,Expression** error);
 #include "./O_Stream.hpp"
 #include "./O_Token.hpp"
 
-#include "objects/OBJ_OBJ.hpp"
+#include "primitives/oobject.hpp"
 
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_EOF.hpp"
@@ -122,4 +108,4 @@ bool readExpression(FILE* f, Expression** exp){
 }
 
 
-#endif /* O_EXPRESSION_HPP_ */
+#endif  O_EXPRESSION_HPP_ */

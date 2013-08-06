@@ -8,36 +8,26 @@
 #ifndef E_VAR_HPP_
 #define E_VAR_HPP_
 
-#include "../O_Expression.hpp"
+#include "../constructs/Expression.hpp"
 
 class E_VAR : public Expression{
 public:
 	String name;
-	unsigned int lock;
-	E_VAR(){};
-	E_VAR(String a){name = a; lock = 0;};
-	E_VAR(String a, unsigned int l){name = a; lock = l;};
-	~E_VAR() {};
-	bool writeBinary(FILE* f){
-		if(writeByte(f, T_VAR)) return true;
-		if(writeString(f, name)) return true;
-		if(writeUInteger(f, lock)) return true;
-		return false;
-	}
-	bool readBinary(FILE* f){
-		byte c;
-		if(readByte(f,&c)) return true;
-		if(c!=T_VAR ) return true;
-		if(readString(f,&name)) return true;
-		if(readUInteger(f,&lock)) return true;
-		return false;
-	}
-	Token getToken(){
+	E_VAR(String a) : Expression(objectClass){name = a; };
+	const Token getToken() const override{
 		return T_VAR;
 	}
-
-	ostream& write(ostream& f){
-		return f << "E_VAR('" << name << "')";
+	Expression* simplify(){
+		return this;
+	}
+	oobject* evaluate(){
+		//TODO variables not implemented
+		cerr << "Variables not implemented" << endl;
+		exit(0);
+		return NULL;
+	}
+	void write(ostream& f,String t="") const override{
+		f << "E_VAR('" << name << "')";
 	}
 };
 #endif /* E_VAR_HPP_ */

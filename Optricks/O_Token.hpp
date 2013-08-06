@@ -17,12 +17,7 @@ enum Token {
 	T_VAR = 5,
 	T_BINOP = 6,
 	T_STR = 7,
-	T_POS = 8,
-	T_NEG = 9,
-	T_NOT = 10,
-	T_REF = 11,
-	T_DEREF = 12,
-	T_BNOT = 13,
+	T_UOP = 8,
 	T_KEY_FUNC = 14,
 	T_FUNC = 15,
 	T_DEC = 16,
@@ -33,7 +28,16 @@ enum Token {
 	T_LOOKUP = 21,
 	T_SLICE = 22,
 	T_NULL = 23,
-	T_INDEXER = 24
+	T_INDEXER = 24,
+	T_OOBJECT = 25,
+	T_VOID = 26,
+	T_CONDITIONAL = 27,
+	T_MODULE = 28,
+	T_IF = 29,
+	T_WHILE = 30,
+	T_FOR = 31,
+	T_FOREACH = 32,
+	T_BLOCK = 33
 };
 
 #endif /* O_TOKEN_HPP_ */

@@ -8,41 +8,30 @@
 #ifndef E_LOOKUP_HPP_
 #define E_LOOKUP_HPP_
 
-#include "../O_Expression.hpp"
+#include "../constructs/Expression.hpp"
 
 class E_LOOKUP : public Expression{
 	public:
-		Token getToken(){ return T_LOOKUP; }
+		const Token getToken() const override{ return T_LOOKUP; }
 		Expression* left;
-		E_VAR* right;
+		String right;
 		String operation;
-		E_LOOKUP(String o, Expression* a, E_VAR* b): left(a), right(b), operation(o){};
-		E_LOOKUP(){}
+		E_LOOKUP(String o, Expression* a, String b): Expression(objectClass),
+				left(a), right(b), operation(o){};//TODO allow more detail
 
-		bool writeBinary(FILE* f){
-			return writeByte(f, T_LOOKUP);
-			if(writeString(f, operation)) return true;
-			if(left->writeBinary(f)) return true;
-			if(right->writeBinary(f)) return true;
-			return false;
+		void write(ostream& f,String a="") const override{
+			f << left;
+			f << operation;
+			f << right;
 		}
-		bool readBinary(FILE* f){
-			byte c;
-			if(readByte(f,&c)) return true;
-			if(c!=T_LOOKUP) return true;
-			if(readString(f, &operation)) return true;
-			if(readExpression(f, &left)) return true;
-			Expression* r;
-			if(readExpression(f, &r)) return true;
-			if(r->getToken()!=T_VAR) return true;
-			right = (E_VAR*)r;
-			return false;
+		oobject* evaluate() override{
+			//TODO lookup variables
+			cerr << "Variable lookup not implemented";
+			exit(1);
 		}
-		ostream& write(ostream& f){
-			f << "E_LOOKUP('" << operation << "', ";
-			left->write(f);
-			f << ", ";
-			return right->write(f) << ")";
+		Expression* simplify() override{
+			//TODO lookup variables
+			return this;
 		}
 };
 

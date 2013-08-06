@@ -38,7 +38,7 @@ public:
 	}
 	ostream& write(ostream& f){
 		f << "OBJ_FUNC('" << name << "', [";
-		for(int i = 0; i<arguments.size(); ++i){
+		for(unsigned int i = 0; i<arguments.size(); ++i){
 			f << arguments[i];
 			if(i<arguments.size()-1) f << ", ";
 		}

@@ -8,7 +8,8 @@
 #ifndef DEFAULTDECLARATION_HPP_
 #define DEFAULTDECLARATION_HPP_
 
-#include "../O_Expression.hpp"
+#include "../constructs/Expression.hpp"
+#include "../expressions/E_VAR.hpp"
 class DefaultDeclaration{
 	public:
 	E_VAR* variable, *lock;
@@ -21,7 +22,7 @@ class DefaultDeclaration{
 
 	ostream& write(ostream& f){
 		f << "DefaultDeclaration(";
-		if(lock!=NULL) lock->write(f) << " ";
+		if(lock!=NULL) f << lock << " ";
 		variable->write(f);
 		if(value!=NULL) {
 			f << "=";
