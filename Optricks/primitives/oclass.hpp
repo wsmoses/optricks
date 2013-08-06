@@ -36,6 +36,7 @@ oclass* classClass = new oclass(NULL);
 oclass::oclass(oclass* init,String nam): oobject((classClass==NULL)?this:classClass){
 			if(classClass==NULL) classClass = this;
 			name = nam;
+			if(init!=NULL)
 			module =new Module(init->module);
 };
 
