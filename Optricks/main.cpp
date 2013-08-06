@@ -48,6 +48,10 @@ int main(int argc, char** argv){
 		while(n->getToken()!=T_VOID){
 			first = false;
 			cout << n << endl;
+			Jump temp = NJUMP;
+			cout << n->simplify(temp) << endl;
+			temp = NJUMP;
+			cout << n->evaluate(temp) << endl;
 			n = lexer.getNextStatement();
 		}
 		st->done = false;

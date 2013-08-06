@@ -51,7 +51,7 @@ oclass* stringClass = new oclass(objectClass,"string");
 oclass* sliceClass = new oclass(objectClass,"slice");
 
 void initClasses(){
-	classClass->module->super = objectClass->module;
+	classClass->module = new Module(objectClass->module);
 	LANG_M->addPointer("class",classClass,0);
 	LANG_M->addPointer("object",objectClass,0);
 	LANG_M->addPointer("bool",boolClass,0);

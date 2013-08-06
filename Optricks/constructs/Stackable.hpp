@@ -20,7 +20,7 @@ class Stackable{
 		}
 };
 
-inline ostream& operator << (Stackable*& s,ostream&f){
+inline ostream& operator << (ostream&f, Stackable* s){
 	s->write(f,"");
 	return f;
 }
