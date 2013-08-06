@@ -8,7 +8,7 @@
 #ifndef EXPRESSION_HPP_
 #define EXPRESSION_HPP_
 
-#include "../O_TOKEN.hpp"
+//#include "../O_TOKEN.hpp"
 
 #ifndef OOBJECT_P_
 #define OOBJECT_P_

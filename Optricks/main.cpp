@@ -1,9 +1,8 @@
 #define MAIN_CPP
 
 #include "containers/settings.hpp"
-
 template <class T>
-ostream& operator<<(ostream&os, const std::vector<T>& v)
+ostream& operator<<(ostream&os, std::vector<T>& v)
 {
 	bool first = true;
     os<<"[";
