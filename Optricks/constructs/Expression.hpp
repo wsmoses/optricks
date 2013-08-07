@@ -45,7 +45,8 @@ class Expression : public Statement{
 
 oobject* Expression::evaluate(Jump& j){
 	j = NOJUMP;
-	return evaluate();
+	auto temp = evaluate();
+	return temp;
 }
 
 Expression* Expression::simplify(Jump& jump){

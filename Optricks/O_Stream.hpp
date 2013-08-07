@@ -685,7 +685,7 @@ Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& s
 		//TODO HANDLE APPEND OPERATORS
 		f->error("Append operators not implemented yet",true);
 	}
-	if(stack.size()==1 && stack[0]->getToken()!=T_SEP){
+	if(stack.size()==1 && stack[0]!=NULL){
 		Expression* temp = stack[0];
 		stack.clear();
 		return new E_INDEXER(toIndex,temp);

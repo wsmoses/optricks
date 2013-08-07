@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <cmath>
 #include <stdlib.h>
 #include <string>
 #include <vector>

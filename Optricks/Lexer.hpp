@@ -120,6 +120,7 @@ class Lexer{
 					if(f->trim(endWith)) f->error("Uncompleted if");
 					std::vector<std::pair<Expression*,Statement* >> statements;
 					Expression* c = getNextExpression();
+					if(!f->done && f->peek()==':') f->read();
 					Statement* s = getNextBlock();
 					statements.push_back(
 							std::pair<Expression*,Statement* >(c,s));
@@ -137,6 +138,7 @@ class Lexer{
 						}
 						if(elif){
 							c = getNextExpression();
+							if(!f->done && f->peek()==':') f->read();
 							s = getNextBlock();
 							statements.push_back(
 									std::pair<Expression*,Statement* >(c,s));
@@ -145,6 +147,8 @@ class Lexer{
 							while(!f->done && f->peek()==';') f->read();
 						}
 						else{
+							if(!f->done && f->peek()==':') f->read();
+							f->trim(endWith);
 							finalElse = getNextBlock();
 							f->trim(endWith);
 							while(!f->done && f->peek()==';') f->read();

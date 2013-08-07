@@ -51,7 +51,8 @@ int main(int argc, char** argv){
 			Jump temp = NJUMP;
 			cout << n->simplify(temp) << endl;
 			temp = NJUMP;
-			cout << n->evaluate(temp) << endl;
+			if(n!=NULL && n->getToken()==T_OOBJECT)
+			cout << (oobject*)(n->evaluate(temp)) << endl;
 			n = lexer.getNextStatement();
 		}
 		st->done = false;

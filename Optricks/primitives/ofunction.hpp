@@ -12,8 +12,15 @@
 
 class ofunction:public oobject{
 	public:
-		ofunction() : oobject(functionClass){}
-		virtual oobject* call(std::vector<oobject*>& a) = 0;
+		oclass* functionReturnType;
+		std::vector<DefaultDeclaration> dec;
+		ofunction(oclass* retType) : oobject(functionClass){
+			functionReturnType = retType;
+		}
+		oobject* call(std::vector<oobject*>& vec){
+			std::vector<oobject>
+		}
+		virtual oobject* _call(std::vector<oobject*>& a,std::vector<DefaultDeclaration>& de) = 0;
 };
 //TODO
 class nativeFunction : public ofunction{

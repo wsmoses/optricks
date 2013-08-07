@@ -14,12 +14,11 @@ class Stackable{
 		//virtual ~Stackable();
 		virtual const Token getToken() const = 0;
 		virtual void write(ostream& s,String start="") const = 0;
-		ostream& operator << (ostream& s){
-			write(s,"");
-			return s;
-		}
 };
-
+inline ostream& operator << (ostream&f, Stackable& s){
+	s.write(f,"");
+	return f;
+}
 inline ostream& operator << (ostream&f, Stackable* s){
 	s->write(f,"");
 	return f;

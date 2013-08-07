@@ -45,13 +45,13 @@ public:
 		oobject *a = start->evaluate(),
 				*b = stop->evaluate(),
 				*c = step->evaluate();
-		if(a->returnType!=intClass ||
-				a->returnType!=nullClass ||
-				b->returnType!=intClass ||
-				b->returnType!=nullClass ||
-				c->returnType!=intClass ||
-				c->returnType!=nullClass){
-			cerr << "Cannot make slice out of unknown type";
+		if( !(a->returnType==intClass ||
+				a->returnType==nullClass) ||
+				!(b->returnType==intClass ||
+				b->returnType==nullClass) ||
+				!(c->returnType==intClass ||
+				c->returnType==nullClass)){
+			cerr << "Cannot make slice out of unknown type " << a->returnType << ":" << b->returnType << ":" << c->returnType;
 			exit(0);
 		}
 		return new oslice(a,b,c);
@@ -66,12 +66,12 @@ public:
 		oobject *a = (oobject*)aa,
 				*b = (oobject*)bb,
 				*c = (oobject*)cc;
-		if(a->returnType!=intClass ||
-				a->returnType!=nullClass ||
-				b->returnType!=intClass ||
-				b->returnType!=nullClass ||
-				c->returnType!=intClass ||
-				c->returnType!=nullClass){
+		if(!(a->returnType==intClass ||
+				a->returnType==nullClass) ||
+				!(b->returnType==intClass ||
+				b->returnType==nullClass) ||
+				!(c->returnType==intClass ||
+				c->returnType==nullClass)){
 			return new E_SLICE(aa,bb,cc);
 		}
 		return new oslice(a,b,c);

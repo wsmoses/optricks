@@ -21,10 +21,8 @@ class oarray : public oobject{
 			return data;
 		}
 		oobject* operator [] (oobject* a) override{
-			cout << "Getting : index of " << a << " for " << this << endl;
 			if(a->returnType==intClass){
 				oint* s = (oint*)a;
-				cout << "Yields " << data[s->value] << " of class " << data[s->value]->returnType << endl;
 				return data[s->value];
 			}
 			else if(a->returnType==sliceClass){

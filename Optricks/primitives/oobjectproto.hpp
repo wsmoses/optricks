@@ -48,7 +48,7 @@ class oobject: public Expression{
 		virtual oobject* operator %= (oobject* a);
 		virtual obool* operator != (oobject* a);
 		virtual obool* operator == (oobject* a);
-		virtual oobject* operator < (oobject* a);
+		virtual obool* operator < (oobject* a);
 		virtual obool* operator <= (oobject* a);
 		virtual obool* operator > (oobject* a);
 		virtual obool* operator >= (oobject* a);
@@ -183,7 +183,7 @@ class oobject: public Expression{
 			cerr << "Binary Operation == not permitted" << endl;
 			exit(0);
 		}
-		oobject* oobject::operator < (oobject* a){
+		obool* oobject::operator < (oobject* a){
 			cerr << "Binary Operation < not permitted" << endl;
 			exit(0);
 		}

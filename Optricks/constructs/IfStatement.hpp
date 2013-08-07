@@ -61,7 +61,7 @@ class IfStatement : public Statement{
 			}
 		}
 		void write(ostream& a,String t) const override{
-			a << "if(" << condition[0].first << ")";
+			a << "if " << condition[0].first << " ";
 			condition[0].second->write(a,t);
 			a << endl;
 			for(unsigned int i = 1; i<condition.size();++i){
@@ -71,7 +71,7 @@ class IfStatement : public Statement{
 				a << endl;
 			}
 			if(finalElse->getToken()!=T_VOID){
-				a << t << "else" << finalElse;
+				a << t << "else " << finalElse;
 			}
 		}
 };
