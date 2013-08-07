@@ -10,17 +10,18 @@
 
 #include "oobject.hpp"
 
+
 class ofunction:public oobject{
 	public:
 		oclass* functionReturnType;
-		std::vector<DefaultDeclaration> dec;
+	//	std::vector<DefaultDeclaration> dec;
 		ofunction(oclass* retType) : oobject(functionClass){
 			functionReturnType = retType;
 		}
 		oobject* call(std::vector<oobject*>& vec){
-			std::vector<oobject>
+		//	std::vector<oobject>
 		}
-		virtual oobject* _call(std::vector<oobject*>& a,std::vector<DefaultDeclaration>& de) = 0;
+	//	virtual oobject* _call(std::vector<oobject*>& a,std::vector<DefaultDeclaration>& de) = 0;
 };
 //TODO
 class nativeFunction : public ofunction{
@@ -32,4 +33,5 @@ class lambdaFunction : public ofunction{
 class userFunction : public ofunction{
 
 };
+
 #endif /* OFUNCTION_HPP_ */

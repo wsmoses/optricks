@@ -32,6 +32,7 @@ class WhileLoop : public Statement{
 					case NJUMP:
 						break;
 					case CONTINUE:
+						if(name==jump.label || jump.label=="") jump = NOJUMP;
 						break;
 					case BREAK:
 						if(name==jump.label || jump.label=="") jump = NOJUMP;

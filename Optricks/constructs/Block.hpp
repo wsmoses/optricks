@@ -35,8 +35,16 @@ class Block : public Statement{
 			std::vector<Statement*> v;
 			for(auto& a:values){
 				Statement* s = a->simplify(jump);
-				if(s->getToken()!=T_VOID)
-					v.push_back(s);
+				if(s->getToken()!=T_VOID){
+					if(s->getToken()!=T_BLOCK){
+						v.push_back(s);
+					} else {
+						Block* inner = (Block*)s;
+						for(auto& b: inner->values){
+							v.push_back(b);
+						}
+					}
+				}
 				if(jump.type!=NJUMP){
 					break;
 				}

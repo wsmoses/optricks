@@ -10,6 +10,8 @@
 
 #include "O_Stream.hpp"
 #include "constructs/WhileLoop.hpp"
+#include "constructs/ForLoop.hpp"
+#include "constructs/ForEachLoop.hpp"
 #include "constructs/IfStatement.hpp"
 #include "constructs/Block.hpp"
 #include "expressions/E_BINOP.hpp"
@@ -105,8 +107,7 @@ class Lexer{
 		}
 		Expression* getNextExpression(bool opCheck=true){
 			Statement* s = getNextStatement(opCheck);
-			//TODO better
-			return (Expression*)s;
+			return dynamic_cast<Expression*>(s);
 		}
 		Statement* getNextStatement(bool opCheck=true){
 			if(f->done || f->trim(endWith)) return VOID;
@@ -161,35 +162,51 @@ class Lexer{
 				else if(temp=="for"){
 					if(f->trim(endWith)) f->error("Uncompleted for",true);
 					bool paren = f->peek()=='(';
-					bool standardFor = paren;
-					//TODO implement standard for(i = 0; i<7; i++)
-					if(paren) f->read();
-
-					String varName = f->getNextName(endWith);
-					if( varName.length()==0)f->error("Need variable to iterate on",true);
-					f->trim(endWith);
-					bool as = f->getNextName(endWith)=="in";
-					f->trim(endWith);
-					bool col = false;
-					if(!f->done && f->peek()==':'){
-						f->read(); f->trim(endWith);
-					}
-					if(as==col){
-						f->error("Need either ':' or 'in' to separate iterator variable from iterable");
-					}
-					Expression* iterable = getNextExpression();
-					f->trim(endWith);
+					//Standard for(i = 0; i<7; i++)
 					if(paren){
-						if(f->read()!=')') f->error("Need ')' for for loop ");
-					}
-					f->trim(endWith);
-					if(!f->done && f->peek()==':'){
 						f->read();
 						f->trim(endWith);
+						Statement* init = getNextStatement();
+						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
+						Statement* scond = getNextStatement();
+						Expression* cond;
+						if(scond->getToken()==T_VOID) cond = new obool(true);
+						else cond = dynamic_cast<Expression*>(scond);
+						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
+						Statement* inc = getNextStatement();
+						f->trim(endWith);
+						if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
+						Statement* blocks = getNextBlock();
+						return new ForLoop(init,cond,inc,blocks);
+						//TODO implement for loop naming
 					}
-					Statement* blocks = getNextBlock();
-					cout << "For("<<varName <<":"<<iterable<<", "<< blocks << endl << flush;
-					f->error("for loop is not fully implemented yet",true);
+					else{
+						String varName = f->getNextName(endWith);
+						if( varName.length()==0)f->error("Need variable to iterate on",true);
+						f->trim(endWith);
+						bool as = f->getNextName(endWith)=="in";
+						f->trim(endWith);
+						bool col = false;
+						if(!f->done && f->peek()==':'){
+							f->read(); f->trim(endWith);
+						}
+						if(as==col){
+							f->error("Need either ':' or 'in' to separate iterator variable from iterable");
+						}
+						Expression* iterable = getNextExpression();
+						f->trim(endWith);
+						if(paren){
+							if(f->read()!=')') f->error("Need ')' for for loop ");
+						}
+						f->trim(endWith);
+						if(!f->done && f->peek()==':'){
+							f->read();
+							f->trim(endWith);
+						}
+						Statement* blocks = getNextBlock();
+						return new ForEachLoop(varName,iterable,blocks,"");
+						//TODO implement for loop naming
+					}
 				}
 				else if(temp=="while"){
 					if(f->trim(endWith)) f->error("Uncompleted while",true);
@@ -200,6 +217,7 @@ class Lexer{
 					if(f->trim(endWith)) f->error("Uncompleted do-while",true);
 					if(f->peek()==':') f->read();
 					return new WhileLoop(cond,getNextBlock());
+					//TODO implement while loop naming
 				}
 				else if(temp=="do"){
 					if(f->trim(endWith)) f->error("Uncompleted do-while",true);
@@ -214,6 +232,7 @@ class Lexer{
 					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of do-while",true);
 					cout << "Do-While("<<cond<<", "<< blocks << endl << flush;
 					f->error("do-while is not fully implemented yet",true);
+					//TODO implement do loop naming
 				}
 				else if (temp == "def" || temp=="lambda" || temp=="function" || temp=="method" ){
 					if(f->trim(endWith)) f->error("Uncompleted function");
@@ -357,7 +376,7 @@ class Lexer{
 								delete arr;
 								if((te = f->read())!=close) f->error("Cannot end inline paren with "+
 										String(1,te)+" instead of "+String(1,close)
-										);
+								);
 								return new E_PARENS(temp);
 							}
 							if(f->done) f->error("Uncompleted inline 2");
@@ -377,7 +396,7 @@ class Lexer{
 					case '!':
 					case '*':
 					case '&':
-					//		case '@':
+						//		case '@':
 					{
 						char n = f->read();
 						Expression* toReturn = new E_UOP(String(1,n),getNextExpression());
@@ -464,7 +483,7 @@ class Lexer{
 				exit(0);
 			}
 			//TODO implement generics
-						/*
+			/*
 			else if(tchar=='<'){
 				f->read();
 				tchar = f->peek();
@@ -494,11 +513,11 @@ class Lexer{
 				f->error("Factorial not implemented yet",true);
 			}
 			//TODO implement generics
-		/*
+			/*
 			else if (tmp == "<"){
 				//equality and check
 			}
-		*/ //TODO implement custom operators (a and b,  r if g else b )
+			 */ //TODO implement custom operators (a and b,  r if g else b )
 			else if (tmp == "?"){
 				f->error("Terenary operator not implement",true);
 				//TODO implement terenary
@@ -521,9 +540,9 @@ class Lexer{
 			}
 			f->trim(endWith);
 			bool semi  = false;
-					if(!f->done && f->peek()==';'){ semi = true; }
-					f->trim(endWith);
-					if(!semi) fixed = operatorCheck(fixed);
+			if(!f->done && f->peek()==';'){ semi = true; }
+			f->trim(endWith);
+			if(!semi) fixed = operatorCheck(fixed);
 			return fixed;
 		}
 };

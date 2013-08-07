@@ -53,4 +53,6 @@ Expression* Expression::simplify(Jump& jump){
 	jump = NOJUMP;
 	return simplify();
 }
+
+
 #endif /* EXPRESSION_HPP_ */

@@ -13,7 +13,7 @@ public:
 		return T_FUNC_CALL;
 	};
 	void write(ostream& f,String t="") const override{
-		f << toCall << vals;
+		f<<"call(" << toCall << ", "<<vals<<")";
 	}
 	Expression* simplify() override{
 		Expression* a = toCall->simplify();
