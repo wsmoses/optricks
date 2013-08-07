@@ -15,19 +15,21 @@
 class oarray : public oobject{
 	public:
 		std::vector<oobject*> data;
-		oarray(unsigned int len): oobject(arrayClass), data(len){}
+		oarray(): oobject(arrayClass), data(){}
 		oarray(const std::vector<oobject*>& dat) : oobject(arrayClass),data(dat){}
 		operator std::vector<oobject*>& (){
 			return data;
 		}
 		oobject* operator [] (oobject* a) override{
+			cout << "Getting : index of " << a << " for " << this << endl;
 			if(a->returnType==intClass){
 				oint* s = (oint*)a;
+				cout << "Yields " << data[s->value] << " of class " << data[s->value]->returnType << endl;
 				return data[s->value];
 			}
 			else if(a->returnType==sliceClass){
 				oslice* s = (oslice*)a;
-				oarray* n = new oarray(0);
+				oarray* n = new oarray();
 				int start = (s->start->returnType==intClass)?(((oint*)s->start)->value):0;
 				int stop = (s->stop->returnType==intClass)?(((oint*)s->stop)->value):data.size();
 				int step = (s->step->returnType==intClass)?(((oint*)s->step)->value):1;
@@ -38,7 +40,7 @@ class oarray : public oobject{
 				return n;
 			}
 			else{
-				cerr << "Array index must be int or slice";
+				cerr << "Array index must be int or slice not " << a << " of class " << a->returnType;
 				exit(0);
 			}
 		}
@@ -57,7 +59,7 @@ class oarray : public oobject{
 		oobject* operator + (oobject* l){
 			if(l->returnType==arrayClass){
 				oarray* ar = (oarray*)l;
-				oarray* t = new oarray(data.size()+ar->data.size());
+				oarray* t = new oarray();
 				for(auto& a:data)
 					t->data.push_back(a);
 				for(auto& a:ar->data)
@@ -89,21 +91,21 @@ class oarray : public oobject{
 class E_ARR : public Expression{
 	public:
 		std::vector<Expression*> values;
-		E_ARR(unsigned int len) : Expression(arrayClass),values(len) { };
+		E_ARR() : Expression(arrayClass),values() { };
 		E_ARR(const std::vector<Expression*>& a) : Expression(arrayClass),values(a) { };
 		const  Token getToken() const override{
 			return T_ARR;
 		};
 		void write(ostream& f,String a="") const override{
-			f << "E_ARR([";
+			f << "[";
 			for(unsigned int i = 0; i<values.size(); ++i){
 				f << values[i];
 				if(i<values.size()-1) f << ", ";
 			}
-			f << "])";
+			f << "]";
 		}
 		oobject* evaluate() override {
-			oarray* n = new oarray(values.size());
+			oarray* n = new oarray();
 			for(Expression* a: values){
 				n->data.push_back(a->evaluate());
 			}

@@ -16,10 +16,10 @@ class WhileLoop : public Statement{
 		Statement* const statement;
 		String name;
 		WhileLoop(Expression * cond, Statement* stat,String n="") : condition(cond), statement(stat){
-			if(condition->returnType!=boolClass){
+			/*if(condition->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
-			}
+			}*/
 			name = n;
 		}
 		const Token getToken() const override {

@@ -25,8 +25,7 @@ class obool;
 #define OOBJECT_P_
 class oobject: public Expression{
 	public:
-		oobject(oclass* clas) : Expression(clas){
-	}
+		oobject(oclass* c):Expression(c){}
 		virtual operator String () const = 0;
 
 		void write(ostream& a, String b) const override;
@@ -70,99 +69,6 @@ class oobject: public Expression{
 			return T_OOBJECT;
 		}
 };
-
-/*
-oobject* operator [] (oobject* z, oobject* a){
-	return (*z)[a];
-}
-inline oobject* operator + (oobject* z, oobject* a){
-	return (*z) + a;
-}
-inline oobject* operator += (oobject* z, oobject* a){
-	return (*z) += a;
-}
-inline oobject* operator - (oobject* z, oobject* a){
-	return (*z) - a;
-}
-inline oobject* operator -= (oobject* z, oobject* a){
-	return (*z) -= a;
-}
-inline oobject* operator * (oobject* z, oobject* a){
-	return (*z) * a;
-}
-inline oobject* operator *= (oobject* z, oobject* a){
-	return (*z) *= a;
-}
-inline oobject* operator / (oobject* z, oobject* a){
-	return (*z) / a;
-}
-inline oobject* operator /= (oobject* z, oobject* a){
-	return (*z) /= a;
-}
-inline oobject* operator ^ (oobject* z, oobject* a){
-	return (*z) ^ a;
-}
-inline oobject* operator ^= (oobject* z, oobject* a){
-	return (*z) ^= a;
-}
-inline oobject* operator % (oobject* z, oobject* a){
-	return (*z) % a;
-}
-inline oobject* operator %= (oobject* z, oobject* a){
-	return (*z) %= a;
-}
-inline oobject* operator != (oobject* z, oobject* a){
-	return (*z) != a;
-}
-inline oobject* operator == (oobject* z, oobject* a){
-	return (*z) == a;
-}
-inline oobject* operator < (oobject* z, oobject* a){
-	return (*z) < a;
-}
-inline oobject* operator <= (oobject* z, oobject* a){
-	return (*z) <= a;
-}
-inline oobject* operator > (oobject* z, oobject* a){
-	return (*z) > a;
-}
-inline oobject* operator >= (oobject* z, oobject* a){
-	return (*z) >= a;
-}
-inline oobject* operator | (oobject* z, oobject* a){
-	return (*z) | a;
-}
-inline oobject* operator |= (oobject* z, oobject* a){
-	return (*z) |= a;
-}
-inline oobject* operator || (oobject* z, oobject* a){
-	return (*z) || a;
-}
-inline oobject* operator & (oobject* z, oobject* a){
-	return (*z) & a;
-}
-inline oobject* operator &= (oobject* z, oobject* a){
-	return (*z) &= a;
-}
-inline oobject* operator && (oobject* z, oobject* a){
-	return (*z) && a;
-}
-inline oobject* operator = (oobject* z, oobject* a){
-	return (*z) = a;
-}
-inline oobject* operator << (oobject* z, oobject* a){
-	return (*z) << a;
-}
-inline oobject* operator >> (oobject* z, oobject* a){
-	return (*z) >> a;
-}
-inline oobject* operator <<= (oobject* z, oobject* a){
-	return (*z) <<= a;
-}
-inline oobject* operator >>= (oobject* z, oobject* a){
-	return (*z) >>= a;
-}
-*/
 
 #include "oclass.hpp"
 #include "obool.hpp"

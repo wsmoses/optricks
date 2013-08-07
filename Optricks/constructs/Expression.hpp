@@ -31,7 +31,7 @@ class Jump;
 class Expression : public Statement{
 	public:
 		oclass* const returnType;
-		Expression(oclass* type);
+		Expression(oclass* c) : returnType(c){}
 		virtual oobject* evaluate() = 0;
 		oobject* evaluate(Jump& j) override final;
 		virtual Expression* simplify() = 0;
@@ -43,12 +43,11 @@ class Expression : public Statement{
 #include "Statement.hpp"
 #include "../primitives/oobjectproto.hpp"
 
-Expression::Expression(oclass* type) : returnType(type) {}
-
 oobject* Expression::evaluate(Jump& j){
 	j = NOJUMP;
 	return evaluate();
 }
+
 Expression* Expression::simplify(Jump& jump){
 	jump = NOJUMP;
 	return simplify();

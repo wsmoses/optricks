@@ -77,7 +77,8 @@ class E_BINOP : public Expression{
 		String operation;
 		E_BINOP(String o, Expression* a, Expression* b): Expression(objectClass),
 				left(a), right(b), operation(o)
-				{};//possible refinement of return type
+				{
+				};//possible refinement of return type
 
 
 		//TODO CHECK IF WORKS

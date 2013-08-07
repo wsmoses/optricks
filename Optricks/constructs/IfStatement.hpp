@@ -17,11 +17,11 @@ class IfStatement : public Statement{
 		std::vector<std::pair<Expression*,Statement*>> const condition;
 		Statement* const finalElse;
 		IfStatement(std::vector<std::pair<Expression*,Statement*>> & cond, Statement* const stat) : condition(cond), finalElse(stat){
-			for(const auto& a:condition)
+			/*for(const auto& a:condition)
 			if(a.first->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
-			}
+			}*/
 			if(condition.size()<1){
 				cerr << "Cannot make if statement with no conditions";
 				exit(0);

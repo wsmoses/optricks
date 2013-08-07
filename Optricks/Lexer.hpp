@@ -324,7 +324,7 @@ class Lexer{
 						char open = f->read();
 						char close = (open=='{')?'}':((open=='[')?']':')');
 						f->trim(endWith);
-						E_ARR* arr = new E_ARR(0);
+						E_ARR* arr = new E_ARR();
 						Expression* temp;
 						char te;
 						if(f->peek()==close) f->read();
@@ -440,7 +440,7 @@ class Lexer{
 				// due to operatorCheck on tuple
 				Expression* e = getNextExpression(false);
 				if(e->getToken()==T_PARENS){
-					E_ARR* temp = new E_ARR(0);
+					E_ARR* temp = new E_ARR();
 					temp->values.push_back(((E_PARENS*)e)->inner);
 					free(e);
 					e = temp;

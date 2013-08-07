@@ -31,7 +31,6 @@ class oint : public oobject{
 
 
 #include "odec.hpp"
-#include "odec.hpp"
 #include "ostring.hpp"
 
 oobject* oint::operator + (oobject* a){
