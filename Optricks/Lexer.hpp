@@ -29,8 +29,7 @@ class Lexer{
 		}
 		std::vector<DefaultDeclaration*> parseArguments(char finish=')'){
 			std::vector<DefaultDeclaration*> args;
-			if(f->done || f->peek()!='(') return args;
-			f->read();
+			if(f->done) return args;
 			while(true){
 
 				if(f->trim(endWith)) return args;
@@ -133,9 +132,10 @@ class Lexer{
 						f->trim(endWith);
 						bool elif = test=="elif";
 						if(!elif){
+							auto m = f->getMarker();
 							String yy = f->getNextName(endWith);
 							if(yy=="if"){ elif=true; f->trim(endWith); }
-							else { f->writeString(yy); }
+							else { f->undoMarker(m); }
 						}
 						if(elif){
 							c = getNextExpression();
@@ -156,7 +156,7 @@ class Lexer{
 						}
 						test = f->getNextName(endWith);
 					}
-					f->writeString(test);
+					f->write(test);
 					return new IfStatement(statements,finalElse);
 				}
 				else if(temp=="for"){
@@ -236,18 +236,19 @@ class Lexer{
 				}
 				else if (temp == "def" || temp=="lambda" || temp=="function" || temp=="method" ){
 					if(f->trim(endWith)) f->error("Uncompleted function");
+					unsigned int m = f->getMarker();
 					String methodName = f->getNextName(endWith);
 					if(f->trim(endWith)) f->error("Uncompleted function (with name)");
 					std::vector<DefaultDeclaration*> arguments;
 					if(!f->done){
 						if(f->peek()=='('){
+							f->read();
 							arguments = parseArguments();
 						}
 						else{
-							f->write(' ');
-							f->writeString(methodName);
+							f->undoMarker(m);
+							f->trim(endWith);
 							methodName="";
-							f->write('(');
 							arguments = parseArguments(':');
 						}
 					}
@@ -503,7 +504,7 @@ class Lexer{
 				}
 			}*/
 
-			String tmp = getNextOperator(f, endWith);
+			String tmp = f->getNextOperator(endWith);
 
 			if(tmp.length()==0) return exp;
 			Expression* fixed;

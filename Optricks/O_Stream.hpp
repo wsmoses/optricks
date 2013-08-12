@@ -5,6 +5,28 @@ const bool isWhitespace(const char a){
 	return a==' ' || a=='\n' || a=='\t' || a=='\r';
 }
 
+const bool isOperator(const char a){
+	return  a=='!' || a=='%' || a=='&' ||
+			a=='^' || a=='*' || a=='|' ||/* a=='(' || a==')' ||*/
+			a=='-' || a=='+' || a=='=' || /*a=='[' || a==']' ||*/ a=='<' ||
+			a=='>' || a=='.' || a=='/' || a=='\\' || a=='|' ||
+			/*a=='{' || a=='}' ||*/ a=='?';
+}
+
+const String BINARY_OPERATORS[]{"and", "or", "xor","xnor",
+		".",":","::","->",".*",":*","::*","->*","=>*",
+		"*^" ,"<>",
+		"++","--","%%",
+		"**","^","%","*","/","+","-",
+		"<<",">>","<<<",">>>",
+		"<=","<",">",">=","==","===","!=","!==",
+		"&","^^", "|","&&","||",
+		"\\.",
+		"+=","%=","-=" ,"*=", "\\.=",
+		"/=","//=","**=","^=","|=","||=","&=","&&=","^^=",
+		"=", ":=", "::=", "<<=", ">>=", "<<<", ">>>", "[", "{","("
+};
+
 #include "O_IO.hpp"
 #include "expressions/E_INDEXER.hpp"
 #include "expressions/E_LOOKUP.hpp"
@@ -17,52 +39,108 @@ class Stream{
 private:
 	FILE* f;
 	std::vector<char> cache;
+	std::vector<std::vector<char> > readChars;
+	unsigned int curCount;
+	void write(){
+			done = false;
+			if(readChars[readChars.size()-1].empty()){
+				if(readChars.size()==0){
+					error("Wrote more than available chars...?",true);
+				}
+				readChars.pop_back();
+				cache.push_back('\n');
+			}
+			else{
+
+				cache.push_back(readChars.back().back());
+				readChars.back().pop_back();
+			}
+			curCount--;
+	}
 public:
-	char last;
-	unsigned int lineCount, charCount, prev;
-	bool start;
-	bool done;
-	bool endAtLines;
-	Stream(FILE* a, bool lines=false){
-		done = false;
-		endAtLines = lines;
-		start = true;
-		f = a;
-		prev = lineCount = 0;
-		last = 0;
-		charCount = 0;
+	char last(){
+		if(readChars.size()==0) return ' ';
+		else if(readChars.back().size()==0) return '\n';
+		else return readChars.back().back();
 	}
 	void write(char c){
-		done = false;
-		if(c=='\n'){ lineCount--; charCount = prev; }
-		else charCount--;
-		cache.push_back(c);
+			done = false;
+			if(readChars[readChars.size()-1].empty()){
+				if(readChars.size()==0){
+					error("Wrote more than available chars...?",true);
+				}
+				if(c!='\n'){
+					error("Cannot re-insert non \\n",true);
+				}
+				readChars.pop_back();
+				cache.push_back('\n');
+			}
+			else{
+				char t = readChars.back().back();
+				if(t!=c){
+					error("Cannot re-insert incorrect char",true);
+				}
+				cache.push_back(t);
+				readChars.back().pop_back();
+			}
+			curCount--;
+	}
+	void write(String c){
+		for(unsigned int i = 0; i<c.size(); ++i){
+			write(c[i]);
+		}
+	}
+	unsigned int getMarker(){
+		return curCount;
+	}
+	void undoMarker(unsigned int a){
+		while(curCount>a) write();
 	}
 	char read(){
 		if(done) error("Already done reading file");
 		char c;
 		if(cache.size()==0){
 			if(readChar(f,&c)){
-				error("Error reading from file: ", ""+c);
-				exit(0);
+				error("Error reading from file",true);
 			}
 		}
 		else{
 			c = cache.back();
 			cache.pop_back();
 		}
-		if(c=='\n'){ lineCount++; prev = charCount; charCount = 0;}
-		else charCount++;
-		last = c;
+		if(c=='\r') return read();
+		if(c=='\n'){
+			readChars.push_back(std::vector<char>());
+		} else readChars.back().push_back(c);
+		curCount++;
 		return c;
 	}
-	String readRecursive(){
+	char peek(){
+		char c = read();
+		write();
+		return c;
+	}
+	bool start;
+	bool allowUndo;
+	bool done;
+	bool endAtLines;
+	Stream(FILE* a, bool lines=false){
+		done = false;
+		curCount = 0;
+		allowUndo = false;
+		endAtLines = lines;
+		start = true;
+		f = a;
+		readChars.push_back(std::vector<char>());
+	}
+	String readRecursiveI(){
 		String filling = "";
 		std::vector<char> st;
 		do{
 			char front = read();
 			if(st.size()==0){
-				if(front==EOF){ write(front); return filling; }
+				//TODO reimplement front
+				//if(front==EOF){ write(front); return filling; }
 				switch(front){
 				case '"': st.push_back('"'); break;
 				case '\'': st.push_back('\''); break;
@@ -318,116 +396,47 @@ public:
 		return filling;
 	}
 
-	String readUntil(char c, char b){
+	String readWhile(const bool (*fun)(char)){
 		String st;
 		char load;
 		do{
 			load = read();
-			if(load==EOF || load==c || load==b){
+			if(!fun(load)){
 				break;
 			}
 			st+=load;
 		}while(true);
-		write(load);
-		//trim();
+		write();
 		return st;
 	}
-	String peekUntil(char c, char b){
-		String st;
-		char load;
-		do{
-			load = read();
-			if(load==EOF || load==c || load==b){
-				break;
-			}
-			st+=load;
-		}while(true);
-		write(load);
-		if(!returnString(f, st)){
-			error("Could not return string to stream in peekString()");
-			exit(0);
-		}
+	String peekUntil(const bool (*fun)(char)){
+		String st = readWhile(fun);
+		for(unsigned int i = 0; i<st.size(); ++i) write();
 		return st;
 	}
 	String readUntil(char c){
 		String st;
-		char load;
-		do{
-			load = read();
-			if(load==EOF || load==c){
-				break;
-			}
-			st+=load;
-		}while(true);
-		write(load);
-		//trim();
+		while(peek()!=c && peek()!=EOF) st+=read();
 		return st;
 	}
 	String peekUntil(char c){
-		String st;
-		char load;
-		do{
-			load = read();
-			if(load==EOF || load==c){
-				break;
-			}
-			st+=load;
-		}while(true);
-		write(load);
-		if(!returnString(f, st)){
-			error("Could not return char to stream in peekUntil()");
-			exit(0);
-		}
+		String st = readUntil(c);
+		for(unsigned int i = 0; i<st.size(); ++i) write();
 		return st;
 	}
 	String read(unsigned int len){
 		String c;
-		char temp;
-		for(unsigned int i = 0; i<len;i++){
-			temp = read();
-			if(temp==EOF){
-				break;
-			}
-			c+=temp;
-		}
-		write(temp);
-		//trim();
+		for(unsigned int i = 0; i<len;i++) c+=read();
 		return c;
-	}
-	void writeString(String a){
-		for(int i = a.length()-1; i>=0; i--){
-			write((char)a[i]);
-		}
 	}
 	String peek(unsigned int len){
-		String c;
-		char temp;
-		for(unsigned int i = 0; i<len;i++){
-			temp = read();
-			if(temp==EOF){
-				break;
-			}
-			c+=temp;
-		}
-		write(temp);
-		writeString(c);
-		return c;
-	}
-	char peek(){
-		if(done) error("Already done reading file");
-		if(cache.size()>0) return cache.back();
-		char c;
-		if(readChar(f,&c)){
-			error("Error reading from file");
-			exit(0);
-		}
-		cache.push_back(c);
-		last = c;
+		String c = read(len);
+		for(unsigned int i = 0; i<len;i++) write();
 		return c;
 	}
 
 	void error(String a = "Compile error", /*String b="", String c="", String d="",*/ bool end=false){
-		cerr << a /*<< b << c << d*/ << "  on line " << lineCount << " character " << charCount << endl << flush;
+		cerr << a /*<< b << c << d*/ << "  on line " << readChars.size() << " character " << readChars.back().size() << endl << flush;
 		if(end) exit(1);
 	}
 
@@ -443,25 +452,20 @@ public:
 		do{
 			c = read();
 			if(c==EOF){
-				write(c);
+				write();
 				done = true;
-#if DEBUG > 1
-				level--;
-				indent();
-				cerr << "Done trimNonLine(char endWith=EOF) (stream) - c==EOF => done==true" << endl;
-#endif
 				return true;
 			}
-			if(c==endWith){
-				write(c);
+			else if(c==endWith){
+				write();
 				return false;
 			}
-			if(endAtLines && c=='\n'){
+			else if(endAtLines && c=='\n'){
 				done = true;
 				return true;
 			}
 		}while(c==' ' || c=='\t' || c=='\r');
-		write(c);
+		write();
 		return false;
 	}
 
@@ -474,7 +478,7 @@ public:
 			c = read();
 			cerr << "Read: " << c << endl;
 			if(c==EOF){
-				write(c);
+				write();
 				done = true;
 				return true;
 			}
@@ -518,13 +522,13 @@ public:
 						prev = cur;
 						cur = read();
 						if(cur==EOF){
-							write(cur);
+							write();
 							error("Unclosed /* comment");
 							exit(0);
 							return true;
 						}
 					}while(prev!='*' || cur!='/');
-					write(cur);
+					write();
 				}
 			}
 			if(c!='\n') break;
@@ -550,21 +554,21 @@ public:
 		//trim();
 		if(done) return "";
 		char nex = peek();
-		if(nex==endWith){ write(nex); done=true; return ""; }
+		if(nex==endWith){ done=true; return ""; }
 		if (isalpha(nex) || nex=='$' || nex=='_') {
 			String temp = "";
 			char tchar;
 			do{
 				tchar = read();
 				if(endWith==tchar){
-					write(tchar);
+					write();
 					done = true;
 					return temp;
 				}
 				if(isalnum(tchar) || tchar=='$' || tchar=='_')	temp+=tchar;
 				else break;
 			}while(true);
-			if(!(tchar==' ' || tchar=='\n' || tchar == '\t')) write(tchar);
+			if(!(tchar==' ' || tchar=='\n' || tchar == '\t')) write();
 			if(endAtLines && tchar=='\n') done = true;
 			return temp;
 		}
@@ -619,7 +623,7 @@ public:
 		}while(true);
 		if(base==-1) base=10;
 		//hi.pop_back();
-		write(tchar);
+		write();
 		if(decimal){
 			return new odec(strtod(hi.c_str(),NULL));
 		}
@@ -627,57 +631,28 @@ public:
 			return new oint(strtol(hi.c_str(),NULL, base));
 		}
 	}
-
-
-};
-
-bool isOperator(int a){
-	return  a=='!' || a=='%' || a=='&' ||
-			a=='^' || a=='*' || a=='|' ||/* a=='(' || a==')' ||*/
-			a=='-' || a=='+' || a=='=' || /*a=='[' || a==']' ||*/ a=='<' ||
-			a=='>' || a=='.' || a=='/' || a=='\\' || a=='|' ||
-			/*a=='{' || a=='}' ||*/ a=='?';
-}
-String getNextOperator(Stream* f, char endWith){
-	char nex = f->peek();
-	if (isOperator(nex)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
-		String temp = "";
-		int tchar;
-		do{
-			tchar = f->read();
-			if(isOperator(tchar)) temp+=tchar;
-			//taken out due to errors with 2*(3+4), if remember why added
-			// in first place write why
-			//	else if(tchar=='(' || tchar=='[' || tchar=='{'){
-			//		temp+=tchar;
-			//		break;
-			//	}
-			else break;
-		}while(true);
-		f->write(tchar);
-		if(temp=="*^" || temp=="<>" || temp == "." || temp==":" || temp=="::" || temp == "->" ||
-				temp =="++" || temp == "--" || temp=="%%" ||
-				temp==".*" || temp==":*" || temp=="::*"||temp=="->*" || temp=="=>*" ||
-				temp == "**" || temp=="^" || temp == "%" || temp == "*" || temp == "/" ||
-				temp == "//" || temp == "+" || temp=="-" || temp=="<<" || temp == ">>" ||
-				temp== "<<<" || temp==">>>" || temp == "<=" || temp == "<" || temp == ">" ||
-				temp == ">=" ||	temp=="==" || temp=="===" || temp == "!=" || temp=="!==" ||
-				temp == "&" || temp == "^^" || temp == "|" || temp == "&&" ||
-				temp == "||" || temp == "\\." || temp == "+=" || temp == "%=" ||
-				temp == "-=" || temp == "*=" || temp=="\\.=" || temp == "\\=" ||
-				temp=="/=" || temp=="//=" || temp == "**=" || temp=="^=" ||
-				temp=="|=" || temp=="||="|| temp=="&=" || temp=="&&=" || temp=="^^=" ||
-				temp=="=" || temp == ":=" || temp == "::=" ||temp == "<<=" ||
-				temp==">>="	|| temp=="<<<" || temp==">>>" || temp=="[" || temp=="{" || temp=="("
-		){
-			f-> trim(endWith);
-			return temp;
+	String getNextOperator(char endWith){
+		if (isOperator(peek())) {
+			String temp = readWhile(isOperator);
+			if(temp.size()==0) temp = readString(endWith);
+			bool binop = false;
+			for(const auto& a:BINARY_OPERATORS){
+				if(a==temp){
+					binop = true;
+					break;
+				}
+			}
+			if(binop){
+				trim(endWith);
+				return temp;
+			}
+			else for(unsigned int i = 0; i<temp.size(); ++i) write();
+			return "";
 		}
-		else f->writeString(temp);
 		return "";
 	}
-	return "";
-}
+
+};
 
 
 Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& stack){

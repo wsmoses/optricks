@@ -56,7 +56,7 @@ int main(int argc, char** argv){
 			n = lexer.getNextStatement();
 		}
 		st->done = false;
-		if(st->last==EOF) break;
+		if(st->last()==EOF) break;
 		if(interactive)
 			cout << "ready> " << flush;
 		while(st->peek()=='\n' || st->peek()==';') st->read();
