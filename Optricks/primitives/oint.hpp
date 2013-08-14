@@ -17,15 +17,21 @@ class oint : public oobject{
 		operator int& (){
 			return value;
 		}
-		operator int () {
-			return value;
-		}
 		operator String () const override final{
 			std::stringstream convert;
 			convert << value;
 			return convert.str();
 		}
-		oobject* operator + (oobject* a) override final;
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			return ConstantInt::get(IntegerType::get(context, 64), value, true);
+		}
+};
+
+
+#include "odec.hpp"
+#include "ostring.hpp"
+
+/*oobject* operator + (oobject* a) override final;
 		oobject* operator + () override final{
 			return this;
 		}
@@ -170,12 +176,6 @@ class oint : public oobject{
 			return this;
 		}
 
-};
-
-
-#include "odec.hpp"
-#include "ostring.hpp"
-
 oobject* oint::operator + (oobject* a){
 	if(a->returnType== intClass)
 				return new oint(value+((oint*)a)->value);
@@ -259,4 +259,5 @@ obool* oint::operator >= (oobject* s){
 	return new obool( ( intClass==(s)->returnType && ((oint*)s)->value>=value)
 					|| (decClass==(s)->returnType && ((odec*)s)->value>=value));
 }
+*/
 #endif /* OINT_HPP_ */

@@ -1,15 +1,15 @@
 /*
- * E_BINOP.hpp
+ * E_INDEXER.hpp
  *
- *  Created on: Apr 16, 2013
+ *  Created on: Apr 12, 2013
  *      Author: wmoses
  */
 
-#ifndef E_BINOP_HPP_
-#define E_BINOP_HPP_
-
+#ifndef E_INDEXER_HPP_
+#define E_INDEXER_HPP_
 #include "../constructs/Expression.hpp"
-#include "../primitives/oobjectproto.hpp"
+
+
 byte precedence(String tmp){
 	if (tmp == "." || tmp==":" || tmp=="::" || tmp == "->"){
 		return 0;
@@ -72,14 +72,56 @@ byte precedence(String tmp){
 
 class E_BINOP : public Expression{
 	public:
-		const Token getToken() const override{ return T_BINOP; }
-		Expression *left, *right;
+		Expression* left;
+		Expression* right;
 		String operation;
-		E_BINOP(String o, Expression* a, Expression* b): Expression(objectClass),
-				left(a), right(b), operation(o)
-				{
-				};//possible refinement of return type
+		E_BINOP(Expression* t, Expression* ind,String op) :
+			Expression(t->returnType),left(t), right(ind),operation(op){
+		}
+		const Token getToken() const override{
+			return T_BINOP;
+		}
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			auto ar = left->evaluate(a,context);
+			auto in = right->evaluate(a,context);
+			auto found = left->returnType->binops.find(operation);
+			if(found==left->returnType->binops.end())
+				todo("Index operator not implemented for class ",
+						left->returnType->name);
+			auto look = found->second;
 
+			auto found2 = look.find(right->returnType);
+			if(found2==look.end())
+				todo(operation," operator not implemented for class ",
+						left->returnType->name, " with right ", right->returnType->name);
+			//TODO allow short-circuit lookup of E_VAR
+			return found2->second->apply(ar, in, a);
+		}
+		Expression* simplify() override{
+			auto found = left->returnType->binops.find(operation);
+			if(found==left->returnType->binops.end())
+				todo(operation," operator not implemented for class ",
+						left->returnType->name);
+			auto look = found->second;
+
+			auto found2 = look.find(right->returnType);
+			if(found2==look.end())
+				todo("Index operator not implemented for class ",
+						left->returnType->name, " with right ", right->returnType->name);
+			return new E_BINOP(left->simplify(), right->simplify(), operation);
+		}
+		void write(ostream& f,String s="") const override{
+			left->write(f,s);
+			if(operation=="[]"){
+			f << "[";
+			right->write(f,s);
+			f << "]";
+			}
+			else{
+			f << " " << operation << " ";
+			right->write(f,s);
+			}
+		}
 
 		//TODO CHECK IF WORKS
 		Expression* fixOrderOfOperations(){
@@ -89,7 +131,7 @@ class E_BINOP : public Expression{
 			while(true){
 				if(tl->getToken()==T_BINOP){
 					E_BINOP* l = (E_BINOP*)(tl);
-					if(precedence(l->operation) > precedence(self->operation)){
+					if(operation!="[]" && precedence(l->operation) > precedence(self->operation)){
 						self->left = l->right;
 						tr = l->right = self;
 						self = l;
@@ -101,7 +143,7 @@ class E_BINOP : public Expression{
 			while(true){
 				if(tr->getToken()==T_BINOP){
 					E_BINOP* r = (E_BINOP*)(tr);
-					if(precedence(r->operation) > precedence(self->operation)){
+					if(operation!="[]" && precedence(r->operation) > precedence(self->operation)){
 						self->right = r->left;
 						tl = r->left = self;
 						self = r;
@@ -111,57 +153,7 @@ class E_BINOP : public Expression{
 			}
 			return self;
 		}
-		oobject* combine(oobject* a, oobject* b){
-			//TODO allow other data types
-			if(operation=="+") 		return *a + b;
-			if(operation=="+=") 	return *a += b;
-			if(operation=="-") 		return *a - b;
-			if(operation=="-=")		return *a-=b;
-			if(operation=="*") 		return *a * b;
-			if(operation=="*=") 	return *a *= b;
-			if(operation=="/") 		return *a / b;
-			if(operation=="/=") 	return *a /= b;
-			if(operation=="^") 		return *a ^ b;
-			if(operation=="^=") 	return *a ^= b;
-			if(operation=="%") 		return *a % b;
-			if(operation=="%=") 	return *a %= b;
-			if(operation=="!=") 	return *a != b;
-			if(operation=="==") 	return *a == b;
-			if(operation=="<") 		return *a < b;
-			if(operation=="<=") 	return *a <= b;
-			if(operation==">") 		return *a > b;
-			if(operation==">=") 	return *a >= b;
-			if(operation=="|") 		return *a | b;
-			if(operation=="|=") 	return *a |= b;
-			if(operation=="||") 	return *a || b;
-			if(operation=="&") 		return *a & b;
-			if(operation=="&=") 	return *a &= b;
-			if(operation=="&&") 	return *a && b;
-			if(operation=="=") 		return *a = b;
-			if(operation=="<<") 	return *a << b;
-			if(operation==">>") 	return *a >> b;
-			if(operation=="<<=") 	return *a <<= b;
-			if(operation==">>=") 	return *a >>= b;
-			else{
-				cerr << "Operation not allowed by language";
-				exit(1);
-			}
-		}
-		Expression* simplify() override{
-			Expression* a = left->simplify();
-			Expression* b = right->simplify();
-			if(a->getToken()==T_OOBJECT && b->getToken()==T_OOBJECT)
-				return combine((oobject*)a,(oobject*)b);
-			else return new E_BINOP(operation,a,b);
-		}
-		oobject* evaluate() override{
-			return combine(left->evaluate(),right->evaluate());
-		}
-		void write(ostream& f,String s="") const override{
-			f << left << operation << right;
-		}
 };
 
 
-
-#endif /* E_BINOP_HPP_ */
+#endif /* E_INDEXER_HPP_ */

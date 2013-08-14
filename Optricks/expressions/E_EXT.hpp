@@ -20,11 +20,9 @@ public:
 		f << "extern " << value;
 	}
 
-	void* evaluate(Jump& jump) override{
+	Value* evaluate(RData& a,LLVMContext& context) override{
 		//TODO implement
-		cerr << "Extern not implemented";
-		exit(0);
-		return VOID;
+		todo("Extern not implemented");
 	}
 	Statement* simplify(Jump& jump) override{
 		return this;

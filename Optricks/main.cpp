@@ -51,8 +51,13 @@ int main(int argc, char** argv){
 			Jump temp = NJUMP;
 			cout << n->simplify(temp) << endl;
 			temp = NJUMP;
-			if(n!=NULL && n->getToken()==T_OOBJECT)
-			cout << (oobject*)(n->evaluate(temp)) << endl;
+			if(n!=NULL){
+				Value* v = (n->evaluate(lexer.rdata,getGlobalContext()));
+				v->dump();
+				cerr << flush;
+				cout << flush;
+			cout << " " <<v << endl << flush;
+			}
 			n = lexer.getNextStatement();
 		}
 		st->done = false;

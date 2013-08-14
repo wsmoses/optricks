@@ -20,11 +20,12 @@ class ostring : public oobject{
 		operator String () const override{
 			return value;
 		}
-		obool* operator == (oobject* s) override{
-			return new obool(stringClass==(s)->returnType && ((ostring*)s)->value.compare(value)==0);
-		}
-		ostring* operator + (oobject* a) override{
-			return new ostring(value+(String)(*a));
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			todo("Implement string evaluate");
+			//return ConstantArray::get(
+			//		uint8_t
+			//		ArrayType::get(llvmChar(a,context),value.length())
+			//, ArrayRef<uint8_t>(value.c_str()));
 		}
 };
 

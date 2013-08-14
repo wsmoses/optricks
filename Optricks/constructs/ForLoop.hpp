@@ -27,7 +27,9 @@ class ForLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOR;
 		}
-		void* evaluate(Jump& jump) override{
+		Value* evaluate(RData& r, LLVMContext& context) override{
+			todo("For loop eval not implemented");
+			/*
 			initialize->evaluate(jump);
 			if(jump.type!=NJUMP){
 				cerr << "Cannot jump on initialize statement in for loop" << endl;
@@ -54,7 +56,7 @@ class ForLoop : public Statement{
 					exit(0);
 				}
 			}
-			return VOID;
+			return VOID;*/
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";

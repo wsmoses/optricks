@@ -8,6 +8,8 @@
 #ifndef LEXER_HPP_
 #define LEXER_HPP_
 
+#include "containers/settings.hpp"
+
 #include "O_Stream.hpp"
 #include "constructs/WhileLoop.hpp"
 #include "constructs/ForLoop.hpp"
@@ -20,12 +22,16 @@
 #include "expressions/E_VAR.hpp"
 #include "functions/DefaultDeclaration.hpp"
 #include "primitives/oobject.hpp"
+
 class Lexer{
 	public:
 		Stream* f;
 		char endWith;
-		Lexer(Stream* t, char e):f(t),endWith(e){
+		Module * module;
 
+		RData rdata;
+		Lexer(Stream* t, char e):f(t),endWith(e),rdata(){
+			module = NULL;
 		}
 		std::vector<DefaultDeclaration*> parseArguments(char finish=')'){
 			std::vector<DefaultDeclaration*> args;
@@ -400,7 +406,7 @@ class Lexer{
 						//		case '@':
 					{
 						char n = f->read();
-						Expression* toReturn = new E_UOP(String(1,n),getNextExpression());
+						Expression* toReturn = new E_PREOP(String(1,n),getNextExpression());
 						f->trim(endWith);
 						semi  = false;
 						if(!f->done && f->peek()==';'){ semi = true; }
@@ -533,11 +539,11 @@ class Lexer{
 			else if(tmp=="="){
 				Expression* post = getNextExpression();
 				//	if(tmp->getToken()!=T_VAR)
-				fixed = new E_PARENS(new E_BINOP(tmp, exp, post));
+				fixed = new E_PARENS(new E_BINOP(exp, post,tmp));
 			}
 			else{
 				Expression* post = getNextExpression();
-				fixed = (new E_BINOP(tmp, exp, post))->fixOrderOfOperations();
+				fixed = (new E_BINOP(exp, post,tmp))->fixOrderOfOperations();
 			}
 			f->trim(endWith);
 			bool semi  = false;

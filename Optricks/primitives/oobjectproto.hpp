@@ -29,42 +29,9 @@ class oobject: public Expression{
 		virtual operator String () const = 0;
 
 		void write(ostream& a, String b) const override;
-		virtual oobject* operator + ();
-		virtual oobject* operator - ();
-		virtual oobject* operator ! ();
-		virtual oobject* operator ~ ();
-		virtual oobject* operator [] (oobject* a);
-		virtual oobject* operator + (oobject* a);
-		virtual oobject* operator += (oobject* a);
-		virtual oobject* operator - (oobject* a);
-		virtual oobject* operator -= (oobject* a);
-		virtual oobject* operator * (oobject* a);
-		virtual oobject* operator *= (oobject* a);
-		virtual oobject* operator / (oobject* a);
-		virtual oobject* operator /= (oobject* a);
-		virtual oobject* operator ^ (oobject* a);
-		virtual oobject* operator ^= (oobject* a);
-		virtual oobject* operator % (oobject* a);
-		virtual oobject* operator %= (oobject* a);
-		virtual obool* operator != (oobject* a);
-		virtual obool* operator == (oobject* a);
-		virtual obool* operator < (oobject* a);
-		virtual obool* operator <= (oobject* a);
-		virtual obool* operator > (oobject* a);
-		virtual obool* operator >= (oobject* a);
-		virtual oobject* operator | (oobject* a);
-		virtual oobject* operator |= (oobject* a);
-		virtual obool* operator || (oobject* a);
-		virtual oobject* operator & (oobject* a);
-		virtual oobject* operator &= (oobject* a);
-		virtual obool* operator && (oobject* a);
-		virtual oobject* operator = (oobject* a);
-		virtual oobject* operator << (oobject* a);
-		virtual oobject* operator >> (oobject* a);
-		virtual oobject* operator <<= (oobject* a);
-		virtual oobject* operator >>= (oobject* a);
-		oobject* evaluate() override final;
-		oobject* simplify() override final;
+		oobject* simplify() override final{
+			return this;
+		}
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}
@@ -77,170 +44,21 @@ class oobject: public Expression{
 		void oobject::write(ostream& a, String b) const{
 			a<< (String)(*this);
 		}
-		oobject* oobject::evaluate(){
-			return this;
-		}
-		oobject* oobject::simplify(){
-			return this;
-		}
-
-
+/*
 		class onull : public oobject{
 			public:
-				onull();
-				obool* operator == (oobject* s) override{
-					return new obool(nullClass==s->returnType);
+				onull():oobject(nullClass){
+
 				}
-				operator String () const override;
+				Value* evaluate(RData& a){
+
+				}
+				operator String() const{
+					return "null";
+				}
 		};
 
 		onull* NULLV = new onull();
+*/
 
-		onull::onull(): oobject(nullClass){};
-
-		onull::operator String () const{
-			return "null";
-		}
-
-#include "ostring.hpp"
-
-
-
-		oobject* oobject::operator + (){
-			cerr << "Unary Operation + not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator - (){
-			cerr << "Unary Operation - not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator ! (){
-			cerr << "Unary Operation ! not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator ~ (){
-			cerr << "Unary Operation ~ not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator [] (oobject* a){
-			cerr << "Lookup Operation [] not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator + (oobject* a){
-			if(a->returnType==stringClass) return new ostring((String)(*this)+((ostring*)a)->value);
-			cerr << "Operation [] not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator += (oobject* a){
-			cerr << "Binary Operation += not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator - (oobject* a){
-			cerr << "Binary Operation - not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator -= (oobject* a){
-			cerr << "Binary Operation -= not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator * (oobject* a){
-			cerr << "Binary Operation * not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator *= (oobject* a){
-			cerr << "Binary Operation *= not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator / (oobject* a){
-			cerr << "Binary Operation / not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator /= (oobject* a){
-			cerr << "Binary Operation /= not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator ^ (oobject* a){
-			cerr << "Binary Operation ^ not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator ^= (oobject* a){
-			cerr << "Binary Operation ^= not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator % (oobject* a){
-			cerr << "Binary Operation % not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator %= (oobject* a){
-			cerr << "Binary Operation %= not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator != (oobject* a){
-			cerr << "Binary Operation != not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator == (oobject* a){
-			cerr << "Binary Operation == not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator < (oobject* a){
-			cerr << "Binary Operation < not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator <= (oobject* a){
-			cerr << "Binary Operation ^ not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator > (oobject* a){
-			cerr << "Binary Operation > not permitted" << endl;
-			exit(0);
-		}
-		obool* oobject::operator >= (oobject* a){
-			cerr << "Binary Operation >= not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator | (oobject* a){
-			cerr << "Binary Operation | not permitted" << endl;
-			exit(0);
-		}
-		oobject* oobject::operator |= (oobject* a){
-			cerr << "Binary Operation |= not permitted" << endl;
-			exit(0);
-		};
-		obool* oobject::operator || (oobject* a){
-			cerr << "Binary Operation || not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator & (oobject* a){
-			cerr << "Binary Operation & not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator &= (oobject* a){
-			cerr << "Binary Operation &= not permitted" << endl;
-			exit(0);
-		};
-		obool* oobject::operator && (oobject* a){
-			cerr << "Binary Operation && not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator = (oobject* a){
-			cerr << "Binary Operation = not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator << (oobject* a){
-			cerr << "Binary Operation << not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator >> (oobject* a){
-			cerr << "Binary Operation >> not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator <<= (oobject* a){
-			cerr << "Binary Operation <<= not permitted" << endl;
-			exit(0);
-		};
-		oobject* oobject::operator >>= (oobject* a){
-			cerr << "Binary Operation >>= not permitted" << endl;
-			exit(0);
-		};
 #endif /* OOBJECTPROTO_HPP_ */

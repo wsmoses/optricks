@@ -19,9 +19,8 @@ class obool: public oobject{
 		operator String () const override{
 			return value?"true":"false";
 		}
-
-		obool* operator == (oobject* s) override{
-			return new obool( ( boolClass==(s)->returnType && ((obool*)s)->value==value));
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			return ConstantInt::get(IntegerType::get(context, 1), value, false);
 		}
 };
 

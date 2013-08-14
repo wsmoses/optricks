@@ -23,7 +23,18 @@ public:
 		}
 		else return new E_FUNC_CALL(a,b);
 	}
-	oobject* evaluate() override{
+	Value* evaluate(RData& a,LLVMContext& context) override{
+		/*auto callee = toCall->evaluate(a,context);
+
+		 std::vector<Value*> ArgsV;
+		  for (unsigned i = 0, e = Args.size(); i != e; ++i) {
+		    ArgsV.push_back(Args[i]->Codegen());
+		    if (ArgsV.back() == 0) return 0;
+		  }
+
+		  return Builder.CreateCall(CalleeF, ArgsV, "calltmp");*/
+		todo("Function calls not implemented");
+		/*
 		oobject* a = toCall->evaluate();
 		oobject* b = vals->evaluate();
 		if(a->returnType==functionClass && b->returnType==arrayClass){
@@ -34,6 +45,7 @@ public:
 			exit(0);
 			return 0;
 		}
+		*/
 	}
 };
 

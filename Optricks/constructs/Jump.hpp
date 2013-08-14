@@ -43,7 +43,8 @@ class Jump{
 
 Jump NOJUMP(NJUMP,"");
 
-Jump::Jump(JumpType j, String lab,Expression* r): type(j), label(lab),ret((r==NULL)?NULLV:r){
+//TODO changed NULLV to NULL
+Jump::Jump(JumpType j, String lab,Expression* r): type(j), label(lab),ret((r==NULL)?NULL:r){
 
 }
 bool Jump::operator == (Jump& a){

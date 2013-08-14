@@ -24,16 +24,11 @@ class odec : public oobject{
 			convert << value;
 			return convert.str();
 		}
-		obool* operator == (oobject* s) override;
+		Value* evaluate(RData &a,LLVMContext& context) override final{
+			return ConstantFP::get(context, APFloat(value));
+		}
 };
 
 #include "oint.hpp"
-obool* odec::operator == (oobject* s) {
-			return new obool(
-							( intClass==((oobject*)s)->returnType && ((oint*)s)->value==value)
-							||
-							(decClass==((oobject*)s)->returnType && ((odec*)s)->value==value)
-							);
-}
 
 #endif /* ODEC_HPP_ */

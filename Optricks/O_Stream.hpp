@@ -28,7 +28,6 @@ const String BINARY_OPERATORS[]{"and", "or", "xor","xnor",
 };
 
 #include "O_IO.hpp"
-#include "expressions/E_INDEXER.hpp"
 #include "expressions/E_LOOKUP.hpp"
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_PARENS.hpp"
@@ -588,8 +587,7 @@ public:
 				done=true;
 				break;
 			}
-			else
-				read();
+			read();
 			if(tchar=='.' || (base<15 && (tchar=='e' || tchar=='E'))){
 				hi+=tchar; decimal=true; te = true;
 				pos++; continue;
@@ -611,19 +609,24 @@ public:
 					base = 8;
 					hi+=tchar;
 				}
-				else break;
+				else{
+					write();
+					break;
+				}
 			}
 			else if(isdigit(tchar) || (tchar>='a' && tchar<='f')  || (tchar>='A' && tchar<='F')){
 				hi+=tchar;
 			}
 			else if(te && tchar=='-') hi+=tchar;
-			else break;
+			else{
+				write();
+				break;
+			}
 			pos++;
 			te = false;
 		}while(true);
 		if(base==-1) base=10;
 		//hi.pop_back();
-		write();
 		if(decimal){
 			return new odec(strtod(hi.c_str(),NULL));
 		}
@@ -663,11 +666,11 @@ Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& s
 	if(stack.size()==1 && stack[0]!=NULL){
 		Expression* temp = stack[0];
 		stack.clear();
-		return new E_INDEXER(toIndex,temp);
+		return new E_BINOP(toIndex,temp,"[]");
 	}
 	else{
 		//TODO allow for a[::,2] or a[:,:]
-		Expression* start = NULLV, *end=NULLV,*step=NULLV;
+		Expression* start = NULL, *end=NULL,*step=NULL;
 		unsigned int pos = 0, spos = 0;
 		while(stack.size()>spos){
 			if(stack[spos]==NULL){
@@ -693,7 +696,7 @@ Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& s
 		}
 		stack.clear();
 		E_SLICE* e = new E_SLICE(start,end,step);
-		return new E_INDEXER(toIndex,e);
+		return new E_BINOP(toIndex,e,"[]");
 	}
 }
 #endif /* O_STREAM_HPP_ */

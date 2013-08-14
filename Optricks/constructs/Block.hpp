@@ -22,14 +22,16 @@ class Block : public Statement{
 		void push_back(Statement* s){
 			return values.push_back(s);
 		}
-		void* evaluate(Jump& jump) override{
+		Value* evaluate(RData& a,LLVMContext& c) override{
+			todo("Block eval not implemented");
+			/*
 			for(auto& a:values){
 				a->evaluate(jump);
 				if(jump.type!=NJUMP){
 					return VOID;
 				}
 			}
-			return VOID;
+			return VOID;*/
 		}
 		Statement* simplify(Jump& jump) override{
 			std::vector<Statement*> v;

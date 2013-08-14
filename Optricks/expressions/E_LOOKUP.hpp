@@ -24,10 +24,9 @@ class E_LOOKUP : public Expression{
 			f << operation;
 			f << right;
 		}
-		oobject* evaluate() override{
+		Value* evaluate(RData& a,LLVMContext& context) override{
 			//TODO lookup variables
-			cerr << "Variable lookup not implemented";
-			exit(1);
+			todo("Variable lookup not implemented");
 		}
 		Expression* simplify() override{
 			//TODO lookup variables

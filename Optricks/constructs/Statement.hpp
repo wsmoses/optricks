@@ -13,9 +13,9 @@
 #include "Expression.hpp" //needed to ensure jump.hpp is included
 #include "Jump.hpp"
 
-void* VoidStatement::evaluate(Jump& jump){
-	jump = NOJUMP;
-	return this;
+Value* VoidStatement::evaluate(RData& a,LLVMContext& context){
+	todo("Void eval not implemented");
+//	return this;
 }
 Statement* VoidStatement::simplify(Jump& jump){
 	jump = NOJUMP;

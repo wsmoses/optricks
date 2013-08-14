@@ -17,14 +17,14 @@ public:
 	const Token getToken() const override{
 		return T_VAR;
 	}
-	Expression* simplify(){
+	Expression* simplify() override final{
 		return this;
 	}
-	oobject* evaluate(){
+	Value* evaluate(RData& a,LLVMContext& context) override final{
 		//TODO variables not implemented
-		cerr << "Variables not implemented" << endl;
-		exit(0);
-		return NULL;
+		Value* ans = (*(a.module))[name];
+		if(ans==NULL) todo("ERROR - could not find "+name);
+		return ans;
 	}
 	void write(ostream& f,String t="") const override{
 		f << "E_VAR('" << name << "')";

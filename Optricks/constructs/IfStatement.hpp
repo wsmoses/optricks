@@ -30,7 +30,9 @@ class IfStatement : public Statement{
 		const Token getToken() const override {
 			return T_IF;
 		}
-		void* evaluate(Jump& jump) override{
+		Value* evaluate(RData& r, LLVMContext& context) override{
+			todo("If statement eval not implemented");
+			/*
 			for(auto &a: condition){
 				if((bool) (a.first->evaluate())){
 					a.second->evaluate(jump);
@@ -39,6 +41,7 @@ class IfStatement : public Statement{
 			}
 			finalElse->evaluate(jump);
 			return VOID;
+			*/
 		}
 		Statement* simplify(Jump& jump) override{
 			std::vector<std::pair<Expression*,Statement*>> stack;

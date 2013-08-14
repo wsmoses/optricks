@@ -27,10 +27,9 @@ class ForEachLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOREACH;
 		}
-		void* evaluate(Jump& jump) override{
+		Value* evaluate(RData& a, LLVMContext& context) override{
 			//TODO iterators not implemented yet
-			cerr << "Cannot perform for-each, iterators not implemented yet" << endl;
-			exit(0);
+			todo("For-each loop eval not implented");
 /*			while((bool)condition->evaluate()){
 				statement->evaluate(jump);
 				switch(jump.type){
@@ -45,7 +44,6 @@ class ForEachLoop : public Statement{
 						return VOID;
 				}
 			}*/
-			return VOID;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for " << localVariableName << " in "<< iterable << ":";

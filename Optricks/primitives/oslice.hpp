@@ -21,15 +21,19 @@ class oslice : public oobject{
 			}
 		}
 		operator String () const override{
+			//TODO
 			std::stringstream ss;
 			ss << "[";
-			if(start!=NULLV) ss << start;
+			if(start!=NULL) ss << start;
 			ss << ":";
-			if(step!=NULLV) ss << stop;
+			if(step!=NULL) ss << stop;
 			ss << ":";
-			if(step!=NULLV) ss << step;
+			if(step!=NULL) ss << step;
 			ss << "]";
 			return ss.str();
+		}
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			todo("Not implemented : slice evaluate");
 		}
 };
 
@@ -41,7 +45,9 @@ public:
 	const Token getToken() const override{
 		return T_SLICE;
 	};
-	oobject* evaluate() override final{
+	Value* evaluate(RData& r,LLVMContext& context) override final{
+		todo("Evaluate E_SLICE");
+		/*
 		oobject *a = start->evaluate(),
 				*b = stop->evaluate(),
 				*c = step->evaluate();
@@ -54,13 +60,13 @@ public:
 			cerr << "Cannot make slice out of unknown type " << a->returnType << ":" << b->returnType << ":" << c->returnType;
 			exit(0);
 		}
-		return new oslice(a,b,c);
+		return new oslice(a,b,c);*/
 	}
 	Expression* simplify() override{
 
-		Expression *aa = start->evaluate(),
-				*bb = stop->evaluate(),
-				*cc = step->evaluate();
+		Expression *aa = start->simplify(),
+				*bb = stop->simplify(),
+				*cc = step->simplify();
 		if(aa->getToken()!=T_OOBJECT || bb->getToken()!=T_OOBJECT || cc->getToken()!=T_OOBJECT)
 			return new E_SLICE(aa,bb,cc);
 		oobject *a = (oobject*)aa,

@@ -20,7 +20,11 @@ class oarray : public oobject{
 		operator std::vector<oobject*>& (){
 			return data;
 		}
-		oobject* operator [] (oobject* a) override{
+		Value* evaluate(RData& a,LLVMContext& context) override final{
+			//TODO
+			todo("Array not implemented");
+		}
+		/*oobject* operator [] (oobject* a) override{
 			if(a->returnType==intClass){
 				oint* s = (oint*)a;
 				return data[s->value];
@@ -41,37 +45,7 @@ class oarray : public oobject{
 				cerr << "Array index must be int or slice not " << a << " of class " << a->returnType;
 				exit(0);
 			}
-		}
-		oobject* operator += (oobject* l){
-			if(l->returnType==arrayClass){
-				oarray* ar = (oarray*)l;
-				for(auto& a:ar->data)
-					data.push_back(a);
-				return this;
-			}
-			else{
-				cerr << "Cannot add += two non-list types";
-				exit(0);
-			}
-		}
-		oobject* operator + (oobject* l){
-			if(l->returnType==arrayClass){
-				oarray* ar = (oarray*)l;
-				oarray* t = new oarray();
-				for(auto& a:data)
-					t->data.push_back(a);
-				for(auto& a:ar->data)
-					t->data.push_back(a);
-				return t;
-			}
-			else if(l->returnType==stringClass){
-				return new ostring((String)(*this)+((ostring*)l)->value);
-			}
-			else{
-				cerr << "Cannot add + two non-list types";
-				exit(0);
-			}
-		}
+		}*/
 		operator String () const override{
 			std::stringstream ss;
 			ss << "[";
@@ -102,12 +76,15 @@ class E_ARR : public Expression{
 			}
 			f << "]";
 		}
-		oobject* evaluate() override {
+		Value* evaluate(RData& a,LLVMContext& context) override {
+			//TODO
+			todo("E_ARR not implemented");
+			/*
 			oarray* n = new oarray();
 			for(Expression* a: values){
-				n->data.push_back(a->evaluate());
+				n->data.push_back(a->evaluate(a));
 			}
-			return n;
+			return n;*/
 		}
 		Expression* simplify() override{
 

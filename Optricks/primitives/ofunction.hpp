@@ -10,7 +10,6 @@
 
 #include "oobject.hpp"
 
-
 class ofunction:public oobject{
 	public:
 		oclass* functionReturnType;

@@ -25,7 +25,9 @@ class WhileLoop : public Statement{
 		const Token getToken() const override {
 			return T_WHILE;
 		}
-		void* evaluate(Jump& jump) override{
+		Value* evaluate(RData& r, LLVMContext& context) override{
+			todo("While loop eval not implemented");
+			/*
 			while((bool)condition->evaluate()){
 				statement->evaluate(jump);
 				switch(jump.type){
@@ -42,6 +44,7 @@ class WhileLoop : public Statement{
 				}
 			}
 			return VOID;
+			*/
 		}
 		void write(ostream& a, String b) const override{
 			a << "while(" << condition << ")";
