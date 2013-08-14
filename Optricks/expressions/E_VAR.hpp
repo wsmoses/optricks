@@ -30,7 +30,7 @@ public:
 		f << "E_VAR('" << name << "')";
 	}
 	void checkTypes(){
-		todo("Check types of variable");
+		todo("E_VAR Check types not implemented");
 	}
 };
 #endif /* E_VAR_HPP_ */

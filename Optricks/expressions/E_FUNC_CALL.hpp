@@ -17,7 +17,7 @@ public:
 	}
 	void checkTypes(){
 		toCall->checkTypes();
-		todo("Function call type-checking");
+		todo("Function call type-checking not implemented");
 	}
 	Expression* simplify() override{
 		Expression* a = toCall->simplify();

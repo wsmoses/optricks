@@ -65,9 +65,19 @@ void initClasses(){
 	//classClass->module = new OModule(objectClass->module);
 	classClass->super = objectClass;
 	///////******************************* Boolean ********************************////////
-	boolClass->binops["&&"][boolClass] = new obinopNative(
+	boolClass->binops["&"][boolClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{
 				return m.builder.CreateAnd(a,b,"andtmp");
+	},boolClass);
+
+	boolClass->binops["|"][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateOr(a,b,"ortmp");
+	},boolClass);
+
+	boolClass->binops["^"][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateXor(a,b,"xortmp");
 	},boolClass);
 
 	boolClass->binops["!="][boolClass] = new obinopNative(
@@ -78,11 +88,6 @@ void initClasses(){
 	boolClass->binops["=="][boolClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{
 				return m.builder.CreateICmpEQ(a,b,"andtmp");
-	},boolClass);
-
-	boolClass->binops["||"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateOr(a,b,"ortmp");
 	},boolClass);
 
 	boolClass->preops["!"] = new ouopNative(
@@ -164,6 +169,21 @@ void initClasses(){
 
 
 	///////******************************* INT ********************************////////
+	intClass->binops["&"][intClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateAnd(a,b,"andtmp");
+	},boolClass);
+
+	intClass->binops["|"][intClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateOr(a,b,"ortmp");
+	},intClass);
+
+	intClass->binops["^"][intClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateXor(a,b,"xortmp");
+	},intClass);
+
 	intClass->binops["+"][intClass] = new obinopNative(
 				[](Value* a, Value* b, RData& m) -> Value*{
 					return m.builder.CreateAdd(a,b,"addtmp");
@@ -225,6 +245,21 @@ void initClasses(){
 					return m.builder.CreateSDiv(a,b,"divtmp");
 	},intClass);
 
+	intClass->binops["<<"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateShl(a,b);
+	},intClass);
+
+	intClass->binops[">>"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateAShr(a,b);
+	},intClass);
+
+	intClass->binops[">>>"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateLShr(a,b);
+	},intClass);
+
 	intClass->preops["-"] = new ouopNative(
 				[](Value* a, RData& m) -> Value*{
 					return m.builder.CreateNeg(a,"negtmp");
@@ -233,6 +268,11 @@ void initClasses(){
 	intClass->preops["+"] = new ouopNative(
 				[](Value* a, RData& m) -> Value*{
 					return a;
+	},intClass);
+
+	intClass->preops["~"] = new ouopNative(
+				[](Value* a, RData& m) -> Value*{
+				return m.builder.CreateNot(a,"negtmp");
 	},intClass);
 
 	///////******************************* INT/Double ********************************////////
@@ -296,6 +336,68 @@ void initClasses(){
 				[](Value* a, Value* b, RData& m) -> Value*{
 					return m.builder.CreateFDiv(m.builder.CreateSIToFP(a,b->getType()),b,"divtmp");
 	},intClass);
+
+	///////******************************* DOUBLE/int ********************************////////
+		decClass->binops["+"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFAdd(a,m.builder.CreateSIToFP(b,a->getType()),"addtmp");
+		},decClass);
+
+		decClass->binops["-"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFSub(a,m.builder.CreateSIToFP(b,a->getType()),"subtmp");
+		},decClass);
+
+		decClass->binops["*"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFMul(a,m.builder.CreateSIToFP(b,a->getType()),"multmp");
+		},decClass);
+
+		decClass->binops["%"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFRem(a,m.builder.CreateSIToFP(b,a->getType()),"modtmp");
+		},decClass);
+
+		decClass->binops["<"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpULT(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops[">"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpUGT(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops["<="][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpULE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops[">="][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpUGE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops["=="][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpUEQ(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops["!="][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFCmpUNE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
+						//TODO there is also a CreateFCmpOGT??
+		},boolClass);
+
+		decClass->binops["/"][intClass] = new obinopNative(
+					[](Value* a, Value* b, RData& m) -> Value*{
+						return m.builder.CreateFDiv(a,m.builder.CreateSIToFP(b,a->getType()),"divtmp");
+		},intClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);
 	LANG_M->addPointer("object",objectClass,0);

@@ -279,7 +279,7 @@ class Lexer{
 					}
 					else{
 						//TODO lambda function
-						cout << "LAMBDA(" << methodName << "," << arguments << ", " << methodBody << endl << flush;
+						cout << "LAMBDA(" << methodName << "," << arguments << ", " << methodBody << ")" << endl << flush;
 						exit(0);
 						//toReturn = new lambdaFunction(methodName, arguments, (*methodBody)[0]);
 						delete methodBody;
@@ -394,7 +394,13 @@ class Lexer{
 								if((te = f->read())!=close) f->error("Cannot end inline paren with "+
 										String(1,te)+" instead of "+String(1,close)
 								);
-								return new E_PARENS(temp);
+								temp = new E_PARENS(temp);
+								f->trim(endWith);
+								semi  = false;
+								if(!f->done && f->peek()==';'){ semi = true; }
+								f->trim(endWith);
+								if(opCheck && !semi) return operatorCheck(temp);
+								else return temp;
 							}
 							if(f->done) f->error("Uncompleted inline 2");
 							if((te = f->read())!=close) f->error("Cannot end inline array with "+
