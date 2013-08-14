@@ -304,6 +304,16 @@ class Lexer{
 					//if(opCheck)
 					//toReturn = operatorCheck(f, toReturn,endWith);
 				}
+				else if (temp=="true" || temp=="false"){
+					Expression* te = new obool(temp=="true");
+					f->trim(endWith);
+					semi  = false;
+					if(!f->done && f->peek()==';'){ semi = true; }
+					f->trim(endWith);
+					if(opCheck && !semi)
+						return operatorCheck(te);
+					else return te;
+				}
 				else{
 					Expression* te = new E_VAR(temp);
 
@@ -406,6 +416,19 @@ class Lexer{
 						//		case '@':
 					{
 						char n = f->read();
+						if((n=='-' || n=='+') && f->peek()>='0' && f->peek()<='9'){
+							if(n=='-') f->write(n);
+							Expression* toReturn = f->readNumber(endWith);
+							f->trim(endWith);
+							semi  = false;
+							if(!f->done && f->peek()==';'){ semi = true; }
+							f->trim(endWith);
+							cout << "opcheck " << (opCheck && !semi) << endl << flush;
+							if(opCheck && !semi)
+								toReturn = operatorCheck(toReturn);
+							return toReturn;
+						}
+						else{
 						Expression* toReturn = new E_PREOP(String(1,n),getNextExpression());
 						f->trim(endWith);
 						semi  = false;
@@ -414,6 +437,7 @@ class Lexer{
 						if(opCheck && !semi)
 							toReturn = operatorCheck(toReturn);
 						return toReturn;
+						}
 					}
 				}
 			}
@@ -509,7 +533,6 @@ class Lexer{
 					tchar = f->peek();
 				}
 			}*/
-
 			String tmp = f->getNextOperator(endWith);
 
 			if(tmp.length()==0) return exp;

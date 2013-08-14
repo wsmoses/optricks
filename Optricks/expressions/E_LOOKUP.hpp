@@ -24,6 +24,9 @@ class E_LOOKUP : public Expression{
 			f << operation;
 			f << right;
 		}
+		void checkTypes(){
+			todo("Check types for lookup");
+		}
 		Value* evaluate(RData& a,LLVMContext& context) override{
 			//TODO lookup variables
 			todo("Variable lookup not implemented");

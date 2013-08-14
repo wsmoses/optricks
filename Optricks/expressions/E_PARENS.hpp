@@ -19,6 +19,10 @@ public:
 	void write (ostream& f,String b="") const override{
 		f  << "(" << inner << ")";
 	}
+	void checkTypes(){
+		inner->checkTypes();
+		returnType = inner->returnType;
+	}
 };
 
 

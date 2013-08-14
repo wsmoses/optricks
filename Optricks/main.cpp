@@ -47,16 +47,17 @@ int main(int argc, char** argv){
 		bool first = true;
 		while(n->getToken()!=T_VOID){
 			first = false;
-			cout << n << endl;
+			cout << n << endl << flush;
 			Jump temp = NJUMP;
-			cout << n->simplify(temp) << endl;
+			cout << n->simplify(temp) << endl << flush;
 			temp = NJUMP;
 			if(n!=NULL){
+				n->checkTypes();
 				Value* v = (n->evaluate(lexer.rdata,getGlobalContext()));
 				v->dump();
-				cerr << flush;
+				cerr << endl << flush;
 				cout << flush;
-			cout << " " <<v << endl << flush;
+			//cout << " " <<v << endl << flush;
 			}
 			n = lexer.getNextStatement();
 		}

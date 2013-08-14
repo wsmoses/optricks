@@ -49,7 +49,7 @@ struct RData{
 class obinop{
 	public:
 		virtual Value* apply(Value* a, Value* b, RData& mod) = 0;
-		oclass* returnValue;
+		oclass* returnType;
 };
 
 class obinopNative : public obinop{
@@ -57,7 +57,7 @@ class obinopNative : public obinop{
 		Value* (*temp)(Value*,Value*,RData&);
 		obinopNative(Value* (*fun)(Value*,Value*,RData&), oclass* a){
 			temp = fun;
-			returnValue = a;
+			returnType = a;
 		}
 		Value* apply(Value* a, Value* b, RData& m){
 			return temp(a,b,m);
@@ -67,7 +67,7 @@ class obinopNative : public obinop{
 class ouop{
 	public:
 		virtual Value* apply(Value* a, RData& mod) = 0;
-		oclass* returnValue;
+		oclass* returnType;
 };
 
 class ouopNative: public ouop{
@@ -75,15 +75,15 @@ class ouopNative: public ouop{
 		Value* (*temp)(Value*,RData&);
 		ouopNative(Value* (*fun)(Value*,RData&),oclass* a){
 			temp = fun;
-			returnValue = a;
+			returnType = a;
 		}
 		Value* apply(Value* a,RData& m){
 			return temp(a,m);
 		}
 };
 
-void todo(String a="",String b="",String c="",String d="",String e=""){
-	cerr << a << b << c << d << e << endl << flush;
+void todo(String a="",String b="",String c="",String d="",String e="",String f="",String g=""){
+	cerr << a << b << c << d << e << f<<g<<endl << flush;
 	exit(1);
 }
 

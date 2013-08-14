@@ -62,6 +62,11 @@ class Block : public Statement{
 			}
 			s << start << "}";
 		}
+		void checkTypes(){
+			for(auto& a:values){
+				a->checkTypes();
+			}
+		}
 		Token const getToken() const override{
 			return T_BLOCK;
 		}

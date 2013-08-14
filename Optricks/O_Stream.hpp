@@ -50,7 +50,6 @@ private:
 				cache.push_back('\n');
 			}
 			else{
-
 				cache.push_back(readChars.back().back());
 				readChars.back().pop_back();
 			}
@@ -115,6 +114,7 @@ public:
 		return c;
 	}
 	char peek(){
+		if(cache.size()>0) return cache.back();
 		char c = read();
 		write();
 		return c;
@@ -405,10 +405,10 @@ public:
 			}
 			st+=load;
 		}while(true);
-		write();
+		write(load);
 		return st;
 	}
-	String peekUntil(const bool (*fun)(char)){
+	String peekWhile(const bool (*fun)(char)){
 		String st = readWhile(fun);
 		for(unsigned int i = 0; i<st.size(); ++i) write();
 		return st;
@@ -475,13 +475,12 @@ public:
 		}
 		do{
 			c = read();
-			cerr << "Read: " << c << endl;
 			if(c==EOF){
 				write();
 				done = true;
 				return true;
 			}
-		}while(c=='\n');
+		}while(c!='\n');
 		done |= endAtLines;
 		return endAtLines;
 	}
@@ -527,8 +526,8 @@ public:
 							return true;
 						}
 					}while(prev!='*' || cur!='/');
-					write();
 				}
+				else write();
 			}
 			if(c!='\n') break;
 			else read();
@@ -588,7 +587,10 @@ public:
 				break;
 			}
 			read();
-			if(tchar=='.' || (base<15 && (tchar=='e' || tchar=='E'))){
+			if(pos==0 && tchar=='-'){
+				hi+=tchar;
+			}
+			else if(tchar=='.' || (base<15 && (tchar=='e' || tchar=='E'))){
 				hi+=tchar; decimal=true; te = true;
 				pos++; continue;
 			}
@@ -635,16 +637,29 @@ public:
 		}
 	}
 	String getNextOperator(char endWith){
+		trim(endWith);
 		if (isOperator(peek())) {
+			bool alpha = false;
 			String temp = readWhile(isOperator);
-			if(temp.size()==0) temp = readString(endWith);
+			if(temp.size()==0){
+				temp = readString(endWith);
+				alpha = true;
+			}
 			bool binop = false;
+			do{
 			for(const auto& a:BINARY_OPERATORS){
 				if(a==temp){
 					binop = true;
 					break;
 				}
 			}
+			if(binop) break;
+			if(temp.size()==0) break;
+			else {
+				write();
+				temp.resize(temp.length()-1);
+			}
+			}while(!alpha);
 			if(binop){
 				trim(endWith);
 				return temp;

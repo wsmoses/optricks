@@ -29,5 +29,8 @@ public:
 	void write(ostream& f,String t="") const override{
 		f << "E_VAR('" << name << "')";
 	}
+	void checkTypes(){
+		todo("Check types of variable");
+	}
 };
 #endif /* E_VAR_HPP_ */

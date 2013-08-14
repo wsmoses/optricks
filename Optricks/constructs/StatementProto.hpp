@@ -23,6 +23,7 @@ class Statement : public Stackable{
 	public:
 		virtual Value* evaluate(RData& a,LLVMContext& context) = 0;
 		virtual Statement* simplify(Jump& jump)  = 0;
+		virtual void checkTypes() = 0;
 };
 
 
@@ -33,6 +34,7 @@ class VoidStatement : public Statement{
 		const Token getToken() const override;
 		bool operator == (Statement* s) const;
 		void write(ostream& a,String r) const override;
+		void checkTypes(){}
 };
 
 VoidStatement* VOID = new VoidStatement();

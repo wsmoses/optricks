@@ -24,6 +24,12 @@ class ForEachLoop : public Statement{
 			}*/
 			name = n;
 		}
+
+		void checkTypes(){
+			iterable->checkTypes();
+			toLoop->checkTypes();
+			todo("Type checking for foreach incomplete due to lack of iterator");
+		}
 		const Token getToken() const override {
 			return T_FOREACH;
 		}

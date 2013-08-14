@@ -15,6 +15,10 @@ public:
 	void write(ostream& f,String t="") const override{
 		f<<"call(" << toCall << ", "<<vals<<")";
 	}
+	void checkTypes(){
+		toCall->checkTypes();
+		todo("Function call type-checking");
+	}
 	Expression* simplify() override{
 		Expression* a = toCall->simplify();
 		Expression* b = vals->simplify();

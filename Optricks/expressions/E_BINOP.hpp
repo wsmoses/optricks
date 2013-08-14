@@ -82,32 +82,27 @@ class E_BINOP : public Expression{
 			return T_BINOP;
 		}
 		Value* evaluate(RData& a,LLVMContext& context) override final{
-			auto ar = left->evaluate(a,context);
-			auto in = right->evaluate(a,context);
+			//TODO allow short-circuit lookup of E_VAR
+			return left->returnType->binops[operation][right->returnType]->apply(
+					left->evaluate(a,context),
+					right->evaluate(a,context),
+					a);
+		}
+		void checkTypes(){
+			left->checkTypes();
+			right->checkTypes();
 			auto found = left->returnType->binops.find(operation);
 			if(found==left->returnType->binops.end())
-				todo("Index operator not implemented for class ",
-						left->returnType->name);
+				todo("Binary operator ",operation," not implemented for class ",
+						left->returnType->name, " [with right ", right->returnType->name,"]");
 			auto look = found->second;
 
 			auto found2 = look.find(right->returnType);
 			if(found2==look.end())
-				todo(operation," operator not implemented for class ",
+				todo("Binary operator ",operation," not implemented for class ",
 						left->returnType->name, " with right ", right->returnType->name);
-			//TODO allow short-circuit lookup of E_VAR
-			return found2->second->apply(ar, in, a);
 		}
 		Expression* simplify() override{
-			auto found = left->returnType->binops.find(operation);
-			if(found==left->returnType->binops.end())
-				todo(operation," operator not implemented for class ",
-						left->returnType->name);
-			auto look = found->second;
-
-			auto found2 = look.find(right->returnType);
-			if(found2==look.end())
-				todo("Index operator not implemented for class ",
-						left->returnType->name, " with right ", right->returnType->name);
 			return new E_BINOP(left->simplify(), right->simplify(), operation);
 		}
 		void write(ostream& f,String s="") const override{

@@ -30,7 +30,7 @@ class Jump;
 #define EXPRESSION_P_
 class Expression : public Statement{
 	public:
-		oclass* const returnType;
+		oclass* returnType;
 		Expression(oclass* c) : returnType(c){}
 		virtual Expression* simplify() = 0;
 		Expression* simplify(Jump& jump) override final;

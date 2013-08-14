@@ -24,6 +24,13 @@ class ForLoop : public Statement{
 			}*/
 			name = n;
 		}
+		void checkTypes(){
+			initialize->checkTypes();
+			condition->checkTypes();
+			if(condition->returnType != boolClass) todo("Cannot have non-bool condition of for-loop ",condition->returnType->name);
+			increment->checkTypes();
+			toLoop->checkTypes();
+		}
 		const Token getToken() const override {
 			return T_FOR;
 		}

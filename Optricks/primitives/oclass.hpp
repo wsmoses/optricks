@@ -25,6 +25,7 @@ class oclass
 		oclass* super;
 		oclass(oclass* init,String nam=""){
 			super = init;
+			name = nam;
 			//TODO redo oclass as oobject;
 		}
 
@@ -63,12 +64,33 @@ oclass* sliceClass = new oclass(objectClass,"slice");
 void initClasses(){
 	//classClass->module = new OModule(objectClass->module);
 	classClass->super = objectClass;
-
+	///////******************************* Boolean ********************************////////
 	boolClass->binops["&&"][boolClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{
 				return m.builder.CreateAnd(a,b,"andtmp");
 	},boolClass);
 
+	boolClass->binops["!="][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateICmpNE(a,b,"andtmp");
+	},boolClass);
+
+	boolClass->binops["=="][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateICmpEQ(a,b,"andtmp");
+	},boolClass);
+
+	boolClass->binops["||"][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateOr(a,b,"ortmp");
+	},boolClass);
+
+	boolClass->preops["!"] = new ouopNative(
+			[](Value* a, RData& m) -> Value*{
+				return m.builder.CreateNot(a,"nottmp");
+	},boolClass);
+
+	///////******************************* Double/Double ******************************////////
 	decClass->binops["+"][decClass] = new obinopNative(
 				[](Value* a, Value* b, RData& m) -> Value*{
 					return m.builder.CreateFAdd(a,b,"addtmp");
@@ -84,9 +106,45 @@ void initClasses(){
 					return m.builder.CreateFMul(a,b,"multmp");
 	},decClass);
 
+	decClass->binops["%"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFRem(a,b,"modtmp");
+	},decClass);
+
 	decClass->binops["<"][decClass] = new obinopNative(
 				[](Value* a, Value* b, RData& m) -> Value*{
 					return m.builder.CreateFCmpULT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	decClass->binops[">"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUGT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	decClass->binops["<="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpULE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	decClass->binops[">="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUGE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	decClass->binops["=="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUEQ(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	decClass->binops["!="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUNE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	decClass->binops["/"][decClass] = new obinopNative(
@@ -98,6 +156,146 @@ void initClasses(){
 				[](Value* a, RData& m) -> Value*{
 					return m.builder.CreateFNeg(a,"negtmp");
 	},decClass);
+
+	decClass->preops["+"] = new ouopNative(
+				[](Value* a, RData& m) -> Value*{
+					return a;
+	},decClass);
+
+
+	///////******************************* INT ********************************////////
+	intClass->binops["+"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateAdd(a,b,"addtmp");
+	},intClass);
+
+	intClass->binops["-"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateSub(a,b,"subtmp");
+	},intClass);
+
+	intClass->binops["*"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateMul(a,b,"multmp");
+	},intClass);
+
+	intClass->binops["%"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateSRem(a,b,"modtmp");
+	},intClass);
+
+	intClass->binops["<"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpSLT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops[">"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpSGT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["<="][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpSLE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops[">="][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpSGE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["=="][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpEQ(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["!="][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateICmpNE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["/"][intClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateSDiv(a,b,"divtmp");
+	},intClass);
+
+	intClass->preops["-"] = new ouopNative(
+				[](Value* a, RData& m) -> Value*{
+					return m.builder.CreateNeg(a,"negtmp");
+	},intClass);
+
+	intClass->preops["+"] = new ouopNative(
+				[](Value* a, RData& m) -> Value*{
+					return a;
+	},intClass);
+
+	///////******************************* INT/Double ********************************////////
+	intClass->binops["+"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFAdd(m.builder.CreateSIToFP(a,b->getType()),b,"addtmp");
+	},decClass);
+
+	intClass->binops["-"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFSub(m.builder.CreateSIToFP(a,b->getType()),b,"subtmp");
+	},decClass);
+
+	intClass->binops["*"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFMul(m.builder.CreateSIToFP(a,b->getType()),b,"multmp");
+	},decClass);
+
+	intClass->binops["%"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFRem(m.builder.CreateSIToFP(a,b->getType()),b,"modtmp");
+	},decClass);
+
+	intClass->binops["<"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpULT(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops[">"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUGT(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["<="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpULE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops[">="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUGE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["=="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUEQ(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["!="][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFCmpUNE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	intClass->binops["/"][decClass] = new obinopNative(
+				[](Value* a, Value* b, RData& m) -> Value*{
+					return m.builder.CreateFDiv(m.builder.CreateSIToFP(a,b->getType()),b,"divtmp");
+	},intClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);
 	LANG_M->addPointer("object",objectClass,0);

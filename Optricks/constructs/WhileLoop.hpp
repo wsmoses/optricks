@@ -22,6 +22,10 @@ class WhileLoop : public Statement{
 			}*/
 			name = n;
 		}
+		void checkTypes(){
+			condition->checkTypes();
+			statement->checkTypes();
+		}
 		const Token getToken() const override {
 			return T_WHILE;
 		}

@@ -82,6 +82,20 @@ public:
 		}
 		return new oslice(a,b,c);
 	}
+	void checkTypes(){
+		if(start!=NULL){
+			start->checkTypes();
+			if(start->returnType!=intClass) todo("Cannot have non-int type in slice ",start->returnType->name);
+		}
+		if(stop!=NULL){
+			stop->checkTypes();
+			if(stop->returnType!=intClass) todo("Cannot have non-int type in slice ",stop->returnType->name);
+		}
+		if(step!=NULL){
+			step->checkTypes();
+			if(step->returnType!=intClass) todo("Cannot have non-int type in slice ",step->returnType->name);
+		}
+	}
 	void write(ostream& f,String a="") const override{
 		f << "E_SLICE(";
 		start->write(f,"");

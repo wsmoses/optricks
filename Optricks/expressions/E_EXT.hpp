@@ -27,6 +27,9 @@ public:
 	Statement* simplify(Jump& jump) override{
 		return this;
 	}
+	void checkTypes(){
+		todo("Check types of extern");
+	}
 };
 
 #endif /* E_EXT_HPP_ */

@@ -14,7 +14,7 @@
 
 class IfStatement : public Statement{
 	public:
-		std::vector<std::pair<Expression*,Statement*>> const condition;
+		std::vector<std::pair<Expression*,Statement*>> condition;
 		Statement* const finalElse;
 		IfStatement(std::vector<std::pair<Expression*,Statement*>> & cond, Statement* const stat) : condition(cond), finalElse(stat){
 			/*for(const auto& a:condition)
@@ -29,6 +29,14 @@ class IfStatement : public Statement{
 		}
 		const Token getToken() const override {
 			return T_IF;
+		}
+		void checkTypes(){
+			for(auto& a:condition){
+				a.first->checkTypes();
+				if(a.first->returnType!=boolClass) todo("Cannot have non-bool as condition for if ",a.first->returnType->name);
+				a.second->checkTypes();
+			}
+			finalElse->checkTypes();
 		}
 		Value* evaluate(RData& r, LLVMContext& context) override{
 			todo("If statement eval not implemented");

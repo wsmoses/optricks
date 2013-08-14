@@ -20,6 +20,9 @@ class oarray : public oobject{
 		operator std::vector<oobject*>& (){
 			return data;
 		}
+		void checkTypes() override{
+			todo("Implement forced array typing");
+		}
 		Value* evaluate(RData& a,LLVMContext& context) override final{
 			//TODO
 			todo("Array not implemented");
@@ -86,6 +89,7 @@ class E_ARR : public Expression{
 			}
 			return n;*/
 		}
+
 		Expression* simplify() override{
 
 			std::vector<oobject*> vals;
@@ -101,6 +105,13 @@ class E_ARR : public Expression{
 				}
 			}
 			return new oarray(vals);
+		}
+
+		void checkTypes() override{
+			for(auto& a:values){
+				a->checkTypes();
+			}
+			todo("Implement forced E_ARR typing");
 		}
 };
 

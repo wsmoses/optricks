@@ -35,6 +35,9 @@ class oobject: public Expression{
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}
+		void checkTypes() override{
+
+		}
 };
 
 #include "oclass.hpp"
