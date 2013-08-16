@@ -11,6 +11,7 @@
 #include "containers/settings.hpp"
 
 #include "O_Stream.hpp"
+#include "constructs/Declaration.hpp"
 #include "constructs/WhileLoop.hpp"
 #include "constructs/ForLoop.hpp"
 #include "constructs/ForEachLoop.hpp"
@@ -20,7 +21,6 @@
 #include "expressions/E_EXT.hpp"
 #include "expressions/E_UOP.hpp"
 #include "expressions/E_VAR.hpp"
-#include "functions/DefaultDeclaration.hpp"
 #include "primitives/oobject.hpp"
 
 class Lexer{
@@ -33,8 +33,8 @@ class Lexer{
 		Lexer(Stream* t, char e):f(t),endWith(e),rdata(){
 			module = NULL;
 		}
-		std::vector<DefaultDeclaration*> parseArguments(char finish=')'){
-			std::vector<DefaultDeclaration*> args;
+		std::vector<Declaration*> parseArguments(char finish=')'){
+			std::vector<Declaration*> args;
 			if(f->done) return args;
 			while(true){
 
@@ -43,11 +43,23 @@ class Lexer{
 					f->read();
 					return args;
 				}
+				Declaration* d = dynamic_cast<Declaration*>(getNextStatement(true,true));
+				if(d==NULL){
+					f->error("Could not parse declaration",true);
+				}
+				for(auto& a:args){
+					if(d->variable->name == a->variable->name){
+						f->error("Cannot have duplicate argument name: "+a->variable->name, true);
+					}
+				}
+				args.push_back(d);
+				f->trim(endWith);
+				/*
 				String type = f->getNextName(endWith);
 
 				if(f->trim(endWith)){
 					if(type.size()>0)
-						args.push_back(new DefaultDeclaration(new E_VAR(type)));
+						args.push_back(new Declaration(new E_VAR(type)));
 					return args;
 				}
 
@@ -67,12 +79,13 @@ class Lexer{
 
 				if(!f->done && f->peek()=='='){
 					f->read();
-					defVal = getNextExpression();
+					defVal = getNextExpression(true);
 					if(defVal->getToken()==T_EOF) f->error("Could not parse default arg");
 				}
 
 
 				args.push_back(new DefaultDeclaration(new E_VAR(name), (type.length()>0)?(new E_VAR(type)):NULL, defVal));
+				*/
 				char tchar = f->peek();
 				if(tchar==finish || tchar==',' || tchar==';'){
 					f->read();
@@ -92,7 +105,7 @@ class Lexer{
 				bool fpek;
 				do{
 					f->trim(endWith);
-					Statement* e = getNextStatement(true);
+					Statement* e = getNextStatement(true, true);
 					if(e->getToken()!=T_EOF) blocks->values.push_back(e);
 					f->trim(endWith);
 					while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
@@ -104,17 +117,17 @@ class Lexer{
 				return blocks;
 			}
 			else{
-				Statement* s = getNextStatement(true);
+				Statement* s = getNextStatement(true, true);
 				while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
 				f->trim(endWith);
 				return s;
 			}
 		}
-		Expression* getNextExpression(bool opCheck=true){
-			Statement* s = getNextStatement(opCheck);
+		Expression* getNextExpression(bool opCheck){
+			Statement* s = getNextStatement(opCheck, false);
 			return dynamic_cast<Expression*>(s);
 		}
-		Statement* getNextStatement(bool opCheck=true){
+		Statement* getNextStatement(bool opCheck, bool allowDeclaration){
 			if(f->done || f->trim(endWith)) return VOID;
 			int nex = f->peek();
 			if(f->done || nex==EOF || nex==endWith) return VOID;
@@ -125,7 +138,7 @@ class Lexer{
 				if(temp=="if"){
 					if(f->trim(endWith)) f->error("Uncompleted if");
 					std::vector<std::pair<Expression*,Statement* >> statements;
-					Expression* c = getNextExpression();
+					Expression* c = getNextExpression(true);
 					if(!f->done && f->peek()==':') f->read();
 					Statement* s = getNextBlock();
 					statements.push_back(
@@ -144,7 +157,7 @@ class Lexer{
 							else { f->undoMarker(m); }
 						}
 						if(elif){
-							c = getNextExpression();
+							c = getNextExpression(true);
 							if(!f->done && f->peek()==':') f->read();
 							s = getNextBlock();
 							statements.push_back(
@@ -172,14 +185,14 @@ class Lexer{
 					if(paren){
 						f->read();
 						f->trim(endWith);
-						Statement* init = getNextStatement();
+						Statement* init = getNextStatement(true, true);
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						Statement* scond = getNextStatement();
+						Statement* scond = getNextStatement(true, false);
 						Expression* cond;
 						if(scond->getToken()==T_VOID) cond = new obool(true);
 						else cond = dynamic_cast<Expression*>(scond);
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						Statement* inc = getNextStatement();
+						Statement* inc = getNextStatement(true, false);
 						f->trim(endWith);
 						if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
 						Statement* blocks = getNextBlock();
@@ -199,7 +212,7 @@ class Lexer{
 						if(as==col){
 							f->error("Need either ':' or 'in' to separate iterator variable from iterable");
 						}
-						Expression* iterable = getNextExpression();
+						Expression* iterable = getNextExpression(true);
 						f->trim(endWith);
 						if(paren){
 							if(f->read()!=')') f->error("Need ')' for for loop ");
@@ -218,7 +231,7 @@ class Lexer{
 					if(f->trim(endWith)) f->error("Uncompleted while",true);
 					bool paren = f->peek()=='(';
 					if(paren) f->read();
-					Expression* cond = getNextExpression();
+					Expression* cond = getNextExpression(true);
 					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of while",true);
 					if(f->trim(endWith)) f->error("Uncompleted do-while",true);
 					if(f->peek()==':') f->read();
@@ -234,7 +247,7 @@ class Lexer{
 					if(f->getNextName(endWith)!="while") f->error("Must complete 'while' part of do{...}while",true);
 					bool paren = f->peek()=='(';
 					if(paren) f->read();
-					Expression* cond = getNextExpression();
+					Expression* cond = getNextExpression(true);
 					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of do-while",true);
 					cout << "Do-While("<<cond<<", "<< blocks << endl << flush;
 					f->error("do-while is not fully implemented yet",true);
@@ -245,7 +258,7 @@ class Lexer{
 					unsigned int m = f->getMarker();
 					String methodName = f->getNextName(endWith);
 					if(f->trim(endWith)) f->error("Uncompleted function (with name)");
-					std::vector<DefaultDeclaration*> arguments;
+					std::vector<Declaration*> arguments;
 					if(!f->done){
 						if(f->peek()=='('){
 							f->read();
@@ -300,6 +313,7 @@ class Lexer{
 					else if (vals.size()>0){
 						return new E_EXT(vals[0]);
 					}
+					//TODO allow parsing of types
 					//toReturn->write(cout) << endl;
 					//if(opCheck)
 					//toReturn = operatorCheck(f, toReturn,endWith);
@@ -316,8 +330,25 @@ class Lexer{
 				}
 				else{
 					Expression* te = new E_VAR(temp);
-
+					auto start = f->getMarker();
 					f->trim(endWith);
+					if(allowDeclaration && start!=f->getMarker()){
+						E_VAR* n = dynamic_cast<E_VAR*>(getNextStatement(false, false));
+						if(n!=NULL){
+							f->trim(endWith);
+							Expression* value = NULL;
+							if(f->peek()=='='){
+								f->read();
+								value = getNextExpression(true);
+							}
+							if(!f->done && f->peek()==';'){ semi = true; }
+							return new Declaration((E_VAR*)te, n, value);
+						}
+						else{
+							f->undoMarker(start);
+							f->trim(endWith);
+						}
+					}
 					semi  = false;
 					if(!f->done && f->peek()==';'){ semi = true; }
 					f->trim(endWith);
@@ -369,7 +400,7 @@ class Lexer{
 						char te;
 						if(f->peek()==close) f->read();
 						else{
-							temp = getNextExpression();
+							temp = getNextExpression(true);
 							forceAr = false;
 							while(temp->getToken()!=T_EOF){
 								arr->values.push_back(temp);
@@ -386,7 +417,7 @@ class Lexer{
 									f->error("Missing , in inline array or wrong end char",true);
 								}
 								if(f->trim(endWith)) f->error("Uncompleted '(' array",true);
-								temp = getNextExpression();
+								temp = getNextExpression(true);
 							}
 							if(open=='(' && !forceAr && arr->values.size()==1){
 								Expression* temp = arr->values[0];
@@ -435,7 +466,7 @@ class Lexer{
 							return toReturn;
 						}
 						else{
-						Expression* toReturn = new E_PREOP(String(1,n),getNextExpression());
+						Expression* toReturn = new E_PREOP(String(1,n),getNextExpression(true));
 						f->trim(endWith);
 						semi  = false;
 						if(!f->done && f->peek()==';'){ semi = true; }
@@ -483,7 +514,7 @@ class Lexer{
 					}
 					if(f->trim(endWith)) f->error("Uncompleted '[' index",true);
 					if(!comma) break;
-					stack.push_back(getNextExpression());
+					stack.push_back(getNextExpression(true));
 				}
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
 				char te;
@@ -499,19 +530,21 @@ class Lexer{
 				//TODO parse function args,  cannot do getNextExpression
 				// due to operatorCheck on tuple
 				Expression* e = getNextExpression(false);
+				Expression* ret;
 				if(e->getToken()==T_PARENS){
-					E_ARR* temp = new E_ARR();
-					temp->values.push_back(((E_PARENS*)e)->inner);
-					free(e);
-					e = temp;
+					ret = new E_FUNC_CALL(exp, std::vector<Expression*>(1,
+							((E_PARENS*)e)->inner));
+				}
+				else{
+					ret = new E_FUNC_CALL(exp, ((E_ARR*)e)->values);
 				}
 				f->trim(endWith);
 
 				bool semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
 				f->trim(endWith);
-				if(!semi) return operatorCheck(new E_FUNC_CALL(exp, (E_ARR*)e));
-				else return new E_FUNC_CALL(exp, (E_ARR*)e);
+				if(!semi) return operatorCheck(ret);
+				else return ret;
 			}
 			else if(tchar=='{'){
 				f->read();
@@ -566,12 +599,12 @@ class Lexer{
 				fixed = (new E_LOOKUP(tmp, exp, ((E_VAR*)post)->name));
 			}
 			else if(tmp=="="){
-				Expression* post = getNextExpression();
+				Expression* post = getNextExpression(true);
 				//	if(tmp->getToken()!=T_VAR)
 				fixed = new E_PARENS(new E_BINOP(exp, post,tmp));
 			}
 			else{
-				Expression* post = getNextExpression();
+				Expression* post = getNextExpression(true);
 				fixed = (new E_BINOP(exp, post,tmp))->fixOrderOfOperations();
 			}
 			f->trim(endWith);

@@ -43,7 +43,7 @@ int main(int argc, char** argv){
 		cout << "ready> " << flush;
 	while(true){
 		st->trim(EOF);
-		n = lexer.getNextStatement();
+		n = lexer.getNextStatement(true, true);
 		bool first = true;
 		while(n->getToken()!=T_VOID){
 			first = false;
@@ -59,7 +59,7 @@ int main(int argc, char** argv){
 				cout << flush;
 			//cout << " " <<v << endl << flush;
 			}
-			n = lexer.getNextStatement();
+			n = lexer.getNextStatement(true, true);
 		}
 		st->done = false;
 		if(st->last()==EOF) break;

@@ -17,8 +17,12 @@ class ofunction:public oobject{
 		ofunction(oclass* retType) : oobject(functionClass){
 			functionReturnType = retType;
 		}
-		oobject* call(std::vector<oobject*>& vec){
-		//	std::vector<oobject>
+		Value* evaluate(RData& r, LLVMContext& c){
+			todo("Implement function evaluation");
+			 // FunctionType *FT = FunctionType::get(Type::getDoubleTy(getGlobalContext()),
+			    //                                   Doubles, false);
+
+			  //Function *F = Function::Create(FT, Function::ExternalLinkage, Name, TheModule);
 		}
 	//	virtual oobject* _call(std::vector<oobject*>& a,std::vector<DefaultDeclaration>& de) = 0;
 };

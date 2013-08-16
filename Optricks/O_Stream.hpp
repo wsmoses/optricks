@@ -566,7 +566,8 @@ public:
 				if(isalnum(tchar) || tchar=='$' || tchar=='_')	temp+=tchar;
 				else break;
 			}while(true);
-			if(!(tchar==' ' || tchar=='\n' || tchar == '\t')) write();
+			//if(!(tchar==' ' || tchar=='\n' || tchar == '\t'))
+				write();
 			if(endAtLines && tchar=='\n') done = true;
 			return temp;
 		}
