@@ -13,8 +13,7 @@
 #include "../containers/settings.hpp"
 
 #define OCLASS_P_
-class oclass
-		//: public oobject
+class oclass: public Stackable
 {
 	public:
 		String name;
@@ -23,22 +22,27 @@ class oclass
 		std::map<String,ouop* > postops;
 		OModule* module;
 		oclass* super;
-		oclass(oclass* init,String nam=""){
+		oclass(oclass* init,String nam="",Type *t=NULL){
 			super = init;
 			name = nam;
+			if(nam!=""){
+				LANG_M->addPointer
+				(nam,
+						(Value*)NULL,this,t,0U);
+			}
 			//TODO redo oclass as oobject;
 		}
 
 		operator String () const{
 			return "class<" + name + ">";
 		};
-/*
+
 		void write(ostream& a, String b) const override final {
 			a<< (String)(*this);
 		}
 		const Token getToken() const override final {
-			return T_OOBJECT;
-		}*/
+			return T_OOBJECT;//TODO change to oclass?
+		}
 };
 
 oclass* classClass = new oclass(NULL);
@@ -53,11 +57,11 @@ oclass::oclass(oclass* init,String nam): oobject((classClass==NULL)?this:classCl
 
 oclass* objectClass = new oclass(NULL,"object");
 oclass* nullClass = new oclass(objectClass,"None");
-oclass* boolClass = new oclass(objectClass,"bool");
+oclass* boolClass = new oclass(objectClass,"bool",BOOLTYPE);
 oclass* arrayClass = new oclass(objectClass,"array");
 oclass* functionClass = new oclass(objectClass,"function");
 oclass* decClass = new oclass(objectClass,"double");
-oclass* intClass = new oclass(decClass,"int");
+oclass* intClass = new oclass(decClass,"int",INTTYPE);
 oclass* stringClass = new oclass(objectClass,"string");
 oclass* sliceClass = new oclass(objectClass,"slice");
 

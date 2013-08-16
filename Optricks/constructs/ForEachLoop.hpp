@@ -12,12 +12,12 @@
 //TODO implement iterator
 class ForEachLoop : public Statement{
 	public:
-		String localVariableName;
+		E_VAR* localVariable;
 		Expression* iterable;
 		Statement* toLoop;
 		String name;
-		ForEachLoop(String& var, Expression* it,Statement* tL, String n="") :
-			localVariableName(var), iterable(it),toLoop(tL){
+		ForEachLoop(E_VAR* var, Expression* it,Statement* tL, String n="") :
+			localVariable(var), iterable(it),toLoop(tL){
 			/*if(condition->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
@@ -52,14 +52,14 @@ class ForEachLoop : public Statement{
 			}*/
 		}
 		void write(ostream& a, String b="") const override{
-			a << "for " << localVariableName << " in "<< iterable << ":";
+			a << "for " << localVariable << " in "<< iterable << ":";
 			toLoop->write(a,b+"  ");
 		}
 		Statement* simplify(Jump& jump) override{
 			Statement* in = toLoop->simplify(jump);
 			//if(jump.type==BREAK && (jump.label=="" || jump.label==name))
 			jump = NJUMP;
-			return new ForEachLoop(localVariableName, iterable->simplify(),in,name);
+			return new ForEachLoop(localVariable, iterable->simplify(),in,name);
 			//TODO [loop unrolloing]
 		}
 };

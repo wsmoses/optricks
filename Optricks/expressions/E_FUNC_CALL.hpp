@@ -5,9 +5,10 @@
 
 class E_FUNC_CALL : public Expression{
 public:
-	Expression* toCall;
+	Resolvable* toCall;
+	ofunction* func;
 	std::vector<Expression*> vals;
-	E_FUNC_CALL(Expression* t, std::vector<Expression*> val) : Expression(objectClass),
+	E_FUNC_CALL(Resolvable* t, std::vector<Expression*> val) : Expression(objectClass),
 			toCall(t), vals(val){ };//TODO analyze return val
 	const Token getToken() const override{
 		return T_FUNC_CALL;
@@ -23,8 +24,19 @@ public:
 		f<<"])";
 	}
 	void checkTypes(){
-		toCall->checkTypes();
-		todo("Function call type-checking not implemented");
+		func = dynamic_cast<ofunction*> (toCall->resolveMeta());
+		func->checkTypes();
+		if(func->declarations.size() < vals.size()) todo("Function " + ((String) *func)+"called with too many arguments");
+		for(unsigned int i = 0; i<vals.size(); i++){
+			vals[i]->checkTypes();
+			oclass* t = dynamic_cast<oclass*>(func->declarations[i]->classV->pointer->resolveMeta());
+			if(t==NULL || vals[i]->returnType!=t)
+				todo("Called function with incorrect arguments: needed ",(t==NULL)?"NULL":(t->name),
+						" got ", vals[i]->returnType->name);
+		}
+		for(unsigned int i = vals.size(); i<func->declarations.size(); i++){
+			if(func->declarations[i]->value==NULL) todo("Argument "+i, " non-optional");
+		}
 	}
 	Expression* simplify() override{
 		//Expression* a = toCall->simplify();
@@ -36,16 +48,18 @@ public:
 		return this;
 	}
 	Value* evaluate(RData& a,LLVMContext& context) override{
-		/*auto callee = toCall->evaluate(a,context);
-
-		 std::vector<Value*> ArgsV;
-		  for (unsigned i = 0, e = Args.size(); i != e; ++i) {
-		    ArgsV.push_back(Args[i]->Codegen());
-		    if (ArgsV.back() == 0) return 0;
+		auto callee = toCall->resolve();//->evaluate(a,context);
+		//TODO check that function is created in cases like [ (lambda int int x: x+2)(2) ]
+		 std::vector<Value*> Args;
+		  for(auto& d: vals){
+		    Args.push_back(d->evaluate(a,context));
+		    if (Args.back() == 0) todo("Error in eval of args");
 		  }
-
-		  return Builder.CreateCall(CalleeF, ArgsV, "calltmp");*/
-		todo("Function calls not implemented");
+			for(unsigned int i = Args.size(); i<func->declarations.size(); i++){
+				Args.push_back(func->declarations[i]->value->evaluate(a,context));
+			}
+		  return a.builder.CreateCall(callee, Args, "calltmp");
+	//	todo("Function calls not implemented");
 		/*
 		oobject* a = toCall->evaluate();
 		oobject* b = vals->evaluate();

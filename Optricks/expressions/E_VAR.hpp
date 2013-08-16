@@ -12,8 +12,8 @@
 
 class E_VAR : public Expression{
 public:
-	String name;
-	E_VAR(String a) : Expression(objectClass){name = a; };
+	Resolvable* pointer;
+	E_VAR(Resolvable* a) : Expression(objectClass),pointer(a){ };
 	const Token getToken() const override{
 		return T_VAR;
 	}
@@ -22,15 +22,15 @@ public:
 	}
 	Value* evaluate(RData& a,LLVMContext& context) override final{
 		//TODO variables not implemented
-		Value* ans = (*(a.module))[name];
-		if(ans==NULL) todo("ERROR - could not find "+name);
+		Value* ans = pointer->resolve();
+		if(ans==NULL) todo("Could not resolve pointer "+pointer->name);
 		return ans;
 	}
 	void write(ostream& f,String t="") const override{
-		f << "E_VAR('" << name << "')";
+		f << "E_VAR('" << pointer->name << "')";
 	}
 	void checkTypes(){
-		todo("E_VAR Check types not implemented");
+		//todo("E_VAR Check types not implemented: "+pointer->name);
 	}
 };
 #endif /* E_VAR_HPP_ */

@@ -41,9 +41,10 @@ int main(int argc, char** argv){
 	Statement* n;
 	if(interactive)
 		cout << "ready> " << flush;
+	OModule* m = new OModule(LANG_M);
 	while(true){
 		st->trim(EOF);
-		n = lexer.getNextStatement(true, true);
+		n = lexer.getNextStatement(m, true, true);
 		bool first = true;
 		while(n->getToken()!=T_VOID){
 			first = false;
@@ -53,13 +54,14 @@ int main(int argc, char** argv){
 			temp = NJUMP;
 			if(n!=NULL){
 				n->checkTypes();
+				cout << "checked types!" << endl << flush;
 				Value* v = (n->evaluate(lexer.rdata,getGlobalContext()));
 				v->dump();
 				cerr << endl << flush;
 				cout << flush;
 			//cout << " " <<v << endl << flush;
 			}
-			n = lexer.getNextStatement(true, true);
+			n = lexer.getNextStatement(m, true, true);
 		}
 		st->done = false;
 		if(st->last()==EOF) break;

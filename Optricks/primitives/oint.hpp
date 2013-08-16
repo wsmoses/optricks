@@ -23,7 +23,7 @@ class oint : public oobject{
 			return convert.str();
 		}
 		Value* evaluate(RData& a,LLVMContext& context) override final{
-			return ConstantInt::get(IntegerType::get(context, 64), value, true);
+			return ConstantInt::get(INTTYPE, value, true);
 		}
 };
 

@@ -20,7 +20,7 @@ class obool: public oobject{
 			return value?"true":"false";
 		}
 		Value* evaluate(RData& a,LLVMContext& context) override final{
-			return ConstantInt::get(IntegerType::get(context, 1), value, false);
+			return ConstantInt::get(BOOLTYPE, value, false);
 		}
 };
 

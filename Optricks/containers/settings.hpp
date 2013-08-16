@@ -87,7 +87,7 @@ void todo(String a="",String b="",String c="",String d="",String e="",String f="
 	exit(1);
 }
 
-IntegerType* llvmChar(RData& a,LLVMContext& context){
-	return IntegerType::get(context, 8);
-}
+auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
+auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
+auto DOUBLETYPE = IntegerType::get(getGlobalContext(), 1);
 #endif /* SETTINGS_HPP_ */
