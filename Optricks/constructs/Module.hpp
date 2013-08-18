@@ -44,7 +44,7 @@ class OModule : public Stackable{
 		std::vector<dataType> data;
 		std::vector<Stackable*> meta;
 		std::vector<Type*> types;
-		std::map<String, opointer> mapping;
+		std::map<String, opointer*> mapping;
 		OModule(OModule* before){
 			super = before;
 		}
@@ -73,12 +73,12 @@ class OModule : public Stackable{
 		opointer* addPointer(String index, dataType value, Stackable* met, Type* t, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()) todo("The variable "+index+" has already been defined in this scope");
-				opointer nex(this, data.size(), index);
+				opointer* nex = new opointer(this, data.size(), index);
 				data.push_back(value);
 				meta.push_back(met);
 				types.push_back(t);
-				mapping.insert(std::pair<String,opointer>(index, nex));
-				return &(mapping[index]);
+				mapping.insert(std::pair<String,opointer*>(index, nex));
+				return nex;
 			} else {
 				if(super==NULL){
 					cerr << "Null module to add pointer to" << endl << flush;
@@ -95,7 +95,7 @@ class OModule : public Stackable{
 				if(paired== search->mapping.end()){
 					search = search->super;
 				} else {
-					return &(mapping[index]);
+					return paired->second;
 				}
 			}
 			return addPointer(index, NULL,NULL,NULL);
@@ -107,14 +107,25 @@ class OModule : public Stackable{
 				if(paired== search->mapping.end()){
 					search = search->super;
 				} else {
-					return &(mapping[index]);
+					return paired->second;
 				}
 			}
+			cerr << "HM" << flush << endl;
+			write(cerr,"");
+			cerr << flush << endl;
 			cerr << "Could not resolve variable: " << index << flush << endl;
 			exit(0);
 		}
 		void write(ostream& a,String t) const override{
-			a << "Module";
+			a << "Module[";
+			bool first = true;
+			for(auto & b: mapping){
+				if(first) first = false;
+				else a << ", ";
+				a << b.first;
+			}
+			a << "]|";
+			if(super!=NULL) super->write(a,t);
 		}
 };
 
@@ -135,7 +146,9 @@ class LateResolve : public Resolvable{
 			module = m;
 		}
 		opointer* resolvePointer() const{
-			return module->getPointer(name);
+			auto a =  module->getPointer(name);
+			if(a==NULL) todo("Could not resolve late pointer for ", name);
+			return a;
 		}
 		Value*& resolve() const override final{
 			return resolvePointer()->resolve();

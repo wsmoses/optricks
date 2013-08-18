@@ -89,5 +89,5 @@ void todo(String a="",String b="",String c="",String d="",String e="",String f="
 
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
-auto DOUBLETYPE = IntegerType::get(getGlobalContext(), 1);
+auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
 #endif /* SETTINGS_HPP_ */

@@ -45,7 +45,28 @@ class externFunction : public ofunction{
 		}
 	Value* evaluate(RData& a,LLVMContext& context) override{
 		//TODO implement
-		todo("Extern not implemented");
+		std::vector<Type*> args;
+		for(auto & b: declarations){
+			Type* cl = b->classV->pointer->resolveType();
+			if(cl==NULL) todo("Type argument "+b->classV->pointer->name+" is null");
+			args.push_back(cl);
+		}
+		Type* r = returnV->resolveType();
+		if(r==NULL) todo("Type argument "+returnV->name+" is null");
+		  FunctionType *FT = FunctionType::get(r, args, false);
+		  Function *F = Function::Create(FT, Function::ExternalLinkage, self->name, NULL);//todo check this
+		  self->resolve() = F;
+		  // Set names for all arguments.
+		 /* unsigned Idx = 0;
+		  for (Function::arg_iterator AI = F->arg_begin(); Idx != args.size();
+		       ++AI, ++Idx) {
+		    AI->setName(args[Idx]);
+
+		    // Add arguments to variable symbol table.
+		    NamedValues[args[Idx]] = AI;
+		  }*/
+		  return F;
+//		todo("Extern not implemented");
 	}
 };
 class nativeFunction : public ofunction{
