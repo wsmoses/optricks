@@ -21,8 +21,8 @@ class E_PREOP : public Expression{
 		Expression* simplify() override final {
 			return new E_PREOP(operation,value->simplify());
 		}
-		Value* evaluate(RData& r,LLVMContext& context) override final {
-			Value* a = value->evaluate(r,context);
+		Value* evaluate(RData& r) override final {
+			Value* a = value->evaluate(r);
 			return value->returnType->preops[operation]->apply(a,r);
 		}
 		void write(ostream& f,String s="") const override{
@@ -50,8 +50,8 @@ class E_POSTOP : public Expression{
 		Expression* simplify() override final {
 			return new E_POSTOP(operation,value->simplify());
 		}
-		Value* evaluate(RData& r,LLVMContext& context) override final {
-			Value* a = value->evaluate(r,context);
+		Value* evaluate(RData& r) override final {
+			Value* a = value->evaluate(r);
 			return value->returnType->postops[operation]->apply(a,r);
 		}
 		void write(ostream& f,String s="") const override{

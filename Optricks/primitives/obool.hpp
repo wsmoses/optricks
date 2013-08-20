@@ -19,7 +19,7 @@ class obool: public oobject{
 		operator String () const override{
 			return value?"true":"false";
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override final{
+		Value* evaluate(RData& a) override final{
 			return ConstantInt::get(BOOLTYPE, value, false);
 		}
 };

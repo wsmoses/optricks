@@ -13,7 +13,7 @@
 #include "Expression.hpp" //needed to ensure jump.hpp is included
 #include "Jump.hpp"
 
-Value* VoidStatement::evaluate(RData& a,LLVMContext& context){
+Value* VoidStatement::evaluate(RData& a){
 	todo("Void eval not implemented");
 //	return this;
 }

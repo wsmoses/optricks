@@ -61,6 +61,12 @@ public:
 		else if(readChars.back().size()==0) return '\n';
 		else return readChars.back().back();
 	}
+	void force(String c){
+		for(unsigned int i = c.size()-1; ; i--){
+			cache.push_back(c[i]);
+			if(i==0) break;
+		}
+	}
 	void write(char c){
 			done = false;
 			if(readChars[readChars.size()-1].empty()){

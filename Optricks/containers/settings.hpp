@@ -23,6 +23,7 @@ using namespace llvm;
 #include <sstream>
 #include <exception>
 #include <stdexcept>
+#include <unordered_map>
 //#include "../O_TOKEN.hpp"
 
 #define cout std::cout
@@ -43,6 +44,7 @@ struct RData{
 	public:
 		RData();
 		OModule* module;
+		Module* lmod;
 		IRBuilder<> builder;
 };
 

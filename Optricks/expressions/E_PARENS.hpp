@@ -9,8 +9,8 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
-	Value* evaluate(RData& a,LLVMContext& context) override {
-		return inner->evaluate(a,context);
+	Value* evaluate(RData& a) override {
+		return inner->evaluate(a);
 	}
 	//TODO verify that this is valid and does not call order of ops again
 	Expression* simplify() override{

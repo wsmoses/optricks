@@ -21,7 +21,7 @@ class Jump;
 #define STATEMENT_P_
 class Statement : public Stackable{
 	public:
-		virtual Value* evaluate(RData& a,LLVMContext& context) = 0;
+		virtual Value* evaluate(RData& a) = 0;
 		virtual Statement* simplify(Jump& jump)  = 0;
 		virtual void checkTypes() = 0;
 };
@@ -29,7 +29,7 @@ class Statement : public Stackable{
 
 class VoidStatement : public Statement{
 	public:
-		Value* evaluate(RData& a,LLVMContext& context) override;
+		Value* evaluate(RData& a) override;
 		Statement* simplify(Jump& jump) override;
 		const Token getToken() const override;
 		bool operator == (Statement* s) const;

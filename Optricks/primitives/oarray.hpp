@@ -23,7 +23,7 @@ class oarray : public oobject{
 		void checkTypes() override{
 			todo("Implement forced array typing");
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override final{
+		Value* evaluate(RData& a) override final{
 			//TODO
 			todo("Array not implemented");
 		}
@@ -79,7 +79,7 @@ class E_ARR : public Expression{
 			}
 			f << "]";
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override {
+		Value* evaluate(RData& a) override {
 			//TODO
 			todo("E_ARR not implemented");
 			/*

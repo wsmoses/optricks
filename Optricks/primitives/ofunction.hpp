@@ -43,7 +43,7 @@ class externFunction : public ofunction{
 	public:
 		externFunction(Resolvable* s, Resolvable* r, std::vector<Declaration*> dec):ofunction(s,r,dec){
 		}
-	Value* evaluate(RData& a,LLVMContext& context) override{
+	Value* evaluate(RData& a) override{
 		//TODO implement
 		std::vector<Type*> args;
 		for(auto & b: declarations){
@@ -54,7 +54,7 @@ class externFunction : public ofunction{
 		Type* r = returnV->resolveType();
 		if(r==NULL) todo("Type argument "+returnV->name+" is null");
 		  FunctionType *FT = FunctionType::get(r, args, false);
-		  Function *F = Function::Create(FT, Function::ExternalLinkage, self->name, NULL);//todo check this
+		  Function *F = Function::Create(FT, Function::ExternalLinkage, self->name, a.lmod);//todo check this
 		  self->resolve() = F;
 		  // Set names for all arguments.
 		 /* unsigned Idx = 0;

@@ -20,7 +20,7 @@ public:
 	Expression* simplify() override final{
 		return this;
 	}
-	Value* evaluate(RData& a,LLVMContext& context) override final{
+	Value* evaluate(RData& a) override final{
 		//TODO variables not implemented
 		Value* ans = pointer->resolve();
 		if(ans==NULL) todo("Could not resolve pointer "+pointer->name);

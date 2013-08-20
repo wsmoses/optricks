@@ -81,11 +81,11 @@ class E_BINOP : public Expression{
 		const Token getToken() const override{
 			return T_BINOP;
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override final{
+		Value* evaluate(RData& a) override final{
 			//TODO allow short-circuit lookup of E_VAR
 			return left->returnType->binops[operation][right->returnType]->apply(
-					left->evaluate(a,context),
-					right->evaluate(a,context),
+					left->evaluate(a),
+					right->evaluate(a),
 					a);
 		}
 		void checkTypes(){

@@ -20,7 +20,7 @@ class ostring : public oobject{
 		operator String () const override{
 			return value;
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override final{
+		Value* evaluate(RData& a) override final{
 			todo("Implement string evaluate");
 			//return ConstantArray::get(
 			//		uint8_t

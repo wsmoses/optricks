@@ -32,7 +32,7 @@ class Declaration: public Statement{
 				todo("Declaration of inconsistent types");
 		}
 	}
-	Value* evaluate(RData& r, LLVMContext& c) final override{
+	Value* evaluate(RData& r) final override{
 		todo("Todo: allow declaration evaluation");
 	}
 	Statement* simplify(Jump& j) final override{

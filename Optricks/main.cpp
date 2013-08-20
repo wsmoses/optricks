@@ -39,8 +39,8 @@ int main(int argc, char** argv){
 	Stream* st = new Stream(stdin,interactive);
 	Lexer lexer(st,interactive?'\n':EOF);
 	Statement* n;
-	if(interactive)
-		cout << "ready> " << flush;
+	//if(interactive)	cout << "ready> " << flush;
+	st->force("extern double cos(double a)\n");
 	OModule* m = new OModule(LANG_M);
 	while(true){
 		st->trim(EOF);
@@ -55,7 +55,7 @@ int main(int argc, char** argv){
 			if(n!=NULL){
 				n->checkTypes();
 				cout << "checked types!" << endl << flush;
-				Value* v = (n->evaluate(lexer.rdata,getGlobalContext()));
+				Value* v = (n->evaluate(lexer.rdata));
 				v->dump();
 				cerr << endl << flush;
 				cout << flush;

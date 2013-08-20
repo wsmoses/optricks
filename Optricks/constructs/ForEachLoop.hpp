@@ -33,7 +33,7 @@ class ForEachLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOREACH;
 		}
-		Value* evaluate(RData& a, LLVMContext& context) override{
+		Value* evaluate(RData& a) override{
 			//TODO iterators not implemented yet
 			todo("For-each loop eval not implented");
 /*			while((bool)condition->evaluate()){

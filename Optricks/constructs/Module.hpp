@@ -32,6 +32,11 @@ class opointer: public Resolvable{
 		}
 		opointer(OModule* a, unsigned int b, String c) : index(b), name(c){
 			module = a;
+			cout << "Made pointer to " << name << endl << flush;
+		}
+		ostream& operator << ( ostream& a){
+			a << "(*" << name << "|" << index << ")";
+			return a;
 		}
 		dataType& resolve() const final override;
 		Stackable*& resolveMeta() const final override;
@@ -41,11 +46,12 @@ class opointer: public Resolvable{
 class OModule : public Stackable{
 	public:
 		OModule* super;
-		std::vector<dataType> data;
-		std::vector<Stackable*> meta;
-		std::vector<Type*> types;
 		std::map<String, opointer*> mapping;
-		OModule(OModule* before){
+		std::vector<Type*> types;
+		std::vector<Stackable*> meta;
+		std::vector<dataType> data;
+		OModule(const OModule& c) = delete;
+		OModule(OModule* before): mapping(),types(),meta(),data(){
 			super = before;
 		}
 		const Token getToken() const override{
@@ -101,7 +107,7 @@ class OModule : public Stackable{
 			return addPointer(index, NULL,NULL,NULL);
 		}
 		opointer* getPointer(String index) {
-			const OModule* search = this;
+			OModule* search = this;
 			while(search!=NULL){
 				auto paired = search->mapping.find(index);
 				if(paired== search->mapping.end()){
@@ -110,21 +116,18 @@ class OModule : public Stackable{
 					return paired->second;
 				}
 			}
-			cerr << "HM" << flush << endl;
-			write(cerr,"");
-			cerr << flush << endl;
 			cerr << "Could not resolve variable: " << index << flush << endl;
 			exit(0);
 		}
 		void write(ostream& a,String t) const override{
-			a << "Module[";
+			a << "Module[" << flush;
 			bool first = true;
 			for(auto & b: mapping){
 				if(first) first = false;
-				else a << ", ";
-				a << b.first;
+				else a << ", " << flush;
+				a << b.first << flush;
 			}
-			a << "]|";
+			a << "]|" << flush;
 			if(super!=NULL) super->write(a,t);
 		}
 };
@@ -167,5 +170,6 @@ RData::RData():
 			module(new OModule(LANG_M)),
 			builder(IRBuilder<>(getGlobalContext()))
 			{
+	lmod = new Module("main", getGlobalContext());
 		}
 #endif /* MODULE_HPP_ */

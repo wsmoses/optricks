@@ -29,7 +29,7 @@ class WhileLoop : public Statement{
 		const Token getToken() const override {
 			return T_WHILE;
 		}
-		Value* evaluate(RData& r, LLVMContext& context) override{
+		Value* evaluate(RData& r) override{
 			todo("While loop eval not implemented");
 			/*
 			while((bool)condition->evaluate()){

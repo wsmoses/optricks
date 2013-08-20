@@ -314,12 +314,14 @@ class Lexer{
 					std::vector<Declaration*> dec;
 					while(true){
 						if(f->trim(endWith) || f->peek()==')') break;
-						Statement* s = getNextStatement(NULL,true,true);//TODO check
+						Statement* s = getNextStatement(mod,true,true);
 						Declaration* d = dynamic_cast<Declaration*>(s);
 						if(d==NULL) f->error("Could not parse extern declaration");
 						dec.push_back(d);
 					}
-					return new externFunction(externName, retV, dec);
+					if(f->read()!=')') f->error("Need ending ')' for extern", true);
+					auto temp = new externFunction(externName, retV, dec);
+					return temp;
 					/*
 					std::vector<String> vals = f->getCommaSeparated(endWith);
 

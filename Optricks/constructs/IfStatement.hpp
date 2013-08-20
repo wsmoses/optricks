@@ -38,7 +38,7 @@ class IfStatement : public Statement{
 			}
 			finalElse->checkTypes();
 		}
-		Value* evaluate(RData& r, LLVMContext& context) override{
+		Value* evaluate(RData& r) override{
 			todo("If statement eval not implemented");
 			/*
 			for(auto &a: condition){

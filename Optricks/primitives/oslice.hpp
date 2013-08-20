@@ -32,7 +32,7 @@ class oslice : public oobject{
 			ss << "]";
 			return ss.str();
 		}
-		Value* evaluate(RData& a,LLVMContext& context) override final{
+		Value* evaluate(RData& a) override final{
 			todo("Not implemented : slice evaluate");
 		}
 };
@@ -45,7 +45,7 @@ public:
 	const Token getToken() const override{
 		return T_SLICE;
 	};
-	Value* evaluate(RData& r,LLVMContext& context) override final{
+	Value* evaluate(RData& r) override final{
 		todo("Evaluate E_SLICE");
 		/*
 		oobject *a = start->evaluate(),

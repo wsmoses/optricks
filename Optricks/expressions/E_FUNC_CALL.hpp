@@ -47,16 +47,16 @@ public:
 		//else 	return new E_FUNC_CALL(toCall, vals);
 		return this;
 	}
-	Value* evaluate(RData& a,LLVMContext& context) override{
+	Value* evaluate(RData& a) override{
 		auto callee = toCall->resolve();//->evaluate(a,context);
 		//TODO check that function is created in cases like [ (lambda int int x: x+2)(2) ]
 		 std::vector<Value*> Args;
 		  for(auto& d: vals){
-		    Args.push_back(d->evaluate(a,context));
+		    Args.push_back(d->evaluate(a));
 		    if (Args.back() == 0) todo("Error in eval of args");
 		  }
 			for(unsigned int i = Args.size(); i<func->declarations.size(); i++){
-				Args.push_back(func->declarations[i]->value->evaluate(a,context));
+				Args.push_back(func->declarations[i]->value->evaluate(a));
 			}
 		  return a.builder.CreateCall(callee, Args, "calltmp");
 	//	todo("Function calls not implemented");

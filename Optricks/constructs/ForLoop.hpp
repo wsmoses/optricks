@@ -34,7 +34,7 @@ class ForLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOR;
 		}
-		Value* evaluate(RData& r, LLVMContext& context) override{
+		Value* evaluate(RData& r) override{
 			todo("For loop eval not implemented");
 			/*
 			initialize->evaluate(jump);

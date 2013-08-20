@@ -24,8 +24,8 @@ class odec : public oobject{
 			convert << value;
 			return convert.str();
 		}
-		Value* evaluate(RData &a,LLVMContext& context) override final{
-			return ConstantFP::get(context, APFloat(value));
+		Value* evaluate(RData &a) override final{
+			return ConstantFP::get(a.lmod->getContext(), APFloat(value));
 		}
 };
 

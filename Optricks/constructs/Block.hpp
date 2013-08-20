@@ -22,7 +22,7 @@ class Block : public Statement{
 		void push_back(Statement* s){
 			return values.push_back(s);
 		}
-		Value* evaluate(RData& a,LLVMContext& c) override{
+		Value* evaluate(RData& r) override{
 			todo("Block eval not implemented");
 			/*
 			for(auto& a:values){
