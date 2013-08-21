@@ -7,11 +7,18 @@
 
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
-#include <llvm/Analysis/Verifier.h>
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/PassManager.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Transforms/Scalar.h"
 using namespace llvm;
 #include <stdio.h>
 #include <iostream>
@@ -45,7 +52,9 @@ struct RData{
 		RData();
 		OModule* module;
 		Module* lmod;
+		FunctionPassManager* fpm;
 		IRBuilder<> builder;
+		ExecutionEngine* exec;
 };
 
 class obinop{
@@ -89,6 +98,7 @@ void todo(String a="",String b="",String c="",String d="",String e="",String f="
 	exit(1);
 }
 
+auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
 auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());

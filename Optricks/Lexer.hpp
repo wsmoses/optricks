@@ -320,8 +320,7 @@ class Lexer{
 						dec.push_back(d);
 					}
 					if(f->read()!=')') f->error("Need ending ')' for extern", true);
-					auto temp = new externFunction(externName, retV, dec);
-					return temp;
+					return new externFunction(externName, retV, dec);
 					/*
 					std::vector<String> vals = f->getCommaSeparated(endWith);
 

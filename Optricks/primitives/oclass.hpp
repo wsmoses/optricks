@@ -20,11 +20,13 @@ class oclass: public Stackable
 		std::map<String,std::map<oclass*, obinop*> > binops;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
+		Type* type;
 		OModule* module;
 		oclass* super;
 		oclass(oclass* init,String nam="",Type *t=NULL){
 			super = init;
 			name = nam;
+			type = t;
 			if(nam!=""){
 				LANG_M->addPointer
 				(nam,
@@ -339,7 +341,7 @@ void initClasses(){
 	intClass->binops["/"][decClass] = new obinopNative(
 				[](Value* a, Value* b, RData& m) -> Value*{
 					return m.builder.CreateFDiv(m.builder.CreateSIToFP(a,b->getType()),b,"divtmp");
-	},intClass);
+	},decClass);
 
 	///////******************************* DOUBLE/int ********************************////////
 		decClass->binops["+"][intClass] = new obinopNative(
@@ -401,7 +403,7 @@ void initClasses(){
 		decClass->binops["/"][intClass] = new obinopNative(
 					[](Value* a, Value* b, RData& m) -> Value*{
 						return m.builder.CreateFDiv(a,m.builder.CreateSIToFP(b,a->getType()),"divtmp");
-		},intClass);
+		},decClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);
 	LANG_M->addPointer("object",objectClass,0);

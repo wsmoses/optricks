@@ -101,6 +101,7 @@ class E_BINOP : public Expression{
 			if(found2==look.end())
 				todo("Binary operator ",operation," not implemented for class ",
 						left->returnType->name, " with right ", right->returnType->name);
+			returnType = found2->second->returnType;
 		}
 		Expression* simplify() override{
 			return new E_BINOP(left->simplify(), right->simplify(), operation);

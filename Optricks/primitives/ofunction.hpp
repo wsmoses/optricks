@@ -14,6 +14,7 @@ class ofunction:public oobject{
 	public:
 		Resolvable* self;
 		Resolvable* returnV;
+		oclass* postReturnV;
 		std::vector<Declaration*> declarations;
 		ofunction(Resolvable* s, Resolvable* r, std::vector<Declaration*> dec):oobject(functionClass),
 			self(s),returnV(r),declarations(dec){
@@ -36,6 +37,8 @@ class ofunction:public oobject{
 			for(auto& a:declarations){
 				a->checkTypes();
 			}
+			postReturnV = dynamic_cast<oclass*>(returnV->resolveMeta());
+			if(postReturnV==NULL) todo("Could not post-resolve return type "+returnV->name);
 		}
 };
 //TODO

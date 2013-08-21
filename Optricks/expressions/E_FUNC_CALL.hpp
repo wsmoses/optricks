@@ -37,6 +37,7 @@ public:
 		for(unsigned int i = vals.size(); i<func->declarations.size(); i++){
 			if(func->declarations[i]->value==NULL) todo("Argument "+i, " non-optional");
 		}
+		returnType = func->postReturnV;
 	}
 	Expression* simplify() override{
 		//Expression* a = toCall->simplify();

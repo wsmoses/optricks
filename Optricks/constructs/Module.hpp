@@ -26,13 +26,12 @@ class Resolvable{
 class opointer: public Resolvable{
 	public:
 		unsigned int index;
-		String name;
-		opointer(){
-
-		}
-		opointer(OModule* a, unsigned int b, String c) : index(b), name(c){
+		//opointer(){
+//
+	//	}
+		opointer(OModule* a, unsigned int b, String c) : index(b){
 			module = a;
-			cout << "Made pointer to " << name << endl << flush;
+			name = c;
 		}
 		ostream& operator << ( ostream& a){
 			a << "(*" << name << "|" << index << ")";
@@ -168,8 +167,25 @@ OModule* LANG_M = new OModule(NULL);
 
 RData::RData():
 			module(new OModule(LANG_M)),
-			builder(IRBuilder<>(getGlobalContext()))
+			lmod(new Module("main",getGlobalContext())),
+			builder(IRBuilder<>(lmod->getContext()))
 			{
-	lmod = new Module("main", getGlobalContext());
+
+	  InitializeNativeTarget();
+			exec = EngineBuilder(lmod).create();
+			fpm = new FunctionPassManager(lmod);
+	fpm->add(new DataLayout(*exec->getDataLayout()));
+	// Provide basic AliasAnalysis support for GVN.
+	fpm->add(createBasicAliasAnalysisPass());
+	// Do simple "peephole" optimizations and bit-twiddling optzns.
+	fpm->add(createInstructionCombiningPass());
+	// Reassociate expressions.
+	fpm->add(createReassociatePass());
+	// Eliminate Common SubExpressions.
+	fpm->add(createGVNPass());
+	// Simplify the control flow graph (deleting unreachable blocks, etc).
+	fpm->add(createCFGSimplificationPass());
+
+	fpm->doInitialization();
 		}
 #endif /* MODULE_HPP_ */
