@@ -10,7 +10,7 @@
 
 #include "Stackable.hpp"
 #include "../containers/settings.hpp"
-#include "../primitives/oobject.hpp"
+#include "../primitives/oobjectproto.hpp"
 
 #define dataType Value*
 
@@ -19,16 +19,14 @@ class Resolvable{
 	OModule* module;
 	String name;
 	virtual dataType& resolve() const = 0;
-	virtual Stackable*& resolveMeta() const = 0;
-	virtual Type*& resolveType() const = 0;
+	virtual ClassProto*& resolveReturnClass() const = 0;
+	virtual FunctionProto*& resolveFunction() const = 0;
+	virtual ClassProto*& resolveSelfClass() const = 0;
 };
 
 class opointer: public Resolvable{
 	public:
 		unsigned int index;
-		//opointer(){
-//
-	//	}
 		opointer(OModule* a, unsigned int b, String c) : index(b){
 			module = a;
 			name = c;
@@ -38,19 +36,21 @@ class opointer: public Resolvable{
 			return a;
 		}
 		dataType& resolve() const final override;
-		Stackable*& resolveMeta() const final override;
-		Type*& resolveType() const final override;
+		ClassProto*& resolveReturnClass() const final override;
+		ClassProto*& resolveSelfClass() const final override;
+		FunctionProto*& resolveFunction() const final override;
 };
 
 class OModule : public Stackable{
 	public:
 		OModule* super;
 		std::map<String, opointer*> mapping;
-		std::vector<Type*> types;
-		std::vector<Stackable*> meta;
+		std::vector<ClassProto*> returnClasses;
+		std::vector<ClassProto*> selfClasses;
+		std::vector<FunctionProto*> functions;
 		std::vector<dataType> data;
 		OModule(const OModule& c) = delete;
-		OModule(OModule* before): mapping(),types(),meta(),data(){
+		OModule(OModule* before): mapping(),returnClasses(),selfClasses(),data(){
 			super = before;
 		}
 		const Token getToken() const override{
@@ -70,18 +70,21 @@ class OModule : public Stackable{
 			}
 			return -1;
 		}
-		void setPointer(String index, dataType value, Stackable* meta,Type* t){
-			findPointer(index)->resolve() = value;
-			findPointer(index)->resolveMeta() = meta;
-			findPointer(index)->resolveType() = t;
+		void setPointer(String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl){
+			auto p = findPointer(index);
+			p->resolve() = value;
+			p->resolveReturnClass() = cl;
+			p->resolveFunction() = fun;
+			p->resolveSelfClass() = selfCl;
 		}
-		opointer* addPointer(String index, dataType value, Stackable* met, Type* t, unsigned int level=0){
+		opointer* addPointer(String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()) todo("The variable "+index+" has already been defined in this scope");
 				opointer* nex = new opointer(this, data.size(), index);
 				data.push_back(value);
-				meta.push_back(met);
-				types.push_back(t);
+				returnClasses.push_back(cla);
+				functions.push_back(fun);
+				selfClasses.push_back(selfCl);
 				mapping.insert(std::pair<String,opointer*>(index, nex));
 				return nex;
 			} else {
@@ -90,7 +93,7 @@ class OModule : public Stackable{
 					exit(1);
 				}
 				else
-				return super->addPointer(index, value, met, t, level-1);
+				return super->addPointer(index, value, cla, fun, selfCl, level-1);
 			}
 		}
 		opointer* findPointer(String index) {
@@ -103,7 +106,7 @@ class OModule : public Stackable{
 					return paired->second;
 				}
 			}
-			return addPointer(index, NULL,NULL,NULL);
+			return addPointer(index, NULL,NULL, NULL,NULL);
 		}
 		opointer* getPointer(String index) {
 			OModule* search = this;
@@ -116,6 +119,8 @@ class OModule : public Stackable{
 				}
 			}
 			cerr << "Could not resolve variable: " << index << flush << endl;
+			write(cerr, "");
+			cerr << endl << flush;
 			exit(0);
 		}
 		void write(ostream& a,String t) const override{
@@ -134,11 +139,14 @@ class OModule : public Stackable{
 dataType& opointer::resolve() const {
 	return module->data[index];
 }
-Stackable*& opointer::resolveMeta() const {
-	return module->meta[index];
+ClassProto*& opointer::resolveReturnClass() const {
+	return module->returnClasses[index];
 }
-Type*& opointer::resolveType() const {
-	return module->types[index];
+FunctionProto*& opointer::resolveFunction() const {
+	return module->functions[index];
+}
+ClassProto*& opointer::resolveSelfClass() const {
+	return module->selfClasses[index];
 }
 
 class LateResolve : public Resolvable{
@@ -155,11 +163,14 @@ class LateResolve : public Resolvable{
 		Value*& resolve() const override final{
 			return resolvePointer()->resolve();
 		}
-		Stackable*& resolveMeta() const override final{
-			return resolvePointer()->resolveMeta();
+		ClassProto*& resolveReturnClass() const override final{
+			return resolvePointer()->resolveReturnClass();
 		}
-		Type*& resolveType() const override final{
-			return resolvePointer()->resolveType();
+		FunctionProto*& resolveFunction() const override final{
+			return resolvePointer()->resolveFunction();
+		}
+		ClassProto*& resolveSelfClass() const override final{
+			return resolvePointer()->resolveSelfClass();
 		}
 };
 #undef dataType
@@ -179,9 +190,9 @@ RData::RData():
 	fpm->add(createBasicAliasAnalysisPass());
 	// Do simple "peephole" optimizations and bit-twiddling optzns.
 	fpm->add(createInstructionCombiningPass());
-	// Reassociate expressions.
+	// Reassociate Statements.
 	fpm->add(createReassociatePass());
-	// Eliminate Common SubExpressions.
+	// Eliminate Common SubStatements.
 	fpm->add(createGVNPass());
 	// Simplify the control flow graph (deleting unreachable blocks, etc).
 	fpm->add(createCFGSimplificationPass());

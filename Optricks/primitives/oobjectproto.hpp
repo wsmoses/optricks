@@ -9,25 +9,25 @@
 #define OOBJECTPROTO_HPP_
 
 #include "../containers/settings.hpp"
-#include "../constructs/Expression.hpp"
-#include "../constructs/Module.hpp"
+#include "../constructs/Statement.hpp"
 
 #ifndef OCLASS_P_
 #define OCLASS_P_
-class oclass;
-#endif
-
-#ifndef OBOOL_P_
-#define OBOOL_P_
-class obool;
+class ClassProto;
 #endif
 
 #define OOBJECT_P_
-class oobject: public Expression{
+class oobject: public Statement{
 	public:
-		oobject(oclass* c):Expression(c){}
+		oobject(PositionID a, ClassProto* cl):Statement(a, cl){}
+		FunctionProto* getFunctionProto() override{ return NULL; }
 		virtual operator String () const = 0;
 
+		//TODO
+		void registerClasses(RData& r) override final{};
+		void registerFunctionArgs(RData& r) override{};
+		void registerFunctionDefaultArgs() override{};
+		void resolvePointers() override{};
 		void write(ostream& a, String b) const override;
 		oobject* simplify() override final{
 			return this;
@@ -35,14 +35,10 @@ class oobject: public Expression{
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}
-		void checkTypes() override{
-
+		ClassProto* checkTypes() override{
+			return returnType;
 		}
 };
-
-#include "oclass.hpp"
-#include "obool.hpp"
-
 
 		void oobject::write(ostream& a, String b) const{
 			a<< (String)(*this);

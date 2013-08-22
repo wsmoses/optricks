@@ -8,23 +8,24 @@
 #ifndef WHILELOOP_HPPO_
 #define WHILELOOP_HPPO_
 
-#include "./Expression.hpp"
+#include "./Statement.hpp"
 
 class WhileLoop : public Statement{
 	public:
-		Expression* const condition;
+		Statement* const condition;
 		Statement* const statement;
 		String name;
-		WhileLoop(Expression * cond, Statement* stat,String n="") : condition(cond), statement(stat){
-			/*if(condition->returnType!=boolClass){
-				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
-				exit(0);
-			}*/
+		WhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
+			Statement(a, voidClass),
+			condition(cond), statement(stat){
 			name = n;
 		}
-		void checkTypes(){
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		ClassProto* checkTypes() override final{
 			condition->checkTypes();
+			if(condition->returnType!=boolClass) todo("Cannot make non-bool type condition for while loop");
 			statement->checkTypes();
+			return returnType;
 		}
 		const Token getToken() const override {
 			return T_WHILE;
@@ -50,28 +51,29 @@ class WhileLoop : public Statement{
 			return VOID;
 			*/
 		}
+
+		void registerClasses(RData& r) override final{
+			condition->registerClasses(r);
+			statement->registerClasses(r);
+		}
+		void registerFunctionArgs(RData& r) override final{
+			condition->registerFunctionArgs(r);
+			statement->registerFunctionArgs(r);
+		}
+		void registerFunctionDefaultArgs() override final{
+			condition->registerFunctionDefaultArgs();
+			statement->registerFunctionDefaultArgs();
+		}
+		void resolvePointers() override final{
+			condition->resolvePointers();
+			statement->resolvePointers();
+		}
 		void write(ostream& a, String b) const override{
 			a << "while(" << condition << ")";
 			statement->write(a,b);
 		}
-		Statement* simplify(Jump& jump) override{
-			if(condition->getToken()==T_OOBJECT){
-				obool* c;
-				c = (obool*)condition;
-				if( (bool)c ){
-					//CHECK for optimizations due to jump
-					return new WhileLoop(c,statement->simplify(jump),name);
-				}
-				else return VOID;
-			}
-			else{
-				Statement* in = statement->simplify(jump);
-				//if(in->getToken()==T_VOID){
-				//	return condition->simplify();
-				//}
-				//else
-					return new WhileLoop(condition->simplify(), in,name);
-			}
+		WhileLoop* simplify() override final{
+			return new WhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
 };
 

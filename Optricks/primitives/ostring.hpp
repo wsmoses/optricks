@@ -13,7 +13,7 @@
 class ostring : public oobject{
 	public:
 		String value;
-		ostring(String i): oobject(stringClass), value(i){}
+		ostring(PositionID id, String i): oobject(id, stringClass), value(i){}
 		operator String& (){
 			return value;
 		}

@@ -8,29 +8,55 @@
 #ifndef E_VAR_HPP_
 #define E_VAR_HPP_
 
-#include "../constructs/Expression.hpp"
+#include "../constructs/Statement.hpp"
+#include "../constructs/Module.hpp"
 
-class E_VAR : public Expression{
+class E_VAR : public Statement{
 public:
 	Resolvable* pointer;
-	E_VAR(Resolvable* a) : Expression(objectClass),pointer(a){ };
+//	Resolvable* type;
+	E_VAR(PositionID id, Resolvable* a) : Statement(id),pointer(a){
+	//	type = ty;
+	};
 	const Token getToken() const override{
 		return T_VAR;
 	}
-	Expression* simplify() override final{
+	Statement* simplify() override final{
 		return this;
 	}
 	Value* evaluate(RData& a) override final{
 		//TODO variables not implemented
 		Value* ans = pointer->resolve();
-		if(ans==NULL) todo("Could not resolve pointer "+pointer->name);
+		if(ans==NULL){
+			todo("Could not resolve pointer "+pointer->name);
+		}
 		return ans;
 	}
 	void write(ostream& f,String t="") const override{
 		f << "E_VAR('" << pointer->name << "')";
 	}
-	void checkTypes(){
-		//todo("E_VAR Check types not implemented: "+pointer->name);
+
+	void registerClasses(RData& r) override final{
+	//TODO
 	}
+	void registerFunctionArgs(RData& r) override final{
+		//TODO
+	};
+	void registerFunctionDefaultArgs() override final{
+		//TODO
+	};
+	ClassProto* checkTypes() override{
+		ClassProto* temp = pointer->resolveReturnClass();
+		if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
+		return returnType = temp;
+	}
+	void resolvePointers() override{
+		LateResolve* r = dynamic_cast<LateResolve*>(pointer);
+		if(r!=NULL){
+			pointer = r->resolvePointer();
+		}
+		if(pointer == NULL) error("What?? Pointer is null? for " + pointer->name);
+	}
+	FunctionProto* getFunctionProto() override final{ return pointer->resolveFunction(); }
 };
 #endif /* E_VAR_HPP_ */

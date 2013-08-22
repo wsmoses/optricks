@@ -9,18 +9,12 @@
 #define OARRAY_HPP_
 
 #include "oobjectproto.hpp"
-#include "oint.hpp"
-#include "oslice.hpp"
 
 class oarray : public oobject{
 	public:
 		std::vector<oobject*> data;
-		oarray(): oobject(arrayClass), data(){}
-		oarray(const std::vector<oobject*>& dat) : oobject(arrayClass),data(dat){}
-		operator std::vector<oobject*>& (){
-			return data;
-		}
-		void checkTypes() override{
+		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id, arrayClass),data(dat){}
+		ClassProto* checkTypes() override{
 			todo("Implement forced array typing");
 		}
 		Value* evaluate(RData& a) override final{
@@ -63,11 +57,11 @@ class oarray : public oobject{
 		}
 };
 
-class E_ARR : public Expression{
+class E_ARR : public Statement{
 	public:
-		std::vector<Expression*> values;
-		E_ARR() : Expression(arrayClass),values() { };
-		E_ARR(const std::vector<Expression*>& a) : Expression(arrayClass),values(a) { };
+		std::vector<Statement*> values;
+		E_ARR(PositionID id) : Statement(id, arrayClass),values() { };
+		E_ARR(PositionID id, const std::vector<Statement*>& a) : Statement(id, arrayClass),values(a) { };
 		const  Token getToken() const override{
 			return T_ARR;
 		};
@@ -84,35 +78,57 @@ class E_ARR : public Expression{
 			todo("E_ARR not implemented");
 			/*
 			oarray* n = new oarray();
-			for(Expression* a: values){
+			for(Statement* a: values){
 				n->data.push_back(a->evaluate(a));
 			}
 			return n;*/
 		}
 
-		Expression* simplify() override{
+		Statement* simplify() override{
 
 			std::vector<oobject*> vals;
-			for(Expression* a: values){
-				Expression* t = a->simplify();
+			for(Statement* a: values){
+				Statement* t = a->simplify();
 				if(t->getToken()==T_OOBJECT)
 					vals.push_back((oobject*)a);
 				else{
-					std::vector<Expression*> val2;
-					for(Expression* b: values)
+					std::vector<Statement*> val2;
+					for(Statement* b: values)
 						val2.push_back(b->simplify());
-					return new E_ARR(val2);
+					return new E_ARR(filePos, val2);
 				}
 			}
-			return new oarray(vals);
+			return new oarray(filePos, vals);
 		}
 
-		void checkTypes() override{
+		void registerClasses(RData& r) override final{
+			for(auto& a:values){
+				a->registerClasses(r);
+			}
+		}
+		void registerFunctionArgs(RData& r) override final{
+			for(auto& a:values){
+				a->registerFunctionArgs(r);
+			}
+		};
+		void registerFunctionDefaultArgs() override final{
+			for(auto& a:values){
+				a->registerFunctionDefaultArgs();
+			}
+		};
+		void resolvePointers() override final{
+			for(auto& a: values){
+				a->resolvePointers();
+			}
+		};
+		ClassProto* checkTypes() override{
 			for(auto& a:values){
 				a->checkTypes();
 			}
 			todo("Implement forced E_ARR typing");
+			return arrayClass;
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
 };
 
 #endif /* OARRAY_HPP_ */

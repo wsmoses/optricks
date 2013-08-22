@@ -12,8 +12,8 @@
 
 class oslice : public oobject{
 	public:
-		oobject* start, *stop, *step;
-		oslice(oobject* a, oobject* b, oobject* c): oobject(sliceClass),
+		Statement* start, *stop, *step;
+		oslice(PositionID id, Statement* a, Statement* b, Statement* c): oobject(id, sliceClass),
 				start(a), stop(b),step(c){
 			if(step==0){
 				cerr << "Step in slice cannot be 0";
@@ -24,11 +24,11 @@ class oslice : public oobject{
 			//TODO
 			std::stringstream ss;
 			ss << "[";
-			if(start!=NULL) ss << start;
+			if(start!=NULL && start!=VOID) ss << start;
 			ss << ":";
-			if(step!=NULL) ss << stop;
+			if(stop!=NULL && step!=VOID) ss << stop;
 			ss << ":";
-			if(step!=NULL) ss << step;
+			if(step!=NULL && step!=VOID) ss << step;
 			ss << "]";
 			return ss.str();
 		}
@@ -37,10 +37,10 @@ class oslice : public oobject{
 		}
 };
 
-class E_SLICE : public Expression{
+class E_SLICE : public Statement{
 public:
-	Expression* start, *stop, *step;
-	E_SLICE(Expression* a, Expression* b, Expression* c): Expression(sliceClass),
+	Statement* start, *stop, *step;
+	E_SLICE(PositionID id, Statement* a, Statement* b, Statement* c): Statement(id, sliceClass),
 			start(a), stop(b),step(c){}
 	const Token getToken() const override{
 		return T_SLICE;
@@ -62,13 +62,13 @@ public:
 		}
 		return new oslice(a,b,c);*/
 	}
-	Expression* simplify() override{
+	Statement* simplify() override{
 
-		Expression *aa = start->simplify(),
+		Statement *aa = start->simplify(),
 				*bb = stop->simplify(),
 				*cc = step->simplify();
 		if(aa->getToken()!=T_OOBJECT || bb->getToken()!=T_OOBJECT || cc->getToken()!=T_OOBJECT)
-			return new E_SLICE(aa,bb,cc);
+			return new E_SLICE(filePos, aa,bb,cc);
 		oobject *a = (oobject*)aa,
 				*b = (oobject*)bb,
 				*c = (oobject*)cc;
@@ -78,11 +78,33 @@ public:
 				b->returnType==nullClass) ||
 				!(c->returnType==intClass ||
 				c->returnType==nullClass)){
-			return new E_SLICE(aa,bb,cc);
+			return new E_SLICE(filePos, aa,bb,cc);
 		}
-		return new oslice(a,b,c);
+		return new oslice(filePos, a,b,c);
 	}
-	void checkTypes(){
+
+	FunctionProto* getFunctionProto() override final{ return NULL; }
+	void registerClasses(RData& r) override final{
+		start->registerClasses(r);
+		stop->registerClasses(r);
+		step->registerClasses(r);
+	}
+	void registerFunctionArgs(RData& r) override final{
+		start->registerFunctionArgs(r);
+		stop->registerFunctionArgs(r);
+		step->registerFunctionArgs(r);
+	}
+	void registerFunctionDefaultArgs() override final{
+		start->registerFunctionDefaultArgs();
+		stop->registerFunctionDefaultArgs();
+		step->registerFunctionDefaultArgs();
+	}
+	void resolvePointers() override final{
+		start->resolvePointers();
+		stop->resolvePointers();
+		step->resolvePointers();
+	}
+	ClassProto* checkTypes(){
 		if(start!=NULL){
 			start->checkTypes();
 			if(start->returnType!=intClass) todo("Cannot have non-int type in slice ",start->returnType->name);
@@ -95,6 +117,7 @@ public:
 			step->checkTypes();
 			if(step->returnType!=intClass) todo("Cannot have non-int type in slice ",step->returnType->name);
 		}
+		return returnType;
 	}
 	void write(ostream& f,String a="") const override{
 		f << "E_SLICE(";

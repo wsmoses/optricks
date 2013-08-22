@@ -10,25 +10,8 @@
 
 #include "StatementProto.hpp"
 
-#include "Expression.hpp" //needed to ensure jump.hpp is included
-#include "Jump.hpp"
-
-Value* VoidStatement::evaluate(RData& a){
-	todo("Void eval not implemented");
-//	return this;
-}
-Statement* VoidStatement::simplify(Jump& jump){
-	jump = NOJUMP;
-	return this;
-}
-const Token VoidStatement::getToken() const{
-	return T_VOID;
-}
-bool VoidStatement::operator == (Statement* s) const{
-	return getToken()==s->getToken();
-}
-void VoidStatement::write(ostream& a,String r) const{
-	a << "void";
+ClassProto* VoidStatement::checkTypes(){
+	return returnType = voidClass;
 }
 
 #endif /* STATEMENT_HPP_ */

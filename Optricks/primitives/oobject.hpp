@@ -15,5 +15,6 @@
 #include "oint.hpp"
 #include "ostring.hpp"
 #include "oslice.hpp"
+#include "oclass.hpp"
 
 #endif /* OOBJECT_HPP_ */

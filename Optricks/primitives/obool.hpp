@@ -10,12 +10,12 @@
 
 #include "oobjectproto.hpp"
 
-#define OCLASS_P_
 class obool: public oobject{
 	public:
 		bool value;
-		explicit obool(bool a) : oobject(boolClass) { value = a; }
-		operator bool& () { return value; }
+		obool(PositionID id, bool a) : oobject(id, boolClass) {
+			value = a;
+		}
 		operator String () const override{
 			return value?"true":"false";
 		}

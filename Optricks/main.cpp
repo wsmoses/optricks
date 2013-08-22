@@ -1,5 +1,15 @@
 #define MAIN_CPP
 
+/**
+ * TODO resolution
+ * a) register class names
+ * b) register operator / function names (prototypes) with arguments
+ * 		this includes class methods / constructors
+ * c) register operator / function prototypes with default
+ * 		this includes class methods / constructors
+ * d) switch to opointers instead of late-resolves
+ * e) type check everything
+ */
 #include "containers/settings.hpp"
 template <class T>
 ostream& operator<<(ostream&os, std::vector<T>& v)
@@ -17,28 +27,27 @@ ostream& operator<<(ostream&os, std::vector<T>& v)
 
 #include "Lexer.hpp"
 
-void execF(RData& r, Statement* n){
+void execF(RData& r, Statement* n,bool interactive){
 	if(n==NULL) return;// NULL;
-	Jump temp = NJUMP;
-	n = n->simplify(temp);
-	cout << n << endl << flush;
+	n = n->simplify();
+	if(interactive) cout << n << endl << flush;
+	n->registerClasses(r);
+	n->registerFunctionArgs(r);
+	n->registerFunctionDefaultArgs();
+	n->resolvePointers();
 	n->checkTypes();
 	Type* type;
-	Expression* e = dynamic_cast<Expression*>(n);
-	if(e!=NULL){
-		type = e->returnType->type;
+		type = n->returnType->type;
 		if(type==NULL){
-			cout << "Error null return type for class " + e->returnType->name ;
+			if(interactive) cout << "Error null return type for class " + n->returnType->name ;
 			type = VOIDTYPE;
 		}
-	}
-	else type = VOIDTYPE;
 		FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
 		Function *F = Function::Create(FT, Function::ExternalLinkage, "", r.lmod);//todo check this
 		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 		r.builder.SetInsertPoint(BB);
 		Value* v = n->evaluate(r);
-		v->dump();
+		if(interactive)	v->dump();
 		if(type!=VOIDTYPE)
 			r.builder.CreateRet(v);
 		else
@@ -48,32 +57,42 @@ void execF(RData& r, Statement* n){
 		//cout << "verified" << endl << flush;
 		r.fpm->run(*F);
 		//cout << "fpm" << endl << flush;
+		if(interactive){
 		F->dump();
 		cerr << flush;
+		}
 		//cout << "dumped" << endl << flush;
 		void *FPtr = r.exec->getPointerToFunction(F);
 		//cout << "ran" << endl << flush;
-		if(e==NULL || type==VOIDTYPE){
+		if(n==NULL || type==VOIDTYPE){
 			void (*FP)() = (void (*)())(intptr_t)FPtr;
 			FP();
-			cout <<  "Evaluated" << endl << flush;
-		} else if(e->returnType==decClass){
+			if(interactive) cout <<  "Evaluated" << endl << flush;
+		} else if(n->returnType==decClass){
 			double (*FP)() = (double (*)())(intptr_t)FPtr;
-			cout <<  "Evaluated to " << FP() << endl << flush;
-		} else if(e->returnType==intClass){
+			auto t = FP();
+			if(interactive) cout <<  "Evaluated to " << t << endl << flush;
+		} else if(n->returnType==intClass){
 			long long (*FP)() = (long long (*)())(intptr_t)FPtr;
-			cout <<  "Evaluated to " << FP() << endl << flush;
-		} else if(e->returnType==boolClass){
+			auto t = FP();
+			if(interactive) cout <<  "Evaluated to " << t << endl << flush;
+		} else if(n->returnType==boolClass){
 			bool (*FP)() = (bool (*)())(intptr_t)FPtr;
-			cout <<  "Evaluated to " << FP() << endl << flush;
+			auto t = FP();
+			if(interactive) cout <<  "Evaluated to " << t << endl << flush;
 		} else{
-			cerr << "Unknown temp type to JIT-evaluate " << e->returnType->name << endl << flush;
+			cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 		}
 }
 int main(int argc, char** argv){
-	cout << "Optricks version 0.2.1" << endl << flush;
+
+	bool interactive = argc<2;
 	initClasses();
-	cout << "Created by Billy Moses" << endl << flush;
+
+	if(interactive) {
+		cout << "Optricks version 0.1.3" << endl << flush;
+		cout << "Created by Billy Moses" << endl << flush;
+	}
 	//TODO 2 x major decision
 	//should ++ / -- be eliminated and replaced with +=1 and -=1
 	// or should semicolons be strictly enforced
@@ -88,12 +107,12 @@ int main(int argc, char** argv){
 	//if semicolons were strictly enforced then
 	//list comprehension could become an operator
 
-	bool interactive = argc<2;
 	Stream* st = new Stream(stdin,interactive);
 	Lexer lexer(st,interactive?'\n':EOF);
 	Statement* n;
-	if(interactive)	cout << "ready> " << flush;
-	st->force("extern double cos(double a); cos(3.14159/2)\n");
+	//if(interactive)	cout << "ready> " << flush;
+	//st->force("extern double cos(double a); cos(3.14159)\n");
+	st->force("(lambda int a,int b: a+b)(4,5)\n");
 	//st->force("2+3.1\n");
 	OModule* m = new OModule(LANG_M);
 	while(true){
@@ -102,14 +121,19 @@ int main(int argc, char** argv){
 		bool first = true;
 		while(n->getToken()!=T_VOID){
 			first = false;
-			execF(lexer.rdata,n);
+			execF(lexer.rdata,n,interactive);
+			st->done = false;
+			if(st->last()==EOF) break;
+			while(st->peek()=='\n' || st->peek()==';') st->read();
+			st->done = false;
 			n = lexer.getNextStatement(m, true, true);
 		}
 		st->done = false;
 		if(st->last()==EOF) break;
+		while(st->peek()=='\n' || st->peek()==';') st->read();
+		st->done = false;
 		if(interactive)
 			cout << "ready> " << flush;
-		while(st->peek()=='\n' || st->peek()==';') st->read();
 
 		st->done = false;
 		if(first) break;

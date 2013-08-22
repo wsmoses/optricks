@@ -8,37 +8,67 @@
 #ifndef DECLARATION_HPP_
 #define DECLARATION_HPP_
 
-#include "../constructs/Expression.hpp"
+#include "../constructs/Statement.hpp"
 #include "../expressions/E_VAR.hpp"
+
+#define DECLR_P_
 class Declaration: public Statement{
 	public:
 	E_VAR* classV;
 	E_VAR* variable;
-	Expression* value;
-	Declaration(E_VAR* v, E_VAR* loc, Expression* e=NULL){
+	Statement* value;
+	Declaration(PositionID id, E_VAR* v, E_VAR* loc, Statement* e=NULL) : Statement(id, voidClass){
 		classV = v;
 		variable = loc;
 		value = e;
 	}
+	FunctionProto* getFunctionProto() override final{ return NULL; }
 	const Token getToken() const final override{
 		return T_DECLARATION;
 	}
-	void checkTypes() final override{
+	ClassProto* checkTypes() final override{
 		classV->checkTypes();
+		if(classV->returnType!=classClass) error("Argument " + classV->pointer->name + "is not a class");
+		ClassProto*& meta = variable->pointer->resolveReturnClass();
+		if(meta==NULL) meta = classV->pointer->resolveSelfClass();
+		else{
+			cout << "Why is meta of declaration non-null? " << meta << endl << flush ;
+		}
 		variable->checkTypes();
 		if(value!=NULL){
 			value->checkTypes();
-			if(value->returnType != dynamic_cast<oclass*>(classV->pointer->resolveMeta()))
-				todo("Declaration of inconsistent types");
+			if(value->returnType != classV->pointer->resolveSelfClass() )
+				error("Declaration of inconsistent types");
 		}
+		return returnType;
 	}
+
+	void registerClasses(RData& r) override final{
+		classV->registerClasses(r);
+		variable->registerClasses(r);
+		if(value!=NULL) value->registerClasses(r);
+	}
+	void registerFunctionArgs(RData& r) override final{
+		classV->registerFunctionArgs(r);
+		variable->registerFunctionArgs(r);
+		if(value!=NULL) value->registerFunctionArgs(r);
+		//TODO add name in table of args?
+	};
+	void registerFunctionDefaultArgs() override final{
+		classV->registerFunctionDefaultArgs();
+		variable->registerFunctionDefaultArgs();
+		if(value!=NULL) value->registerFunctionDefaultArgs();
+	};
+	void resolvePointers() override final{
+		classV->resolvePointers();
+		variable->resolvePointers();
+		if(value!=NULL) value->resolvePointers();
+	};
 	Value* evaluate(RData& r) final override{
-		todo("Todo: allow declaration evaluation");
+		error("Todo: allow declaration evaluation");
 	}
-	Statement* simplify(Jump& j) final override{
-		if(value!=NULL)
-		return new Declaration(classV, variable, value->simplify());
-		else return this;
+	Declaration* simplify() final override{
+		return new Declaration(filePos, classV, variable, (value==NULL)?NULL:(value->simplify()) );
 	}
 	void write(ostream& f, String s="") const final override{
 		f << "DECLARATION(";

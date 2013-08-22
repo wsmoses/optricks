@@ -1,6 +1,11 @@
 #ifndef O_STREAM_HPP_
 #define O_STREAM_HPP_
 
+#include "primitives/odec.hpp"
+#include "primitives/oint.hpp"
+#include "primitives/oslice.hpp"
+#include "expressions/E_BINOP.hpp"
+
 const bool isWhitespace(const char a){
 	return a==' ' || a=='\n' || a=='\t' || a=='\r';
 }
@@ -32,7 +37,6 @@ const String BINARY_OPERATORS[]{"and", "or", "xor","xnor",
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_PARENS.hpp"
 #include "expressions/E_FUNC_CALL.hpp"
-#include "constructs/Expression.hpp"
 
 class Stream{
 private:
@@ -129,6 +133,9 @@ public:
 	bool allowUndo;
 	bool done;
 	bool endAtLines;
+	PositionID pos(){
+		return PositionID(readChars.size(), readChars.back().size(),"#unknown");
+	}
 	Stream(FILE* a, bool lines=false){
 		done = false;
 		curCount = 0;
@@ -637,10 +644,10 @@ public:
 		if(base==-1) base=10;
 		//hi.pop_back();
 		if(decimal){
-			return new odec(strtod(hi.c_str(),NULL));
+			return new odec(this->pos(), strtod(hi.c_str(),NULL));
 		}
 		else{
-			return new oint(strtol(hi.c_str(),NULL, base));
+			return new oint(this->pos(), strtol(hi.c_str(),NULL, base));
 		}
 	}
 	String getNextOperator(char endWith){
@@ -680,19 +687,19 @@ public:
 };
 
 
-Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& stack){
+Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stack){
 	if(stack.size()==0){
 		//TODO HANDLE APPEND OPERATORS
 		f->error("Append operators not implemented yet",true);
 	}
 	if(stack.size()==1 && stack[0]!=NULL){
-		Expression* temp = stack[0];
+		Statement* temp = stack[0];
 		stack.clear();
-		return new E_BINOP(toIndex,temp,"[]");
+		return new E_BINOP(f->pos(), toIndex,temp,"[]");
 	}
 	else{
 		//TODO allow for a[::,2] or a[:,:]
-		Expression* start = NULL, *end=NULL,*step=NULL;
+		Statement* start = NULL, *end=NULL,*step=NULL;
 		unsigned int pos = 0, spos = 0;
 		while(stack.size()>spos){
 			if(stack[spos]==NULL){
@@ -717,8 +724,8 @@ Expression* getIndex(Stream* f, Expression* toIndex, std::vector<Expression*>& s
 			}
 		}
 		stack.clear();
-		E_SLICE* e = new E_SLICE(start,end,step);
-		return new E_BINOP(toIndex,e,"[]");
+		E_SLICE* e = new E_SLICE(f->pos(), start,end,step);
+		return new E_BINOP(f->pos(), toIndex,e,"[]");
 	}
 }
 #endif /* O_STREAM_HPP_ */

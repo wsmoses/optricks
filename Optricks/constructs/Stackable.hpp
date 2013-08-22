@@ -7,7 +7,6 @@
 
 #ifndef STACKABLE_HPP_
 #define STACKABLE_HPP_
-#include "../O_Token.hpp"
 #include "../containers/settings.hpp"
 class Stackable{
 	public:

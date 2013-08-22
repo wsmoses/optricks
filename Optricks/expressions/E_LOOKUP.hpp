@@ -8,15 +8,15 @@
 #ifndef E_LOOKUP_HPP_
 #define E_LOOKUP_HPP_
 
-#include "../constructs/Expression.hpp"
+#include "../constructs/Statement.hpp"
 
-class E_LOOKUP : public Expression{
+class E_LOOKUP : public Statement{
 	public:
 		const Token getToken() const override{ return T_LOOKUP; }
-		Expression* left;
+		Statement* left;
 		String right;
 		String operation;
-		E_LOOKUP(String o, Expression* a, String b): Expression(objectClass),
+		E_LOOKUP(PositionID id, String o, Statement* a, String b): Statement(id),
 				left(a), right(b), operation(o){};//TODO allow more detail
 
 		void write(ostream& f,String a="") const override{
@@ -24,16 +24,33 @@ class E_LOOKUP : public Expression{
 			f << operation;
 			f << right;
 		}
-		void checkTypes(){
+
+		void registerClasses(RData& r) override final{
+			todo("E_LOOKUP rC");
+		}
+		void registerFunctionArgs(RData& r) override final{
+			todo("E_LOOKUP rFA");
+		};
+		void registerFunctionDefaultArgs() override final{
+			todo("E_LOOKUP rFDA");
+		};
+		void resolvePointers() override final{
+			todo("E_LOOKUP rP");
+		}
+		ClassProto* checkTypes(){
 			todo("Check types for lookup");
 		}
 		Value* evaluate(RData& a) override{
 			//TODO lookup variables
 			todo("Variable lookup not implemented");
 		}
-		Expression* simplify() override{
+		Statement* simplify() override{
 			//TODO lookup variables
 			return this;
+		}
+		FunctionProto* getFunctionProto() override final{
+			error("E_LOOKUP getFunctionProto() not implemented");
+			return NULL;
 		}
 };
 

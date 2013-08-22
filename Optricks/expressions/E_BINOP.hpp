@@ -7,8 +7,7 @@
 
 #ifndef E_INDEXER_HPP_
 #define E_INDEXER_HPP_
-#include "../constructs/Expression.hpp"
-
+#include "../constructs/Statement.hpp"
 
 byte precedence(String tmp){
 	if (tmp == "." || tmp==":" || tmp=="::" || tmp == "->"){
@@ -70,13 +69,13 @@ byte precedence(String tmp){
 	return 255;
 }
 
-class E_BINOP : public Expression{
+class E_BINOP : public Statement{
 	public:
-		Expression* left;
-		Expression* right;
+		Statement* left;
+		Statement* right;
 		String operation;
-		E_BINOP(Expression* t, Expression* ind,String op) :
-			Expression(t->returnType),left(t), right(ind),operation(op){
+		E_BINOP(PositionID a, Statement* t, Statement* ind,String op) :
+			Statement(a),left(t), right(ind),operation(op){
 		}
 		const Token getToken() const override{
 			return T_BINOP;
@@ -88,7 +87,7 @@ class E_BINOP : public Expression{
 					right->evaluate(a),
 					a);
 		}
-		void checkTypes(){
+		ClassProto* checkTypes() override final{
 			left->checkTypes();
 			right->checkTypes();
 			auto found = left->returnType->binops.find(operation);
@@ -101,11 +100,28 @@ class E_BINOP : public Expression{
 			if(found2==look.end())
 				todo("Binary operator ",operation," not implemented for class ",
 						left->returnType->name, " with right ", right->returnType->name);
-			returnType = found2->second->returnType;
+			return returnType = found2->second->returnType;
 		}
-		Expression* simplify() override{
-			return new E_BINOP(left->simplify(), right->simplify(), operation);
+		Statement* simplify() override{
+			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
 		}
+		void registerClasses(RData& r) override final{
+			left->registerClasses(r);
+			right->registerClasses(r);
+		}
+		void registerFunctionArgs(RData& r) override final{
+			left->registerFunctionArgs(r);
+			right->registerFunctionArgs(r);
+		};
+		void registerFunctionDefaultArgs() override final{
+			left->registerFunctionDefaultArgs();
+			right->registerFunctionDefaultArgs();
+		};
+		void resolvePointers() override final{
+			left->resolvePointers();
+			right->resolvePointers();
+		};
+		FunctionProto* getFunctionProto() override final{ return NULL; }
 		void write(ostream& f,String s="") const override{
 			left->write(f,s);
 			if(operation=="[]"){
@@ -120,9 +136,9 @@ class E_BINOP : public Expression{
 		}
 
 		//TODO CHECK IF WORKS
-		Expression* fixOrderOfOperations(){
-			Expression* tl = left;
-			Expression* tr = right;
+		Statement* fixOrderOfOperations(){
+			Statement* tl = left;
+			Statement* tr = right;
 			E_BINOP* self = this;
 			while(true){
 				if(tl->getToken()==T_BINOP){

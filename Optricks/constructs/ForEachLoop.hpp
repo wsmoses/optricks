@@ -8,16 +8,16 @@
 #ifndef FOREACHLOOP_HPPO_
 #define FOREACHLOOP_HPPO_
 
-#include "./Expression.hpp"
+#include "./Statement.hpp"
 //TODO implement iterator
 class ForEachLoop : public Statement{
 	public:
 		E_VAR* localVariable;
-		Expression* iterable;
+		Statement* iterable;
 		Statement* toLoop;
 		String name;
-		ForEachLoop(E_VAR* var, Expression* it,Statement* tL, String n="") :
-			localVariable(var), iterable(it),toLoop(tL){
+		ForEachLoop(PositionID id, E_VAR* var, Statement* it,Statement* tL, String n="") :
+			Statement(id, voidClass), localVariable(var), iterable(it),toLoop(tL){
 			/*if(condition->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
@@ -25,10 +25,11 @@ class ForEachLoop : public Statement{
 			name = n;
 		}
 
-		void checkTypes(){
+		ClassProto* checkTypes(){
 			iterable->checkTypes();
 			toLoop->checkTypes();
 			todo("Type checking for foreach incomplete due to lack of iterator");
+			return returnType;
 		}
 		const Token getToken() const override {
 			return T_FOREACH;
@@ -55,13 +56,14 @@ class ForEachLoop : public Statement{
 			a << "for " << localVariable << " in "<< iterable << ":";
 			toLoop->write(a,b+"  ");
 		}
-		Statement* simplify(Jump& jump) override{
-			Statement* in = toLoop->simplify(jump);
+		Statement* simplify() override{
+			Statement* in = toLoop->simplify();
 			//if(jump.type==BREAK && (jump.label=="" || jump.label==name))
-			jump = NJUMP;
-			return new ForEachLoop(localVariable, iterable->simplify(),in,name);
+			error("Cannot simplify foreach loop");
+			//return new ForEachLoop(filePos, localVariable, iterable->simplify(),in,name);
 			//TODO [loop unrolloing]
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
 };
 
 

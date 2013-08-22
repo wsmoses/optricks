@@ -9,17 +9,11 @@
 #define ODEC_HPP_
 
 #include "oobjectproto.hpp"
-
-#include "obool.hpp"
-
 class odec : public oobject{
 	public:
 		double value;
-		odec(double i): oobject(decClass), value(i){}
-		operator double& (){
-			return value;
-		}
-		operator String () const override{
+		odec(PositionID a, double i): oobject(a, decClass), value(i){}
+		operator String () const override final{
 			std::stringstream convert;
 			convert << value;
 			return convert.str();
@@ -28,7 +22,5 @@ class odec : public oobject{
 			return ConstantFP::get(a.lmod->getContext(), APFloat(value));
 		}
 };
-
-#include "oint.hpp"
 
 #endif /* ODEC_HPP_ */

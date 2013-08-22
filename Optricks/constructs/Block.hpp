@@ -13,10 +13,20 @@
 class Block : public Statement{
 	public:
 		std::vector<Statement*> values;
-		Block() :values(){
-
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void registerClasses(RData& r) override final{
+			for(auto& a: values) a->registerClasses(r);
 		}
-		Block(std::vector<Statement*>& v) :values(v){
+		void registerFunctionArgs(RData& r) override final{
+			for(auto& a: values) a->registerFunctionArgs(r);
+		}
+		void registerFunctionDefaultArgs() override final{
+			for(auto& a: values) a->registerFunctionDefaultArgs();
+		}
+		void resolvePointers() override final{
+			for(auto& a: values) a->resolvePointers();
+		}
+		Block(PositionID a) : Statement(a,voidClass),values(){
 
 		}
 		void push_back(Statement* s){
@@ -33,25 +43,18 @@ class Block : public Statement{
 			}
 			return VOID;*/
 		}
-		Statement* simplify(Jump& jump) override{
+		Statement* simplify() override{
+			Block* b = new Block(filePos);
 			std::vector<Statement*> v;
 			for(auto& a:values){
-				Statement* s = a->simplify(jump);
-				if(s->getToken()!=T_VOID){
-					if(s->getToken()!=T_BLOCK){
-						v.push_back(s);
-					} else {
-						Block* inner = (Block*)s;
-						for(auto& b: inner->values){
-							v.push_back(b);
-						}
-					}
-				}
-				if(jump.type!=NJUMP){
-					break;
-				}
+				Statement* s = a->simplify();
+				if(s->getToken()!=T_VOID) b->values.push_back(s);
 			}
-			return new Block(v);
+			if(b->values.size()==0){
+				free(b);
+				return VOID;
+			}
+			return b;
 		}
 		void write(ostream& s,String start="") const override{
 			s << "{" << endl;
@@ -62,10 +65,11 @@ class Block : public Statement{
 			}
 			s << start << "}";
 		}
-		void checkTypes(){
+		ClassProto* checkTypes(){
 			for(auto& a:values){
 				a->checkTypes();
 			}
+			return returnType;
 		}
 		Token const getToken() const override{
 			return T_BLOCK;

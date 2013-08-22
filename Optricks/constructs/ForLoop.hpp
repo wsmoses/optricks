@@ -8,28 +8,30 @@
 #ifndef FORLOOP_HPPO_
 #define FORLOOP_HPPO_
 
-#include "./Expression.hpp"
+#include "./Statement.hpp"
 class ForLoop : public Statement{
 	public:
 		Statement* initialize;
-		Expression* condition;
+		Statement* condition;
 		Statement* increment;
 		Statement* toLoop;
 		String name;
-		ForLoop(Statement* init, Expression* cond, Statement* inc,Statement* tL, String n="") :
-			initialize(init),condition(cond),increment(inc),toLoop(tL){
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		ForLoop(PositionID a, Statement* init, Statement* cond, Statement* inc,Statement* tL, String n="") :
+			Statement(a, voidClass), initialize(init),condition(cond),increment(inc),toLoop(tL){
 			/*if(condition->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
 			}*/
 			name = n;
 		}
-		void checkTypes(){
+		ClassProto* checkTypes(){
 			initialize->checkTypes();
 			condition->checkTypes();
 			if(condition->returnType != boolClass) todo("Cannot have non-bool condition of for-loop ",condition->returnType->name);
 			increment->checkTypes();
 			toLoop->checkTypes();
+			return returnType;
 		}
 		const Token getToken() const override {
 			return T_FOR;
@@ -69,15 +71,33 @@ class ForLoop : public Statement{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
 			toLoop->write(a,b+"  ");
 		}
-		Statement* simplify(Jump& jump) override{
-			Statement* in = toLoop->simplify(jump);
-			jump = NJUMP;
-			Statement* init = initialize->simplify(jump);
-			jump = NJUMP;
-			Statement* inc = increment->simplify(jump);
-			//if(jump.type==BREAK && (jump.label=="" || jump.label==name))
-			jump = NJUMP;
-			return new ForLoop(init, condition->simplify(),inc,in,name);
+
+		void registerClasses(RData& r) override final{
+			condition->registerClasses(r);
+			initialize->registerClasses(r);
+			increment->registerClasses(r);
+			toLoop->registerClasses(r);
+		}
+		void registerFunctionArgs(RData& r) override final{
+			condition->registerFunctionArgs(r);
+			initialize->registerFunctionArgs(r);
+			increment->registerFunctionArgs(r);
+			toLoop->registerFunctionArgs(r);
+		}
+		void registerFunctionDefaultArgs() override final{
+			condition->registerFunctionDefaultArgs();
+			initialize->registerFunctionDefaultArgs();
+			increment->registerFunctionDefaultArgs();
+			toLoop->registerFunctionDefaultArgs();
+		}
+		void resolvePointers() override final{
+			condition->resolvePointers();
+			initialize->resolvePointers();
+			increment->resolvePointers();
+			toLoop->resolvePointers();
+		}
+		ForLoop* simplify() override{
+			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
 			//TODO [loop unrolloing]
 		}
 };
