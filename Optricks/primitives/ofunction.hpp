@@ -112,7 +112,7 @@ class lambdaFunction : public ofunction{
 				r = VOIDTYPE;
 			}
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, "", ar.lmod);//todo check this
+			Function *F = Function::Create(FT, Function::ExternalLinkage, "lambda", ar.lmod);//todo check this
 			// Set names for all arguments.
 			unsigned Idx = 0;
 			for (Function::arg_iterator AI = F->arg_begin(); Idx != args.size();
@@ -121,9 +121,13 @@ class lambdaFunction : public ofunction{
 				prototype->declarations[Idx]->variable->pointer->resolve() = AI;
 			}
 
-//			BasicBlock *Parent =;
-			//ar.builder.SetInsertPoint( Parent );
-			BasicBlock *BB =  ar.builder.GetInsertBlock();//BasicBlock::Create(getGlobalContext(), "entry", F);
+			//BasicBlock *Parent = ar.builder.GetInsertBlock();
+		//	ar.builder.SetInsertPoint(Parent);
+
+			  BasicBlock *Parent = ar.builder.GetInsertBlock();
+			BasicBlock *BB =
+				//	ar.builder.GetInsertBlock();
+					BasicBlock::Create(getGlobalContext(), "entry", F);
 			ar.builder.SetInsertPoint(BB);
 			Value* v = ret->evaluate(ar);
 			if(r!=VOIDTYPE)
@@ -134,6 +138,8 @@ class lambdaFunction : public ofunction{
 			verifyFunction(*F);
 			//cout << "verified" << endl << flush;
 			ar.fpm->run(*F);
+
+			 ar.builder.SetInsertPoint( Parent );
 			return F;
 		}
 };

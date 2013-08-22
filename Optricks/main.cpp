@@ -110,9 +110,10 @@ int main(int argc, char** argv){
 	Stream* st = new Stream(stdin,interactive);
 	Lexer lexer(st,interactive?'\n':EOF);
 	Statement* n;
-	//if(interactive)	cout << "ready> " << flush;
+	if(interactive)	cout << "ready> " << flush;
 	//st->force("extern double cos(double a); cos(3.14159)\n");
-	st->force("(lambda int a,int b: a+b)(4,5)\n");
+	//st->force("lambda int a,int b: a+b\n");
+	//st->force("(lambda int a,int b: a+b)(4,5)\n");
 	//st->force("2+3.1\n");
 	OModule* m = new OModule(LANG_M);
 	while(true){
