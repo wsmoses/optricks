@@ -230,7 +230,6 @@ class userFunction : public ofunction{
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				prototype->declarations[Idx]->variable->pointer->resolve() = AI;
 			}
-			cerr << "Made args" << endl << flush;
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB =
 					//	ar.builder.GetInsertBlock();

@@ -1,0 +1,38 @@
+def void printdensity(int d){
+  if d > 8 				putchar(32)  # ' '
+  else if d > 4 	putchar(46)  # '.'
+  else if d > 2	  putchar(43)  # '+'
+  else            putchar(42); # '*'
+  return;
+}
+
+# Determine whether the specific location diverges.
+# Solve for z = z^2 + c in the complex plane.
+def int mandleconverger(double real, double imag, int iters, double creal, double cimag){
+  return (iters > 255 | (real*real + imag*imag > 4)) ? iters : 
+  mandleconverger(real*real - imag*imag + creal,
+                                2.*real*imag + cimag, iters+1, creal, 
+                                                    cimag);
+/*  if iters > 255 | (real*real + imag*imag > 4) return iters
+  else return mandleconverger(real*real - imag*imag + creal,
+                                2.*real*imag + cimag, iters+1, creal, 
+                                                    cimag);*/
+}                           
+def int mandleconverge(double real, double imag) return mandleconverger(real, imag, 0, real, imag);
+
+def void mandelhelp(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep, double realX){
+	printdensity(mandleconverge(xmin, ymin))
+	if(xmin+xstep < xmax) mandelhelp(xmin+xstep, xmax, xstep, ymin, ymax, ystep,realX);
+	else if(ymin+ystep < ymax){
+	putchar(10);
+		mandelhelp(realX, xmax, xstep, ymin+ystep, ymax, ystep,realX);
+	}
+	return;
+}
+
+def void mandel(double realstart=-2.3, double imagstart=-1.3, double realmag=0.05, double imagmag=0.07){
+  mandelhelp(realstart, realstart+realmag*78., realmag,imagstart, imagstart+imagmag*40., imagmag, realstart);
+  putchar(10);
+  return;
+}
+mandel();

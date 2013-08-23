@@ -60,7 +60,9 @@ class Lexer{
 			Function *F = Function::Create(FT, Function::ExternalLinkage, "", rdata.lmod);//todo check this
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);
-			for(auto& n: stats) n->evaluate(rdata);
+			for(auto& n: stats){
+				n->evaluate(rdata);
+			}
 			rdata.builder.CreateRetVoid();
 			verifyFunction(*F);
 			rdata.fpm->run(*F);
@@ -155,6 +157,7 @@ class Lexer{
 					if(e!=NULL && e->getToken()!=T_VOID && e->getToken()!=T_EOF) blocks->values.push_back(e);
 					f->trim(endWith);
 					while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
+					f->trim(endWith);
 					fpek = f->peek()=='}';
 				}while(!f->done && !fpek);
 				if(fpek) f->trim(endWith);
@@ -526,7 +529,6 @@ class Lexer{
 							semi  = false;
 							if(!f->done && f->peek()==';'){ semi = true; }
 							f->trim(endWith);
-							cout << "opcheck " << (opCheck && !semi) << endl << flush;
 							if(opCheck && !semi)
 								toReturn = operatorCheck(mod, toReturn);
 							return toReturn;
