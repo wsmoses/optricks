@@ -20,8 +20,16 @@ class ClassProto;
 class oobject: public Statement{
 	public:
 		oobject(PositionID a, ClassProto* cl):Statement(a, cl){}
+
 		FunctionProto* getFunctionProto() override{ return NULL; }
-		AllocaInst* getAlloc() override final{ return NULL; };
+		void setFunctionProto(FunctionProto* f) override{ error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override{ return NULL; }
+		void setClassProto(ClassProto* f) override { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override{ return NULL; };
+		void setAlloc(AllocaInst* f) override { error("Cannot set allocated instance"); }
+		String getObjName() override { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override { error("Cannot set resolve"); }
+		Value* getResolve() override { error("Cannot get resolve"); }
 		virtual operator String () const = 0;
 
 		//TODO
@@ -41,9 +49,9 @@ class oobject: public Statement{
 		}
 };
 
-		void oobject::write(ostream& a, String b) const{
-			a<< (String)(*this);
-		}
+void oobject::write(ostream& a, String b) const{
+	a<< (String)(*this);
+}
 /*
 		class onull : public oobject{
 			public:
@@ -59,6 +67,6 @@ class oobject: public Statement{
 		};
 
 		onull* NULLV = new onull();
-*/
+ */
 
 #endif /* OOBJECTPROTO_HPP_ */

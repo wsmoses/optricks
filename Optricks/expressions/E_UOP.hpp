@@ -21,9 +21,6 @@ class E_PREOP : public Statement{
 		Statement* simplify() override final {
 			return new E_PREOP(filePos, operation,value->simplify());
 		}
-		AllocaInst* getAlloc() override final{
-			return NULL;//todo allow (++x) = 4?
-		};
 		Value* evaluate(RData& r) override final {
 			Value* a = value->evaluate(r);
 			return value->returnType->preops[operation]->apply(a,r);
@@ -51,6 +48,14 @@ class E_PREOP : public Statement{
 			value->resolvePointers();
 		};
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 
@@ -65,9 +70,6 @@ class E_POSTOP : public Statement{
 		Statement* simplify() override final {
 			return new E_POSTOP(filePos, operation,value->simplify());
 		}
-		AllocaInst* getAlloc() override final{
-			return NULL; //todo allow (x++) = 4; ?
-		};
 		Value* evaluate(RData& r) override final {
 			Value* a = value->evaluate(r);
 			return value->returnType->postops[operation]->apply(a,r);
@@ -95,6 +97,14 @@ class E_POSTOP : public Statement{
 			value->resolvePointers();
 		};
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 #endif /* E_BINOP_HPP_ */

@@ -19,10 +19,16 @@ class TernaryOperator : public Statement{
 		TernaryOperator(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			Statement(a), condition(cond), then(th), finalElse(stat){
 		}
-		AllocaInst* getAlloc() override final{
-			return NULL; //todo allow something like (cond)?x:y = 4; ?
-		};
+
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 		const Token getToken() const override {
 			return T_TERNARY;
 		}
@@ -93,14 +99,7 @@ class TernaryOperator : public Statement{
 			return new TernaryOperator(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}
 		void write(ostream& a,String t) const override{
-			a << "if " << condition << " ";
-			then->write(a,t);
-			a << ";" << endl;
-			if(finalElse->getToken()!=T_VOID){
-				a << t << "else ";
-				finalElse->write(a, t);
-				a << ";" << endl;
-			}
+			a << condition << "?" << then << ":" << finalElse;
 		}
 };
 

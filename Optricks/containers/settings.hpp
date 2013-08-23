@@ -170,6 +170,7 @@ auto STRINGTYPE = ConstantDataArray::getString(getGlobalContext(),"")->getType()
 
 ClassProto* classClass = new ClassProto("class");
 ClassProto* objectClass = new ClassProto("object");
+//ClassProto* autoClass = new ClassProto("auto"); todo auto class
 ClassProto* nullClass = new ClassProto("None");
 ClassProto* boolClass = new ClassProto("bool", BOOLTYPE);
 ClassProto* arrayClass = new ClassProto("array");
@@ -537,4 +538,5 @@ void initClassesMeta(){
 	LANG_M->addPointer("string",stringClass,0);
 	LANG_M->addPointer("slice",sliceClass,0);*/
 }
+
 #endif /* SETTINGS_HPP_ */

@@ -31,10 +31,10 @@ void execF(RData& r, Statement* n,bool interactive){
 	if(n==NULL) return;// NULL;
 	n = n->simplify();
 	if(interactive) cout << n << endl << flush;
+	n->resolvePointers();
 	n->registerClasses(r);
 	n->registerFunctionArgs(r);
 	n->registerFunctionDefaultArgs();
-	n->resolvePointers();
 	n->checkTypes();
 	Type* type;
 	type = n->returnType->type;
@@ -111,46 +111,54 @@ int main(int argc, char** argv){
 	Lexer lexer(NULL,interactive?'\n':EOF);
 	lexer.execFile("./stdlib/stdlib.opt",true, true);
 	if(!interactive)
-	lexer.execFile("stdin",false, false,stdin);
+		lexer.execFile("stdin",false, false,stdin);
 	else{
 
 		Statement* n;
 		Stream* st = new Stream(stdin,interactive);
 		lexer.f = st;
 		cout << "ready> " << flush;
-	//st->force("extern double cos(double a); cos(3.14159)\n");
-	//st->force("lambda int a,int b: a+b\n");
-	//st->force("(lambda int a,int b: a+b)(4,5)\n");
-	//st->force("(lambda double a: (lambda double sq: sq*sq)(sin(a))+(lambda double sq: sq*sq)(cos(a)))(.9)\n");
-	//st->force("2+3.1\n");
-//	st->force("if true: putchar(71); else: putchar(72)\n");
-//	st->force("(lambda int a, int b, int c: if a<=b & a<=c: a; elif b<=a & b<=c: b; else: c)(1,2,3)\n");
-//	st->force("(lambda int a, int b, int c: if a<=b & a<=c putchar(a) elif b<=a & b<=c putchar(b) else putchar(c))(1,2,3)\n");
-//	st->force("if(true){ putchar(71); putchar(72); }\n");
-//	st->force("true?1:0\n");
+
+		/*
+		st->force("extern double cos(double a); cos(3.14159)\n");
+		st->force("lambda int a,int b: a+b\n");
+		st->force("(lambda int a,int b: a+b)(4,5)\n");
+		st->force("(lambda double a: (lambda double sq: sq*sq)(sin(a))+(lambda double sq: sq*sq)(cos(a)))(.9)\n");
+		st->force("2+3.1\n");
+		st->force("if true: putchar(71); else: putchar(72)\n");
+		st->force("(lambda int a, int b, int c: if a<=b & a<=c: a; elif b<=a & b<=c: b; else: c)(1,2,3)\n");
+		st->force("(lambda int a, int b, int c: if a<=b & a<=c putchar(a) elif b<=a & b<=c putchar(b) else putchar(c))(1,2,3)\n");
+		st->force("if(true){ putchar(71); putchar(72); }\n");
+		st->force("true?1:0\n");
 		st->force("if(true){ int i = 74; putchar(i); i = 75; putchar(i); }\n");
-	while(true){
-		st->trim(EOF);
-		n = lexer.getNextStatement();
-		bool first = true;
-		while(n->getToken()!=T_VOID){
-			first = false;
-			execF(lexer.rdata,n,interactive);
+		st->force("def int printr(int i){ int j = i+48; putchar(j); return i;}\n");
+		st->force("def int printr(int i){ int j = i+48; putchar(j); return i;}; printr(9);\n");
+		st->force("def int p2(int i){ if(i>0) p2(i-1); return putchar(i+48); }; printr(9);\n");
+		st->force("def void hi(){ putchar(50); return; }");
+		//*/
+//		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
+		while(true){
+			st->trim(EOF);
+			n = lexer.getNextStatement();
+			bool first = true;
+			while(n->getToken()!=T_VOID){
+				first = false;
+				execF(lexer.rdata,n,interactive);
+				st->done = false;
+				if(st->last()==EOF) break;
+				while(st->peek()==';') st->read();
+				st->done = false;
+				n = lexer.getNextStatement();
+			}
 			st->done = false;
 			if(st->last()==EOF) break;
-			while(st->peek()==';') st->read();
+			while(st->peek()=='\n' || st->peek()==';') st->read();
 			st->done = false;
-			n = lexer.getNextStatement();
-		}
-		st->done = false;
-		if(st->last()==EOF) break;
-		while(st->peek()=='\n' || st->peek()==';') st->read();
-		st->done = false;
 			cout << "ready> " << flush;
 
-		st->done = false;
-		if(first) break;
-	}
+			st->done = false;
+			if(first) break;
+		}
 	}
 	return 0;
 }

@@ -106,7 +106,6 @@ class E_ARR : public Statement{
 				a->registerClasses(r);
 			}
 		}
-		AllocaInst* getAlloc() override final{ return NULL; };
 		void registerFunctionArgs(RData& r) override final{
 			for(auto& a:values){
 				a->registerFunctionArgs(r);
@@ -130,6 +129,14 @@ class E_ARR : public Statement{
 			return arrayClass;
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 #endif /* OARRAY_HPP_ */

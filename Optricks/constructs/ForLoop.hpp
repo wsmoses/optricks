@@ -16,7 +16,6 @@ class ForLoop : public Statement{
 		Statement* increment;
 		Statement* toLoop;
 		String name;
-		FunctionProto* getFunctionProto() override final{ return NULL; }
 		ForLoop(PositionID a, Statement* init, Statement* cond, Statement* inc,Statement* tL, String n="") :
 			Statement(a, voidClass), initialize(init),condition(cond),increment(inc),toLoop(tL){
 			/*if(condition->returnType!=boolClass){
@@ -36,7 +35,6 @@ class ForLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOR;
 		}
-		AllocaInst* getAlloc() override final{ return NULL; };
 		Value* evaluate(RData& r) override{
 			/*
 			Value *StartVal = initialize->evaluate(r);
@@ -117,6 +115,15 @@ class ForLoop : public Statement{
 			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
 			//TODO [loop unrolloing]
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

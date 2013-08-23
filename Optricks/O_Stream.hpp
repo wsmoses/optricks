@@ -70,6 +70,7 @@ public:
 			cache.push_back(c[i]);
 			if(i==0) break;
 		}
+		cout << c << flush;
 	}
 	void write(char c){
 			done = false;

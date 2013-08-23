@@ -19,7 +19,6 @@ class E_SET: public Statement{
 			variable = loc;
 			value = e;
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
 		const Token getToken() const final override{
 			return T_SET;
 		}
@@ -47,7 +46,6 @@ class E_SET: public Statement{
 			variable->resolvePointers();
 			if(value!=NULL) value->resolvePointers();
 		};
-		AllocaInst* getAlloc() override final{ return NULL; };
 		Value* evaluate(RData& r) final override{
 			Value* nex = value->evaluate(r);
 			AllocaInst* aloc = variable->getAlloc();
@@ -67,6 +65,16 @@ class E_SET: public Statement{
 			}
 			f << ")";
 		}
+
+		FunctionProto* getFunctionProto() override final{ return value->getFunctionProto(); }
+		void setFunctionProto(FunctionProto* f) override final { value->setFunctionProto(f); }
+		ClassProto* getClassProto() override final{ return value->getClassProto(); }
+		void setClassProto(ClassProto* f) override final { value->setClassProto(f); }
+		AllocaInst* getAlloc() override final{ return value->getAlloc(); };
+		void setAlloc(AllocaInst* f) override final { value->setAlloc(f); }
+		String getObjName() override final { return value->getObjName(); }
+		void setResolve(Value* v) override final { value->setResolve(v); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 #endif /* E_SET_HPP_ */

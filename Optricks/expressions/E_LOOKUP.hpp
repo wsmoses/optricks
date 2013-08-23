@@ -19,7 +19,6 @@ class E_LOOKUP : public Statement{
 		E_LOOKUP(PositionID id, String o, Statement* a, String b): Statement(id),
 				left(a), right(b), operation(o){};//TODO allow more detail
 
-		AllocaInst* getAlloc() override final{ error("Need to implement getAlloc() for E_LOOKUP"); };
 		void write(ostream& f,String a="") const override{
 			f << left;
 			f << operation;
@@ -49,10 +48,16 @@ class E_LOOKUP : public Statement{
 			//TODO lookup variables
 			return this;
 		}
-		FunctionProto* getFunctionProto() override final{
-			error("E_LOOKUP getFunctionProto() not implemented");
-			return NULL;
-		}
+
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

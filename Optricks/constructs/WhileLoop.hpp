@@ -20,8 +20,6 @@ class WhileLoop : public Statement{
 			condition(cond), statement(stat){
 			name = n;
 		}
-		AllocaInst* getAlloc() override final{ return NULL; };
-		FunctionProto* getFunctionProto() override final{ return NULL; }
 		ClassProto* checkTypes() override final{
 			condition->checkTypes();
 			if(condition->returnType!=boolClass) error("Cannot make non-bool type condition for while loop");
@@ -76,6 +74,15 @@ class WhileLoop : public Statement{
 		WhileLoop* simplify() override final{
 			return new WhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

@@ -20,8 +20,6 @@ class IfStatement : public Statement{
 		IfStatement(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			Statement(a, voidClass), condition(cond), then(th), finalElse(stat){
 		}
-		AllocaInst* getAlloc() override final{ return NULL; };
-		FunctionProto* getFunctionProto() override final{ return NULL; }
 		const Token getToken() const override {
 			return T_IF;
 		}
@@ -100,6 +98,15 @@ class IfStatement : public Statement{
 				a << ";" << endl;
 			}
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

@@ -13,8 +13,6 @@ class E_FUNC_CALL : public Statement{
 		const Token getToken() const override{
 			return T_FUNC_CALL;
 		};
-
-		AllocaInst* getAlloc() override final{ return NULL; };
 		void write(ostream& f,String t="") const override{
 			f<<"call(";
 			toCall->write(f);
@@ -26,10 +24,6 @@ class E_FUNC_CALL : public Statement{
 				a->write(f);
 			}
 			f<<"])";
-		}
-		FunctionProto* getFunctionProto() override final{
-			error("E_FUNC_CALL getFunctionProto() not implemented");
-			return NULL;
 		}
 		void registerClasses(RData& r) override final{
 			toCall->registerClasses(r);
@@ -50,14 +44,14 @@ class E_FUNC_CALL : public Statement{
 		ClassProto* checkTypes() override{
 			toCall->checkTypes();
 			FunctionProto* proto = toCall->getFunctionProto();
-			if(proto==NULL) error("Non-existant function prototype");
+			if(proto==NULL) error("Non-existent function prototype");
 			if(proto->declarations.size() < vals.size()) error("Function "+proto->name+" called with too many arguments");
 			for(unsigned int i = 0; i<vals.size(); i++){
 				vals[i]->checkTypes();
-				if(proto->declarations[i]->classV->pointer->resolveReturnClass()!=classClass){
-					error("Argument " + proto->declarations[i]->classV->pointer->name + "is not a class");
+				if(proto->declarations[i]->classV->getClassProto()==NULL){
+					error("Argument " + proto->declarations[i]->classV->getObjName() + " is not a class FC");
 				}
-				ClassProto* t = proto->declarations[i]->classV->pointer->resolveSelfClass();
+				ClassProto* t = proto->declarations[i]->classV->getClassProto();
 				if(t==NULL || vals[i]->returnType!=t)
 					error("Called function with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
 							" got "+ vals[i]->returnType->name);
@@ -73,7 +67,6 @@ class E_FUNC_CALL : public Statement{
 		Value* evaluate(RData& a) override{
 			Value* callee = toCall->evaluate(a);
 			FunctionProto* proto = toCall->getFunctionProto();
-			//TODO check that function is created in cases like [ (lambda int int x: x+2)(2) ]
 			std::vector<Value*> Args;
 			for(auto& d: vals){
 				Args.push_back(d->evaluate(a));
@@ -85,6 +78,15 @@ class E_FUNC_CALL : public Statement{
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
 			else return a.builder.CreateCall(callee, Args, "calltmp");
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

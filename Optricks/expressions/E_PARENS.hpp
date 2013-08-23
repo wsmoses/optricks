@@ -10,8 +10,15 @@ public:
 		return T_PARENS;
 	};
 
-	AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
 	FunctionProto* getFunctionProto() override final{ return inner->getFunctionProto(); }
+	void setFunctionProto(FunctionProto* f) override final { inner->setFunctionProto(f); }
+	ClassProto* getClassProto() override final{ return inner->getClassProto(); }
+	void setClassProto(ClassProto* f) override final { inner->setClassProto(f); }
+	AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
+	void setAlloc(AllocaInst* f) override final { inner->setAlloc(f); }
+	String getObjName() override final { return inner->getObjName(); }
+	void setResolve(Value* v) override final { inner->setResolve(v); }
+	Value* getResolve() override final { return inner->getResolve(); }
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}

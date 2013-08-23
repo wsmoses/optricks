@@ -17,6 +17,7 @@
 #include "constructs/ForEachLoop.hpp"
 #include "constructs/IfStatement.hpp"
 #include "constructs/Block.hpp"
+#include "expressions/E_RETURN.hpp"
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_UOP.hpp"
 #include "expressions/E_VAR.hpp"
@@ -50,10 +51,10 @@ class Lexer{
 				if(s==NULL || s->getToken()==T_VOID) break;
 				stats.push_back(s->simplify());
 			}
+			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->registerClasses(rdata);
 			for(auto& n: stats) n->registerFunctionArgs(rdata);
 			for(auto& n: stats) n->registerFunctionDefaultArgs();
-			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->checkTypes();
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, "", rdata.lmod);//todo check this
@@ -186,6 +187,7 @@ class Lexer{
 							std::pair<Statement*,Statement* >(c,s));
 					f->trim(endWith);
 					while(!f->done && f->peek()==';') f->read();
+					auto marker = f->getMarker();
 					String test = f->getNextName(endWith);
 					Statement* finalElse = VOID;
 					while(!f->done && (test=="else" || test=="elif")){
@@ -214,9 +216,10 @@ class Lexer{
 							f->trim(endWith);
 							while(!f->done && f->peek()==';') f->read();
 						}
+						marker = f->getMarker();
 						test = f->getNextName(endWith);
 					}
-					f->write(test);
+					f->undoMarker(marker);
 					Statement* building = finalElse;
 					for(unsigned int i = statements.size()-1; ; i--){
 						building = new IfStatement(pos(), statements[i].first, statements[i].second, building);
@@ -316,7 +319,7 @@ class Lexer{
 				}
 				else if (temp == "def" || temp=="lambda" || temp=="function" || temp=="method" ){
 					if(f->trim(endWith)) f->error("Uncompleted function");
-					String returnName = f->getNextName(endWith);
+					Statement* returnName = getNextStatement(mod, true, false);
 					OModule* module = new OModule(mod);
 					f->trim(endWith);
 					unsigned int m = f->getMarker();
@@ -342,33 +345,20 @@ class Lexer{
 					}
 					bool paren;
 					Statement* methodBody = getNextBlock(module, &paren);
-					if(paren){
-						//TODO regular function
-						cout << "FUNC(" << methodName << "," << arguments << ", " << methodBody << endl << flush;
-						f->error("Function not implemented",true);//TODO re-implement
+					E_VAR* funcName = new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL));
+					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody);
 						f->trim(endWith);
 						semi  = false;
 						if(!f->done && f->peek()==';'){ semi = true; }
 						f->trim(endWith);
-						//if(opCheck && !semi)
-						//	toReturn = operatorCheck(f, toReturn, endWith);
-						return VOID;//TODO fix this and two lines above when functino is implemented
-					}
-					else{
-						//TODO lambda function
-						cout << "LAMBDA(" << methodName << "," << arguments << ", " << methodBody << ")" << endl << flush;
-						exit(0);
-						//toReturn = new lambdaFunction(methodName, arguments, (*methodBody)[0]);
-						delete methodBody;
-					}
+						if(opCheck && !semi) return operatorCheck(mod, func);
+						return func;
 				}
 				else if (temp == "extern"){
 					if(f->trim(endWith)) f->error("Extern without name");
-					LateResolve* retV =
-							new LateResolve(mod,f->getNextName(endWith),pos())
-					;
+					Statement* retV = getNextStatement(mod, true, false);
 					f->trim(endWith);
-					Resolvable* externName = mod->addPointer(pos(), f->getNextName(endWith),NULL,NULL,NULL,NULL,NULL);
+					E_VAR* externName = new E_VAR(pos(), mod->addPointer(pos(), f->getNextName(endWith),NULL,functionClass,NULL,NULL,NULL));
 					f->trim(endWith);
 					if(f->peek()!='('){
 						f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -387,23 +377,7 @@ class Lexer{
 					}
 					if(f->read()!=')') f->error("Need ending ')' for extern", true);
 					return new externFunction(pos(), externName, retV, dec);
-					/*
-					std::vector<String> vals = f->getCommaSeparated(endWith);
-
-					if(!f->done && f->peek()==';') f->read();
-					if(vals.size()>1){
-						Block* arr = new Block();
-						for (auto &a: vals){
-							arr->values.push_back(new E_EXT(a));
-						}
-						return arr;
-					}
-					else if (vals.size()>0){
-						return new E_EXT(vals[0]);
-					}*/
-					//toReturn->write(cout) << endl;
-					//if(opCheck)
-					//toReturn = operatorCheck(f, toReturn,endWith);
+					//TODO allow multiple externs
 				}
 				else if (temp=="true" || temp=="false"){
 					Statement* te = new obool(pos(), temp=="true");
@@ -414,6 +388,10 @@ class Lexer{
 					if(opCheck && !semi)
 						return operatorCheck(mod, te);
 					else return te;
+				}
+				else if(temp=="return"){
+					f->trim(endWith);
+					return new E_RETURN(pos(), getNextStatement(mod, true, false));
 				}
 				else{
 					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp,pos()));

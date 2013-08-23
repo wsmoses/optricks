@@ -40,7 +40,8 @@ enum Token {
 	T_BLOCK = 33,
 	T_DECLARATION = 34,
 	T_TERNARY = 35,
-	T_SET
+	T_SET = 36,
+	T_RETURN = 37
 };
 
 #endif /* O_TOKEN_HPP_ */

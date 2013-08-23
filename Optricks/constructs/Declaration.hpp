@@ -14,24 +14,32 @@
 #define DECLR_P_
 class Declaration: public Statement{
 	public:
-		E_VAR* classV;
+		Statement* classV;
 		E_VAR* variable;
 		Statement* value;
 		AllocaInst* Alloca;
-		Declaration(PositionID id, E_VAR* v, E_VAR* loc, Statement* e=NULL) : Statement(id, voidClass){
+		Declaration(PositionID id, Statement* v, E_VAR* loc, Statement* e=NULL) : Statement(id, voidClass){
 			classV = v;
 			variable = loc;
 			value = e;
 			Alloca = NULL;
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
 		const Token getToken() const final override{
 			return T_DECLARATION;
 		}
 		ClassProto* checkTypes() final override{
 			if(value!=NULL){
 				value->checkTypes();
-				if(value->returnType != classV->pointer->resolveSelfClass() )
+				if(value->returnType != classV->getClassProto() || value->returnType==NULL )
 					error("Declaration of inconsistent types");
 			}
 			return returnType;
@@ -46,14 +54,9 @@ class Declaration: public Statement{
 			classV->registerFunctionArgs(r);
 			variable->registerFunctionArgs(r);
 			if(value!=NULL) value->registerFunctionArgs(r);
-
 			classV->checkTypes();
-			if(classV->returnType!=classClass) error("Argument " + classV->pointer->name + "is not a class");
-			ClassProto*& meta = variable->pointer->resolveReturnClass();
-			if(meta==NULL) meta = classV->pointer->resolveSelfClass();
-			else{
-				cout << "Why is meta of declaration non-null? " << meta << endl << flush ;
-			}
+			if(classV->getClassProto()==NULL) error("Argument " + classV->getObjName() + "is not a class DC");
+			variable->pointer->resolveReturnClass() = variable->returnType = classV->getClassProto();
 			variable->checkTypes();
 			//TODO add name in table of args?
 		};
@@ -71,7 +74,7 @@ class Declaration: public Statement{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
-			Alloca = TmpB.CreateAlloca(classV->pointer->resolveSelfClass()->type, 0,variable->pointer->name);
+			Alloca = TmpB.CreateAlloca(classV->getClassProto()->type, 0,variable->pointer->name);
 			if(value!=NULL && value->getToken()!=T_VOID){
 				r.builder.CreateStore(value->evaluate(r), Alloca);
 			}
@@ -80,7 +83,6 @@ class Declaration: public Statement{
 			//variable->pointer->resolve() = r.builder.CreateLoad(Alloca);
 //			error("Todo: allow declaration evaluation");
 		}
-		AllocaInst* getAlloc() override final{ return NULL; }; // todo check
 		Declaration* simplify() final override{
 			return new Declaration(filePos, classV, variable, (value==NULL)?NULL:(value->simplify()) );
 		}

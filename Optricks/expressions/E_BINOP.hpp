@@ -80,7 +80,6 @@ class E_BINOP : public Statement{
 		const Token getToken() const override{
 			return T_BINOP;
 		}
-		AllocaInst* getAlloc() override final{ return NULL; };
 		Value* evaluate(RData& a) override final{
 			//TODO allow short-circuit lookup of E_VAR
 			return left->returnType->binops[operation][right->returnType]->apply(
@@ -122,7 +121,6 @@ class E_BINOP : public Statement{
 			left->resolvePointers();
 			right->resolvePointers();
 		};
-		FunctionProto* getFunctionProto() override final{ return NULL; }
 		void write(ostream& f,String s="") const override{
 			left->write(f,s);
 			if(operation=="[]"){
@@ -166,6 +164,15 @@ class E_BINOP : public Statement{
 			}
 			return self;
 		}
+		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
+		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 };
 
 

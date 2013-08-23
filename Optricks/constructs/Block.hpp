@@ -14,7 +14,14 @@ class Block : public Statement{
 	public:
 		std::vector<Statement*> values;
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
+		ClassProto* getClassProto() override final{ return NULL; }
+		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
 		AllocaInst* getAlloc() override final{ return NULL; };
+		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
+		String getObjName() override final { error("Cannot get name"); return ""; }
+		void setResolve(Value* v) override final { error("Cannot set resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); }
 		void registerClasses(RData& r) override final{
 			for(auto& a: values) a->registerClasses(r);
 		}
@@ -32,6 +39,7 @@ class Block : public Statement{
 		}
 		Value* evaluate(RData& r) override{
 			for(auto& a:values) a->evaluate(r);
+			return NULL;
 				//TODO check;
 //			error("Block eval not implemented");
 			/*
