@@ -137,6 +137,8 @@ int main(int argc, char** argv){
 		st->force("def void hi(){ putchar(50); return; }");
 		//*/
 //		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
+		//st->force("for(int i = 0; i<10; i= i+1) putchar(i+48)\n");
+		//st->force("if(true){ for(int i = 0; i<10; i= i+1) putchar(i+48)} \n");
 		while(true){
 			st->trim(EOF);
 			n = lexer.getNextStatement();

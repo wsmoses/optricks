@@ -287,9 +287,9 @@ class Lexer{
 					if(paren) f->read();
 					Statement* cond = getNextStatement(mod, true,false);
 					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of while",true);
-					if(f->trim(endWith)) f->error("Uncompleted do-while",true);
+					if(f->trim(endWith)) f->error("Uncompleted while",true);
 					if(f->peek()==':') f->read();
-					return new WhileLoop(pos(), cond,getNextBlock(mod));
+					return new IfStatement(pos(), cond, new DoWhileLoop(pos(), cond,getNextBlock(mod)),VOID);
 					//TODO implement while loop naming
 				}
 				else if(temp=="do"){
@@ -303,9 +303,7 @@ class Lexer{
 					if(paren) f->read();
 					Statement* cond = getNextStatement(mod, true,false);
 					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of do-while",true);
-					cout << "Do-While("<<cond<<", "<< blocks << endl << flush;
-					f->error("do-while is not fully implemented yet",true);
-					//TODO implement do loop naming
+					return new DoWhileLoop(pos(), cond, blocks);
 				}
 				else if(temp=="lambda"){
 					if(f->trim(endWith)) f->error("Uncompleted lambda function");

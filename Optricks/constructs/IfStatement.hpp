@@ -17,7 +17,7 @@ class IfStatement : public Statement{
 		Statement* condition;
 		Statement* then;
 		Statement* const finalElse;
-		IfStatement(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
+		IfStatement(PositionID a, Statement* cond, Statement* th, Statement* stat=VOID) :
 			Statement(a, voidClass), condition(cond), then(th), finalElse(stat){
 		}
 		const Token getToken() const override {

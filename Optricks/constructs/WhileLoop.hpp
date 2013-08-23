@@ -10,12 +10,12 @@
 
 #include "./Statement.hpp"
 
-class WhileLoop : public Statement{
+class DoWhileLoop : public Statement{
 	public:
 		Statement* const condition;
 		Statement* const statement;
 		String name;
-		WhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
+		DoWhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
 			Statement(a, voidClass),
 			condition(cond), statement(stat){
 			name = n;
@@ -30,25 +30,29 @@ class WhileLoop : public Statement{
 			return T_WHILE;
 		}
 		Value* evaluate(RData& r) override{
-			error("While loop eval not implemented");
-			/*
-			while((bool)condition->evaluate()){
-				statement->evaluate(jump);
-				switch(jump.type){
-					case NJUMP:
-						break;
-					case CONTINUE:
-						if(name==jump.label || jump.label=="") jump = NOJUMP;
-						break;
-					case BREAK:
-						if(name==jump.label || jump.label=="") jump = NOJUMP;
-						return VOID;
-					case RETURN:
-						return VOID;
-				}
-			}
-			return VOID;
-			*/
+			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock *PreheaderBB = r.builder.GetInsertBlock();
+
+			BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+
+			  // Insert an explicit fall through from the current block to the LoopBB.
+			r.builder.CreateBr(LoopBB);
+
+			  // Start insertion in LoopBB.
+			r.builder.SetInsertPoint(LoopBB);
+			statement->evaluate(r);
+			Value* step = condition->evaluate(r);
+			Value *EndCond = condition->evaluate(r);
+
+			BasicBlock *LoopEndBB = r.builder.GetInsertBlock();
+			  BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
+
+			  // Insert the conditional branch into the end of LoopEndBB.
+			  r.builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+
+			  // Any new code will be inserted in AfterBB.
+			  r.builder.SetInsertPoint(AfterBB);
+			  return AfterBB;
 		}
 
 		void registerClasses(RData& r) override final{
@@ -71,8 +75,8 @@ class WhileLoop : public Statement{
 			a << "while(" << condition << ")";
 			statement->write(a,b);
 		}
-		WhileLoop* simplify() override final{
-			return new WhileLoop(filePos, condition->simplify(), statement->simplify(), name);
+		DoWhileLoop* simplify() override final{
+			return new DoWhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }

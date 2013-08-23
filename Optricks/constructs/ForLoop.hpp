@@ -36,51 +36,30 @@ class ForLoop : public Statement{
 			return T_FOR;
 		}
 		Value* evaluate(RData& r) override{
-			/*
-			Value *StartVal = initialize->evaluate(r);
-			// block.
-			Function *TheFunction = Builder.GetInsertBlock()->getParent();
-			BasicBlock *PreheaderBB = Builder.GetInsertBlock();
+			initialize->evaluate(r);
+			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock *PreheaderBB = r.builder.GetInsertBlock();
+
 			BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
 
-			// Insert an explicit fall through from the current block to the LoopBB.
-			Builder.CreateBr(LoopBB);
-			// Start insertion in LoopBB.
-			Builder.SetInsertPoint(LoopBB);
+			  // Insert an explicit fall through from the current block to the LoopBB.
+			r.builder.CreateBr(LoopBB);
 
-			// Start the PHI node with an entry for Start.
-			PHINode *Variable = Builder.CreatePHI(Type::getDoubleTy(getGlobalContext()), 2, VarName.c_str());
-			Variable->addIncoming(StartVal, PreheaderBB);
-			*/
-			error("For loop eval not implemented");
-			/*
-			initialize->evaluate(jump);
-			if(jump.type!=NJUMP){
-				cerr << "Cannot jump on initialize statement in for loop" << endl;
-				exit(0);
-			}
-			while((bool)condition->evaluate()){
-				toLoop->evaluate(jump);
-				switch(jump.type){
-					case NJUMP:
-						break;
-					case CONTINUE:
-						if(name==jump.label || jump.label=="") jump = NOJUMP;
-						break;
-					case BREAK:
-						if(name==jump.label || jump.label=="") jump = NOJUMP;
-						return VOID;
-					case RETURN:
-						return VOID;
-				}
-				jump = NJUMP;
-				increment->evaluate(jump);
-				if(jump.type!=NJUMP){
-					cerr << "Cannot jump on increment statement in for loop" << endl;
-					exit(0);
-				}
-			}
-			return VOID;*/
+			  // Start insertion in LoopBB.
+			r.builder.SetInsertPoint(LoopBB);
+			toLoop->evaluate(r);
+			Value* step = increment->evaluate(r);
+			Value *EndCond = condition->evaluate(r);
+
+			BasicBlock *LoopEndBB = r.builder.GetInsertBlock();
+			  BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
+
+			  // Insert the conditional branch into the end of LoopEndBB.
+			  r.builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+
+			  // Any new code will be inserted in AfterBB.
+			  r.builder.SetInsertPoint(AfterBB);
+			  return AfterBB;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
