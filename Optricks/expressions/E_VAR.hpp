@@ -24,9 +24,10 @@ public:
 	Statement* simplify() override final{
 		return this;
 	}
-	Value* evaluate(RData& a) override final{
+	Value* evaluate(RData& r) override final{
 		//TODO variables not implemented
 		Value* ans = pointer->resolve();
+		if(pointer->resolveAlloc()!=NULL) return r.builder.CreateLoad(pointer->resolveAlloc());
 		if(ans==NULL){
 			error("Could not resolve pointer "+pointer->name);
 		}
@@ -58,5 +59,6 @@ public:
 		if(pointer == NULL) error("What?? Pointer is null? for " + pointer->name);
 	}
 	FunctionProto* getFunctionProto() override final{ return pointer->resolveFunction(); }
+	AllocaInst* getAlloc() override final{ return pointer->resolveAlloc(); };
 };
 #endif /* E_VAR_HPP_ */

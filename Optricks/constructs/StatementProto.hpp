@@ -38,6 +38,7 @@ class Statement : public Stackable{
 		virtual void resolvePointers() = 0;
 		virtual ClassProto* checkTypes() = 0;
 		virtual FunctionProto* getFunctionProto() = 0;
+		virtual AllocaInst* getAlloc() = 0;
 };
 
 
@@ -65,6 +66,7 @@ class VoidStatement : public Statement{
 		void registerFunctionDefaultArgs() override final{};
 		void resolvePointers() override final{};
 		FunctionProto* getFunctionProto() override final{ return NULL; };
+		AllocaInst* getAlloc() override final{ return NULL; };
 		ClassProto* checkTypes() override final;
 };
 

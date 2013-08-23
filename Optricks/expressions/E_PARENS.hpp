@@ -10,6 +10,7 @@ public:
 		return T_PARENS;
 	};
 
+	AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
 	FunctionProto* getFunctionProto() override final{ return inner->getFunctionProto(); }
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);

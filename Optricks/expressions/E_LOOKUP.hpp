@@ -19,6 +19,7 @@ class E_LOOKUP : public Statement{
 		E_LOOKUP(PositionID id, String o, Statement* a, String b): Statement(id),
 				left(a), right(b), operation(o){};//TODO allow more detail
 
+		AllocaInst* getAlloc() override final{ error("Need to implement getAlloc() for E_LOOKUP"); };
 		void write(ostream& f,String a="") const override{
 			f << left;
 			f << operation;

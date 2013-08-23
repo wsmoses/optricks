@@ -38,7 +38,9 @@ enum Token {
 	T_FOR = 31,
 	T_FOREACH = 32,
 	T_BLOCK = 33,
-	T_DECLARATION = 34
+	T_DECLARATION = 34,
+	T_TERNARY = 35,
+	T_SET
 };
 
 #endif /* O_TOKEN_HPP_ */

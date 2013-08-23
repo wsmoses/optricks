@@ -21,6 +21,7 @@ class oobject: public Statement{
 	public:
 		oobject(PositionID a, ClassProto* cl):Statement(a, cl){}
 		FunctionProto* getFunctionProto() override{ return NULL; }
+		AllocaInst* getAlloc() override final{ return NULL; };
 		virtual operator String () const = 0;
 
 		//TODO

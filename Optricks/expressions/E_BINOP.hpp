@@ -80,6 +80,7 @@ class E_BINOP : public Statement{
 		const Token getToken() const override{
 			return T_BINOP;
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		Value* evaluate(RData& a) override final{
 			//TODO allow short-circuit lookup of E_VAR
 			return left->returnType->binops[operation][right->returnType]->apply(

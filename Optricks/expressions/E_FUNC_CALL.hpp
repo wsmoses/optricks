@@ -14,6 +14,7 @@ class E_FUNC_CALL : public Statement{
 			return T_FUNC_CALL;
 		};
 
+		AllocaInst* getAlloc() override final{ return NULL; };
 		void write(ostream& f,String t="") const override{
 			f<<"call(";
 			toCall->write(f);
@@ -81,7 +82,8 @@ class E_FUNC_CALL : public Statement{
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
 				Args.push_back(proto->declarations[i]->value->evaluate(a));
 			}
-			return a.builder.CreateCall(callee, Args, "calltmp");
+			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
+			else return a.builder.CreateCall(callee, Args, "calltmp");
 		}
 };
 

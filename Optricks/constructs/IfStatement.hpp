@@ -14,94 +14,90 @@
 
 class IfStatement : public Statement{
 	public:
-		std::vector<std::pair<Statement*,Statement*>> condition;
+		Statement* condition;
+		Statement* then;
 		Statement* const finalElse;
-		IfStatement(PositionID a, std::vector<std::pair<Statement*,Statement*>> & cond, Statement* const stat) :
-			Statement(a, voidClass), condition(cond), finalElse(stat){
-			if(condition.size()<1){
-				cerr << "Cannot make if statement with no conditions";
-				exit(0);
-			}
+		IfStatement(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
+			Statement(a, voidClass), condition(cond), then(th), finalElse(stat){
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		const Token getToken() const override {
 			return T_IF;
 		}
 
 		void registerClasses(RData& r) override final{
-			for(auto& a: condition){
-				a.first->registerClasses(r);
-				a.second->registerClasses(r);
-			}
+			condition->registerClasses(r);
+			then->registerClasses(r);
 			finalElse->registerClasses(r);
 		}
 		void registerFunctionArgs(RData& r) override final{
-			for(auto& a: condition){
-				a.first->registerFunctionArgs(r);
-				a.second->registerFunctionArgs(r);
-			}
+			condition->registerFunctionArgs(r);
+			then->registerFunctionArgs(r);
 			finalElse->registerFunctionArgs(r);
 		}
 		void registerFunctionDefaultArgs() override final{
-			for(auto& a: condition){
-				a.first->registerFunctionDefaultArgs();
-				a.second->registerFunctionDefaultArgs();
-			}
+			condition->registerFunctionDefaultArgs();
+			then->registerFunctionDefaultArgs();
 			finalElse->registerFunctionDefaultArgs();
 		}
 		void resolvePointers() override final{
-			for(auto& a: condition){
-				a.first->resolvePointers();
-				a.second->resolvePointers();
-			}
+			condition->resolvePointers();
+			then->resolvePointers();
 			finalElse->resolvePointers();
 		}
 		ClassProto* checkTypes() override{
-			for(auto& a:condition){
-				if(a.first->checkTypes()!=boolClass) error("Cannot have non-bool as condition for if "+a.first->returnType->name);
-				a.second->checkTypes();
-			}
+			if(condition->checkTypes()!=boolClass) error("Cannot have non-bool as condition for if "+condition->returnType->name);
+			then->checkTypes();
 			finalElse->checkTypes();
 			return returnType;
 		}
 		Value* evaluate(RData& r) override{
-			error("If statement eval not implemented");
-			/*
-			for(auto &a: condition){
-				if((bool) (a.first->evaluate())){
-					a.second->evaluate(jump);
-					return VOID;
-				}
-			}
-			finalElse->evaluate(jump);
-			return VOID;
-			*/
+
+		//	  BasicBlock *Parent = r.builder.GetInsertBlock();
+	//		BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then");
+			  Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			  BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
+			  BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
+			  BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
+
+			  r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
+
+			  // Emit then value.
+			  r.builder.SetInsertPoint(ThenBB);
+
+			  then->evaluate(r);
+
+			  r.builder.CreateBr(MergeBB);
+			  // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+			  ThenBB = r.builder.GetInsertBlock();
+
+			  // Emit else block.
+			  TheFunction->getBasicBlockList().push_back(ElseBB);
+			  r.builder.SetInsertPoint(ElseBB);
+
+			  if(finalElse->getToken() != T_VOID) finalElse->evaluate(r);
+
+			  r.builder.CreateBr(MergeBB);
+			  // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+			  ElseBB = r.builder.GetInsertBlock();
+
+			  // Emit merge block.
+			  TheFunction->getBasicBlockList().push_back(MergeBB);
+			  r.builder.SetInsertPoint(MergeBB);
+			  return MergeBB;
 		}
 		Statement* simplify() override{
-			std::vector<std::pair<Statement*,Statement*>> stack;
-			for(auto &a: condition){
-				Statement* sim = a.first->simplify();
-				stack.push_back(std::pair<Statement*,Statement*>(sim,a.second->simplify()));
-			}
-			if(stack.size()==0){
-				return finalElse->simplify();
-			}
-			else{
-				return new IfStatement(filePos, stack,finalElse->simplify());
-			}
+			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}
 		void write(ostream& a,String t) const override{
-			a << "if " << condition[0].first << " ";
-			condition[0].second->write(a,t);
-			a << endl;
-			for(unsigned int i = 1; i<condition.size();++i){
-				a << t << "else if(" << condition[i].first << ")";
-				condition[i].second->write(a,t);
-				if(finalElse->getToken()==T_VOID || i<condition.size()-1)
-				a << endl;
-			}
+			a << "if " << condition << " ";
+			then->write(a,t);
+			a << ";" << endl;
 			if(finalElse->getToken()!=T_VOID){
-				a << t << "else " << finalElse;
+				a << t << "else ";
+				finalElse->write(a, t);
+				a << ";" << endl;
 			}
 		}
 };

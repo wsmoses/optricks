@@ -77,9 +77,9 @@ struct ClassProto{
 
 struct FunctionProto{
 	public:
+		String name;
 		std::vector<Declaration*> declarations;
 		ClassProto* returnType;
-		String name;
 		FunctionProto(String n, std::vector<Declaration*>& a, ClassProto* r):name(n),declarations(a), returnType(r){}
 		FunctionProto(String n, ClassProto* r=NULL):name(n),declarations(), returnType(r){}
 };
@@ -182,6 +182,17 @@ ClassProto* voidClass = new ClassProto("void", VOIDTYPE);
 
 void initClassesMeta(){
 	///////******************************* Boolean ********************************////////
+	/* //TODO short-circuit
+	boolClass->binops["&&"][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateAnd(a,b,"andtmp");
+	},boolClass);
+
+	boolClass->binops["||"][boolClass] = new obinopNative(
+			[](Value* a, Value* b, RData& m) -> Value*{
+				return m.builder.CreateOr(a,b,"ortmp");
+	},boolClass);
+	*/
 	boolClass->binops["&"][boolClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{
 				return m.builder.CreateAnd(a,b,"andtmp");

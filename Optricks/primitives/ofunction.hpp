@@ -23,7 +23,7 @@ class ofunction:public oobject{
 			prototype = new FunctionProto((self==NULL)?"unknown":(self->name), dec, NULL);
 		}
 
-		void registerFunctionArgs(RData& r) override final{
+		void registerFunctionArgs(RData& r) override{
 			if(self!=NULL){
 				if(prototype==NULL) error("Function prototype should not be null");
 				self->resolveFunction() = prototype;
@@ -68,7 +68,8 @@ class externFunction : public ofunction{
 		externFunction(PositionID id, Resolvable* s, Resolvable* r, std::vector<Declaration*> dec):
 			ofunction(id, s,r,dec){
 		}
-		Value* evaluate(RData& a) override{
+		void registerFunctionArgs(RData& a){
+			ofunction::registerFunctionArgs(a);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
 				Type* cl = b->classV->pointer->resolveSelfClass()->type;
@@ -80,7 +81,9 @@ class externFunction : public ofunction{
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, self->name, a.lmod);//todo check this
 			self->resolve() = F;
-			return F;
+		}
+		Value* evaluate(RData& a) override{
+			return self->resolve();
 		}
 };
 class nativeFunction : public ofunction{

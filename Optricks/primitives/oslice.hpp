@@ -62,6 +62,7 @@ public:
 		}
 		return new oslice(a,b,c);*/
 	}
+	AllocaInst* getAlloc() override final { return NULL; }
 	Statement* simplify() override{
 
 		Statement *aa = start->simplify(),

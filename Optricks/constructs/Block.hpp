@@ -14,6 +14,7 @@ class Block : public Statement{
 	public:
 		std::vector<Statement*> values;
 		FunctionProto* getFunctionProto() override final{ return NULL; }
+		AllocaInst* getAlloc() override final{ return NULL; };
 		void registerClasses(RData& r) override final{
 			for(auto& a: values) a->registerClasses(r);
 		}
@@ -29,11 +30,10 @@ class Block : public Statement{
 		Block(PositionID a) : Statement(a,voidClass),values(){
 
 		}
-		void push_back(Statement* s){
-			return values.push_back(s);
-		}
 		Value* evaluate(RData& r) override{
-			error("Block eval not implemented");
+			for(auto& a:values) a->evaluate(r);
+				//TODO check;
+//			error("Block eval not implemented");
 			/*
 			for(auto& a:values){
 				a->evaluate(jump);

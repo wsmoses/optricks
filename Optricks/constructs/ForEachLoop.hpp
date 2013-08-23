@@ -56,6 +56,7 @@ class ForEachLoop : public Statement{
 			a << "for " << localVariable << " in "<< iterable << ":";
 			toLoop->write(a,b+"  ");
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		Statement* simplify() override{
 			Statement* in = toLoop->simplify();
 			//if(jump.type==BREAK && (jump.label=="" || jump.label==name))

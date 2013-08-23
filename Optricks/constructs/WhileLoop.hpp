@@ -20,6 +20,7 @@ class WhileLoop : public Statement{
 			condition(cond), statement(stat){
 			name = n;
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		ClassProto* checkTypes() override final{
 			condition->checkTypes();

@@ -20,6 +20,8 @@
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_UOP.hpp"
 #include "expressions/E_VAR.hpp"
+#include "expressions/E_SET.hpp"
+#include "expressions/E_TERNARY.hpp"
 #include "primitives/oobject.hpp"
 #include "primitives/obool.hpp"
 
@@ -33,8 +35,8 @@ class Lexer{
 		Lexer(Stream* t, char e):f(t),endWith(e),rdata(){
 			myMod = new OModule(LANG_M);
 		}
-		void execFile(String fileName, bool newModa, bool newModb){
-			FILE* fi = fopen(fileName.c_str(), "r");
+		void execFile(String fileName, bool newModa, bool newModb, FILE* fi=NULL){
+			if(fi==NULL) fi = fopen(fileName.c_str(), "r");
 			char tt = endWith;
 			endWith = EOF;
 			Stream* tmp = f;
@@ -149,7 +151,7 @@ class Lexer{
 				do{
 					f->trim(endWith);
 					Statement* e = getNextStatement(module, true, true);
-					if(e->getToken()!=T_EOF) blocks->values.push_back(e);
+					if(e!=NULL && e->getToken()!=T_VOID && e->getToken()!=T_EOF) blocks->values.push_back(e);
 					f->trim(endWith);
 					while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
 					fpek = f->peek()=='}';
@@ -215,7 +217,12 @@ class Lexer{
 						test = f->getNextName(endWith);
 					}
 					f->write(test);
-					return new IfStatement(pos(), statements,finalElse);
+					Statement* building = finalElse;
+					for(unsigned int i = statements.size()-1; ; i--){
+						building = new IfStatement(pos(), statements[i].first, statements[i].second, building);
+						if(i==0) break;
+					}
+					return building;
 				}
 				else if(temp=="for"){
 					if(f->trim(endWith)) f->error("Uncompleted for",true);
@@ -361,7 +368,7 @@ class Lexer{
 							new LateResolve(mod,f->getNextName(endWith),pos())
 					;
 					f->trim(endWith);
-					Resolvable* externName = mod->addPointer(pos(), f->getNextName(endWith),NULL,NULL,NULL,NULL);
+					Resolvable* externName = mod->addPointer(pos(), f->getNextName(endWith),NULL,NULL,NULL,NULL,NULL);
 					f->trim(endWith);
 					if(f->peek()!='('){
 						f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -412,7 +419,7 @@ class Lexer{
 					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp,pos()));
 					auto start = f->getMarker();
 					f->trim(endWith);
-					if(allowDeclaration && start!=f->getMarker()){
+					if(allowDeclaration && start!=f->getMarker() && isalpha(f->peek()) ){
 						E_VAR* n = dynamic_cast<E_VAR*>(getNextStatement(mod, false, false));
 						if(n!=NULL){
 							f->trim(endWith);
@@ -422,7 +429,7 @@ class Lexer{
 								value = getNextStatement(mod, true,false);
 							}
 							if(!f->done && f->peek()==';'){ semi = true; }
-							n = new E_VAR(pos(), mod->addPointer(pos(), n->pointer->name,NULL,NULL,NULL,NULL)); // TODO look at
+							n = new E_VAR(pos(), mod->addPointer(pos(), n->pointer->name,NULL,NULL,NULL,NULL,NULL)); // TODO look at
 							return new Declaration(pos(), (E_VAR*)te, n, value);
 						}
 						else{
@@ -569,6 +576,7 @@ class Lexer{
 				return exp;
 			}
 			char tchar = f->peek();
+			if(tchar=='{') return exp;
 			if(tchar=='['){
 				f->read();
 				std::vector<Statement*> stack;
@@ -630,6 +638,15 @@ class Lexer{
 				cerr << " '{' operatorCheck not implemented yet" << endl << flush;
 				exit(0);
 			}
+			else if (tchar=='?'){
+				f->read();
+				f->trim(endWith);
+				Statement* op1 = getNextStatement(mod, true, false);
+				f->trim(endWith);
+				if(f->read()!=':') f->error("Ternary operator requires ':'",true);
+				Statement* op2 = getNextStatement(mod, true, false);
+				return new TernaryOperator(pos(), exp, op1, op2);
+			}
 			//TODO implement generics
 			/*
 			else if(tchar=='<'){
@@ -656,8 +673,7 @@ class Lexer{
 			Statement* fixed;
 
 			if(tmp=="!") {
-				//TODO implement factorial
-				f->error("Factorial not implemented yet",true);
+				return new E_POSTOP(pos(), "!", exp);
 			}
 			//TODO implement generics
 			/*
@@ -665,10 +681,6 @@ class Lexer{
 				//equality and check
 			}
 			 */ //TODO implement custom operators (a and b,  r if g else b )
-			else if (tmp == "?"){
-				f->error("Terenary operator not implement",true);
-				//TODO implement terenary
-			}
 			else if (tmp == "." || tmp=="->" || tmp==":" || tmp=="::" || tmp==".*"
 					|| tmp==":*" || tmp=="::*"|| tmp=="->*" || tmp=="=>*"){
 				String name = f->getNextName(endWith);
@@ -678,8 +690,7 @@ class Lexer{
 			}
 			else if(tmp=="="){
 				Statement* post = getNextStatement(mod, true,false);
-				//	if(tmp->getToken()!=T_VAR)
-				fixed = new E_PARENS(pos(), new E_BINOP(pos(), exp, post,tmp));
+				fixed = new E_SET(pos(), exp, post);
 			}
 			else{
 				Statement* post = getNextStatement(mod, true,false);

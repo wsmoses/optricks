@@ -22,6 +22,7 @@ class Resolvable{
 	virtual ClassProto*& resolveReturnClass() const = 0;
 	virtual FunctionProto*& resolveFunction() const = 0;
 	virtual ClassProto*& resolveSelfClass() const = 0;
+	virtual AllocaInst*& resolveAlloc() const = 0;
 };
 
 class opointer: public Resolvable{
@@ -39,18 +40,20 @@ class opointer: public Resolvable{
 		ClassProto*& resolveReturnClass() const final override;
 		ClassProto*& resolveSelfClass() const final override;
 		FunctionProto*& resolveFunction() const final override;
+		AllocaInst*& resolveAlloc() const final override;
 };
 
 class OModule : public Stackable{
 	public:
 		OModule* super;
 		std::map<String, opointer*> mapping;
+		std::vector<AllocaInst*> allocs;
 		std::vector<ClassProto*> returnClasses;
 		std::vector<ClassProto*> selfClasses;
 		std::vector<FunctionProto*> functions;
 		std::vector<dataType> data;
 		OModule(const OModule& c) = delete;
-		OModule(OModule* before): mapping(),returnClasses(),selfClasses(),data(){
+		OModule(OModule* before): mapping(),returnClasses(),allocs(), selfClasses(),data(){
 			super = before;
 		}
 		const Token getToken() const override{
@@ -70,14 +73,15 @@ class OModule : public Stackable{
 			}
 			return -1;
 		}
-		void setPointer(PositionID a, String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl){
+		void setPointer(PositionID a, String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
 			auto p = findPointer(a, index);
 			p->resolve() = value;
 			p->resolveReturnClass() = cl;
 			p->resolveFunction() = fun;
 			p->resolveSelfClass() = selfCl;
+			p->resolveAlloc() = al;
 		}
-		opointer* addPointer(PositionID a, String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, unsigned int level=0){
+		opointer* addPointer(PositionID a, String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()){
 					todo("The variable "+index+" has already been defined in this scope", a);
@@ -87,6 +91,7 @@ class OModule : public Stackable{
 				returnClasses.push_back(cla);
 				functions.push_back(fun);
 				selfClasses.push_back(selfCl);
+				allocs.push_back(al);
 				mapping.insert(std::pair<String,opointer*>(index, nex));
 				return nex;
 			} else {
@@ -95,7 +100,7 @@ class OModule : public Stackable{
 					exit(1);
 				}
 				else
-				return super->addPointer(a, index, value, cla, fun, selfCl, level-1);
+				return super->addPointer(a, index, value, cla, fun, selfCl, al, level-1);
 			}
 		}
 		opointer* findPointer(PositionID a, String index) {
@@ -108,7 +113,7 @@ class OModule : public Stackable{
 					return paired->second;
 				}
 			}
-			return addPointer(a, index, NULL,NULL, NULL,NULL);
+			return addPointer(a, index, NULL,NULL, NULL,NULL,NULL);
 		}
 		opointer* getPointer(PositionID id, String index) {
 			OModule* search = this;
@@ -151,6 +156,9 @@ FunctionProto*& opointer::resolveFunction() const {
 ClassProto*& opointer::resolveSelfClass() const {
 	return module->selfClasses[index];
 }
+AllocaInst*& opointer::resolveAlloc() const {
+	return module->allocs[index];
+}
 
 class LateResolve : public Resolvable{
 	public:
@@ -175,6 +183,9 @@ class LateResolve : public Resolvable{
 		}
 		ClassProto*& resolveSelfClass() const override final{
 			return resolvePointer()->resolveSelfClass();
+		}
+		AllocaInst*& resolveAlloc() const override final{
+			return resolvePointer()->resolveAlloc();
 		}
 };
 #undef dataType

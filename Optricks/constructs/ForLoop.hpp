@@ -36,7 +36,24 @@ class ForLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOR;
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		Value* evaluate(RData& r) override{
+			/*
+			Value *StartVal = initialize->evaluate(r);
+			// block.
+			Function *TheFunction = Builder.GetInsertBlock()->getParent();
+			BasicBlock *PreheaderBB = Builder.GetInsertBlock();
+			BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+
+			// Insert an explicit fall through from the current block to the LoopBB.
+			Builder.CreateBr(LoopBB);
+			// Start insertion in LoopBB.
+			Builder.SetInsertPoint(LoopBB);
+
+			// Start the PHI node with an entry for Start.
+			PHINode *Variable = Builder.CreatePHI(Type::getDoubleTy(getGlobalContext()), 2, VarName.c_str());
+			Variable->addIncoming(StartVal, PreheaderBB);
+			*/
 			error("For loop eval not implemented");
 			/*
 			initialize->evaluate(jump);

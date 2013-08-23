@@ -106,6 +106,7 @@ class E_ARR : public Statement{
 				a->registerClasses(r);
 			}
 		}
+		AllocaInst* getAlloc() override final{ return NULL; };
 		void registerFunctionArgs(RData& r) override final{
 			for(auto& a:values){
 				a->registerFunctionArgs(r);

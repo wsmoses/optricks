@@ -90,7 +90,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.1.3" << endl << flush;
+		cout << "Optricks version 0.1.4" << endl << flush;
 		cout << "Created by Billy Moses" << endl << flush;
 	}
 	//TODO 2 x major decision
@@ -107,16 +107,28 @@ int main(int argc, char** argv){
 	//if semicolons were strictly enforced then
 	//list comprehension could become an operator
 
-	Stream* st = new Stream(stdin,interactive);
-	Statement* n;
-	if(interactive)	cout << "ready> " << flush;
+
+	Lexer lexer(NULL,interactive?'\n':EOF);
+	lexer.execFile("./stdlib/stdlib.opt",true, true);
+	if(!interactive)
+	lexer.execFile("stdin",false, false,stdin);
+	else{
+
+		Statement* n;
+		Stream* st = new Stream(stdin,interactive);
+		lexer.f = st;
+		cout << "ready> " << flush;
 	//st->force("extern double cos(double a); cos(3.14159)\n");
 	//st->force("lambda int a,int b: a+b\n");
 	//st->force("(lambda int a,int b: a+b)(4,5)\n");
 	//st->force("(lambda double a: (lambda double sq: sq*sq)(sin(a))+(lambda double sq: sq*sq)(cos(a)))(.9)\n");
 	//st->force("2+3.1\n");
-	Lexer lexer(st,interactive?'\n':EOF);
-	lexer.execFile("./stdlib/stdlib.opt",true, true);
+//	st->force("if true: putchar(71); else: putchar(72)\n");
+//	st->force("(lambda int a, int b, int c: if a<=b & a<=c: a; elif b<=a & b<=c: b; else: c)(1,2,3)\n");
+//	st->force("(lambda int a, int b, int c: if a<=b & a<=c putchar(a) elif b<=a & b<=c putchar(b) else putchar(c))(1,2,3)\n");
+//	st->force("if(true){ putchar(71); putchar(72); }\n");
+//	st->force("true?1:0\n");
+		st->force("if(true){ int i = 74; putchar(i); i = 75; putchar(i); }\n");
 	while(true){
 		st->trim(EOF);
 		n = lexer.getNextStatement();
@@ -134,11 +146,11 @@ int main(int argc, char** argv){
 		if(st->last()==EOF) break;
 		while(st->peek()=='\n' || st->peek()==';') st->read();
 		st->done = false;
-		if(interactive)
 			cout << "ready> " << flush;
 
 		st->done = false;
 		if(first) break;
+	}
 	}
 	return 0;
 }

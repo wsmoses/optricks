@@ -21,6 +21,9 @@ class E_PREOP : public Statement{
 		Statement* simplify() override final {
 			return new E_PREOP(filePos, operation,value->simplify());
 		}
+		AllocaInst* getAlloc() override final{
+			return NULL;//todo allow (++x) = 4?
+		};
 		Value* evaluate(RData& r) override final {
 			Value* a = value->evaluate(r);
 			return value->returnType->preops[operation]->apply(a,r);
@@ -62,6 +65,9 @@ class E_POSTOP : public Statement{
 		Statement* simplify() override final {
 			return new E_POSTOP(filePos, operation,value->simplify());
 		}
+		AllocaInst* getAlloc() override final{
+			return NULL; //todo allow (x++) = 4; ?
+		};
 		Value* evaluate(RData& r) override final {
 			Value* a = value->evaluate(r);
 			return value->returnType->postops[operation]->apply(a,r);
