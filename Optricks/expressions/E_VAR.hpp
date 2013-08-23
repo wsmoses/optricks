@@ -28,7 +28,7 @@ public:
 		//TODO variables not implemented
 		Value* ans = pointer->resolve();
 		if(ans==NULL){
-			todo("Could not resolve pointer "+pointer->name);
+			error("Could not resolve pointer "+pointer->name);
 		}
 		return ans;
 	}

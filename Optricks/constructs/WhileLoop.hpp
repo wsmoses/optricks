@@ -23,7 +23,7 @@ class WhileLoop : public Statement{
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		ClassProto* checkTypes() override final{
 			condition->checkTypes();
-			if(condition->returnType!=boolClass) todo("Cannot make non-bool type condition for while loop");
+			if(condition->returnType!=boolClass) error("Cannot make non-bool type condition for while loop");
 			statement->checkTypes();
 			return returnType;
 		}
@@ -31,7 +31,7 @@ class WhileLoop : public Statement{
 			return T_WHILE;
 		}
 		Value* evaluate(RData& r) override{
-			todo("While loop eval not implemented");
+			error("While loop eval not implemented");
 			/*
 			while((bool)condition->evaluate()){
 				statement->evaluate(jump);

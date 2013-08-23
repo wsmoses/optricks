@@ -32,8 +32,7 @@ class E_PREOP : public Statement{
 			value->checkTypes();
 			auto found = value->returnType->preops.find(operation);
 			if(found==value->returnType->preops.end())
-				todo("Unary operator ",operation," not implemented for class ",
-						value->returnType->name);
+				error("Unary operator "+operation+" not implemented for class "+value->returnType->name);
 			return returnType = found->second->returnType;
 		}
 		void registerClasses(RData& r) override final{
@@ -74,8 +73,7 @@ class E_POSTOP : public Statement{
 			value->checkTypes();
 			auto found = value->returnType->postops.find(operation);
 			if(found==value->returnType->postops.end())
-				todo("Unary operator ",operation," not implemented for class ",
-						value->returnType->name);
+				error("Unary operator "+operation+" not implemented for class "+value->returnType->name);
 			return returnType = found->second->returnType;
 		}
 		void registerClasses(RData& r) override final{

@@ -58,11 +58,11 @@ class E_FUNC_CALL : public Statement{
 				}
 				ClassProto* t = proto->declarations[i]->classV->pointer->resolveSelfClass();
 				if(t==NULL || vals[i]->returnType!=t)
-					todo("Called function with incorrect arguments: needed ",(t==NULL)?"NULL":(t->name),
-							" got ", vals[i]->returnType->name);
+					error("Called function with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
+							" got "+ vals[i]->returnType->name);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
-				if(proto->declarations[i]->value==NULL) todo("Argument "+i, " non-optional");
+				if(proto->declarations[i]->value==NULL) error("Argument "+i, " non-optional");
 			}
 			return returnType = proto->returnType;
 		}
@@ -76,7 +76,7 @@ class E_FUNC_CALL : public Statement{
 			std::vector<Value*> Args;
 			for(auto& d: vals){
 				Args.push_back(d->evaluate(a));
-				if (Args.back() == 0) todo("Error in eval of args");
+				if (Args.back() == 0) error("Error in eval of args");
 			}
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
 				Args.push_back(proto->declarations[i]->value->evaluate(a));

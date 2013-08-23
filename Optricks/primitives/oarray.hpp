@@ -15,11 +15,11 @@ class oarray : public oobject{
 		std::vector<oobject*> data;
 		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id, arrayClass),data(dat){}
 		ClassProto* checkTypes() override{
-			todo("Implement forced array typing");
+			error("Implement forced array typing");
 		}
 		Value* evaluate(RData& a) override final{
 			//TODO
-			todo("Array not implemented");
+			error("Array not implemented");
 		}
 		/*oobject* operator [] (oobject* a) override{
 			if(a->returnType==intClass){
@@ -75,7 +75,7 @@ class E_ARR : public Statement{
 		}
 		Value* evaluate(RData& a) override {
 			//TODO
-			todo("E_ARR not implemented");
+			error("E_ARR not implemented");
 			/*
 			oarray* n = new oarray();
 			for(Statement* a: values){
@@ -125,7 +125,7 @@ class E_ARR : public Statement{
 			for(auto& a:values){
 				a->checkTypes();
 			}
-			todo("Implement forced E_ARR typing");
+			error("Implement forced E_ARR typing");
 			return arrayClass;
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }

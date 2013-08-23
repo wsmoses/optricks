@@ -58,7 +58,7 @@ class ofunction:public oobject{
 				a->checkTypes();
 			}
 			prototype->returnType = returnV->resolveSelfClass();
-			if(prototype->returnType==NULL) todo("Could not post-resolve return type "+returnV->name);
+			if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->name);
 			return returnType;
 		}
 };
@@ -72,11 +72,11 @@ class externFunction : public ofunction{
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
 				Type* cl = b->classV->pointer->resolveSelfClass()->type;
-				if(cl==NULL) todo("Type argument "+b->classV->pointer->name+" is null");
+				if(cl==NULL) error("Type argument "+b->classV->pointer->name+" is null");
 				args.push_back(cl);
 			}
 			Type* r = returnV->resolveSelfClass()->type;
-			if(r==NULL) todo("Type argument "+returnV->name+" is null");
+			if(r==NULL) error("Type argument "+returnV->name+" is null");
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, self->name, a.lmod);//todo check this
 			self->resolve() = F;
@@ -108,7 +108,7 @@ class lambdaFunction : public ofunction{
 			}
 			Type* r = prototype->returnType->type;
 			if(r==NULL){
-				todo("Error null return type for class " + prototype->returnType->name);
+				error("Error null return type for class " + prototype->returnType->name);
 				r = VOIDTYPE;
 			}
 			FunctionType *FT = FunctionType::get(r, args, false);

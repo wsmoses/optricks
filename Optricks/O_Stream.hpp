@@ -494,6 +494,7 @@ public:
 				return true;
 			}
 		}while(c!='\n');
+		if(read()!='\r') write();
 		done |= endAtLines;
 		return endAtLines;
 	}

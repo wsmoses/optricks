@@ -26,12 +26,51 @@
 class Lexer{
 	public:
 		Stream* f;
+		OModule* myMod;
 		char endWith;
-		Module * module;
 
 		RData rdata;
 		Lexer(Stream* t, char e):f(t),endWith(e),rdata(){
-			module = new Module("__main__",getGlobalContext());
+			myMod = new OModule(LANG_M);
+		}
+		void execFile(String fileName, bool newModa, bool newModb){
+			FILE* fi = fopen(fileName.c_str(), "r");
+			char tt = endWith;
+			endWith = EOF;
+			Stream* tmp = f;
+			Stream next(fi,false);
+			f = &next;
+			if(newModa) myMod = new OModule(myMod);
+			std::vector<Statement*> stats;
+			while(true){
+				while(f->peek()==';') f->read();
+				Statement* s = getNextStatement();
+				if(s==NULL || s->getToken()==T_VOID) break;
+				stats.push_back(s->simplify());
+			}
+			for(auto& n: stats) n->registerClasses(rdata);
+			for(auto& n: stats) n->registerFunctionArgs(rdata);
+			for(auto& n: stats) n->registerFunctionDefaultArgs();
+			for(auto& n: stats) n->resolvePointers();
+			for(auto& n: stats) n->checkTypes();
+			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
+			Function *F = Function::Create(FT, Function::ExternalLinkage, "", rdata.lmod);//todo check this
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			rdata.builder.SetInsertPoint(BB);
+			for(auto& n: stats) n->evaluate(rdata);
+			rdata.builder.CreateRetVoid();
+			verifyFunction(*F);
+			rdata.fpm->run(*F);
+			void *FPtr = rdata.exec->getPointerToFunction(F);
+			void (*FP)() = (void (*)())(intptr_t)FPtr;
+			FP();
+			fclose(fi);
+			f = tmp;
+			endWith = tt;
+			if(newModb) myMod = new OModule(myMod);
+		}
+		Statement* getNextStatement(){
+			return getNextStatement(myMod, true, true);
 		}
 		std::vector<Declaration*> parseArguments(OModule* m, char finish=')'){
 			std::vector<Declaration*> args;
@@ -224,7 +263,7 @@ class Lexer{
 							f->trim(endWith);
 						}
 						Statement* blocks = getNextBlock(module);
-						todo("Implement for-each loop");
+						f->error("Implement for-each loop");
 						//return new ForEachLoop(new E_VAR(module->addPointer(varName,NULL,NULL,NULL)),iterable,blocks,"");
 						//TODO implement for loop naming
 					}
@@ -319,11 +358,14 @@ class Lexer{
 				else if (temp == "extern"){
 					if(f->trim(endWith)) f->error("Extern without name");
 					LateResolve* retV =
-							new LateResolve(mod,f->getNextName(endWith))
+							new LateResolve(mod,f->getNextName(endWith),pos())
 					;
 					f->trim(endWith);
-					Resolvable* externName = mod->addPointer(f->getNextName(endWith),NULL,NULL,NULL,NULL);
-					if(f->peek()!='(') f->error("'(' required after extern",true);
+					Resolvable* externName = mod->addPointer(pos(), f->getNextName(endWith),NULL,NULL,NULL,NULL);
+					f->trim(endWith);
+					if(f->peek()!='('){
+						f->error("'(' required after extern not "+String(1,f->peek()),true);
+					}
 					f->read();
 					std::vector<Declaration*> dec;
 					OModule* m2 = new OModule(mod);
@@ -367,7 +409,7 @@ class Lexer{
 					else return te;
 				}
 				else{
-					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp));
+					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp,pos()));
 					auto start = f->getMarker();
 					f->trim(endWith);
 					if(allowDeclaration && start!=f->getMarker()){
@@ -380,7 +422,7 @@ class Lexer{
 								value = getNextStatement(mod, true,false);
 							}
 							if(!f->done && f->peek()==';'){ semi = true; }
-							n = new E_VAR(pos(), mod->addPointer(n->pointer->name,NULL,NULL,NULL,NULL)); // TODO look at
+							n = new E_VAR(pos(), mod->addPointer(pos(), n->pointer->name,NULL,NULL,NULL,NULL)); // TODO look at
 							return new Declaration(pos(), (E_VAR*)te, n, value);
 						}
 						else{

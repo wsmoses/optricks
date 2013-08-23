@@ -28,7 +28,7 @@ class ForEachLoop : public Statement{
 		ClassProto* checkTypes(){
 			iterable->checkTypes();
 			toLoop->checkTypes();
-			todo("Type checking for foreach incomplete due to lack of iterator");
+			error("Type checking for foreach incomplete due to lack of iterator");
 			return returnType;
 		}
 		const Token getToken() const override {
@@ -36,7 +36,7 @@ class ForEachLoop : public Statement{
 		}
 		Value* evaluate(RData& a) override{
 			//TODO iterators not implemented yet
-			todo("For-each loop eval not implented");
+			error("For-each loop eval not implented");
 /*			while((bool)condition->evaluate()){
 				statement->evaluate(jump);
 				switch(jump.type){

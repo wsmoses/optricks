@@ -33,7 +33,7 @@ class oslice : public oobject{
 			return ss.str();
 		}
 		Value* evaluate(RData& a) override final{
-			todo("Not implemented : slice evaluate");
+			error("Not implemented : slice evaluate");
 		}
 };
 
@@ -46,7 +46,7 @@ public:
 		return T_SLICE;
 	};
 	Value* evaluate(RData& r) override final{
-		todo("Evaluate E_SLICE");
+		error("Evaluate E_SLICE");
 		/*
 		oobject *a = start->evaluate(),
 				*b = stop->evaluate(),
@@ -107,15 +107,15 @@ public:
 	ClassProto* checkTypes(){
 		if(start!=NULL){
 			start->checkTypes();
-			if(start->returnType!=intClass) todo("Cannot have non-int type in slice ",start->returnType->name);
+			if(start->returnType!=intClass) error("Cannot have non-int type in slice "+start->returnType->name);
 		}
 		if(stop!=NULL){
 			stop->checkTypes();
-			if(stop->returnType!=intClass) todo("Cannot have non-int type in slice ",stop->returnType->name);
+			if(stop->returnType!=intClass) error("Cannot have non-int type in slice "+stop->returnType->name);
 		}
 		if(step!=NULL){
 			step->checkTypes();
-			if(step->returnType!=intClass) todo("Cannot have non-int type in slice ",step->returnType->name);
+			if(step->returnType!=intClass) error("Cannot have non-int type in slice "+step->returnType->name);
 		}
 		return returnType;
 	}

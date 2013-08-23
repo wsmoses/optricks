@@ -70,16 +70,18 @@ class OModule : public Stackable{
 			}
 			return -1;
 		}
-		void setPointer(String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl){
-			auto p = findPointer(index);
+		void setPointer(PositionID a, String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl){
+			auto p = findPointer(a, index);
 			p->resolve() = value;
 			p->resolveReturnClass() = cl;
 			p->resolveFunction() = fun;
 			p->resolveSelfClass() = selfCl;
 		}
-		opointer* addPointer(String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, unsigned int level=0){
+		opointer* addPointer(PositionID a, String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, unsigned int level=0){
 			if(level == 0){
-				if(mapping.find(index)!=mapping.end()) todo("The variable "+index+" has already been defined in this scope");
+				if(mapping.find(index)!=mapping.end()){
+					todo("The variable "+index+" has already been defined in this scope", a);
+				}
 				opointer* nex = new opointer(this, data.size(), index);
 				data.push_back(value);
 				returnClasses.push_back(cla);
@@ -93,10 +95,10 @@ class OModule : public Stackable{
 					exit(1);
 				}
 				else
-				return super->addPointer(index, value, cla, fun, selfCl, level-1);
+				return super->addPointer(a, index, value, cla, fun, selfCl, level-1);
 			}
 		}
-		opointer* findPointer(String index) {
+		opointer* findPointer(PositionID a, String index) {
 			const OModule* search = this;
 			while(search!=NULL){
 				auto paired = search->mapping.find(index);
@@ -106,9 +108,9 @@ class OModule : public Stackable{
 					return paired->second;
 				}
 			}
-			return addPointer(index, NULL,NULL, NULL,NULL);
+			return addPointer(a, index, NULL,NULL, NULL,NULL);
 		}
-		opointer* getPointer(String index) {
+		opointer* getPointer(PositionID id, String index) {
 			OModule* search = this;
 			while(search!=NULL){
 				auto paired = search->mapping.find(index);
@@ -121,6 +123,7 @@ class OModule : public Stackable{
 			cerr << "Could not resolve variable: " << index << flush << endl;
 			write(cerr, "");
 			cerr << endl << flush;
+			todo("Could not resolve variable: "+index,id);
 			exit(0);
 		}
 		void write(ostream& a,String t) const override{
@@ -151,13 +154,14 @@ ClassProto*& opointer::resolveSelfClass() const {
 
 class LateResolve : public Resolvable{
 	public:
-		LateResolve(OModule* m,String n){
+		PositionID filePos;
+		LateResolve(OModule* m,String n, PositionID id): filePos(id){
 			name = n;
 			module = m;
 		}
 		opointer* resolvePointer() const{
-			auto a =  module->getPointer(name);
-			if(a==NULL) todo("Could not resolve late pointer for ", name);
+			auto a =  module->getPointer(filePos, name);
+			if(a==NULL) todo("Could not resolve late pointer for "+name,filePos);
 			return a;
 		}
 		Value*& resolve() const override final{

@@ -33,7 +33,7 @@ class Block : public Statement{
 			return values.push_back(s);
 		}
 		Value* evaluate(RData& r) override{
-			todo("Block eval not implemented");
+			error("Block eval not implemented");
 			/*
 			for(auto& a:values){
 				a->evaluate(jump);

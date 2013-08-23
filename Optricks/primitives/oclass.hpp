@@ -24,7 +24,7 @@ class oclass: public Stackable
 			proto = p;
 			super = init;
 			if(p->name!=""){
-				LANG_M->addPointer(p->name, (Value*)NULL,classClass, NULL,proto, 0U);
+				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, (Value*)NULL,classClass, NULL,proto, 0U);
 			} else cerr << "String this has no name " << p->name << endl << flush;
 			//TODO redo oclass as oobject;
 		}
@@ -59,8 +59,8 @@ void initClasses(){
 	oclass* voidClassO = new oclass(objectClassO,voidClass);
 
 	classClassO->super = objectClassO;
-	LANG_M->getPointer("class")->resolveReturnClass() = classClass;
-	LANG_M->getPointer("object")->resolveReturnClass() = classClass;
+	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->resolveReturnClass() = classClass;
+	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->resolveReturnClass() = classClass;
 }
 
 #endif /* OCLASS_HPP_ */

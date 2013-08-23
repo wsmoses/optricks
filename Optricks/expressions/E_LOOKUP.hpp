@@ -26,23 +26,23 @@ class E_LOOKUP : public Statement{
 		}
 
 		void registerClasses(RData& r) override final{
-			todo("E_LOOKUP rC");
+			error("E_LOOKUP rC");
 		}
 		void registerFunctionArgs(RData& r) override final{
-			todo("E_LOOKUP rFA");
+			error("E_LOOKUP rFA");
 		};
 		void registerFunctionDefaultArgs() override final{
-			todo("E_LOOKUP rFDA");
+			error("E_LOOKUP rFDA");
 		};
 		void resolvePointers() override final{
-			todo("E_LOOKUP rP");
+			error("E_LOOKUP rP");
 		}
 		ClassProto* checkTypes(){
-			todo("Check types for lookup");
+			error("Check types for lookup");
 		}
 		Value* evaluate(RData& a) override{
 			//TODO lookup variables
-			todo("Variable lookup not implemented");
+			error("Variable lookup not implemented");
 		}
 		Statement* simplify() override{
 			//TODO lookup variables

@@ -92,14 +92,14 @@ class E_BINOP : public Statement{
 			right->checkTypes();
 			auto found = left->returnType->binops.find(operation);
 			if(found==left->returnType->binops.end())
-				todo("Binary operator ",operation," not implemented for class ",
-						left->returnType->name, " [with right ", right->returnType->name,"]");
+				error("Binary operator "+operation+" not implemented for class "+
+						left->returnType->name+" [with right "+ right->returnType->name+"]");
 			auto look = found->second;
 
 			auto found2 = look.find(right->returnType);
 			if(found2==look.end())
-				todo("Binary operator ",operation," not implemented for class ",
-						left->returnType->name, " with right ", right->returnType->name);
+				error("Binary operator "+operation+" not implemented for class "+
+						left->returnType->name+ " with right "+ right->returnType->name);
 			return returnType = found2->second->returnType;
 		}
 		Statement* simplify() override{

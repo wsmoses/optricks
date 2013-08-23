@@ -150,8 +150,14 @@ class ouopNative: public ouop{
 		}
 };
 
-void todo(String a="",String b="",String c="",String d="",String e="",String f="",String g=""){
-	cerr << a << b << c << d << e << f<<g<<endl << flush;
+void todo(String a,PositionID filePos){
+	cerr << a << " at ";
+	cerr << filePos.fileName;
+	cerr << " line:";
+	cerr << filePos.lineN;
+	cerr << ", char: ";
+	cerr << filePos.charN;
+	cerr << endl << flush;
 	exit(1);
 }
 
@@ -159,6 +165,8 @@ auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
 auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
+auto CHARTYPE = IntegerType::get(getGlobalContext(), 8);
+auto STRINGTYPE = ConstantDataArray::getString(getGlobalContext(),"")->getType();
 
 ClassProto* classClass = new ClassProto("class");
 ClassProto* objectClass = new ClassProto("object");
@@ -168,7 +176,7 @@ ClassProto* arrayClass = new ClassProto("array");
 ClassProto* functionClass = new ClassProto("function");
 ClassProto* decClass = new ClassProto("double", DOUBLETYPE);
 ClassProto* intClass = new ClassProto("int", INTTYPE);
-ClassProto* stringClass = new ClassProto("string");
+ClassProto* stringClass = new ClassProto("string",STRINGTYPE);
 ClassProto* sliceClass = new ClassProto("slice");
 ClassProto* voidClass = new ClassProto("void", VOIDTYPE);
 

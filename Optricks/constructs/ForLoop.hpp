@@ -28,7 +28,7 @@ class ForLoop : public Statement{
 		ClassProto* checkTypes(){
 			initialize->checkTypes();
 			condition->checkTypes();
-			if(condition->returnType != boolClass) todo("Cannot have non-bool condition of for-loop ",condition->returnType->name);
+			if(condition->returnType != boolClass) error("Cannot have non-bool condition of for-loop "+condition->returnType->name);
 			increment->checkTypes();
 			toLoop->checkTypes();
 			return returnType;
@@ -37,7 +37,7 @@ class ForLoop : public Statement{
 			return T_FOR;
 		}
 		Value* evaluate(RData& r) override{
-			todo("For loop eval not implemented");
+			error("For loop eval not implemented");
 			/*
 			initialize->evaluate(jump);
 			if(jump.type!=NJUMP){
