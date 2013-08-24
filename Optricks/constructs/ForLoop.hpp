@@ -36,7 +36,7 @@ class ForLoop : public Statement{
 			return T_FOR;
 		}
 		Value* evaluate(RData& r) override{
-			initialize->evaluate(r);
+			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->evaluate(r);
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *PreheaderBB = r.builder.GetInsertBlock();
 
@@ -48,7 +48,7 @@ class ForLoop : public Statement{
 			  // Start insertion in LoopBB.
 			r.builder.SetInsertPoint(LoopBB);
 			toLoop->evaluate(r);
-			Value* step = increment->evaluate(r);
+			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
 			Value *EndCond = condition->evaluate(r);
 
 			BasicBlock *LoopEndBB = r.builder.GetInsertBlock();

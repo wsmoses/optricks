@@ -238,14 +238,17 @@ class Lexer{
 					if(paren){
 						f->read();
 						f->trim(endWith);
-						Statement* init = getNextStatement(module, true, true);
+						Statement* init = VOID;
+						if(f->peek()!=';') init = getNextStatement(module, true, true);
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						Statement* scond = getNextStatement(module, true, false);
-						Statement* cond;
-						if(scond->getToken()==T_VOID) cond = new obool(pos(), true);
-						else cond = dynamic_cast<Statement*>(scond);
+						f->trim(endWith);
+						Statement* cond = VOID;
+						if(f->peek()!=';') cond = getNextStatement(module, true, true);
+						if(cond->getToken()==T_VOID) cond = new obool(pos(), true);
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						Statement* inc = getNextStatement(module, true, false);
+						f->trim(endWith);
+						Statement* inc = VOID;
+						if(f->peek()!=')') inc = getNextStatement(module, true, false);
 						f->trim(endWith);
 						if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
 						Statement* blocks = getNextBlock(module);
@@ -669,6 +672,14 @@ class Lexer{
 			else if(tmp=="="){
 				Statement* post = getNextStatement(mod, true,false);
 				fixed = new E_SET(pos(), exp, post);
+			}
+			else if(tmp=="++" || tmp=="--"){
+				fixed = new E_POSTOP(pos(), tmp, exp);
+			}
+			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && tmp[tmp.size()-2]!='='){
+				tmp = tmp.substr(0,tmp.size()-1);
+				Statement* post = getNextStatement(mod, true,false);
+				fixed = new E_SET(pos(), exp, new E_BINOP(pos(), exp, post, tmp));
 			}
 			else{
 				Statement* post = getNextStatement(mod, true,false);

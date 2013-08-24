@@ -11,6 +11,7 @@
  * e) type check everything
  */
 #include "containers/settings.hpp"
+#define START "optricks> "
 template <class T>
 ostream& operator<<(ostream&os, std::vector<T>& v)
 {
@@ -27,10 +28,10 @@ ostream& operator<<(ostream&os, std::vector<T>& v)
 
 #include "Lexer.hpp"
 
-void execF(RData& r, Statement* n,bool interactive){
+void execF(RData& r, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
 	n = n->simplify();
-	if(interactive) cout << n << endl << flush;
+	if(debug) cout << n << endl << flush;
 	n->resolvePointers();
 	n->registerClasses(r);
 	n->registerFunctionArgs(r);
@@ -39,7 +40,7 @@ void execF(RData& r, Statement* n,bool interactive){
 	Type* type;
 	type = n->returnType->type;
 	if(type==NULL){
-		if(interactive) cout << "Error null return type for class " + n->returnType->name ;
+		cout << "Error null return type for class " + n->returnType->name ;
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
@@ -47,7 +48,7 @@ void execF(RData& r, Statement* n,bool interactive){
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	r.builder.SetInsertPoint(BB);
 	Value* v = n->evaluate(r);
-	if(interactive)	v->dump();
+	if(debug)	v->dump();
 	if(type!=VOIDTYPE)
 		r.builder.CreateRet(v);
 	else
@@ -57,7 +58,7 @@ void execF(RData& r, Statement* n,bool interactive){
 	//cout << "verified" << endl << flush;
 	r.fpm->run(*F);
 	//cout << "fpm" << endl << flush;
-	if(interactive){
+	if(debug){
 		F->dump();
 		cerr << flush;
 	}
@@ -67,19 +68,22 @@ void execF(RData& r, Statement* n,bool interactive){
 	if(n==NULL || type==VOIDTYPE){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
-		if(interactive) cout <<  "Evaluated" << endl << flush;
+		if(debug) cout <<  "Evaluated" << endl << flush;
 	} else if(n->returnType==decClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(interactive) cout <<  "Evaluated to " << t << endl << flush;
+		if(debug) cout <<  "Evaluated to ";
+		cout << t << endl << flush;
 	} else if(n->returnType==intClass){
 		long long (*FP)() = (long long (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(interactive) cout <<  "Evaluated to " << t << endl << flush;
+		if(debug) cout <<  "Evaluated to ";
+		cout << t << endl << flush;
 	} else if(n->returnType==boolClass){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(interactive) cout <<  "Evaluated to " << t << endl << flush;
+		if(debug) cout <<  "Evaluated to ";
+		cout << t << endl << flush;
 	} else{
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 	}
@@ -90,8 +94,8 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.1.4" << endl << flush;
-		cout << "Created by Billy Moses" << endl << flush;
+		cout << "Optricks version 0.1.5" << endl << flush;
+		cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
 	//should ++ / -- be eliminated and replaced with +=1 and -=1
@@ -107,7 +111,7 @@ int main(int argc, char** argv){
 	//if semicolons were strictly enforced then
 	//list comprehension could become an operator
 
-
+	bool debug = false;
 	Lexer lexer(NULL,interactive?'\n':EOF);
 	lexer.execFile("./stdlib/stdlib.opt",true, true);
 	if(!interactive)
@@ -117,7 +121,7 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream* st = new Stream(stdin,interactive);
 		lexer.f = st;
-		cout << "ready> " << flush;
+		cout << START << flush;
 
 		/*
 		st->force("extern double cos(double a); cos(3.14159)\n");
@@ -145,18 +149,18 @@ int main(int argc, char** argv){
 			bool first = true;
 			while(n->getToken()!=T_VOID){
 				first = false;
-				execF(lexer.rdata,n,interactive);
+				execF(lexer.rdata,n,debug);
 				st->done = false;
-				if(st->last()==EOF) break;
+				if(st->last()=='\n') break;
 				while(st->peek()==';') st->read();
 				st->done = false;
 				n = lexer.getNextStatement();
 			}
 			st->done = false;
 			if(st->last()==EOF) break;
+			cout << START << flush;
 			while(st->peek()=='\n' || st->peek()==';') st->read();
 			st->done = false;
-			cout << "ready> " << flush;
 
 			st->done = false;
 			if(first) break;
