@@ -49,7 +49,8 @@ class E_RETURN : public Statement{
 			return inner->simplify();
 		}
 		void write (ostream& f,String b="") const override{
-			f  << "(" << inner << ")";
+			f  << "return";
+			if(inner->getToken()!=T_VOID) f << " " << inner;
 		}
 		ClassProto* checkTypes() override final{
 			return returnType = inner->checkTypes();

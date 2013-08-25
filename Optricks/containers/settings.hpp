@@ -7,6 +7,37 @@
 
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
+
+extern "C"
+
+#include <stdio.h>
+#include <iostream>
+#include <cmath>
+#include <stdlib.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <sstream>
+#include <exception>
+#include <stdexcept>
+#include <unordered_map>
+
+void printi(uint64_t i, bool b){
+	std::cout << i;
+	if(b) std::cout << std::endl;
+	std::cout << std::flush;
+}
+void printd(double i, bool b){
+	std::cout << i;
+	if(b) std::cout << std::endl;
+	std::cout << std::flush;
+}
+void printb(bool i, bool b){
+	if(i) std::cout << "true";
+	else std::cout << "false";
+	if(b) std::cout << std::endl;
+	std::cout << std::flush;
+}
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -20,17 +51,6 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
 using namespace llvm;
-#include <stdio.h>
-#include <iostream>
-#include <cmath>
-#include <stdlib.h>
-#include <string>
-#include <vector>
-#include <map>
-#include <sstream>
-#include <exception>
-#include <stdexcept>
-#include <unordered_map>
 #include "../O_TOKEN.hpp"
 
 #define cout std::cout

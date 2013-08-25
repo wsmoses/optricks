@@ -20,9 +20,7 @@ class oslice : public oobject{
 				exit(0);
 			}
 		}
-		operator String () const override{
-			//TODO
-			std::stringstream ss;
+		void write(ostream& ss, String b) const override{
 			ss << "[";
 			if(start!=NULL && start!=VOID) ss << start;
 			ss << ":";
@@ -30,7 +28,6 @@ class oslice : public oobject{
 			ss << ":";
 			if(step!=NULL && step!=VOID) ss << step;
 			ss << "]";
-			return ss.str();
 		}
 		Value* evaluate(RData& a) override final{
 			error("Not implemented : slice evaluate");

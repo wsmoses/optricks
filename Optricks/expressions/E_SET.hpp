@@ -57,13 +57,13 @@ class E_SET: public Statement{
 			return new E_SET(filePos, variable,(value->simplify()) );
 		}
 		void write(ostream& f, String s="") const final override{
-			f << "SET(";
+			//f << "SET(";
 			variable->write(f);
 			if(value!=NULL) {
 				f << "=";
 				value->write(f);
 			}
-			f << ")";
+			//f << ")";
 		}
 
 		FunctionProto* getFunctionProto() override final{ return value->getFunctionProto(); }

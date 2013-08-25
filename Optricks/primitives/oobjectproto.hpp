@@ -29,15 +29,13 @@ class oobject: public Statement{
 		void setAlloc(AllocaInst* f) override { error("Cannot set allocated instance"); }
 		String getObjName() override { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override { error("Cannot set resolve"); }
-		Value* getResolve() override { error("Cannot get resolve"); }
-		virtual operator String () const = 0;
+		Value* getResolve() override { error("Cannot get resolve"); return NULL; }
 
 		//TODO
 		void registerClasses(RData& r) override final{};
 		void registerFunctionArgs(RData& r) override{};
 		void registerFunctionDefaultArgs() override{};
 		void resolvePointers() override{};
-		void write(ostream& a, String b) const override;
 		oobject* simplify() override final{
 			return this;
 		}
@@ -49,9 +47,6 @@ class oobject: public Statement{
 		}
 };
 
-void oobject::write(ostream& a, String b) const{
-	a<< (String)(*this);
-}
 /*
 		class onull : public oobject{
 			public:

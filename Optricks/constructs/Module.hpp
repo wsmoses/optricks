@@ -47,8 +47,8 @@ class OModule : public Stackable{
 	public:
 		OModule* super;
 		std::map<String, opointer*> mapping;
-		std::vector<AllocaInst*> allocs;
 		std::vector<ClassProto*> returnClasses;
+		std::vector<AllocaInst*> allocs;
 		std::vector<ClassProto*> selfClasses;
 		std::vector<FunctionProto*> functions;
 		std::vector<dataType> data;

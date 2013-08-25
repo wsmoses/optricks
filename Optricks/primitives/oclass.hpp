@@ -29,13 +29,9 @@ class oclass: public Stackable
 			//TODO redo oclass as oobject;
 		}
 
-		operator String () const{
-			return "class<" + proto->name + ">";
+		void write(ostream& ss, String b) const override{
+			ss << "class<" + proto->name + ">";
 		};
-
-		void write(ostream& a, String b) const override final {
-			a<< (String)(*this);
-		}
 		const Token getToken() const override final {
 			return T_OOBJECT;//TODO change to oclass?
 		}
@@ -48,15 +44,23 @@ void initClasses(){
 
 	oclass* classClassO = new oclass(NULL,classClass);
 	oclass* objectClassO = new oclass(NULL,objectClass);
-	oclass* nullClassO = new oclass(objectClassO,nullClass);
-	oclass* boolClassO = new oclass(objectClassO,boolClass);
-	oclass* arrayClassO = new oclass(objectClassO,arrayClass);
-	oclass* functionClassO = new oclass(objectClassO,functionClass);
+	//oclass* nullClassO =
+			new oclass(objectClassO,nullClass);
+	//oclass* boolClassO =
+			new oclass(objectClassO,boolClass);
+	//oclass* arrayClassO =
+			new oclass(objectClassO,arrayClass);
+	//oclass* functionClassO =
+			new oclass(objectClassO,functionClass);
 	oclass* decClassO = new oclass(objectClassO,decClass);
-	oclass* intClassO = new oclass(decClassO,intClass);
-	oclass* stringClassO = new oclass(objectClassO,stringClass);
-	oclass* sliceClassO = new oclass(objectClassO,sliceClass);
-	oclass* voidClassO = new oclass(objectClassO,voidClass);
+	//oclass* intClassO =
+			new oclass(decClassO,intClass);
+	//oclass* stringClassO =
+			new oclass(objectClassO,stringClass);
+	//oclass* sliceClassO =
+			new oclass(objectClassO,sliceClass);
+	//oclass* voidClassO =
+			new oclass(objectClassO,voidClass);
 
 	classClassO->super = objectClassO;
 	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->resolveReturnClass() = classClass;

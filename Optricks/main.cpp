@@ -1,5 +1,7 @@
 #define MAIN_CPP
 
+#include "containers/settings.hpp"
+
 /**
  * TODO resolution
  * a) register class names
@@ -10,8 +12,7 @@
  * d) switch to opointers instead of late-resolves
  * e) type check everything
  */
-#include "containers/settings.hpp"
-#define START "optricks> "
+
 template <class T>
 ostream& operator<<(ostream&os, std::vector<T>& v)
 {
@@ -30,8 +31,8 @@ ostream& operator<<(ostream&os, std::vector<T>& v)
 
 void execF(RData& r, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
+	if(debug && n->getToken()!=T_VOID) cout << n << endl << flush;
 	n = n->simplify();
-	if(debug) cout << n << endl << flush;
 	n->resolvePointers();
 	n->registerClasses(r);
 	n->registerFunctionArgs(r);
@@ -75,10 +76,10 @@ void execF(RData& r, Statement* n,bool debug){
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
 	} else if(n->returnType==intClass){
-		long long (*FP)() = (long long (*)())(intptr_t)FPtr;
+		uint64_t (*FP)() = (uint64_t (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
-		cout << t << endl << flush;
+		printi(t, true);
 	} else if(n->returnType==boolClass){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
@@ -88,14 +89,113 @@ void execF(RData& r, Statement* n,bool debug){
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 	}
 }
+/**
+ * Returns whether s starts with b;
+ */
+bool startsWith(String s, String b){
+	if(s.length() < b.length()) return false;
+	for(unsigned int i = 0; i<b.length(); i++){
+		if(s[i]!=b[i]) return false;
+	}
+	return true;
+}
+bool startsWithEq(String s, String b){
+	if(s==b) return true;
+	b+="=";
+	if(s.length() < b.length()) return false;
+	for(unsigned int i = 0; i<b.length(); i++){
+		if(s[i]!=b[i]) return false;
+	}
+	return true;
+}
+String testString(String toTest, String testing){
+	String tmp = "";
+	if(startsWith(toTest, testing+"=")) tmp = toTest.substr(testing.length()+1);
+	if(tmp.length()==0){
+		cerr << "Unknown value of " << tmp << " for variable " << toTest << " -- no operation" << endl << flush;
+		exit(1);
+	}
+	return tmp;
+}
+bool testFor(String toTest, String testing){
+	if(toTest==testing) return true;
+	if(!startsWith(toTest, testing+"=")) return false;
+	String tmp = toTest.substr(testing.length()+1);
+	if(tmp=="y" || tmp=="yes") return true;
+	else if(tmp=="n" || tmp=="no") return false;
+	else{
+		cerr << "Unknown value of " << tmp << " for variable " << toTest << " you must use yes/no" << endl << flush;
+		exit(1);
+	}
+}
 int main(int argc, char** argv){
-
-	bool interactive = argc<2;
+	String file = "";
+	String command = "";
+	bool interactive = false;
+	bool forceInt = false;
+	bool debug = false;
+	for(int i = 1; i<argc; ++i){
+		String s = String(argv[i]);
+		if(startsWithEq(s, "--debug")){
+			debug = testFor(s,"--debug");
+		}
+		else if(s=="-i") { forceInt = true; interactive = true; }
+		else if(s=="-ni") { forceInt = true; interactive = false; }
+		else if(startsWithEq(s, "--inter")){
+			forceInt = true;
+			interactive = testFor(s,"--inter");
+		}
+		else if(startsWithEq(s, "--interactive")){
+			forceInt = true;
+			interactive = testFor(s,"--interactive");
+		}
+		else if(startsWithEq(s,"--command")){
+			s = testString(s, "--command");
+			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set command as " << s << endl << flush; exit(1); }
+			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
+			command=s;
+		}
+		else if(s=="-c"){
+			i++;
+			if(i>=argc){
+				cerr << "No file when set with -f "<< endl << flush;
+				exit(1);
+			}
+			s = String(argv[i]);
+			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set command as " << s << endl << flush; exit(1); }
+			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
+			command=s;
+		}
+		else if(startsWithEq(s,"--file")){
+			s = testString(s, "--file");
+			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
+			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
+			file=s;
+		}
+		else if(s=="-f"){
+			i++;
+			if(i>=argc){
+				cerr << "No file when set with -f "<< endl << flush;
+				exit(1);
+			}
+			s = String(argv[i]);
+			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
+			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
+			file=s;
+		}
+		else {
+			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
+			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
+			file=s;
+		}
+	}
+	if(!forceInt) interactive = file=="";
 	initClasses();
 
 	if(interactive) {
 		cout << "Optricks version 0.1.5" << endl << flush;
 		cout << "Created by Billy Moses" << endl << endl << flush;
+		cout << "Be sure to output a semicolon to end your statement" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
 	//should ++ / -- be eliminated and replaced with +=1 and -=1
@@ -111,18 +211,16 @@ int main(int argc, char** argv){
 	//if semicolons were strictly enforced then
 	//list comprehension could become an operator
 
-	bool debug = false;
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	lexer.execFile("./stdlib/stdlib.opt",true, true);
+	lexer.execFile("./stdlib/stdlib.opt",true, true,false);
 	if(!interactive)
-		lexer.execFile("stdin",false, false,stdin);
+		lexer.execFile(file,false, false,debug);
 	else{
 
 		Statement* n;
-		Stream* st = new Stream(stdin,interactive);
+		Stream* st = new Stream(file, true);
 		lexer.f = st;
 		cout << START << flush;
-
 		/*
 		st->force("extern double cos(double a); cos(3.14159)\n");
 		st->force("lambda int a,int b: a+b\n");
@@ -143,9 +241,12 @@ int main(int argc, char** argv){
 //		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
 		//st->force("for(int i = 0; i<10; i= i+1) putchar(i+48)\n");
 		//st->force("if(true){ for(int i = 0; i<10; i= i+1) putchar(i+48)} \n");
+		//st->force("3\n");
 		while(true){
+			st->enableOut = true;
 			st->trim(EOF);
-			n = lexer.getNextStatement();
+			n = lexer.getNextStatement('\n');
+			st->enableOut = false;
 			bool first = true;
 			while(n->getToken()!=T_VOID){
 				first = false;
@@ -154,7 +255,9 @@ int main(int argc, char** argv){
 				if(st->last()=='\n') break;
 				while(st->peek()==';') st->read();
 				st->done = false;
-				n = lexer.getNextStatement();
+				st->enableOut = true;
+				n = lexer.getNextStatement('\n');
+				st->enableOut = false;
 			}
 			st->done = false;
 			if(st->last()==EOF) break;

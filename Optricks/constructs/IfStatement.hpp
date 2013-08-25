@@ -89,13 +89,25 @@ class IfStatement : public Statement{
 			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}
 		void write(ostream& a,String t) const override{
-			a << "if " << condition << " ";
+			bool prevIf = false;
+			if(t.length()>=2 && t[0]=='I' && t[1]=='F'){
+				prevIf = true;
+				t = t.substr(2);
+			}
+			a << "if ";
+			if(finalElse->getToken()==T_IF && !prevIf) a << "  ";
+			a << condition << " ";
 			then->write(a,t);
-			a << ";" << endl;
 			if(finalElse->getToken()!=T_VOID){
-				a << t << "else ";
-				finalElse->write(a, t);
 				a << ";" << endl;
+				if(finalElse->getToken()==T_IF){
+					a << t << "el";
+					finalElse->write(a, "IF"+t);
+				}
+				else{
+					a << t << "else ";
+					finalElse->write(a, t);
+				}
 			}
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }

@@ -32,7 +32,7 @@ class E_PREOP : public Statement{
 			value->checkTypes();
 			auto found = value->returnType->preops.find(operation);
 			if(found==value->returnType->preops.end())
-				error("Unary operator "+operation+" not implemented for class "+value->returnType->name);
+				error("Pre operator "+operation+" not implemented for class "+value->returnType->name);
 			return returnType = found->second->returnType;
 		}
 		void registerClasses(RData& r) override final{
@@ -75,13 +75,13 @@ class E_POSTOP : public Statement{
 			return value->returnType->postops[operation]->apply(a,r);
 		}
 		void write(ostream& f,String s="") const override{
-			f << "(" << operation << value << ")";
+			f << "(" << value << " " << operation << ")";
 		}
 		ClassProto* checkTypes() override{
 			value->checkTypes();
 			auto found = value->returnType->postops.find(operation);
 			if(found==value->returnType->postops.end())
-				error("Unary operator "+operation+" not implemented for class "+value->returnType->name);
+				error("Post operator "+operation+" not implemented for class "+value->returnType->name);
 			return returnType = found->second->returnType;
 		}
 		void registerClasses(RData& r) override final{

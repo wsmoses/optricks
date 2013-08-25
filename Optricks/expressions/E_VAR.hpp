@@ -34,7 +34,8 @@ class E_VAR : public Statement{
 			return ans;
 		}
 		void write(ostream& f,String t="") const override{
-			f << "E_VAR('" << pointer->name << "')";
+			f  << pointer->name;
+//			f << "v'" << pointer->name << "'";
 		}
 
 		void registerClasses(RData& r) override final{

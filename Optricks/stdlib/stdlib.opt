@@ -24,7 +24,7 @@ extern double 	log2	(double a);
 extern double 	logb	(double a);
 extern double	scalbn	(double	a);
 extern double	scalbln	(double a);
-extern double 	pow		(double a);
+extern double 	pow		(double a, double b);
 extern double	sqrt	(double a);
 extern double	cbrt	(double a);
 extern double	erf		(double a);
@@ -45,3 +45,8 @@ extern double 	nearbyint(double a);
 extern double	remainder(double a);
 extern double	remquo	(double a);
 extern int 		putchar	(int i);
+extern void exit(int i=0);
+def void quit(int i){ return exit(i); }
+extern void printi(int i, bool b=true);
+extern void printd(double i, bool b=true);
+extern void printb(bool i, bool b=true);

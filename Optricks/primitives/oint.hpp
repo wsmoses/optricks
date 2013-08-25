@@ -12,12 +12,10 @@
 
 class oint : public oobject{
 	public:
-		long long value;
-		oint(PositionID a,  long long i): oobject(a,intClass), value(i){}
-		operator String () const override final{
-			std::stringstream convert;
-			convert << value;
-			return convert.str();
+		int64_t value;
+		oint(PositionID a,  int64_t i): oobject(a,intClass), value(i){}
+		void write(ostream& f, String b) const override{
+			f << value;
 		}
 		Value* evaluate(RData& a) override final{
 			return ConstantInt::get(INTTYPE, value, true);

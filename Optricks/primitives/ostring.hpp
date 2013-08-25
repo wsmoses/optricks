@@ -14,17 +14,14 @@ class ostring : public oobject{
 	public:
 		String value;
 		ostring(PositionID id, String i): oobject(id, stringClass), value(i){}
-		operator String& (){
-			return value;
-		}
-		operator String () const override{
-			String t = "";
+		void write(ostream& f, String b) const override{
+			f<<"\"";
 			for(auto& c: value){
-				if(c=='\\') t+="\\\\";
-				else if(c=='"') t+="\"";
-				else t+=c;
+				if(c=='\\')  f << "\\\\";
+				else if(c=='"') f << "\"";
+				else f << c;
 			}
-			return "\""+t+"\"";
+			f<<"\"";
 		}
 		Value* evaluate(RData& a) override final{
 		//	ConstantInt* data[value.length()];

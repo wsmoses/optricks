@@ -16,8 +16,8 @@ class obool: public oobject{
 		obool(PositionID id, bool a) : oobject(id, boolClass) {
 			value = a;
 		}
-		operator String () const override{
-			return value?"true":"false";
+		void write(ostream& ss, String b) const override{
+			ss << value?"true":"false";
 		}
 		Value* evaluate(RData& a) override final{
 			return ConstantInt::get(BOOLTYPE, value, false);

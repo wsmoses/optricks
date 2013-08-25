@@ -5,7 +5,8 @@
 #include "primitives/oint.hpp"
 #include "primitives/oslice.hpp"
 #include "expressions/E_BINOP.hpp"
-
+#define START "optricks> "
+#define CONT  "--------> "
 const bool isWhitespace(const char a){
 	return a==' ' || a=='\n' || a=='\t' || a=='\r';
 }
@@ -41,6 +42,8 @@ const String BINARY_OPERATORS[]{"and", "or", "xor","xnor",
 class Stream{
 private:
 	FILE* f;
+	String fileName;
+	const bool interactive;
 	std::vector<char> cache;
 	std::vector<std::vector<char> > readChars;
 	unsigned int curCount;
@@ -60,6 +63,30 @@ private:
 			curCount--;
 	}
 public:
+	bool enableOut;
+	Stream(String file, bool i): interactive(i){
+		enableOut = false;
+		done = false;
+		curCount = 0;
+		allowUndo = false;
+		start = true;
+
+		FILE* fileV;
+		if(file=="-" || file=="" || file=="<stdin>"){
+			file="<stdin>";
+			fileV = stdin;
+		} else{
+			fileV = fopen(file.c_str(), "r");
+			if(fileV==NULL){
+				cerr << "Error opening file " << file << endl << flush;
+				exit(1);
+			}
+		}
+		f = fileV;
+		fileName = file;
+		readChars.push_back(std::vector<char>());
+	}
+
 	char last(){
 		if(readChars.size()==0) return ' ';
 		else if(readChars.back().size()==0) return '\n';
@@ -112,6 +139,10 @@ public:
 			if(readChar(f,&c)){
 				error("Error reading from file",true);
 			}
+			if(c=='\n' && interactive){
+				 cout << (enableOut?CONT:START) << flush;
+			}
+
 		}
 		else{
 			c = cache.back();
@@ -133,18 +164,14 @@ public:
 	bool start;
 	bool allowUndo;
 	bool done;
-	bool endAtLines;
 	PositionID pos(){
-		return PositionID(readChars.size(), readChars.back().size(),"#unknown");
+		return PositionID(readChars.size(), readChars.back().size(),fileName);
 	}
-	Stream(FILE* a, bool lines=false){
-		done = false;
-		curCount = 0;
-		allowUndo = false;
-		endAtLines = lines;
-		start = true;
-		f = a;
-		readChars.push_back(std::vector<char>());
+	~Stream(){
+		close();
+	}
+	void close(){
+		fclose(f);
 	}
 	String readRecursiveI(){
 		String filling = "";
@@ -473,10 +500,10 @@ public:
 				write();
 				return false;
 			}
-			else if(endAtLines && c=='\n'){
+		/*	else if(endAtLines && c=='\n'){
 				done = true;
 				return true;
-			}
+			}*/
 		}while(c==' ' || c=='\t' || c=='\r');
 		write();
 		return false;
@@ -496,28 +523,32 @@ public:
 			}
 		}while(c!='\n');
 		if(read()!='\r') write();
-		done |= endAtLines;
-		return endAtLines;
+		//done |= endAtLines;
+		return done;//endAtLines;
 	}
 
 	/**
 	 * Returns whether the file has ended
 	 */
 	bool trim(char endWith/*=EOF*/){
-		if(done){
-			return true;
-		}
+		if(done) return true;
+		auto tmp = curCount;
 		do{
+			tmp = curCount;
 			if(trimNonLine(endWith)){
 				return true;
 			}
 			char c = peek();
-			if(c==EOF || (endAtLines && c=='\n')){
+			if(c==EOF /*|| (endAtLines && c=='\n')*/){
 				done = true;
 				return true;
 			}
 			if(c==endWith){
 				return false;
+			}
+			if(c=='\n'){
+				read();
+				continue;
 			}
 			if(c=='#' && trimEndOfLine()){
 				return true;
@@ -544,9 +575,7 @@ public:
 				}
 				else write();
 			}
-			if(c!='\n') break;
-			else read();
-		}while(true);
+		}while(tmp!=curCount);
 		return false;
 	}
 	std::vector<String> getCommaSeparated(char endWith){
@@ -583,7 +612,7 @@ public:
 			}while(true);
 			//if(!(tchar==' ' || tchar=='\n' || tchar == '\t'))
 				write();
-			if(endAtLines && tchar=='\n') done = true;
+	//		if(endAtLines && tchar=='\n') done = true;
 			return temp;
 		}
 		return "";
@@ -649,7 +678,7 @@ public:
 			return new odec(this->pos(), strtod(hi.c_str(),NULL));
 		}
 		else{
-			return new oint(this->pos(), strtol(hi.c_str(),NULL, base));
+			return new oint(this->pos(), strtoll(hi.c_str(),NULL, base));
 		}
 	}
 	String getNextOperator(char endWith){

@@ -14,6 +14,17 @@ class E_FUNC_CALL : public Statement{
 			return T_FUNC_CALL;
 		};
 		void write(ostream& f,String t="") const override{
+
+			toCall->write(f);
+			f << "(";
+			bool first = true;
+			for(auto& a:vals){
+				if(first) first = false;
+				else f << ", ";
+				a->write(f);
+			}
+			f<<")";
+			/*
 			f<<"call(";
 			toCall->write(f);
 			f << ", [";
@@ -24,6 +35,7 @@ class E_FUNC_CALL : public Statement{
 				a->write(f);
 			}
 			f<<"])";
+			*/
 		}
 		void registerClasses(RData& r) override final{
 			toCall->registerClasses(r);

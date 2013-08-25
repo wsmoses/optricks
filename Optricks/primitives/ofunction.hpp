@@ -51,21 +51,6 @@ class ofunction:public oobject{
 			if(returnV!=NULL) returnV->resolvePointers();
 		};
 		FunctionProto* getFunctionProto() override final{ return prototype; }
-		operator String () const override{
-			std::stringstream f;
-			f << "function ";
-			if(prototype->returnType !=NULL)  f << (prototype->returnType->name) << " ";
-			f << (prototype->name) ;
-			f << "(" ;
-			bool first = true;
-			for(auto &a: prototype->declarations){
-				if(first) first = false;
-				else f << ", " ;
-				a->write(f,"");
-			}
-			f << ")";
-			return f.str();
-		}
 		ClassProto* checkTypes() override{
 			for(auto& a:prototype->declarations){
 				a->checkTypes();
@@ -85,6 +70,19 @@ class externFunction : public ofunction{
 		externFunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec):
 			ofunction(id, s,r,dec){
 		}
+		void write(ostream& f, String b) const override{
+			f << "extern ";
+			f << returnV << " ";
+			f << (prototype->name) ;
+			f << "(" ;
+			bool first = true;
+			for(auto &a: prototype->declarations){
+				if(first) first = false;
+				else f << ", " ;
+				a->write(f,"");
+			}
+			f << ")";
+		}
 		void registerFunctionArgs(RData& a){
 			ofunction::registerFunctionArgs(a);
 			std::vector<Type*> args;
@@ -99,6 +97,9 @@ class externFunction : public ofunction{
 			if(r==NULL) error("Type argument "+cp->name+" is null");
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);//todo check this
+			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
+			if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
+			if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
 			if(F->getName().str()!=prototype->name) error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
 			self->setResolve(F);
 		}
@@ -115,6 +116,18 @@ class lambdaFunction : public ofunction{
 		lambdaFunction(PositionID id, std::vector<Declaration*> dec, Statement* r):
 			ofunction(id, NULL,NULL,dec){
 			ret = r;
+		}
+
+		void write(ostream& f, String b) const override{
+			f << "lambda ";
+			bool first = true;
+			for(auto &a: prototype->declarations){
+				if(first) first = false;
+				else f << ", " ;
+				a->write(f,b+"  ");
+			}
+			f << ": ";
+			f << ret;
 		}
 		void registerFunctionArgs(RData& r) override{
 			ofunction::registerFunctionArgs(r);
@@ -184,6 +197,20 @@ class userFunction : public ofunction{
 			ofunction(id, a, b, dec){
 			ret = r;
 		}
+		void write(ostream& f, String b) const override{
+			f << "def ";
+			f << returnV << " ";
+			f << (prototype->name) ;
+			f << "(" ;
+			bool first = true;
+			for(auto &a: prototype->declarations){
+				if(first) first = false;
+				else f << ", " ;
+				a->write(f,"");
+			}
+			f << ")";
+			if(ret!=NULL) ret->write(f, b);
+		}
 		void registerFunctionArgs(RData& ra) override{
 			ofunction::registerFunctionArgs(ra);
 			ret->registerFunctionArgs(ra);
@@ -235,7 +262,8 @@ class userFunction : public ofunction{
 					//	ar.builder.GetInsertBlock();
 					BasicBlock::Create(getGlobalContext(), "entry", F);
 			ra.builder.SetInsertPoint(BB);
-			Value* v = ret->evaluate(ra);
+			//Value* v =
+					ret->evaluate(ra);
 			//if(r!=VOIDTYPE)
 			//	ar.builder.CreateRet(v);
 			//else

@@ -43,8 +43,7 @@ class oarray : public oobject{
 				exit(0);
 			}
 		}*/
-		operator String () const override{
-			std::stringstream ss;
+		void write(ostream& ss, String b) const override{
 			ss << "[";
 			if(data.size()>0) {
 				for(unsigned int i = 0; i<data.size(); ++i){
@@ -53,7 +52,6 @@ class oarray : public oobject{
 				}
 			}
 			ss << "]";
-			return ss.str();
 		}
 };
 

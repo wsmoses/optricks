@@ -87,7 +87,7 @@ class Declaration: public Statement{
 			return new Declaration(filePos, classV, variable, (value==NULL)?NULL:(value->simplify()) );
 		}
 		void write(ostream& f, String s="") const final override{
-			f << "DECLARATION(";
+			//f << "d(";
 			if(classV!=NULL) f << classV << " ";
 			else f << "auto ";
 			variable->write(f);
@@ -95,7 +95,7 @@ class Declaration: public Statement{
 				f << "=";
 				value->write(f);
 			}
-			f << ")";
+			//f << ")";
 		}
 };
 
