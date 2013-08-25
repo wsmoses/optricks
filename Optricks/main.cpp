@@ -213,6 +213,7 @@ int main(int argc, char** argv){
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
 	lexer.execFile("./stdlib/stdlib.opt",true, true,false);
+//	lexer.execFile("./mandel.opt",true, true,true);
 	if(!interactive)
 		lexer.execFile(file,false, false,debug);
 	else{

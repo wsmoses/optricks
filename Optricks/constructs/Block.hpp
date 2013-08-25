@@ -38,7 +38,14 @@ class Block : public Statement{
 
 		}
 		Value* evaluate(RData& r) override{
-			for(auto& a:values) a->evaluate(r);
+			bool ret = false;
+			for(auto& a:values){
+				if(ret) error("Already had guarenteed return");
+				r.guarenteedReturn = false;
+				a->evaluate(r);
+				if(r.guarenteedReturn) ret = true;
+			}
+			r.guarenteedReturn = ret;
 			return NULL;
 				//TODO check;
 //			error("Block eval not implemented");

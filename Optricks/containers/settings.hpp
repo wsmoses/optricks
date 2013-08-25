@@ -8,8 +8,6 @@
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
 
-extern "C"
-
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
@@ -124,14 +122,77 @@ struct PositionID{
 		}
 };
 
+
+enum JumpType{
+	RETURN = 0,
+	BREAK = 1,
+	CONTINUE = 2
+};
+
+enum TJump{
+	FUNC = 0,
+	LOOP = 1
+};
+
+struct Jumpable {
+	public:
+		String name;
+		TJump toJump;
+		BasicBlock* start;
+		BasicBlock* end;
+		ClassProto* returnType;
+		std::vector<std::pair<BasicBlock*,Value*> > endings;
+		Jumpable(String n, TJump t, BasicBlock* s, BasicBlock* e, ClassProto* p):
+			name(n), toJump(t), start(s), end(e), returnType(p){
+		}
+};
 struct RData{
+	private:
+		std::vector<Jumpable*> jumps;
 	public:
 		RData();
-		OModule* module;
+//		OModule* module;
+		bool guarenteedReturn;
 		Module* lmod;
 		FunctionPassManager* fpm;
 		IRBuilder<> builder;
 		ExecutionEngine* exec;
+		void addJump(Jumpable* j){
+			jumps.push_back(j);
+		}
+		Jumpable* popJump(){
+			auto a = jumps.back();
+			jumps.pop_back();
+			return a;
+		}
+		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val){
+			if(name==""){
+				if(jump==RETURN){
+					for(unsigned int i = jumps.size()-1; ; i--){
+						if(jumps[i]->toJump == FUNC){
+							if(jumps[i]->returnType != ret){
+								cerr << "Invalid return type, trying to use a " << ret->name << " instead of a " << jumps[i]->returnType->name << endl << flush;
+								exit(0);
+							}
+							jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+							return jumps[i]->end;
+						}
+						if(i == 0){
+							cerr << "Error could not find returning block" << endl << flush;
+							return NULL;
+						}
+					}
+				} else {
+					cerr << "Error not done yet" << endl << flush;
+					exit(1);
+					return NULL;
+				}
+			} else {
+				cerr << "Error not done yet2" << endl << flush;
+				exit(1);
+				return NULL;
+			}
+		}
 };
 
 class obinop{

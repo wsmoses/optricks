@@ -79,6 +79,7 @@ class Declaration: public Statement{
 				r.builder.CreateStore(value->evaluate(r), Alloca);
 			}
 			variable->pointer->resolveAlloc() = Alloca;
+			r.guarenteedReturn = false;
 			return NULL;
 			//variable->pointer->resolve() = r.builder.CreateLoad(Alloca);
 //			error("Todo: allow declaration evaluation");

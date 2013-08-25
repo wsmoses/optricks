@@ -31,7 +31,7 @@ class Lexer{
 		Stream* f;
 		OModule* myMod;
 		//char endWith;
-		bool inter;
+	//	bool inter;
 		RData rdata;
 		Lexer(Stream* t, bool inter):f(t),rdata(){
 			//endWith=EOF;
@@ -365,10 +365,11 @@ class Lexer{
 					else return te;
 				}
 				else if(temp=="return"){
+					if(!allowDeclaration) f->error("Cannot have return here");
 					f->trim(endWith);
 					Statement* t = VOID;
 					if(f->peek()!='}' && f->peek()!=',' && f->peek()!=':' && f->peek()!=')') t = getNextStatement(endWith, mod, true, false);
-					return new E_RETURN(pos(), t);
+					return new E_RETURN(pos(), t, "", RETURN);
 				}
 				else{
 					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp,pos()));

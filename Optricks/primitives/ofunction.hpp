@@ -261,13 +261,29 @@ class userFunction : public ofunction{
 			BasicBlock *BB =
 					//	ar.builder.GetInsertBlock();
 					BasicBlock::Create(getGlobalContext(), "entry", F);
+			BasicBlock *MERGE =
+					//	ar.builder.GetInsertBlock();
+					BasicBlock::Create(getGlobalContext(), "funcMerge", F);
+			Jumpable* j = new Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
+			ra.addJump(j);
 			ra.builder.SetInsertPoint(BB);
-			//Value* v =
-					ret->evaluate(ra);
-			//if(r!=VOIDTYPE)
-			//	ar.builder.CreateRet(v);
-			//else
-			//	ar.builder.CreateRetVoid();
+			ra.guarenteedReturn = false;
+			ret->evaluate(ra);
+			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
+			if(! ra.guarenteedReturn) ra.builder.CreateBr(MERGE);
+			ra.guarenteedReturn = false;
+			ra.builder.SetInsertPoint(MERGE);
+			if(r!=VOIDTYPE){
+				auto functionReturnType = prototype->returnType->type;
+				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j->endings.size(), "funcRet" );
+				for(auto &a : j->endings){
+					phi->addIncoming(a.second, a.first);
+				}
+				ra.builder.CreateRet(phi);
+			}
+			else
+				ra.builder.CreateRetVoid();
+			free(j);
 			//cout << "testing cos" << cos(3) << endl << flush;
 			verifyFunction(*F);
 			//cout << "verified" << endl << flush;

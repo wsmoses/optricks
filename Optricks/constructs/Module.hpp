@@ -192,7 +192,9 @@ class LateResolve : public Resolvable{
 OModule* LANG_M = new OModule(NULL);
 
 RData::RData():
-			module(new OModule(LANG_M)),
+//			module(new OModule(LANG_M)),
+			jumps(),
+			guarenteedReturn(false),
 			lmod(new Module("main",getGlobalContext())),
 			builder(IRBuilder<>(lmod->getContext()))
 			{

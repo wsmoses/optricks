@@ -51,38 +51,47 @@ class IfStatement : public Statement{
 			return returnType;
 		}
 		Value* evaluate(RData& r) override{
-
+				bool ret = true;
 		//	  BasicBlock *Parent = r.builder.GetInsertBlock();
 	//		BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then");
 			  Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			  BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			  BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
-			  BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
+			  BasicBlock *MergeBB = NULL;
+			  ;
 
 			  r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
 
-			  // Emit then value.
+			  r.guarenteedReturn = false;
 			  r.builder.SetInsertPoint(ThenBB);
-
 			  then->evaluate(r);
-
-			  r.builder.CreateBr(MergeBB);
-			  // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
-			  ThenBB = r.builder.GetInsertBlock();
+			  if(!r.guarenteedReturn){
+				  if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
+				  r.builder.CreateBr(MergeBB);
+			  }
+			  ret = ret && r.guarenteedReturn;
 
 			  // Emit else block.
 			  TheFunction->getBasicBlockList().push_back(ElseBB);
 			  r.builder.SetInsertPoint(ElseBB);
 
-			  if(finalElse->getToken() != T_VOID) finalElse->evaluate(r);
-
-			  r.builder.CreateBr(MergeBB);
-			  // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
-			  ElseBB = r.builder.GetInsertBlock();
+			  if(finalElse->getToken() != T_VOID){
+				  r.guarenteedReturn = false;
+				  finalElse->evaluate(r);
+				  ret = ret && r.guarenteedReturn;
+			  }
+			  else ret = false;
+			  if(!r.guarenteedReturn){
+				  if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
+				  r.builder.CreateBr(MergeBB);
+			  }
 
 			  // Emit merge block.
+			  if(MergeBB!=NULL){
 			  TheFunction->getBasicBlockList().push_back(MergeBB);
 			  r.builder.SetInsertPoint(MergeBB);
+			  }
+			  r.guarenteedReturn = ret;
 			  return MergeBB;
 		}
 		Statement* simplify() override{

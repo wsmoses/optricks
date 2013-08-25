@@ -11,7 +11,10 @@
 class E_RETURN : public Statement{
 	public:
 		Statement* inner;
-		E_RETURN(PositionID id, Statement* t) : Statement(id, t->returnType), inner(t) { };
+		String name;
+		JumpType jump;
+		E_RETURN(PositionID id, Statement* t, String n, JumpType j) :
+			Statement(id, t->returnType), inner(t), name(n), jump(j){ };
 		const Token getToken() const override{
 			return T_RETURN;
 		};
@@ -39,10 +42,23 @@ class E_RETURN : public Statement{
 			inner->resolvePointers();
 		}
 		Value* evaluate(RData& r) override {
-			Value* t;
-			if(inner->getToken()!=T_VOID) t = inner->evaluate(r);
-			if(returnType==voidClass) return r.builder.CreateRetVoid();
-			else return r.builder.CreateRet(t);
+			Value* t = NULL;
+	//		BasicBlock *Parent = r.builder.GetInsertBlock();
+	//		BasicBlock *RETB = BasicBlock::Create(getGlobalContext(), "ret");
+	//		r.builder.SetInsertPoint(RETB);
+			if(inner->getToken()!=T_VOID){
+				t = inner->evaluate(r);
+				if(t==NULL) error("Why is t null?");
+			}
+			auto toBreak = r.getBlock(name, jump, returnType, r.builder.GetInsertBlock(), t);
+	//		auto toBreak = r.getBlock(name, jump, returnType, RETB, t);
+			r.builder.CreateBr(toBreak);
+			r.guarenteedReturn = true;
+	//		r.builder.SetInsertPoint(Parent);
+			return NULL;
+	//		return RETB;
+			//if(returnType==voidClass) return r.builder.CreateRetVoid();
+			//else return r.builder.CreateRet(t);
 		}
 		//TODO verify that this is valid and does not call order of ops again
 		Statement* simplify() override{
