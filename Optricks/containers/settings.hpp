@@ -183,9 +183,16 @@ struct RData{
 						}
 					}
 				} else {
-					cerr << "Error not done yet" << endl << flush;
-					exit(1);
-					return NULL;
+					for(unsigned int i = jumps.size()-1; ; i--){
+						if(jumps[i]->toJump == LOOP){
+							//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+							return (jump==BREAK)?(jumps[i]->end):(jumps[i]->start);
+						}
+						if(i == 0){
+							cerr << "Error could not find continue/break block" << endl << flush;
+							return NULL;
+						}
+					}
 				}
 			} else {
 				cerr << "Error not done yet2" << endl << flush;
@@ -262,6 +269,9 @@ ClassProto* stringClass = new ClassProto("string",STRINGTYPE);
 ClassProto* sliceClass = new ClassProto("slice");
 ClassProto* voidClass = new ClassProto("void", VOIDTYPE);
 
+bool isStartName(int i){
+	return isalpha(i) || i=='_' || i=='$';
+}
 void initClassesMeta(){
 	///////******************************* Boolean ********************************////////
 	/* //TODO short-circuit
@@ -618,6 +628,12 @@ void initClassesMeta(){
 	LANG_M->addPointer("double",decClass,0);
 	LANG_M->addPointer("string",stringClass,0);
 	LANG_M->addPointer("slice",sliceClass,0);*/
+}
+
+template<typename C> bool in(const std::vector<C> a, C b){
+	for(const auto& e: a)
+		if(e==b) return true;
+	return false;
 }
 
 #endif /* SETTINGS_HPP_ */

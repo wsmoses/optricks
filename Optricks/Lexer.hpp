@@ -31,7 +31,7 @@ class Lexer{
 		Stream* f;
 		OModule* myMod;
 		//char endWith;
-	//	bool inter;
+		//	bool inter;
 		RData rdata;
 		Lexer(Stream* t, bool inter):f(t),rdata(){
 			//endWith=EOF;
@@ -64,10 +64,10 @@ class Lexer{
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats){
 				auto t = n->evaluate(rdata);
-				if(debug){
-					t->dump();
-					cerr << endl << flush;
-				}
+			}
+			if(debug){
+				rdata.lmod->dump();
+				cerr << endl << flush;
 			}
 			rdata.builder.CreateRetVoid();
 			verifyFunction(*F);
@@ -79,6 +79,34 @@ class Lexer{
 			f = tmp;
 			if(newModb) myMod = new OModule(myMod);
 		}
+		String getNextName(char endWith){
+			f->trim(endWith);
+			auto temp = f->getNextName(endWith);
+			if(temp.length()==0) f->error("Variable Name of Length 0, next char is "+String(1,f->peek()));
+			if(in<String>(RESERVED_KEYWORDS, temp)) f->error("Variable name is a reserved keyword");
+			if(in<String>(BINARY_OPERATORS, temp)) f->error("Variable name is a binary operator");
+			return temp;
+		}
+		E_VAR* getNextVariable(char endWith, OModule* mod, bool late=true){
+			Resolvable* pointer;
+			if(late) pointer = new LateResolve(mod, getNextName(endWith), pos());
+			else pointer = mod->addPointer(pos(), getNextName(endWith),NULL,NULL,NULL,NULL,NULL);
+			return new E_VAR(pos(), pointer);
+		}
+		Declaration* getNextDeclaration(char endWith, OModule* mod){
+			f->trim(endWith);
+			Statement* declarationType = getNextType(EOF, mod);
+			f->trim(EOF);
+			String varName = getNextName(endWith);
+			f->trim(endWith);
+			Statement* value = NULL;
+			if(f->peek()=='='){
+				f->read();
+				value = getNextStatement(EOF, mod, true,false);
+			}
+			E_VAR* variable = new E_VAR(pos(), mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL,NULL)); // TODO look at
+			return new Declaration(pos(), declarationType, variable, value);
+		}
 		Statement* getNextStatement(char endWith){
 			return getNextStatement(endWith, myMod, true, true);
 		}
@@ -86,16 +114,12 @@ class Lexer{
 			std::vector<Declaration*> args;
 			if(f->done) return args;
 			while(true){
-
 				if(f->trim(endWith)) return args;
 				if(f->peek()==finish){
 					f->read();
 					return args;
 				}
-				Declaration* d = dynamic_cast<Declaration*>(getNextStatement(EOF, m, true,true));
-				if(d==NULL){
-					f->error("Could not parse declaration",true);
-				}
+				Declaration* d = getNextDeclaration(EOF, m);
 				for(auto& a:args){
 					if(d->variable->pointer->name == a->variable->pointer->name){
 						f->error("Cannot have duplicate argument name: "+a->variable->pointer->name, true);
@@ -104,11 +128,11 @@ class Lexer{
 				args.push_back(d);
 				f->trim(endWith);
 				char tchar = f->peek();
-				if(tchar==finish || tchar==',' || tchar==';'){
+				if(tchar==finish || tchar==','){
 					f->read();
 					if(tchar==finish) return args;
 				}
-				else f->error("Could not parse arguments");
+				else f->error("Could not parse arguments - encountered character "+String(1,tchar));
 			}
 			return args;
 		}
@@ -123,16 +147,14 @@ class Lexer{
 			if(par!=NULL) *par=paren;
 			if(paren){
 				Block* blocks = new Block(pos());
-				bool fpek;
-				do{
-					f->trim(EOF);
+				f->trim(EOF);
+				while(f->peek()!='}'){
 					Statement* e = getNextStatement(EOF, module, true, true);
 					if(e!=NULL && e->getToken()!=T_VOID) blocks->values.push_back(e);
 					f->trim(EOF);
 					while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
 					f->trim(EOF);
-					fpek = f->peek()=='}';
-				}while(!f->done && !fpek);
+				}
 				f->trim(endWith);
 				if(paren && f->read()!='}') f->error("Need '}' for ending block statement");
 				return blocks;
@@ -144,13 +166,33 @@ class Lexer{
 				return s;
 			}
 		}
+		Statement* getNextType(char endWith, OModule* mod){
+			f->trim(EOF);
+			if(f->done || !isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
+			Statement* currentType = getNextVariable(endWith, mod);
+			do{
+				f->trim(endWith);
+				auto marker = f->getMarker();
+				String typeOperation = f->getNextOperator(endWith);
+				if(typeOperation=="" || !in<String>(TYPE_OPERATORS, typeOperation)){
+					f->undoMarker(marker);
+					break;
+				}
+				f->trim(endWith);
+				if(f->done || isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
+				auto nextVariable = getNextName(endWith);
+				currentType = new E_LOOKUP(pos(), currentType, nextVariable, typeOperation);
+			}while(true);
+			return currentType;
+		}
 		Statement* getNextStatement(char endWith, OModule* mod, bool opCheck, bool allowDeclaration){
 			if(f->done || f->trim(EOF)) return VOID;
 			int nex = f->peek();
 			if(f->done || nex==EOF /*|| nex==endWith*/) return VOID;
 			if(nex==';') return VOID;
 			bool semi;
-			if (isalpha(nex) || nex=='_' || nex=='$') {
+			if (isStartName(nex)) {
+				auto undoRead = f->getMarker();
 				String temp = f->getNextName(endWith);
 				if(temp=="if"){
 					if(f->trim(EOF)) f->error("Uncompleted if");
@@ -160,8 +202,7 @@ class Lexer{
 					if(!f->done && f->peek()==':') f->read();
 					Statement* s = getNextBlock(endWith, mod);
 					if(c->getToken()==T_VOID) f->error("Need expression for if");
-					statements.push_back(
-							std::pair<Statement*,Statement* >(c,s));
+					statements.push_back(std::pair<Statement*,Statement* >(c,s));
 					f->trim(endWith);
 					while(!f->done && f->peek()==';') f->read();
 					auto marker = f->getMarker();
@@ -180,10 +221,8 @@ class Lexer{
 							c = getNextStatement(EOF, mod, true,false);
 							if(!f->done && f->peek()==':') f->read();
 							s = getNextBlock(endWith, mod);
-							statements.push_back(
-									std::pair<Statement*,Statement* >(c,s));
+							statements.push_back(std::pair<Statement*,Statement* >(c,s));
 							f->trim(endWith);
-
 							while(!f->done && f->peek()==';') f->read();
 						}
 						else{
@@ -217,7 +256,7 @@ class Lexer{
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 						f->trim(EOF);
 						Statement* cond = VOID;
-						if(f->peek()!=';') cond = getNextStatement(EOF, module, true, true);
+						if(f->peek()!=';') cond = getNextStatement(EOF, module, true, false);
 						if(cond->getToken()==T_VOID) cond = new obool(pos(), true);
 						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 						f->trim(EOF);
@@ -230,8 +269,7 @@ class Lexer{
 						//TODO implement for loop naming
 					}
 					else{
-						String varName = f->getNextName(EOF);
-						if( varName.length()==0)f->error("Need variable to iterate on",true);
+						String iterName = getNextName(EOF);
 						f->trim(EOF);
 						bool as = f->getNextName(endWith)=="in";
 						f->trim(EOF);
@@ -292,14 +330,16 @@ class Lexer{
 					Statement* methodBody = getNextBlock(endWith, module);
 					return new lambdaFunction(pos(), arguments, methodBody);
 				}
-				else if (temp == "def" || temp=="lambda" || temp=="function" || temp=="method" ){
+				else if (temp == "def" || temp=="function" || temp=="method" ){
 					if(f->trim(EOF)) f->error("Uncompleted function");
-					Statement* returnName = getNextStatement(EOF, mod, true, false);
+					Statement* returnName = getNextType(endWith, mod);
 					OModule* module = new OModule(mod);
 					f->trim(EOF);
-					unsigned int m = f->getMarker();
-					String methodName = f->getNextName(endWith);
-					if(f->trim(endWith)) f->error("Uncompleted function (with name)");
+					String methodName = "";
+					if(isStartName(f->peek())){
+						methodName = getNextName(endWith);
+						f->trim(EOF);
+					}
 					std::vector<Declaration*> arguments;
 					if(!f->done){
 						if(f->peek()=='('){
@@ -307,7 +347,6 @@ class Lexer{
 							arguments = parseArguments(EOF, module);
 						}
 						else{
-							f->undoMarker(m);
 							f->trim(endWith);
 							methodName="";
 							arguments = parseArguments(EOF, module, ':');
@@ -322,18 +361,19 @@ class Lexer{
 					Statement* methodBody = getNextBlock(endWith, module, &paren);
 					E_VAR* funcName = new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL));
 					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody);
-						f->trim(endWith);
-						semi  = false;
-						if(!f->done && f->peek()==';'){ semi = true; }
-						f->trim(endWith);
-						if(opCheck && !semi) return operatorCheck(endWith, mod, func);
-						return func;
+					f->trim(endWith);
+					semi  = false;
+					if(!f->done && f->peek()==';'){ semi = true; }
+					f->trim(endWith);
+					if(opCheck && !semi) return operatorCheck(endWith, mod, func);
+					return func;
 				}
 				else if (temp == "extern"){
 					if(f->trim(endWith)) f->error("Extern without name");
-					Statement* retV = getNextStatement(EOF, mod, true, false);
+					Statement* retV = getNextType(EOF, mod);
 					f->trim(endWith);
-					E_VAR* externName = new E_VAR(pos(), mod->addPointer(pos(), f->getNextName(endWith),NULL,functionClass,NULL,NULL,NULL));
+					E_VAR* externName = getNextVariable(endWith, mod,false);
+					externName->pointer->resolveReturnClass() = functionClass;
 					f->trim(endWith);
 					if(f->peek()!='('){
 						f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -343,9 +383,7 @@ class Lexer{
 					OModule* m2 = new OModule(mod);
 					while(true){
 						if(f->trim(endWith) || f->peek()==')') break;
-						Statement* s = getNextStatement(EOF, m2,true,true);
-						Declaration* d = dynamic_cast<Declaration*>(s);
-						if(d==NULL) f->error("Could not parse extern declaration");
+						Declaration* d= getNextDeclaration(EOF, m2);
 						dec.push_back(d);
 						if(f->trim(endWith)) break;
 						if(f->peek()==',') f->read();
@@ -371,34 +409,31 @@ class Lexer{
 					if(f->peek()!='}' && f->peek()!=',' && f->peek()!=':' && f->peek()!=')') t = getNextStatement(endWith, mod, true, false);
 					return new E_RETURN(pos(), t, "", RETURN);
 				}
+				else if(temp=="break" || temp=="continue"){
+					if(!allowDeclaration) f->error("Cannot have return here");
+					f->trim(endWith);
+					String name = "";
+					if(isStartName(f->peek())){
+						name = getNextName(EOF);
+					}
+					return new E_RETURN(pos(), NULL, name, (temp=="break")?BREAK:CONTINUE );
+				}
 				else{
-					Statement* te = new E_VAR(pos(), new LateResolve(mod,temp,pos()));
 					auto start = f->getMarker();
 					f->trim(endWith);
-					if(allowDeclaration && start!=f->getMarker() && isalpha(f->peek()) ){
-						E_VAR* n = dynamic_cast<E_VAR*>(getNextStatement(endWith, mod, false, false));
-						if(n!=NULL){
-							f->trim(endWith);
-							Statement* value = NULL;
-							if(f->peek()=='='){
-								f->read();
-								value = getNextStatement(EOF, mod, true,false);
-							}
-							if(!f->done && f->peek()==';'){ semi = true; }
-							n = new E_VAR(pos(), mod->addPointer(pos(), n->pointer->name,NULL,NULL,NULL,NULL,NULL)); // TODO look at
-							return new Declaration(pos(), (E_VAR*)te, n, value);
-						}
-						else{
-							f->undoMarker(start);
-							f->trim(endWith);
-						}
+					if(allowDeclaration && start!=f->getMarker() && isStartName(f->peek()) ){
+						f->undoMarker(undoRead);
+						return getNextDeclaration(endWith, mod);
+					} else {
+						f->undoMarker(undoRead);
+						E_VAR* nextVar = getNextVariable(endWith, mod);
+						semi  = false;
+						if(!f->done && f->peek()==';'){ semi = true; }
+						f->trim(endWith);
+						if(opCheck && !semi)
+							return operatorCheck(endWith, mod, nextVar);
+						else return nextVar;
 					}
-					semi  = false;
-					if(!f->done && f->peek()==';'){ semi = true; }
-					f->trim(endWith);
-					if(opCheck && !semi)
-						return operatorCheck(endWith, mod, te);
-					else return te;
 				}
 			}
 			else{
@@ -465,7 +500,7 @@ class Lexer{
 							}
 							if(open=='(' && !forceAr && arr->values.size()==1){
 								Statement* temp = arr->values[0];
-								delete arr;
+								//delete arr;
 								if((te = f->read())!=close) f->error("Cannot end inline paren with "+
 										String(1,te)+" instead of "+String(1,close)
 								);
@@ -527,9 +562,7 @@ class Lexer{
 			return VOID;
 		}
 		Statement* operatorCheck(char endWith, OModule* mod, Statement* exp){
-			if(f->done || f->trim(endWith)){
-				return exp;
-			}
+			if(f->done || f->trim(endWith))	return exp;
 			if(f->last()==endWith){
 				f->write(endWith);
 				return exp;
@@ -579,10 +612,10 @@ class Lexer{
 				// due to operatorCheck on tuple
 				Statement* e = getNextStatement(endWith, mod, false,false);
 				Statement* ret;
-					if(e->getToken()==T_PARENS)
-						ret = new E_FUNC_CALL(pos(), exp, std::vector<Statement*>(1,
-								((E_PARENS*)e)->inner));
-					else ret = new E_FUNC_CALL(pos(), exp, ((E_ARR*)e)->values);
+				if(e->getToken()==T_PARENS)
+					ret = new E_FUNC_CALL(pos(), exp, std::vector<Statement*>(1,
+							((E_PARENS*)e)->inner));
+				else ret = new E_FUNC_CALL(pos(), exp, ((E_ARR*)e)->values);
 				f->trim(endWith);
 
 				bool semi  = false;
@@ -640,12 +673,10 @@ class Lexer{
 				//equality and check
 			}
 			 */ //TODO implement custom operators (a and b,  r if g else b )
-			else if (tmp == "." || tmp=="->" || tmp==":" || tmp=="::" || tmp==".*"
-					|| tmp==":*" || tmp=="::*"|| tmp=="->*" || tmp=="=>*"){
-				String name = f->getNextName(endWith);
+			else if (in<String>(TYPE_OPERATORS, tmp)){
+				String name = getNextName(endWith);
 				if(name.length()==0) f->error("Name for lookup cannot be "+name);
-
-				fixed = (new E_LOOKUP(pos(), tmp, exp, name));
+				fixed = (new E_LOOKUP(pos(), exp, name, tmp));
 			}
 			else if(tmp=="="){
 				Statement* post = getNextStatement(endWith, mod, true,false);

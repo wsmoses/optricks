@@ -75,8 +75,8 @@ class IfStatement : public Statement{
 			  TheFunction->getBasicBlockList().push_back(ElseBB);
 			  r.builder.SetInsertPoint(ElseBB);
 
+			  r.guarenteedReturn = false;
 			  if(finalElse->getToken() != T_VOID){
-				  r.guarenteedReturn = false;
 				  finalElse->evaluate(r);
 				  ret = ret && r.guarenteedReturn;
 			  }

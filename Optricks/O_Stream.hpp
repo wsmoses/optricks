@@ -19,7 +19,17 @@ const bool isOperator(const char a){
 			/*a=='{' || a=='}' ||*/ a=='?';
 }
 
-const String BINARY_OPERATORS[]{"and", "or", "xor","xnor",
+const std::vector<String> RESERVED_KEYWORDS = {
+		"if","else","elif","for","while","do",
+		"lambda","def","function","method","extern",
+		"true","false",
+		"return","break","continue"
+};
+
+const std::vector<String> TYPE_OPERATORS = {
+		".",":","::","->",".*",":*","::*","->*","=>*"
+};
+const std::vector<String> BINARY_OPERATORS = {"and", "or", "xor","xnor",
 		".",":","::","->",".*",":*","::*","->*","=>*",
 		"*^" ,"<>",
 		"++","--","%%",

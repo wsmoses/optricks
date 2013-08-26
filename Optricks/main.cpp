@@ -195,7 +195,6 @@ int main(int argc, char** argv){
 	if(interactive) {
 		cout << "Optricks version 0.1.5" << endl << flush;
 		cout << "Created by Billy Moses" << endl << endl << flush;
-		cout << "Be sure to output a semicolon to end your statement" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
 	//should ++ / -- be eliminated and replaced with +=1 and -=1
@@ -242,7 +241,8 @@ int main(int argc, char** argv){
 //		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
 		//st->force("for(int i = 0; i<10; i= i+1) putchar(i+48)\n");
 		//st->force("if(true){ for(int i = 0; i<10; i= i+1) putchar(i+48)} \n");
-		//st->force("3\n");
+		//st->force("for(int i = 0; i<10; i+=1){ if(i==5) break; printi(i); }\n");
+		//st->force("(def void (int i){for(int i = 0; i<10; i+=1){ if(i%2==0) continue; printi(i) } })(0);");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

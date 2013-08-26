@@ -270,7 +270,10 @@ class userFunction : public ofunction{
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
-			if(! ra.guarenteedReturn) ra.builder.CreateBr(MERGE);
+			if(! ra.guarenteedReturn){
+				if(prototype->returnType==voidClass)	ra.builder.CreateBr(MERGE);
+				else error("Could not find return statement");
+			}
 			ra.guarenteedReturn = false;
 			ra.builder.SetInsertPoint(MERGE);
 			if(r!=VOIDTYPE){

@@ -38,32 +38,34 @@ class ForLoop : public Statement{
 		Value* evaluate(RData& r) override{
 			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->evaluate(r);
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock *PreheaderBB = r.builder.GetInsertBlock();
 
-			BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+			BasicBlock *loopBlock = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
+			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
 
-			  // Insert an explicit fall through from the current block to the LoopBB.
-			r.builder.CreateBr(LoopBB);
+			r.builder.CreateBr(loopBlock);
 
-			  // Start insertion in LoopBB.
-			r.builder.SetInsertPoint(LoopBB);
+			r.builder.SetInsertPoint(loopBlock);
+			Jumpable* j = new Jumpable(name, LOOP, incBlock, afterBlock, NULL);
+			r.addJump(j);
+			r.guarenteedReturn = false;
 			toLoop->evaluate(r);
+			if(r.popJump()!=j) error("Did not receive same func jumpable created");
+			r.builder.CreateBr(incBlock);
+
+			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
 			Value *EndCond = condition->evaluate(r);
+			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
+			r.guarenteedReturn = false;
 
-			BasicBlock *LoopEndBB = r.builder.GetInsertBlock();
-			  BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
-
-			  // Insert the conditional branch into the end of LoopEndBB.
-			  r.builder.CreateCondBr(EndCond, LoopBB, AfterBB);
-
-			  // Any new code will be inserted in AfterBB.
-			  r.builder.SetInsertPoint(AfterBB);
-			  return AfterBB;
+			// Any new code will be inserted in AfterBB.
+			r.builder.SetInsertPoint(afterBlock);
+			return TheFunction;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
-			toLoop->write(a,b+"  ");
+			toLoop->write(a,b);
 		}
 
 		void registerClasses(RData& r) override final{

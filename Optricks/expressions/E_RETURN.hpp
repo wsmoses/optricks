@@ -14,62 +14,96 @@ class E_RETURN : public Statement{
 		String name;
 		JumpType jump;
 		E_RETURN(PositionID id, Statement* t, String n, JumpType j) :
-			Statement(id, t->returnType), inner(t), name(n), jump(j){ };
+			Statement(id, voidClass), inner(t), name(n), jump(j){ };
 		const Token getToken() const override{
 			return T_RETURN;
 		};
 
-		FunctionProto* getFunctionProto() override final{ return inner->getFunctionProto(); }
-		void setFunctionProto(FunctionProto* f) override final { inner->setFunctionProto(f); }
-		ClassProto* getClassProto() override final{ return inner->getClassProto(); }
-		void setClassProto(ClassProto* f) override final { inner->setClassProto(f); }
-		AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
-		void setAlloc(AllocaInst* f) override final { inner->setAlloc(f); }
-		String getObjName() override final { return inner->getObjName(); }
-		void setResolve(Value* v) override final { inner->setResolve(v); }
-		Value* getResolve() override final { return inner->getResolve(); }
+		FunctionProto* getFunctionProto() override final{
+			error("Cannot getFunctionProto() for E_RETURN");
+			return inner->getFunctionProto();
+		}
+		void setFunctionProto(FunctionProto* f) override final {
+			error("Cannot setFunctionProto() for E_RETURN");
+			inner->setFunctionProto(f); }
+		ClassProto* getClassProto() override final{
+			error("Cannot getClassProto() for E_RETURN");
+			return inner->getClassProto(); }
+		void setClassProto(ClassProto* f) override final {
+			error("Cannot setClassProto() for E_RETURN");
+			inner->setClassProto(f); }
+		AllocaInst* getAlloc() override final{
+			error("Cannot getAlloc() for E_RETURN");
+			return inner->getAlloc(); };
+		void setAlloc(AllocaInst* f) override final {
+			error("Cannot setAlloc() for E_RETURN");
+			inner->setAlloc(f); }
+		String getObjName() override final {
+			error("Cannot getObjName() for E_RETURN");
+			return inner->getObjName(); }
+		void setResolve(Value* v) override final {
+			error("Cannot setResolve() for E_RETURN");
+			inner->setResolve(v); }
+		Value* getResolve() override final {
+			error("Cannot getResolve() for E_RETURN");
+			return inner->getResolve(); }
 
 		void registerClasses(RData& r) override final{
+			if(inner!=NULL)
 			inner->registerClasses(r);
 		}
 		void registerFunctionArgs(RData& r) override final{
+			if(inner!=NULL)
 			inner->registerFunctionArgs(r);
 		}
 		void registerFunctionDefaultArgs() override final{
+			if(inner!=NULL)
 			inner->registerFunctionDefaultArgs();
 		}
 		void resolvePointers() override final{
+			if(inner!=NULL)
 			inner->resolvePointers();
+		}
+		Statement* simplify() override{
+			return this;
 		}
 		Value* evaluate(RData& r) override {
 			Value* t = NULL;
 	//		BasicBlock *Parent = r.builder.GetInsertBlock();
 	//		BasicBlock *RETB = BasicBlock::Create(getGlobalContext(), "ret");
 	//		r.builder.SetInsertPoint(RETB);
-			if(inner->getToken()!=T_VOID){
+			if(inner!=NULL && inner->getToken()!=T_VOID){
 				t = inner->evaluate(r);
 				if(t==NULL) error("Why is t null?");
 			}
-			auto toBreak = r.getBlock(name, jump, returnType, r.builder.GetInsertBlock(), t);
+			auto toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t);
 	//		auto toBreak = r.getBlock(name, jump, returnType, RETB, t);
 			r.builder.CreateBr(toBreak);
-			r.guarenteedReturn = true;
-	//		r.builder.SetInsertPoint(Parent);
+			//if(jump==RETURN)
+				r.guarenteedReturn = true;
 			return NULL;
 	//		return RETB;
 			//if(returnType==voidClass) return r.builder.CreateRetVoid();
 			//else return r.builder.CreateRet(t);
 		}
-		//TODO verify that this is valid and does not call order of ops again
-		Statement* simplify() override{
-			return inner->simplify();
-		}
 		void write (ostream& f,String b="") const override{
-			f  << "return";
-			if(inner->getToken()!=T_VOID) f << " " << inner;
+			switch(jump){
+				case RETURN:
+					f  << "return";
+					if(inner!= NULL && inner->getToken()!=T_VOID) f << " " << inner;
+					return;
+				case BREAK:
+					f  << "break";
+					if(name!= "" ) f << " " << name;
+					return;
+				case CONTINUE:
+					f  << "continue";
+					if(name!= "" ) f << " " << name;
+					return;
+			}
 		}
 		ClassProto* checkTypes() override final{
-			return returnType = inner->checkTypes();
+			if(inner!=NULL) inner->checkTypes();
 		}
 };
 

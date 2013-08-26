@@ -16,7 +16,7 @@ class E_LOOKUP : public Statement{
 		Statement* left;
 		String right;
 		String operation;
-		E_LOOKUP(PositionID id, String o, Statement* a, String b): Statement(id),
+		E_LOOKUP(PositionID id, Statement* a,  String b, String o): Statement(id),
 				left(a), right(b), operation(o){};//TODO allow more detail
 
 		void write(ostream& f,String a="") const override{
