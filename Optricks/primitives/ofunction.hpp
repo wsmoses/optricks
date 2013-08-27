@@ -30,7 +30,7 @@ class ofunction:public oobject{
 				d->registerFunctionArgs(r);
 			}
 			//if(prototype->returnType==NULL) error("Function prototype-return should not be null");
-			if(self!=NULL){
+			if(self!=NULL && self->getObjName()!=""){
 				self->setFunctionProto(prototype);
 				self->returnType = functionClass;
 			}
@@ -245,9 +245,9 @@ class userFunction : public ofunction{
 			Type* r = cp->type;
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, self->getObjName(), ra.lmod);
+			Function *F = Function::Create(FT, Function::ExternalLinkage, (self==NULL)?"anonymousfunc":(self->getObjName()), ra.lmod);
 
-			self->setResolve(F);
+			if(self!=NULL) self->setResolve(F);
 			//BasicBlock *Parent = ar.builder.GetInsertBlock();
 			//	ar.builder.SetInsertPoint(Parent);
 

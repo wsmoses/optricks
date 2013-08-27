@@ -204,6 +204,7 @@ RData::RData():
 			fpm = new FunctionPassManager(lmod);
 	fpm->add(new DataLayout(*exec->getDataLayout()));
 	// Provide basic AliasAnalysis support for GVN.
+
 	fpm->add(createBasicAliasAnalysisPass());
 	// Do simple "peephole" optimizations and bit-twiddling optzns.
 	fpm->add(createInstructionCombiningPass());
@@ -213,6 +214,47 @@ RData::RData():
 	fpm->add(createGVNPass());
 	// Simplify the control flow graph (deleting unreachable blocks, etc).
 	fpm->add(createCFGSimplificationPass());
+///HERE ARE NEW ONES
+	fpm->add(createCFGSimplificationPass()); // Clean up disgusting code
+	    fpm->add(createPromoteMemoryToRegisterPass());// Kill useless allocas
+
+	    fpm->add(createInstructionCombiningPass()); // Cleanup for scalarrepl.
+	    fpm->add(createScalarReplAggregatesPass()); // Break up aggregate allocas
+	    fpm->add(createInstructionCombiningPass()); // Cleanup for scalarrepl.
+	    fpm->add(createJumpThreadingPass());        // Thread jumps.
+	    fpm->add(createCFGSimplificationPass());    // Merge & remove BBs
+	    fpm->add(createInstructionCombiningPass()); // Combine silly seq's
+
+	    fpm->add(createCFGSimplificationPass());    // Merge & remove BBs
+	    fpm->add(createReassociatePass());          // Reassociate expressions
+
+	    fpm->add(createEarlyCSEPass()); //// ****
+
+	    fpm->add(createLoopIdiomPass()); //// ****
+	    fpm->add(createLoopRotatePass());           // Rotate loops.
+	    fpm->add(createLICMPass());                 // Hoist loop invariants
+	    fpm->add(createLoopUnswitchPass());         // Unswitch loops.
+	    fpm->add(createInstructionCombiningPass());
+	    fpm->add(createIndVarSimplifyPass());       // Canonicalize indvars
+	    //fpm->add(createLoopDeletionPass());         // Delete dead loops
+	    fpm->add(createLoopUnrollPass());           // Unroll small loops
+	    //fpm->add(createLoopStrengthReducePass());   // (jwb added)
+
+	    fpm->add(createInstructionCombiningPass()); // Clean up after the unroller
+	    fpm->add(createGVNPass());                  // Remove redundancies
+	    //fpm->add(createMemCpyOptPass());            // Remove memcpy / form memset
+	    fpm->add(createSCCPPass());                 // Constant prop with SCCP
+
+	    // Run instcombine after redundancy elimination to exploit opportunities
+	    // opened up by them.
+	    fpm->add(createSinkingPass()); ////////////// ****
+	    fpm->add(createInstructionSimplifierPass());///////// ****
+	    fpm->add(createInstructionCombiningPass());
+	    fpm->add(createJumpThreadingPass());         // Thread jumps
+	    fpm->add(createDeadStoreEliminationPass());  // Delete dead stores
+
+	    fpm->add(createAggressiveDCEPass());         // Delete dead instructions
+	    fpm->add(createCFGSimplificationPass());     // Merge & remove BBs
 
 	fpm->doInitialization();
 		}

@@ -31,28 +31,32 @@ class DoWhileLoop : public Statement{
 		}
 		Value* evaluate(RData& r) override{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock *PreheaderBB = r.builder.GetInsertBlock();
 
-			BasicBlock *LoopBB = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+			BasicBlock *loopBlock = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
+			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
+			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
 
-			  // Insert an explicit fall through from the current block to the LoopBB.
-			r.builder.CreateBr(LoopBB);
+			r.builder.CreateBr(loopBlock);
 
-			  // Start insertion in LoopBB.
-			r.builder.SetInsertPoint(LoopBB);
+			// Start insertion in LoopBB.
+			r.builder.SetInsertPoint(loopBlock);
+			Jumpable* j = new Jumpable(name, LOOP, incBlock, afterBlock, NULL);
+			r.addJump(j);
+			r.guarenteedReturn = false;
 			statement->evaluate(r);
-			Value* step = condition->evaluate(r);
+			if(r.popJump()!=j) error("Did not receive same while-loop jumpable created");
+			r.builder.CreateBr(incBlock);
+
+
+			r.builder.SetInsertPoint(incBlock);
 			Value *EndCond = condition->evaluate(r);
+			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
+			r.guarenteedReturn = false;
 
-			BasicBlock *LoopEndBB = r.builder.GetInsertBlock();
-			  BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
-
-			  // Insert the conditional branch into the end of LoopEndBB.
-			  r.builder.CreateCondBr(EndCond, LoopBB, AfterBB);
-
-			  // Any new code will be inserted in AfterBB.
-			  r.builder.SetInsertPoint(AfterBB);
-			  return AfterBB;
+			r.builder.SetInsertPoint(afterBlock);
+			TheFunction->dump();
+			cerr << "TT" << endl << flush;
+			return afterBlock;
 		}
 
 		void registerClasses(RData& r) override final{
@@ -86,7 +90,7 @@ class DoWhileLoop : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

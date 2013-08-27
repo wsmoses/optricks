@@ -51,48 +51,45 @@ class IfStatement : public Statement{
 			return returnType;
 		}
 		Value* evaluate(RData& r) override{
-				bool ret = true;
-		//	  BasicBlock *Parent = r.builder.GetInsertBlock();
-	//		BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then");
-			  Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			  BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
-			  BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
-			  BasicBlock *MergeBB = NULL;
-			  ;
+			bool ret = true;
+			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
+			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
+			BasicBlock *MergeBB = NULL;
 
-			  r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
+			r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
 
-			  r.guarenteedReturn = false;
-			  r.builder.SetInsertPoint(ThenBB);
-			  then->evaluate(r);
-			  if(!r.guarenteedReturn){
-				  if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
-				  r.builder.CreateBr(MergeBB);
-			  }
-			  ret = ret && r.guarenteedReturn;
+			r.guarenteedReturn = false;
+			r.builder.SetInsertPoint(ThenBB);
+			then->evaluate(r);
+			if(!r.guarenteedReturn){
+				if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
+				r.builder.CreateBr(MergeBB);
+			}
+			ret = ret && r.guarenteedReturn;
 
-			  // Emit else block.
-			  TheFunction->getBasicBlockList().push_back(ElseBB);
-			  r.builder.SetInsertPoint(ElseBB);
+			// Emit else block.
+			TheFunction->getBasicBlockList().push_back(ElseBB);
+			r.builder.SetInsertPoint(ElseBB);
 
-			  r.guarenteedReturn = false;
-			  if(finalElse->getToken() != T_VOID){
-				  finalElse->evaluate(r);
-				  ret = ret && r.guarenteedReturn;
-			  }
-			  else ret = false;
-			  if(!r.guarenteedReturn){
-				  if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
-				  r.builder.CreateBr(MergeBB);
-			  }
+			r.guarenteedReturn = false;
+			if(finalElse->getToken() != T_VOID){
+				finalElse->evaluate(r);
+				ret = ret && r.guarenteedReturn;
+			}
+			else ret = false;
+			if(!r.guarenteedReturn){
+				if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
+				r.builder.CreateBr(MergeBB);
+			}
 
-			  // Emit merge block.
-			  if(MergeBB!=NULL){
-			  TheFunction->getBasicBlockList().push_back(MergeBB);
-			  r.builder.SetInsertPoint(MergeBB);
-			  }
-			  r.guarenteedReturn = ret;
-			  return MergeBB;
+			// Emit merge block.
+			if(MergeBB!=NULL){
+				TheFunction->getBasicBlockList().push_back(MergeBB);
+				r.builder.SetInsertPoint(MergeBB);
+			}
+			r.guarenteedReturn = ret;
+			return MergeBB;
 		}
 		Statement* simplify() override{
 			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
@@ -127,7 +124,7 @@ class IfStatement : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 

@@ -359,7 +359,7 @@ class Lexer{
 					}
 					bool paren;
 					Statement* methodBody = getNextBlock(endWith, module, &paren);
-					E_VAR* funcName = new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL));
+					E_VAR* funcName = (methodName=="")?NULL:(new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL)));
 					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody);
 					f->trim(endWith);
 					semi  = false;

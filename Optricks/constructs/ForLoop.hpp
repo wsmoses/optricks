@@ -18,10 +18,6 @@ class ForLoop : public Statement{
 		String name;
 		ForLoop(PositionID a, Statement* init, Statement* cond, Statement* inc,Statement* tL, String n="") :
 			Statement(a, voidClass), initialize(init),condition(cond),increment(inc),toLoop(tL){
-			/*if(condition->returnType!=boolClass){
-				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
-				exit(0);
-			}*/
 			name = n;
 		}
 		ClassProto* checkTypes(){
@@ -43,7 +39,8 @@ class ForLoop : public Statement{
 			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
 			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
 
-			r.builder.CreateBr(loopBlock);
+			Value *Cond1 = condition->evaluate(r);
+			r.builder.CreateCondBr(Cond1, loopBlock, afterBlock);
 
 			r.builder.SetInsertPoint(loopBlock);
 			Jumpable* j = new Jumpable(name, LOOP, incBlock, afterBlock, NULL);
@@ -59,9 +56,8 @@ class ForLoop : public Statement{
 			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
 			r.guarenteedReturn = false;
 
-			// Any new code will be inserted in AfterBB.
 			r.builder.SetInsertPoint(afterBlock);
-			return TheFunction;
+			return afterBlock;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
@@ -104,7 +100,7 @@ class ForLoop : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

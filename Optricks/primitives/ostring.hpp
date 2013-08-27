@@ -29,6 +29,7 @@ class ostring : public oobject{
 		//		data[0] = ConstantInt::get(CHARTYPE, value[0], false);
 		//	}
 			//llvm::ConstantDataArray::get
+//			return {INTTYPE, PointerType::get(CHARTYPE, 0)}
 			return ConstantDataArray::getString(a.lmod->getContext(), value);
 			//return llvm::ConstantArray::get(ArrayType::get(CHARTYPE, value.length()), ArrayRef<Constant*>(data));
 			//return ConstantArray::get(

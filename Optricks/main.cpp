@@ -243,6 +243,7 @@ int main(int argc, char** argv){
 		//st->force("if(true){ for(int i = 0; i<10; i= i+1) putchar(i+48)} \n");
 		//st->force("for(int i = 0; i<10; i+=1){ if(i==5) break; printi(i); }\n");
 		//st->force("(def void (int i){for(int i = 0; i<10; i+=1){ if(i%2==0) continue; printi(i) } })(0);");
+		//st->force("(def void () printi(72))()\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

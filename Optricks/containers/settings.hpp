@@ -254,7 +254,24 @@ auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
 auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
 auto CHARTYPE = IntegerType::get(getGlobalContext(), 8);
-auto STRINGTYPE = ConstantDataArray::getString(getGlobalContext(),"")->getType();
+std::vector<Type*> __str_struct = {INTTYPE, PointerType::get(CHARTYPE, 0)};
+auto STRINGTYPE = StructType::create(__str_struct);
+
+ArrayRef<int> getArrayRefFromString(String s){
+	std::vector<int> v;
+	for(auto a:s) v.push_back(a);
+	return ArrayRef<int>(v);
+}
+
+/*
+auto& getLLVMString(String s){
+	//auto tmp = getArrayRefFromString(s);
+	//auto dat = ConstantDataArray::get(getGlobalContext(), tmp);
+
+}*/
+
+//PointerType::getUnqual(ConstantDataArray::getString(getGlobalContext(),"")->getType());
+//		ConstantDataArray::getString(getGlobalContext(),"")->getType();
 
 ClassProto* classClass = new ClassProto("class");
 ClassProto* objectClass = new ClassProto("object");
