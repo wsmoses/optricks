@@ -69,12 +69,17 @@ public:
 		oobject *a = (oobject*)aa,
 				*b = (oobject*)bb,
 				*c = (oobject*)cc;
-		if(!(a->returnType==intClass ||
-				a->returnType==nullClass) ||
-				!(b->returnType==intClass ||
-				b->returnType==nullClass) ||
-				!(c->returnType==intClass ||
-				c->returnType==nullClass)){
+		if(!(a->returnType==intClass
+				//|| a->returnType==nullClass
+				)
+				||
+				!(b->returnType==intClass
+				//		|| b->returnType==nullClass
+				) ||
+				!(c->returnType==intClass
+				//		|| c->returnType==nullClass
+				)
+				){
 			return new E_SLICE(filePos, aa,bb,cc);
 		}
 		return new oslice(filePos, a,b,c);

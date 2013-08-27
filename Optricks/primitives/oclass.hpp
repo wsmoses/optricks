@@ -19,10 +19,8 @@ class oclass: public Stackable
 	public:
 		ClassProto* proto;
 		OModule* module;
-		oclass* super;
-		oclass(oclass* init,ClassProto* p){
+		oclass(ClassProto* p){
 			proto = p;
-			super = init;
 			if(p->name!=""){
 				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, (Value*)NULL,classClass, NULL,proto, 0U);
 			} else cerr << "String this has no name " << p->name << endl << flush;
@@ -42,27 +40,26 @@ void initClasses(){
 	//classClass->module = new OModule(objectClass->module);
 	initClassesMeta();
 
-	oclass* classClassO = new oclass(NULL,classClass);
-	oclass* objectClassO = new oclass(NULL,objectClass);
+	oclass* classClassO = new oclass(classClass);
+	oclass* objectClassO = new oclass(objectClass);
 	//oclass* nullClassO =
-			new oclass(objectClassO,nullClass);
+	//		new oclass(nullClass);
 	//oclass* boolClassO =
-			new oclass(objectClassO,boolClass);
+			new oclass(boolClass);
 	//oclass* arrayClassO =
-			new oclass(objectClassO,arrayClass);
+			new oclass(arrayClass);
 	//oclass* functionClassO =
-			new oclass(objectClassO,functionClass);
-	oclass* decClassO = new oclass(objectClassO,decClass);
+			new oclass(functionClass);
+	oclass* decClassO = new oclass(decClass);
 	//oclass* intClassO =
-			new oclass(decClassO,intClass);
+			new oclass(intClass);
 	//oclass* stringClassO =
-			new oclass(objectClassO,stringClass);
+			new oclass(stringClass);
 	//oclass* sliceClassO =
-			new oclass(objectClassO,sliceClass);
+			new oclass(sliceClass);
 	//oclass* voidClassO =
-			new oclass(objectClassO,voidClass);
+			new oclass(voidClass);
 
-	classClassO->super = objectClassO;
 	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->resolveReturnClass() = classClass;
 	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->resolveReturnClass() = classClass;
 }

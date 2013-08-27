@@ -25,7 +25,7 @@ class E_SET: public Statement{
 		ClassProto* checkTypes() final override{
 			returnType = variable->checkTypes();
 			value->checkTypes();
-			if(value->returnType != variable->returnType )
+			if(! value->returnType->hasCast(returnType))
 				error("E_SET of inconsistent types");
 			return returnType;
 		}
@@ -47,7 +47,7 @@ class E_SET: public Statement{
 			if(value!=NULL) value->resolvePointers();
 		};
 		Value* evaluate(RData& r) final override{
-			Value* nex = value->evaluate(r);
+			Value* nex = value->returnType->castTo(r, value->evaluate(r), variable->returnType);
 			AllocaInst* aloc = variable->getAlloc();
 			if(aloc==NULL) error("Cannot set variable of non-alloc");
 			r.builder.CreateStore(nex, aloc);

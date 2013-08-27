@@ -39,8 +39,9 @@ class Declaration: public Statement{
 		ClassProto* checkTypes() final override{
 			if(value!=NULL){
 				value->checkTypes();
-				if(value->returnType != classV->getClassProto() || value->returnType==NULL )
-					error("Declaration of inconsistent types");
+				if(value->returnType==NULL)error("Declaration of inconsistent types");
+				if(!value->returnType->hasCast(classV->getClassProto()) )
+					error("Declaration of inconsistent types - variable of type "+classV->getClassProto()->name+" and value of "+value->returnType->name);
 			}
 			return returnType;
 		}
@@ -76,7 +77,7 @@ class Declaration: public Statement{
 					TheFunction->getEntryBlock().begin());
 			Alloca = TmpB.CreateAlloca(classV->getClassProto()->type, 0,variable->pointer->name);
 			if(value!=NULL && value->getToken()!=T_VOID){
-				r.builder.CreateStore(value->evaluate(r), Alloca);
+				r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), classV->getClassProto()) , Alloca);
 			}
 			variable->pointer->resolveAlloc() = Alloca;
 			r.guarenteedReturn = false;

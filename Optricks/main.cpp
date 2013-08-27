@@ -193,7 +193,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.1.5" << endl << flush;
+		cout << "Optricks version 0.1.6" << endl << flush;
 		cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision

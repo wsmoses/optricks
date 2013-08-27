@@ -82,25 +82,18 @@ class E_BINOP : public Statement{
 		}
 		Value* evaluate(RData& a) override final{
 			//TODO allow short-circuit lookup of E_VAR
-			return left->returnType->binops[operation][right->returnType]->apply(
-					left->evaluate(a),
-					right->evaluate(a),
-					a);
+			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);
+			return temp.first->apply(
+					temp.second.first->apply(left->evaluate(a), a),
+					temp.second.second->apply(right->evaluate(a), a),
+					a
+			);
 		}
 		ClassProto* checkTypes() override final{
-			left->checkTypes();
-			right->checkTypes();
-			auto found = left->returnType->binops.find(operation);
-			if(found==left->returnType->binops.end())
-				error("Binary operator "+operation+" not implemented for class "+
-						left->returnType->name+" [with right "+ right->returnType->name+"]");
-			auto look = found->second;
-
-			auto found2 = look.find(right->returnType);
-			if(found2==look.end())
-				error("Binary operator "+operation+" not implemented for class "+
-						left->returnType->name+ " with right "+ right->returnType->name);
-			return returnType = found2->second->returnType;
+			auto leftT = left->checkTypes();
+			auto rightT = right->checkTypes();
+			auto temp = leftT->getBinop(filePos, operation, rightT);
+			return returnType = temp.first->returnType;
 		}
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);

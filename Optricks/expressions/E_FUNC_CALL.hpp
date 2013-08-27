@@ -64,7 +64,7 @@ class E_FUNC_CALL : public Statement{
 					error("Argument " + proto->declarations[i]->classV->getObjName() + " is not a class FC");
 				}
 				ClassProto* t = proto->declarations[i]->classV->getClassProto();
-				if(t==NULL || vals[i]->returnType!=t)
+				if(t==NULL || ! vals[i]->returnType->hasCast(t) )
 					error("Called function with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
 							" got "+ vals[i]->returnType->name);
 			}
@@ -80,12 +80,15 @@ class E_FUNC_CALL : public Statement{
 			Value* callee = toCall->evaluate(a);
 			FunctionProto* proto = toCall->getFunctionProto();
 			std::vector<Value*> Args;
-			for(auto& d: vals){
-				Args.push_back(d->evaluate(a));
+
+			for(unsigned int i = 0; i<vals.size(); i++){
+				ClassProto* t = proto->declarations[i]->classV->getClassProto();
+				Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
 				if (Args.back() == 0) error("Error in eval of args");
 			}
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
-				Args.push_back(proto->declarations[i]->value->evaluate(a));
+				ClassProto* t = proto->declarations[i]->classV->getClassProto();
+				Args.push_back( proto->declarations[i]->value->evaluate(a));
 			}
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
 			else return a.builder.CreateCall(callee, Args, "calltmp");

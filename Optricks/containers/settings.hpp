@@ -15,10 +15,12 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <sstream>
 #include <exception>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 void printi(uint64_t i, bool b){
 	std::cout << i;
@@ -63,45 +65,6 @@ using namespace llvm;
 #define exception std::exception
 //#include "indexed_map.hpp"
 
-#ifndef DECLR_P_
-#define DECLR_P_
-class Declaration;
-#endif
-
-class OModule;
-#ifndef OOBJECT_P_
-#define OOBJECT_P_
-class oobject;
-#endif
-
-//#ifndef OCLASS_P_
-//#define OCLASS_P_
-//class ClassProto;
-//#endif
-
-class obinop;
-class ouop;
-
-struct ClassProto{
-	public:
-		std::map<String,std::map<ClassProto*, obinop*> > binops;
-		std::map<String,ouop* > preops;
-		std::map<String,ouop* > postops;
-		Type* type;
-		String name;
-		ClassProto(String n, Type* t=NULL) : type(t), name(n) {}
-};
-
-
-struct FunctionProto{
-	public:
-		String name;
-		std::vector<Declaration*> declarations;
-		ClassProto* returnType;
-		FunctionProto(String n, std::vector<Declaration*>& a, ClassProto* r):name(n),declarations(a), returnType(r){}
-		FunctionProto(String n, ClassProto* r=NULL):name(n),declarations(), returnType(r){}
-};
-
 struct PositionID{
 	public:
 		String fileName;
@@ -122,6 +85,28 @@ struct PositionID{
 		}
 };
 
+void todo(String a,PositionID filePos){
+	cerr << a << " at ";
+	cerr << filePos.fileName;
+	cerr << " line:";
+	cerr << filePos.lineN;
+	cerr << ", char: ";
+	cerr << filePos.charN;
+	cerr << endl << flush;
+	exit(1);
+}
+
+#ifndef DECLR_P_
+#define DECLR_P_
+class Declaration;
+#endif
+
+class OModule;
+#ifndef OOBJECT_P_
+#define OOBJECT_P_
+class oobject;
+#endif
+
 
 enum JumpType{
 	RETURN = 0,
@@ -133,6 +118,9 @@ enum TJump{
 	FUNC = 0,
 	LOOP = 1
 };
+
+
+class ClassProto;
 
 struct Jumpable {
 	public:
@@ -151,7 +139,6 @@ struct RData{
 		std::vector<Jumpable*> jumps;
 	public:
 		RData();
-//		OModule* module;
 		bool guarenteedReturn;
 		Module* lmod;
 		FunctionPassManager* fpm;
@@ -165,60 +152,16 @@ struct RData{
 			jumps.pop_back();
 			return a;
 		}
-		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val){
-			if(name==""){
-				if(jump==RETURN){
-					for(unsigned int i = jumps.size()-1; ; i--){
-						if(jumps[i]->toJump == FUNC){
-							if(jumps[i]->returnType != ret){
-								cerr << "Invalid return type, trying to use a " << ret->name << " instead of a " << jumps[i]->returnType->name << endl << flush;
-								exit(0);
-							}
-							jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
-							return jumps[i]->end;
-						}
-						if(i == 0){
-							cerr << "Error could not find returning block" << endl << flush;
-							return NULL;
-						}
-					}
-				} else {
-					for(unsigned int i = jumps.size()-1; ; i--){
-						if(jumps[i]->toJump == LOOP){
-							//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
-							return (jump==BREAK)?(jumps[i]->end):(jumps[i]->start);
-						}
-						if(i == 0){
-							cerr << "Error could not find continue/break block" << endl << flush;
-							return NULL;
-						}
-					}
-				}
-			} else {
-				cerr << "Error not done yet2" << endl << flush;
-				exit(1);
-				return NULL;
-			}
-		}
+		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val);
 };
 
-class obinop{
-	public:
-		virtual Value* apply(Value* a, Value* b, RData& mod) = 0;
-		ClassProto* returnType;
-};
+//#ifndef OCLASS_P_
+//#define OCLASS_P_
+//class ClassProto;
+//#endif
 
-class obinopNative : public obinop{
-	public:
-		Value* (*temp)(Value*,Value*,RData&);
-		obinopNative(Value* (*fun)(Value*,Value*,RData&), ClassProto* a){
-			temp = fun;
-			returnType = a;
-		}
-		Value* apply(Value* a, Value* b, RData& m){
-			return temp(a,b,m);
-		}
-};
+class obinop;
+
 
 class ouop{
 	public:
@@ -238,16 +181,134 @@ class ouopNative: public ouop{
 		}
 };
 
-void todo(String a,PositionID filePos){
-	cerr << a << " at ";
-	cerr << filePos.fileName;
-	cerr << " line:";
-	cerr << filePos.lineN;
-	cerr << ", char: ";
-	cerr << filePos.charN;
-	cerr << endl << flush;
-	exit(1);
-}
+class FunctionProto;
+
+class ClassProto{
+	private:
+		std::map<String,std::map<ClassProto*, obinop*> > binops;
+		std::map<ClassProto*, ouop*> casts;
+		//		std::map<String,std::map<ClassProto*, obinop*> > binops;
+	public:
+		ClassProto* superClass;
+		std::map<String,ouop* > preops;
+		std::map<String,ouop* > postops;
+		Type* type;
+		String name;
+		bool hasCast(ClassProto* right){
+			auto found = casts.find(right);
+			return found!=casts.end();
+		}
+		ouop*& addCast(ClassProto* right){
+			if(hasCast(right)) todo("Error: Redefining cast "+name+" to "+right->name,PositionID(0,0,"<start>"));
+			return casts[right];
+		}
+		Value* castTo(RData& r, Value* c, ClassProto* right){
+			if(hasCast(right)) return casts[right]->apply(c, r);
+			else{
+				todo("Compile error - could not find cast "+name+" to "+right->name,PositionID(0,0,"<start>"));
+				return NULL;
+			}
+		}
+		obinop*& addBinop(String operation, ClassProto* right){
+			auto found = binops.find(operation);
+			if(found!=binops.end()){
+				auto found2 = found->second.find(right);
+				if(found2!=found->second.end()){
+					todo("Error: Redefining binary operation '"+operation+"' from "+name+" to "+right->name,
+							PositionID(0,0,"<start>"));
+				}
+			}
+			return binops[operation][right];
+		}
+		std::pair<obinop*, std::pair<ouop*,ouop*> > getBinop(PositionID id, String operation, ClassProto* right){
+			ClassProto* self = this;
+			while(self!=NULL){
+				auto found = self->binops.find(operation);
+				if(found==self->binops.end()){
+					self = self->superClass;
+					continue;
+				}
+				auto thisToSelf = this->casts.find(self);
+				if(thisToSelf==this->casts.end()){
+					self = self->superClass;
+					continue;
+				}
+				auto look = found->second;
+				auto toCheck = right;
+				while(toCheck!=NULL){
+					auto found2 = look.find(toCheck);
+					if(found2==look.end()){
+						toCheck = toCheck->superClass;
+						continue;
+					}
+					auto found3 = right->casts.find(toCheck);
+					if(found3==right->casts.end()){
+						toCheck = toCheck->superClass;
+						continue;
+					}
+					return std::pair<obinop*,std::pair<ouop*,ouop*> >(found2->second,
+							std::pair<ouop*,ouop*>(thisToSelf->second, found3->second)
+					);
+				}
+				self = self->superClass;
+			}
+			todo("Binary operator "+operation+" not implemented for class "+
+					name+ " with right "+ right->name, id);
+			return std::pair<obinop*,std::pair<ouop*,ouop*> >(NULL,
+					std::pair<ouop*,ouop*>(NULL,NULL));
+		}
+		ClassProto* leastCommonAncestor(ClassProto* c){
+			std::set<ClassProto*> mySet;
+			std::vector<ClassProto*> todo = {this, c};
+			while(todo.size()>0){
+				ClassProto* tmp = todo.back();
+				auto tmp2 = mySet.find(tmp);
+				if(tmp2!=mySet.end()) return *(tmp2);
+				else{
+					todo.pop_back();
+					if(tmp->superClass!=NULL) todo.push_back(tmp->superClass);
+					mySet.insert(tmp);
+				}
+			}
+			return NULL;
+		}
+		ClassProto(ClassProto* sC, String n, Type* t=NULL) : superClass(sC), type(t), name(n) {
+			auto temp = new ouopNative(
+					[](Value* a, RData& m) -> Value*{
+				return a;
+			}
+			, this);
+			casts.insert(std::pair<ClassProto*, ouop*>(this,temp));
+		}
+};
+
+
+class FunctionProto{
+	public:
+		String name;
+		std::vector<Declaration*> declarations;
+		ClassProto* returnType;
+		FunctionProto(String n, std::vector<Declaration*>& a, ClassProto* r):name(n),declarations(a), returnType(r){}
+		FunctionProto(String n, ClassProto* r=NULL):name(n),declarations(), returnType(r){}
+};
+
+class obinop{
+	public:
+		virtual Value* apply(Value* a, Value* b, RData& mod) = 0;
+		ClassProto* returnType;
+};
+
+class obinopNative : public obinop{
+	public:
+		Value* (*temp)(Value*,Value*,RData&);
+		obinopNative(Value* (*fun)(Value*,Value*,RData&), ClassProto* a){
+			temp = fun;
+			returnType = a;
+		}
+		Value* apply(Value* a, Value* b, RData& m){
+			return temp(a,b,m);
+		}
+};
 
 auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
@@ -273,384 +334,60 @@ auto& getLLVMString(String s){
 //PointerType::getUnqual(ConstantDataArray::getString(getGlobalContext(),"")->getType());
 //		ConstantDataArray::getString(getGlobalContext(),"")->getType();
 
-ClassProto* classClass = new ClassProto("class");
-ClassProto* objectClass = new ClassProto("object");
+ClassProto* objectClass = new ClassProto(NULL, "object");
+ClassProto* classClass = new ClassProto(objectClass, "class");
 //ClassProto* autoClass = new ClassProto("auto"); todo auto class
-ClassProto* nullClass = new ClassProto("None");
-ClassProto* boolClass = new ClassProto("bool", BOOLTYPE);
-ClassProto* arrayClass = new ClassProto("array");
-ClassProto* functionClass = new ClassProto("function");
-ClassProto* decClass = new ClassProto("double", DOUBLETYPE);
-ClassProto* intClass = new ClassProto("int", INTTYPE);
-ClassProto* stringClass = new ClassProto("string",STRINGTYPE);
-ClassProto* sliceClass = new ClassProto("slice");
-ClassProto* voidClass = new ClassProto("void", VOIDTYPE);
-
-bool isStartName(int i){
-	return isalpha(i) || i=='_' || i=='$';
-}
-void initClassesMeta(){
-	///////******************************* Boolean ********************************////////
-	/* //TODO short-circuit
-	boolClass->binops["&&"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateAnd(a,b,"andtmp");
-	},boolClass);
-
-	boolClass->binops["||"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateOr(a,b,"ortmp");
-	},boolClass);
-	*/
-	boolClass->binops["&"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateAnd(a,b,"andtmp");
-	},boolClass);
-
-	boolClass->binops["|"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateOr(a,b,"ortmp");
-	},boolClass);
-
-	boolClass->binops["^"][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateXor(a,b,"xortmp");
-	},boolClass);
-
-	boolClass->binops["!="][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateICmpNE(a,b,"andtmp");
-	},boolClass);
-
-	boolClass->binops["=="][boolClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateICmpEQ(a,b,"andtmp");
-	},boolClass);
-
-	boolClass->preops["!"] = new ouopNative(
-			[](Value* a, RData& m) -> Value*{
-				return m.builder.CreateNot(a,"nottmp");
-	},boolClass);
-
-	///////******************************* Double/Double ******************************////////
-	decClass->binops["+"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFAdd(a,b,"addtmp");
-	},decClass);
-
-	decClass->binops["-"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFSub(a,b,"subtmp");
-	},decClass);
-
-	decClass->binops["*"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFMul(a,b,"multmp");
-	},decClass);
-
-	decClass->binops["%"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFRem(a,b,"modtmp");
-	},decClass);
-
-	decClass->binops["<"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpULT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops[">"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUGT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops["<="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpULE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops[">="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUGE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops["=="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUEQ(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops["!="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUNE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	decClass->binops["/"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFDiv(a,b,"divtmp");
-	},decClass);
-
-	decClass->preops["-"] = new ouopNative(
-				[](Value* a, RData& m) -> Value*{
-					return m.builder.CreateFNeg(a,"negtmp");
-	},decClass);
-
-	decClass->preops["+"] = new ouopNative(
-				[](Value* a, RData& m) -> Value*{
-					return a;
-	},decClass);
-
-
-	///////******************************* INT ********************************////////
-	intClass->binops["&"][intClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateAnd(a,b,"andtmp");
-	},intClass);
-
-	intClass->binops["|"][intClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateOr(a,b,"ortmp");
-	},intClass);
-
-	intClass->binops["^"][intClass] = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> Value*{
-				return m.builder.CreateXor(a,b,"xortmp");
-	},intClass);
-
-	intClass->binops["+"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateAdd(a,b,"addtmp");
-	},intClass);
-
-	intClass->binops["-"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateSub(a,b,"subtmp");
-	},intClass);
-
-	intClass->binops["*"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateMul(a,b,"multmp");
-	},intClass);
-
-	intClass->binops["%"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateSRem(a,b,"modtmp");
-	},intClass);
-
-	intClass->binops["<"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpSLT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops[">"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpSGT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["<="][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpSLE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops[">="][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpSGE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["=="][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpEQ(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["!="][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateICmpNE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["/"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateSDiv(a,b,"divtmp");
-	},intClass);
-
-	intClass->binops["<<"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateShl(a,b);
-	},intClass);
-
-	intClass->binops[">>"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateAShr(a,b);
-	},intClass);
-
-	intClass->binops[">>>"][intClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateLShr(a,b);
-	},intClass);
-
-	intClass->preops["-"] = new ouopNative(
-				[](Value* a, RData& m) -> Value*{
-					return m.builder.CreateNeg(a,"negtmp");
-	},intClass);
-
-	intClass->preops["+"] = new ouopNative(
-				[](Value* a, RData& m) -> Value*{
-					return a;
-	},intClass);
-
-	intClass->preops["~"] = new ouopNative(
-				[](Value* a, RData& m) -> Value*{
-				return m.builder.CreateNot(a,"negtmp");
-	},intClass);
-
-	///////******************************* INT/Double ********************************////////
-	intClass->binops["+"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFAdd(m.builder.CreateSIToFP(a,b->getType()),b,"addtmp");
-	},decClass);
-
-	intClass->binops["-"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFSub(m.builder.CreateSIToFP(a,b->getType()),b,"subtmp");
-	},decClass);
-
-	intClass->binops["*"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFMul(m.builder.CreateSIToFP(a,b->getType()),b,"multmp");
-	},decClass);
-
-	intClass->binops["%"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFRem(m.builder.CreateSIToFP(a,b->getType()),b,"modtmp");
-	},decClass);
-
-	intClass->binops["<"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpULT(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops[">"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUGT(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["<="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpULE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops[">="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUGE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["=="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUEQ(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["!="][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFCmpUNE(m.builder.CreateSIToFP(a,b->getType()),b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
-	},boolClass);
-
-	intClass->binops["/"][decClass] = new obinopNative(
-				[](Value* a, Value* b, RData& m) -> Value*{
-					return m.builder.CreateFDiv(m.builder.CreateSIToFP(a,b->getType()),b,"divtmp");
-	},decClass);
-
-	///////******************************* DOUBLE/int ********************************////////
-		decClass->binops["+"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFAdd(a,m.builder.CreateSIToFP(b,a->getType()),"addtmp");
-		},decClass);
-
-		decClass->binops["-"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFSub(a,m.builder.CreateSIToFP(b,a->getType()),"subtmp");
-		},decClass);
-
-		decClass->binops["*"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFMul(a,m.builder.CreateSIToFP(b,a->getType()),"multmp");
-		},decClass);
-
-		decClass->binops["%"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFRem(a,m.builder.CreateSIToFP(b,a->getType()),"modtmp");
-		},decClass);
-
-		decClass->binops["<"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpULT(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops[">"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpUGT(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops["<="][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpULE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops[">="][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpUGE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops["=="][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpUEQ(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops["!="][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFCmpUNE(a,m.builder.CreateSIToFP(b,a->getType()),"cmptmp");
-						//TODO there is also a CreateFCmpOGT??
-		},boolClass);
-
-		decClass->binops["/"][intClass] = new obinopNative(
-					[](Value* a, Value* b, RData& m) -> Value*{
-						return m.builder.CreateFDiv(a,m.builder.CreateSIToFP(b,a->getType()),"divtmp");
-		},decClass);
-	/*
-	LANG_M->addPointer("class",classClass,0);
-	LANG_M->addPointer("object",objectClass,0);
-	LANG_M->addPointer("bool",boolClass,0);
-	LANG_M->addPointer("array",arrayClass,0);
-	LANG_M->addPointer("function",functionClass,0);
-	LANG_M->addPointer("int",intClass,0);
-	LANG_M->addPointer("double",decClass,0);
-	LANG_M->addPointer("string",stringClass,0);
-	LANG_M->addPointer("slice",sliceClass,0);*/
-}
-
+//ClassProto* nullClass = new ClassProto("None");
+ClassProto* boolClass = new ClassProto(objectClass, "bool", BOOLTYPE);
+ClassProto* arrayClass = new ClassProto(objectClass, "array");
+ClassProto* functionClass = new ClassProto(objectClass, "function");
+ClassProto* decClass = new ClassProto(objectClass, "double", DOUBLETYPE);
+ClassProto* intClass = new ClassProto(decClass, "int", INTTYPE);
+ClassProto* stringClass = new ClassProto(objectClass, "string",STRINGTYPE);
+ClassProto* sliceClass = new ClassProto(objectClass, "slice");
+ClassProto* voidClass = new ClassProto(objectClass, "void", VOIDTYPE); //todo check?
+
+#include "operators.hpp"
 template<typename C> bool in(const std::vector<C> a, C b){
 	for(const auto& e: a)
 		if(e==b) return true;
 	return false;
 }
 
+
+BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val){
+	if(name==""){
+		if(jump==RETURN){
+			for(unsigned int i = jumps.size()-1; ; i--){
+				if(jumps[i]->toJump == FUNC){
+					if(jumps[i]->returnType != ret){
+						cerr << "Invalid return type, trying to use a " << ret->name << " instead of a " << jumps[i]->returnType->name << endl << flush;
+						exit(0);
+					}
+					jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+					return jumps[i]->end;
+				}
+				if(i == 0){
+					cerr << "Error could not find returning block" << endl << flush;
+					return NULL;
+				}
+			}
+		} else {
+			for(unsigned int i = jumps.size()-1; ; i--){
+				if(jumps[i]->toJump == LOOP){
+					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+					return (jump==BREAK)?(jumps[i]->end):(jumps[i]->start);
+				}
+				if(i == 0){
+					cerr << "Error could not find continue/break block" << endl << flush;
+					return NULL;
+				}
+			}
+		}
+	} else {
+		cerr << "Error not done yet2" << endl << flush;
+		exit(1);
+		return NULL;
+	}
+}
 #endif /* SETTINGS_HPP_ */
