@@ -54,8 +54,6 @@ class DoWhileLoop : public Statement{
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			TheFunction->dump();
-			cerr << "TT" << endl << flush;
 			return afterBlock;
 		}
 

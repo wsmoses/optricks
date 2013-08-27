@@ -685,7 +685,7 @@ class Lexer{
 			else if(tmp=="++" || tmp=="--"){
 				fixed = new E_POSTOP(pos(), tmp, exp);
 			}
-			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && !(tmp[tmp.size()-2]=='=' || (tmp.size()==2 && (tmp[0]=='<' || tmp[0]=='>')))){
+			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && !(tmp[tmp.size()-2]=='=' || tmp[tmp.size()-2]=='!' || (tmp.size()==2 && (tmp[0]=='<' || tmp[0]=='>')))){
 				tmp = tmp.substr(0,tmp.size()-1);
 				Statement* post = getNextStatement(endWith, mod, true,false);
 				fixed = new E_SET(pos(), exp, new E_BINOP(pos(), exp, post, tmp));

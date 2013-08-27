@@ -215,6 +215,7 @@ RData::RData():
 	// Simplify the control flow graph (deleting unreachable blocks, etc).
 	fpm->add(createCFGSimplificationPass());
 ///HERE ARE NEW ONES
+	///*
 	fpm->add(createCFGSimplificationPass()); // Clean up disgusting code
 	    fpm->add(createPromoteMemoryToRegisterPass());// Kill useless allocas
 
@@ -255,7 +256,7 @@ RData::RData():
 
 	    fpm->add(createAggressiveDCEPass());         // Delete dead instructions
 	    fpm->add(createCFGSimplificationPass());     // Merge & remove BBs
-
+//*/
 	fpm->doInitialization();
 		}
 #endif /* MODULE_HPP_ */

@@ -409,7 +409,7 @@ void initClassesMeta(){
 	intClass->binops["&"][intClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{
 				return m.builder.CreateAnd(a,b,"andtmp");
-	},boolClass);
+	},intClass);
 
 	intClass->binops["|"][intClass] = new obinopNative(
 			[](Value* a, Value* b, RData& m) -> Value*{

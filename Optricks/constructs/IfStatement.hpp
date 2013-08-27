@@ -53,9 +53,10 @@ class IfStatement : public Statement{
 		Value* evaluate(RData& r) override{
 			bool ret = true;
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock* myStart = r.builder.GetInsertBlock();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
-			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
-			BasicBlock *MergeBB = NULL;
+			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
+			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
 
 			r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
 
@@ -63,13 +64,12 @@ class IfStatement : public Statement{
 			r.builder.SetInsertPoint(ThenBB);
 			then->evaluate(r);
 			if(!r.guarenteedReturn){
-				if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
 				r.builder.CreateBr(MergeBB);
 			}
 			ret = ret && r.guarenteedReturn;
 
 			// Emit else block.
-			TheFunction->getBasicBlockList().push_back(ElseBB);
+			//TheFunction->getBasicBlockList().push_back(ElseBB);
 			r.builder.SetInsertPoint(ElseBB);
 
 			r.guarenteedReturn = false;
@@ -79,15 +79,12 @@ class IfStatement : public Statement{
 			}
 			else ret = false;
 			if(!r.guarenteedReturn){
-				if(MergeBB==NULL) MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
 				r.builder.CreateBr(MergeBB);
 			}
 
 			// Emit merge block.
-			if(MergeBB!=NULL){
-				TheFunction->getBasicBlockList().push_back(MergeBB);
-				r.builder.SetInsertPoint(MergeBB);
-			}
+//			TheFunction->getBasicBlockList().push_back(MergeBB);
+			r.builder.SetInsertPoint(MergeBB);
 			r.guarenteedReturn = ret;
 			return MergeBB;
 		}

@@ -60,7 +60,7 @@ class ofunction:public oobject{
 				returnV->checkTypes();
 				prototype->returnType = returnV->getClassProto();
 				if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->returnType->name);
-			} else if(prototype->returnType==NULL) error("Could not p-resolve return type");
+			} //else if(prototype->returnType==NULL) error("Could not p-resolve return type");
 			return returnType;
 		}
 };
