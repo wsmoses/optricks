@@ -80,11 +80,14 @@ class IfStatement : public Statement{
 			else ret = false;
 			if(!r.guarenteedReturn){
 				r.builder.CreateBr(MergeBB);
+//				TheFunction->getBasicBlockList().push_back(MergeBB);
+				r.builder.SetInsertPoint(MergeBB);
+			} else{
+				TheFunction->getBasicBlockList().remove(MergeBB);
 			}
 
 			// Emit merge block.
-//			TheFunction->getBasicBlockList().push_back(MergeBB);
-			r.builder.SetInsertPoint(MergeBB);
+//
 			r.guarenteedReturn = ret;
 			return MergeBB;
 		}

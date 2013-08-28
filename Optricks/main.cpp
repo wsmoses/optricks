@@ -244,6 +244,8 @@ int main(int argc, char** argv){
 		//st->force("for(int i = 0; i<10; i+=1){ if(i==5) break; printi(i); }\n");
 		//st->force("(def void (int i){for(int i = 0; i<10; i+=1){ if(i%2==0) continue; printi(i) } })(0);");
 		//st->force("(def void () printi(72))()\n");
+		//st->force("for(int i = 0; i<1000 i+=1) printd((def double (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
+		//st->force("for(int i = 0; i<1000 i+=1) printd((def auto (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

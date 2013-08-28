@@ -37,10 +37,16 @@ class Declaration: public Statement{
 			return T_DECLARATION;
 		}
 		ClassProto* checkTypes() final override{
+			classV->checkTypes();
+			variable->checkTypes();
 			if(value!=NULL){
 				value->checkTypes();
 				if(value->returnType==NULL)error("Declaration of inconsistent types");
-				if(!value->returnType->hasCast(classV->getClassProto()) )
+				else if(classV->getClassProto()==autoClass){
+					variable->pointer->resolveReturnClass() = variable->returnType = value->returnType;
+					variable->checkTypes();
+				}
+				else if(!value->returnType->hasCast(classV->getClassProto()) )
 					error("Declaration of inconsistent types - variable of type "+classV->getClassProto()->name+" and value of "+value->returnType->name);
 			}
 			return returnType;
@@ -75,9 +81,9 @@ class Declaration: public Statement{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
-			Alloca = TmpB.CreateAlloca(classV->getClassProto()->type, 0,variable->pointer->name);
+			Alloca = TmpB.CreateAlloca(variable->returnType->type, 0,variable->pointer->name);
 			if(value!=NULL && value->getToken()!=T_VOID){
-				r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), classV->getClassProto()) , Alloca);
+				r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), variable->returnType) , Alloca);
 			}
 			variable->pointer->resolveAlloc() = Alloca;
 			r.guarenteedReturn = false;

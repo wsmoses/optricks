@@ -152,7 +152,7 @@ struct RData{
 			jumps.pop_back();
 			return a;
 		}
-		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val);
+		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd);
 };
 
 //#ifndef OCLASS_P_
@@ -334,6 +334,7 @@ auto& getLLVMString(String s){
 //PointerType::getUnqual(ConstantDataArray::getString(getGlobalContext(),"")->getType());
 //		ConstantDataArray::getString(getGlobalContext(),"")->getType();
 
+ClassProto* autoClass = new ClassProto(NULL, "auto");
 ClassProto* objectClass = new ClassProto(NULL, "object");
 ClassProto* classClass = new ClassProto(objectClass, "class");
 //ClassProto* autoClass = new ClassProto("auto"); todo auto class
@@ -355,16 +356,16 @@ template<typename C> bool in(const std::vector<C> a, C b){
 }
 
 
-BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val){
+BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd){
 	if(name==""){
 		if(jump==RETURN){
 			for(unsigned int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == FUNC){
-					if(jumps[i]->returnType != ret){
-						cerr << "Invalid return type, trying to use a " << ret->name << " instead of a " << jumps[i]->returnType->name << endl << flush;
+					if(ret==NULL || !ret->hasCast(jumps[i]->returnType)){
+						cerr << "Invalid return type, trying to use a " << ((ret==NULL)?"null":(ret->name)) << " instead of a " << jumps[i]->returnType->name << endl << flush;
 						exit(0);
 					}
-					jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+					jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,ret->castTo(rd, val, jumps[i]->returnType)));
 					return jumps[i]->end;
 				}
 				if(i == 0){

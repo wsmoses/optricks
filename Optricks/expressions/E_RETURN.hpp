@@ -76,8 +76,9 @@ class E_RETURN : public Statement{
 				t = inner->evaluate(r);
 				if(t==NULL) error("Why is t null?");
 			}
-			auto toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t);
+			auto toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t, r);
 	//		auto toBreak = r.getBlock(name, jump, returnType, RETB, t);
+
 			r.builder.CreateBr(toBreak);
 			//if(jump==RETURN)
 				r.guarenteedReturn = true;
@@ -104,6 +105,7 @@ class E_RETURN : public Statement{
 		}
 		ClassProto* checkTypes() override final{
 			if(inner!=NULL) inner->checkTypes();
+			return NULL;
 		}
 };
 

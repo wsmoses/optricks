@@ -39,10 +39,12 @@ class E_LOOKUP : public Statement{
 		}
 		ClassProto* checkTypes(){
 			error("Check types for lookup");
+			return NULL;
 		}
 		Value* evaluate(RData& a) override{
 			//TODO lookup variables
 			error("Variable lookup not implemented");
+			return NULL;
 		}
 		Statement* simplify() override{
 			//TODO lookup variables
@@ -57,7 +59,7 @@ class E_LOOKUP : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 

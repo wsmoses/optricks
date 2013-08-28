@@ -25,7 +25,7 @@ class E_SET: public Statement{
 		ClassProto* checkTypes() final override{
 			returnType = variable->checkTypes();
 			value->checkTypes();
-			if(! value->returnType->hasCast(returnType))
+			if(!( variable->returnType == autoClass || value->returnType->hasCast(returnType)))
 				error("E_SET of inconsistent types");
 			return returnType;
 		}

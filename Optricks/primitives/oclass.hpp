@@ -40,8 +40,9 @@ void initClasses(){
 	//classClass->module = new OModule(objectClass->module);
 	initClassesMeta();
 
-	oclass* classClassO = new oclass(classClass);
-	oclass* objectClassO = new oclass(objectClass);
+	new oclass(classClass);
+	new oclass(objectClass);
+	new oclass(autoClass);
 	//oclass* nullClassO =
 	//		new oclass(nullClass);
 	//oclass* boolClassO =
@@ -50,7 +51,7 @@ void initClasses(){
 			new oclass(arrayClass);
 	//oclass* functionClassO =
 			new oclass(functionClass);
-	oclass* decClassO = new oclass(decClass);
+	 new oclass(decClass);
 	//oclass* intClassO =
 			new oclass(intClass);
 	//oclass* stringClassO =

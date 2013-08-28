@@ -64,8 +64,8 @@ class E_FUNC_CALL : public Statement{
 					error("Argument " + proto->declarations[i]->classV->getObjName() + " is not a class FC");
 				}
 				ClassProto* t = proto->declarations[i]->classV->getClassProto();
-				if(t==NULL || ! vals[i]->returnType->hasCast(t) )
-					error("Called function with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
+				if(t==NULL || ! ( t==autoClass || vals[i]->returnType==autoClass || vals[i]->returnType->hasCast(t) ))
+					error("Called function "+proto->name+" with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
 							" got "+ vals[i]->returnType->name);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
@@ -101,7 +101,7 @@ class E_FUNC_CALL : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

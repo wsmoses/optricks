@@ -242,6 +242,7 @@ class userFunction : public ofunction{
 			}
 			ClassProto* cp = returnV->getClassProto();
 			if(cp==NULL) error("Unknown return type");
+			if(cp==autoClass) error("Cannot support auto return for function");
 			Type* r = cp->type;
 
 			FunctionType *FT = FunctionType::get(r, args, false);
@@ -275,6 +276,9 @@ class userFunction : public ofunction{
 				else error("Could not find return statement");
 			}
 			ra.guarenteedReturn = false;
+
+			F->getBasicBlockList().remove(MERGE);
+			F->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
 			if(r!=VOIDTYPE){
 				auto functionReturnType = prototype->returnType->type;
@@ -287,6 +291,7 @@ class userFunction : public ofunction{
 			else
 				ra.builder.CreateRetVoid();
 			free(j);
+			F->dump();
 			//cout << "testing cos" << cos(3) << endl << flush;
 			verifyFunction(*F);
 			//cout << "verified" << endl << flush;

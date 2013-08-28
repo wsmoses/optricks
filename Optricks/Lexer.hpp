@@ -65,13 +65,18 @@ class Lexer{
 			for(auto& n: stats){
 				auto t = n->evaluate(rdata);
 			}
+			rdata.builder.CreateRetVoid();
+
 			if(debug){
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
-			rdata.builder.CreateRetVoid();
 			verifyFunction(*F);
 			rdata.fpm->run(*F);
+			if(debug){
+				rdata.lmod->dump();
+				cerr << endl << flush;
+			}
 			void *FPtr = rdata.exec->getPointerToFunction(F);
 			void (*FP)() = (void (*)())(intptr_t)FPtr;
 			FP();
