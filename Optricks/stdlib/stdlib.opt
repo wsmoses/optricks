@@ -47,6 +47,20 @@ extern double	remquo	(double a);
 extern int 		putchar	(int i);
 extern void exit(int i=0);
 def void quit(int i){ return exit(i); }
+/*
+def void printi(int i, bool b=true){
+	int z;
+	if(i<0){
+		putchar(45);
+		z = -i;
+	} else z=i;
+	do{
+		putchar(z%10+48);
+		z/=10;
+	}while(z>0);
+	if(b) putchar(10);
+}*/
 extern void printi(int i, bool b=true);
 extern void printd(double i, bool b=true);
 extern void printb(bool i, bool b=true);
+extern void prints(string i, bool b=true);

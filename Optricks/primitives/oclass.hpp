@@ -17,8 +17,11 @@
 class oclass: public Stackable
 {
 	public:
+		/*oclass* simplify() override final{
+			return this;
+		}*/
 		ClassProto* proto;
-		OModule* module;
+		//OModule* module;
 		oclass(ClassProto* p){
 			proto = p;
 			if(p->name!=""){

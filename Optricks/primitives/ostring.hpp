@@ -23,6 +23,9 @@ class ostring : public oobject{
 			}
 			f<<"\"";
 		}
+		oobject* simplify() override final{
+			return this;
+		}
 		Value* evaluate(RData& a) override final{
 		//	ConstantInt* data[value.length()];
 		//	for(unsigned int i = 0; i<value.length(); ++i){
@@ -30,7 +33,24 @@ class ostring : public oobject{
 		//	}
 			//llvm::ConstantDataArray::get
 //			return {INTTYPE, PointerType::get(CHARTYPE, 0)}
-			return ConstantDataArray::getString(a.lmod->getContext(), value);
+//
+
+			std::vector<unsigned char> data;
+			for(auto& a: value) data.push_back(a);
+			auto temp = ConstantDataArray::get(a.lmod->getContext(), ArrayRef<unsigned char>(data));
+		/*	auto point = LLVMBuildGEP(a.builder, temp, NULL, 0, "tempn");
+					//GetElementPtrInst::Create(ConstantInt::get(INTTYPE, 0, true), ArrayRef<Value*>(temp));
+			LLVMOpaqueValue* tmp[2];
+			LLVMOpaqueValue** V = tmp;
+			V[0] = reinterpret_cast<LLVMOpaqueValue*>(ConstantInt::get(INTTYPE, value.length(), true));
+			V[1] = reinterpret_cast<LLVMOpaqueValue*>(point);
+			return reinterpret_cast<Value*>(LLVMConstStruct(V, 2, false));
+//			return LLVMConstStruct(V, 2, false);
+//*/
+			error("Do not use strings");
+			return NULL;
+
+			//return ConstantStruct::get (STRINGTYPE,ArrayRef<Constant*>(V) );
 			//return llvm::ConstantArray::get(ArrayType::get(CHARTYPE, value.length()), ArrayRef<Constant*>(data));
 			//return ConstantArray::get(
 			//		uint8_t

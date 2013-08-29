@@ -20,6 +20,9 @@ class oslice : public oobject{
 				exit(0);
 			}
 		}
+		oobject* simplify() override final{
+			return this;
+		}
 		void write(ostream& ss, String b) const override{
 			ss << "[";
 			if(start!=NULL && start!=VOID) ss << start;
@@ -31,6 +34,7 @@ class oslice : public oobject{
 		}
 		Value* evaluate(RData& a) override final{
 			error("Not implemented : slice evaluate");
+			return NULL;
 		}
 };
 
@@ -58,6 +62,7 @@ public:
 			exit(0);
 		}
 		return new oslice(a,b,c);*/
+		return NULL;
 	}
 	Statement* simplify() override{
 
@@ -136,7 +141,7 @@ public:
 	void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 	String getObjName() override final { error("Cannot get name"); return ""; }
 	void setResolve(Value* v) override final { error("Cannot set resolve"); }
-	Value* getResolve() override final { error("Cannot get resolve"); }
+	Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OSLICE_HPP_ */

@@ -28,7 +28,7 @@ class TernaryOperator : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 		const Token getToken() const override {
 			return T_TERNARY;
 		}

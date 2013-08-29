@@ -100,8 +100,13 @@ class externFunction : public ofunction{
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
+			if(prototype->name=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 			if(F->getName().str()!=prototype->name) error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
 			self->setResolve(F);
+		}
+
+		oobject* simplify() override final{
+			return this;
 		}
 		Value* evaluate(RData& a) override{
 			return self->getResolve();
@@ -118,6 +123,12 @@ class lambdaFunction : public ofunction{
 			ret = r;
 		}
 
+		lambdaFunction* simplify() override final{
+
+			std::vector<Declaration*> g;
+			for(auto a:prototype->declarations) g.push_back(a->simplify());
+			return new lambdaFunction(filePos,g,ret->simplify());
+		}
 		void write(ostream& f, String b) const override{
 			f << "lambda ";
 			bool first = true;
@@ -196,6 +207,9 @@ class userFunction : public ofunction{
 		userFunction(PositionID id, Statement* a, Statement* b, std::vector<Declaration*> dec, Statement* r):
 			ofunction(id, a, b, dec){
 			ret = r;
+		}
+		oobject* simplify() override final{
+			return this;
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
@@ -291,7 +305,6 @@ class userFunction : public ofunction{
 			else
 				ra.builder.CreateRetVoid();
 			free(j);
-			F->dump();
 			//cout << "testing cos" << cos(3) << endl << flush;
 			verifyFunction(*F);
 			//cout << "verified" << endl << flush;

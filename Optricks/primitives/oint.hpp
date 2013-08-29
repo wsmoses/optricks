@@ -17,6 +17,9 @@ class oint : public oobject{
 		void write(ostream& f, String b) const override{
 			f << value;
 		}
+		oobject* simplify() override final{
+			return this;
+		}
 		Value* evaluate(RData& a) override final{
 			return ConstantInt::get(INTTYPE, value, true);
 		}

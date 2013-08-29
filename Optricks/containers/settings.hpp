@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <map>
@@ -21,23 +22,10 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+#include "basic_functions.hpp"
 
-void printi(uint64_t i, bool b){
-	std::cout << i;
-	if(b) std::cout << std::endl;
-	std::cout << std::flush;
-}
-void printd(double i, bool b){
-	std::cout << i;
-	if(b) std::cout << std::endl;
-	std::cout << std::flush;
-}
-void printb(bool i, bool b){
-	if(i) std::cout << "true";
-	else std::cout << "false";
-	if(b) std::cout << std::endl;
-	std::cout << std::flush;
-}
+#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/Transforms/IPO.h"
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -50,6 +38,9 @@ void printb(bool i, bool b){
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/InitializePasses.h"
+#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 using namespace llvm;
 #include "../O_TOKEN.hpp"
 
@@ -315,7 +306,8 @@ auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 64);
 auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
 auto CHARTYPE = IntegerType::get(getGlobalContext(), 8);
-std::vector<Type*> __str_struct = {INTTYPE, PointerType::get(CHARTYPE, 0)};
+auto CHARPOINTER = PointerType::get(CHARTYPE, 0);
+std::vector<Type*> __str_struct = {INTTYPE, CHARPOINTER};
 auto STRINGTYPE = StructType::create(__str_struct);
 
 ArrayRef<int> getArrayRefFromString(String s){

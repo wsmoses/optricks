@@ -37,7 +37,63 @@ class Lexer{
 			//endWith=EOF;
 			myMod = new OModule(LANG_M);
 		}
-		void execFile(String fileName, bool newModa, bool newModb, bool debug){
+		void execFiles(std::vector<String> fileNames, ostream& file, bool debug, bool toFile, unsigned int optLevel = 3){
+			std::vector<Statement*> stats;
+			for(auto& fileName:fileNames){
+				Stream* tmp = f;
+				Stream next(fileName,false);
+				f = &next;
+				while(true){
+					while(f->peek()==';') f->read();
+					Statement* s = getNextStatement(EOF);
+					if(s==NULL || s->getToken()==T_VOID) break;
+					if(debug && s->getToken()!=T_VOID){
+						cout << s << ";" << endl << endl << flush;
+					}
+					s = s->simplify();
+					stats.push_back(s);
+				}
+				f->close();
+				f = tmp;
+			}
+			for(auto& n: stats) n->resolvePointers();
+			for(auto& n: stats) n->registerClasses(rdata);
+			for(auto& n: stats) n->registerFunctionArgs(rdata);
+			for(auto& n: stats) n->registerFunctionDefaultArgs();
+			for(auto& n: stats) n->checkTypes();
+
+			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
+			Function *F = Function::Create(FT, Function::ExternalLinkage, "main", rdata.lmod);//todo check this
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			rdata.builder.SetInsertPoint(BB);
+			for(auto& n: stats) n->evaluate(rdata);
+			rdata.builder.CreateRetVoid();
+			verifyFunction(*F);
+			if(toFile) verifyModule(*(rdata.lmod));
+			auto modOpt = new PassManager();
+			FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
+
+			// Set up optimisers
+			PassManagerBuilder pmb;
+			pmb.OptLevel = optLevel;
+			pmb.populateFunctionPassManager(*fnOpt);
+			if(toFile) pmb.populateModulePassManager(*modOpt);
+			fnOpt->run(*F);
+			modOpt->run(*(rdata.lmod));
+
+			if(toFile){
+				llvm::raw_os_ostream raw_stream(file);
+				WriteBitcodeToFile(rdata.lmod, raw_stream);
+//				rdata.lmod->print(raw_stream, 0);
+			} else {
+				void *FPtr = rdata.exec->getPointerToFunction(F);
+				void (*FP)() = (void (*)())(intptr_t)FPtr;
+				FP();
+			}
+		}
+	/*	void generateIR(bool debug){
+		}
+		void execFile(String fileName, bool newModa, bool newModb, bool debug, bool run){
 			Stream* tmp = f;
 			Stream next(fileName,false);
 			f = &next;
@@ -77,13 +133,15 @@ class Lexer{
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
-			void *FPtr = rdata.exec->getPointerToFunction(F);
-			void (*FP)() = (void (*)())(intptr_t)FPtr;
-			FP();
+			if(run){
+				void *FPtr = rdata.exec->getPointerToFunction(F);
+				void (*FP)() = (void (*)())(intptr_t)FPtr;
+				FP();
+			}
 			f->close();
 			f = tmp;
 			if(newModb) myMod = new OModule(myMod);
-		}
+		}*/
 		String getNextName(char endWith){
 			f->trim(endWith);
 			auto temp = f->getNextName(endWith);

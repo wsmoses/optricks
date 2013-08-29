@@ -74,7 +74,7 @@ class E_SET: public Statement{
 		void setAlloc(AllocaInst* f) override final { value->setAlloc(f); }
 		String getObjName() override final { return value->getObjName(); }
 		void setResolve(Value* v) override final { value->setResolve(v); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* E_SET_HPP_ */

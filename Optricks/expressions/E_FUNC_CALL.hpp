@@ -74,9 +74,32 @@ class E_FUNC_CALL : public Statement{
 			return returnType = proto->returnType;
 		}
 		Statement* simplify() override{
-			return new E_FUNC_CALL(filePos, toCall->simplify(), vals);
+			auto tem = toCall->simplify();
+			std::vector<Statement*> g;
+			for(auto a:vals) g.push_back(a->simplify());
+			return new E_FUNC_CALL(filePos, tem, g);
 		}
 		Value* evaluate(RData& a) override{
+			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
+			if(temp!=NULL){
+				//TODO be aware that this makes something like
+				/*
+				 * for(int i=0; i<7; i+=1) printi((lambda int z: z*i)(i)) // VALID
+				 * yet something like
+				 * for(int i=0; i<7; i+=1){
+				 *  auto tmp = (lambda int z: z*i)
+				 *  printi(tmp(i))
+				 *  } 													 // INVALID
+				 */
+				//for(int i=0; i<7; i+=1){ auto tmp = (lambda int z: z*z) printi(tmp(i)) }
+				for(unsigned int i = 0; i<temp->prototype->declarations.size(); i++){
+					Declaration* decl = temp->prototype->declarations[i];
+					if(i<vals.size()) decl = new Declaration(decl->filePos, decl->classV, decl->variable, vals[i]);
+					else if(decl->value==NULL || decl->value->getToken()==T_VOID) error("No argument for lambda function!");
+					decl->evaluate(a);
+				}
+				return temp->ret->evaluate(a);
+			}
 			Value* callee = toCall->evaluate(a);
 			FunctionProto* proto = toCall->getFunctionProto();
 			std::vector<Value*> Args;
@@ -88,7 +111,7 @@ class E_FUNC_CALL : public Statement{
 			}
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getClassProto();
-				Args.push_back( proto->declarations[i]->value->evaluate(a));
+				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 			}
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
 			else return a.builder.CreateCall(callee, Args, "calltmp");

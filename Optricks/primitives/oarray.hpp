@@ -16,10 +16,15 @@ class oarray : public oobject{
 		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id, arrayClass),data(dat){}
 		ClassProto* checkTypes() override{
 			error("Implement forced array typing");
+			return NULL;
 		}
 		Value* evaluate(RData& a) override final{
 			//TODO
 			error("Array not implemented");
+			return NULL;
+		}
+		oobject* simplify() override final{
+			return this;
 		}
 		/*oobject* operator [] (oobject* a) override{
 			if(a->returnType==intClass){
@@ -80,6 +85,7 @@ class E_ARR : public Statement{
 				n->data.push_back(a->evaluate(a));
 			}
 			return n;*/
+			return NULL;
 		}
 
 		Statement* simplify() override{
@@ -134,7 +140,7 @@ class E_ARR : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OARRAY_HPP_ */

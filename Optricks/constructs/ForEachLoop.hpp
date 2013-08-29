@@ -51,6 +51,7 @@ class ForEachLoop : public Statement{
 						return VOID;
 				}
 			}*/
+			return NULL;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for " << localVariable << " in "<< iterable << ":";
@@ -62,6 +63,7 @@ class ForEachLoop : public Statement{
 			error("Cannot simplify foreach loop");
 			//return new ForEachLoop(filePos, localVariable, iterable->simplify(),in,name);
 			//TODO [loop unrolloing]
+			return NULL;
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
@@ -71,7 +73,7 @@ class ForEachLoop : public Statement{
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
 		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); }
+		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

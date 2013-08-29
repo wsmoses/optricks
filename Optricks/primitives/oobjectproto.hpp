@@ -36,9 +36,6 @@ class oobject: public Statement{
 		void registerFunctionArgs(RData& r) override{};
 		void registerFunctionDefaultArgs() override{};
 		void resolvePointers() override{};
-		oobject* simplify() override final{
-			return this;
-		}
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}

@@ -17,6 +17,9 @@ class odec : public oobject{
 		void write(ostream& ss, String b) const override{
 			ss << value;
 		}
+		oobject* simplify() override final{
+			return this;
+		}
 		Value* evaluate(RData &a) override final{
 			return ConstantFP::get(a.lmod->getContext(), APFloat(value));
 		}

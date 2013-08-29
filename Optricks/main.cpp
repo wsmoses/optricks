@@ -1,7 +1,8 @@
 #define MAIN_CPP
 
 #include "containers/settings.hpp"
-
+#include <fstream>
+#include <iostream>
 /**
  * TODO resolution
  * a) register class names
@@ -85,6 +86,13 @@ void execF(RData& r, Statement* n,bool debug){
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
+	} else if(n->returnType==stringClass){
+		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
+		auto t = FP();
+		//cout << "String length of " << (int)(* (int*)(t.length)) << endl << flush;
+		String temp(t.data, t.length);
+		if(debug) cout <<  "Evaluated to ";
+		//cout << temp << endl << flush;
 	} else{
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 	}
@@ -131,6 +139,7 @@ bool testFor(String toTest, String testing){
 int main(int argc, char** argv){
 	String file = "";
 	String command = "";
+	String output = "";
 	bool interactive = false;
 	bool forceInt = false;
 	bool debug = false;
@@ -166,6 +175,21 @@ int main(int argc, char** argv){
 			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
 			command=s;
 		}
+		else if(startsWithEq(s,"--output")){
+			s = testString(s, "--output");
+			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
+			output=s;
+		}
+		else if(s=="-o"){
+			i++;
+			if(i>=argc){
+				cerr << "No file when set with -o "<< endl << flush;
+				exit(1);
+			}
+			s = String(argv[i]);
+			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
+			output=s;
+		}
 		else if(startsWithEq(s,"--file")){
 			s = testString(s, "--file");
 			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
@@ -190,6 +214,9 @@ int main(int argc, char** argv){
 		}
 	}
 	if(!forceInt) interactive = file=="";
+	//ofstream fout (output);
+	std::ofstream tmp(output, std::ofstream::out | std::ofstream::binary);
+	ostream& outStream = (output=="-" || output=="")?cout:(tmp);
 	initClasses();
 
 	if(interactive) {
@@ -211,12 +238,13 @@ int main(int argc, char** argv){
 	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	lexer.execFile("./stdlib/stdlib.opt",true, true,false);
-//	lexer.execFile("./mandel.opt",true, true,true);
-	if(!interactive)
-		lexer.execFile(file,false, false,debug);
+	std::vector<String> files = {"./stdlib/stdlib.opt"};
+	if(!interactive){
+		files.push_back(file);
+		lexer.execFiles(files, outStream,debug,output!="");
+	}
 	else{
-
+		lexer.execFiles(files, outStream,debug,false);
 		Statement* n;
 		Stream* st = new Stream(file, true);
 		lexer.f = st;
@@ -238,7 +266,7 @@ int main(int argc, char** argv){
 		st->force("def int p2(int i){ if(i>0) p2(i-1); return putchar(i+48); }; printr(9);\n");
 		st->force("def void hi(){ putchar(50); return; }");
 		//*/
-//		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
+		//		st->force("if(true){ printr(9); def int printr(int i){ int j = i+48; putchar(j); return i;}; }\n"); //TODO allow
 		//st->force("for(int i = 0; i<10; i= i+1) putchar(i+48)\n");
 		//st->force("if(true){ for(int i = 0; i<10; i= i+1) putchar(i+48)} \n");
 		//st->force("for(int i = 0; i<10; i+=1){ if(i==5) break; printi(i); }\n");
@@ -246,6 +274,7 @@ int main(int argc, char** argv){
 		//st->force("(def void () printi(72))()\n");
 		//st->force("for(int i = 0; i<1000 i+=1) printd((def double (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
 		//st->force("for(int i = 0; i<1000 i+=1) printd((def auto (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
+		//st->force("\"hi\"\n"); debug = true;
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);
