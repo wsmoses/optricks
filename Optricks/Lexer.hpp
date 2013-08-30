@@ -70,6 +70,10 @@ class Lexer{
 			rdata.builder.CreateRetVoid();
 			verifyFunction(*F);
 			if(toFile) verifyModule(*(rdata.lmod));
+			if(debug){
+				rdata.lmod->dump();
+				cerr << endl << flush;
+			}
 			auto modOpt = new PassManager();
 			FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
 

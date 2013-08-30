@@ -35,5 +35,4 @@ def void mandel(double xmin=-1, double xmax=2, double xstep=.02, double ymin=-1,
 		putchar(10)
 	}
 }
-
 mandel()
