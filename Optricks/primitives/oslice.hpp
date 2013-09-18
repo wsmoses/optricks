@@ -32,7 +32,7 @@ class oslice : public oobject{
 			if(step!=NULL && step!=VOID) ss << step;
 			ss << "]";
 		}
-		Value* evaluate(RData& a) override final{
+		DATA evaluate(RData& a) override final{
 			error("Not implemented : slice evaluate");
 			return NULL;
 		}
@@ -46,7 +46,7 @@ public:
 	const Token getToken() const override{
 		return T_SLICE;
 	};
-	Value* evaluate(RData& r) override final{
+	DATA evaluate(RData& r) override final{
 		error("Evaluate E_SLICE");
 		/*
 		oobject *a = start->evaluate(),
@@ -140,8 +140,8 @@ public:
 	AllocaInst* getAlloc() override final{ return NULL; };
 	void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 	String getObjName() override final { error("Cannot get name"); return ""; }
-	void setResolve(Value* v) override final { error("Cannot set resolve"); }
-	Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+	void setResolve(DATA v) override final { error("Cannot set resolve"); }
+	DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OSLICE_HPP_ */

@@ -31,8 +31,8 @@ class Declaration: public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 		const Token getToken() const final override{
 			return T_DECLARATION;
 		}
@@ -77,7 +77,7 @@ class Declaration: public Statement{
 			variable->resolvePointers();
 			if(value!=NULL) value->resolvePointers();
 		};
-		Value* evaluate(RData& r) final override{
+		DATA evaluate(RData& r) final override{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());

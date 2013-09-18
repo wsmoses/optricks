@@ -41,10 +41,10 @@ class E_RETURN : public Statement{
 		String getObjName() override final {
 			error("Cannot getObjName() for E_RETURN");
 			return inner->getObjName(); }
-		void setResolve(Value* v) override final {
+		void setResolve(DATA v) override final {
 			error("Cannot setResolve() for E_RETURN");
 			inner->setResolve(v); }
-		Value* getResolve() override final {
+		DATA getResolve() override final {
 			error("Cannot getResolve() for E_RETURN");
 			return inner->getResolve(); }
 
@@ -67,7 +67,7 @@ class E_RETURN : public Statement{
 		Statement* simplify() override{
 			return this;
 		}
-		Value* evaluate(RData& r) override {
+		DATA evaluate(RData& r) override {
 			Value* t = NULL;
 	//		BasicBlock *Parent = r.builder.GetInsertBlock();
 	//		BasicBlock *RETB = BasicBlock::Create(getGlobalContext(), "ret");

@@ -55,6 +55,12 @@ class E_FUNC_CALL : public Statement{
 		}
 		ClassProto* checkTypes() override{
 			toCall->checkTypes();
+			if(toCall->returnType==classClass){
+				for(unsigned int i = 0; i<vals.size(); i++){
+								vals[i]->checkTypes();
+				}
+				return returnType = toCall->getClassProto();
+			}
 			FunctionProto* proto = toCall->getFunctionProto();
 			if(proto==NULL) error("Non-existent function prototype");
 			if(proto->declarations.size() < vals.size()) error("Function "+proto->name+" called with too many arguments");
@@ -79,7 +85,7 @@ class E_FUNC_CALL : public Statement{
 			for(auto a:vals) g.push_back(a->simplify());
 			return new E_FUNC_CALL(filePos, tem, g);
 		}
-		Value* evaluate(RData& a) override{
+		DATA evaluate(RData& a) override{
 			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
 			if(temp!=NULL){
 				//TODO be aware that this makes something like
@@ -99,6 +105,9 @@ class E_FUNC_CALL : public Statement{
 					decl->evaluate(a);
 				}
 				return temp->ret->evaluate(a);
+			}
+			if(toCall->returnType==classClass){
+				return toCall->getClassProto()->construct(a,vals,filePos);
 			}
 			Value* callee = toCall->evaluate(a);
 			FunctionProto* proto = toCall->getFunctionProto();
@@ -123,8 +132,8 @@ class E_FUNC_CALL : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

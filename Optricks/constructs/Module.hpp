@@ -9,16 +9,15 @@
 #define MODULE_HPP_
 
 #include "Stackable.hpp"
-#include "../containers/settings.hpp"
+#include "../containers/all.hpp"
 #include "../primitives/oobjectproto.hpp"
 
-#define dataType Value*
 
 class Resolvable{
 	public:
 	OModule* module;
 	String name;
-	virtual dataType& resolve() const = 0;
+	virtual DATA& resolve() const = 0;
 	virtual ClassProto*& resolveReturnClass() const = 0;
 	virtual FunctionProto*& resolveFunction() const = 0;
 	virtual ClassProto*& resolveSelfClass() const = 0;
@@ -36,7 +35,7 @@ class opointer: public Resolvable{
 			a << "(*" << name << "|" << index << ")";
 			return a;
 		}
-		dataType& resolve() const final override;
+		DATA& resolve() const final override;
 		ClassProto*& resolveReturnClass() const final override;
 		ClassProto*& resolveSelfClass() const final override;
 		FunctionProto*& resolveFunction() const final override;
@@ -51,7 +50,7 @@ class OModule : public Stackable{
 		std::vector<AllocaInst*> allocs;
 		std::vector<ClassProto*> selfClasses;
 		std::vector<FunctionProto*> functions;
-		std::vector<dataType> data;
+		std::vector<DATA> data;
 		OModule(const OModule& c) = delete;
 		OModule(OModule* before): mapping(),returnClasses(),allocs(), selfClasses(),data(){
 			super = before;
@@ -73,7 +72,7 @@ class OModule : public Stackable{
 			}
 			return -1;
 		}
-		void setPointer(PositionID a, String index, dataType value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
+		void setPointer(PositionID a, String index, DATA value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
 			auto p = findPointer(a, index);
 			p->resolve() = value;
 			p->resolveReturnClass() = cl;
@@ -81,7 +80,7 @@ class OModule : public Stackable{
 			p->resolveSelfClass() = selfCl;
 			p->resolveAlloc() = al;
 		}
-		opointer* addPointer(PositionID a, String index, dataType value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
+		opointer* addPointer(PositionID a, String index, DATA value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()){
 					todo("The variable "+index+" has already been defined in this scope", a);
@@ -144,7 +143,7 @@ class OModule : public Stackable{
 		}
 };
 
-dataType& opointer::resolve() const {
+DATA& opointer::resolve() const {
 	return module->data[index];
 }
 ClassProto*& opointer::resolveReturnClass() const {
@@ -172,7 +171,7 @@ class LateResolve : public Resolvable{
 			if(a==NULL) todo("Could not resolve late pointer for "+name,filePos);
 			return a;
 		}
-		Value*& resolve() const override final{
+		DATA& resolve() const override final{
 			return resolvePointer()->resolve();
 		}
 		ClassProto*& resolveReturnClass() const override final{
@@ -188,7 +187,6 @@ class LateResolve : public Resolvable{
 			return resolvePointer()->resolveAlloc();
 		}
 };
-#undef dataType
 OModule* LANG_M = new OModule(NULL);
 
 RData::RData():

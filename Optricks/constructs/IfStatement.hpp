@@ -10,7 +10,6 @@
 
 #include "./Statement.hpp"
 #include "./Block.hpp"
-#include "../containers/settings.hpp"
 
 class IfStatement : public Statement{
 	public:
@@ -50,7 +49,7 @@ class IfStatement : public Statement{
 			finalElse->checkTypes();
 			return returnType;
 		}
-		Value* evaluate(RData& r) override{
+		DATA evaluate(RData& r) override{
 			bool ret = true;
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock* myStart = r.builder.GetInsertBlock();
@@ -89,7 +88,7 @@ class IfStatement : public Statement{
 			// Emit merge block.
 //
 			r.guarenteedReturn = ret;
-			return MergeBB;
+			return NULL;
 		}
 		Statement* simplify() override{
 			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
@@ -123,8 +122,8 @@ class IfStatement : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 

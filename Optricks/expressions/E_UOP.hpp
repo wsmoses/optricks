@@ -21,8 +21,8 @@ class E_PREOP : public Statement{
 		Statement* simplify() override final {
 			return new E_PREOP(filePos, operation,value->simplify());
 		}
-		Value* evaluate(RData& r) override final {
-			Value* a = value->evaluate(r);
+		DATA evaluate(RData& r) override final {
+			auto a = value->evaluate(r);
 			return value->returnType->preops[operation]->apply(a,r);
 		}
 		void write(ostream& f,String s="") const override{
@@ -54,8 +54,8 @@ class E_PREOP : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 
@@ -70,8 +70,8 @@ class E_POSTOP : public Statement{
 		Statement* simplify() override final {
 			return new E_POSTOP(filePos, operation,value->simplify());
 		}
-		Value* evaluate(RData& r) override final {
-			Value* a = value->evaluate(r);
+		DATA evaluate(RData& r) override final {
+			auto a = value->evaluate(r);
 			return value->returnType->postops[operation]->apply(a,r);
 		}
 		void write(ostream& f,String s="") const override{
@@ -103,8 +103,8 @@ class E_POSTOP : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 #endif /* E_BINOP_HPP_ */

@@ -8,8 +8,6 @@
 #ifndef STATEMENTPROTO_HPP_
 #define STATEMENTPROTO_HPP_
 
-
-#include "../containers/settings.hpp"
 #include "Stackable.hpp"
 
 #define STATEMENT_P_
@@ -18,8 +16,7 @@ class Statement : public Stackable{
 		ClassProto* returnType;
 		PositionID filePos;
 		Statement(PositionID a, ClassProto* rt=NULL) :
-			returnType(rt), filePos(a)
-		{}
+			returnType(rt), filePos(a)	{}
 		~Statement(){}
 		void error(String s="Compile error", bool exi=true){
 			cerr << s << " in ";
@@ -31,7 +28,7 @@ class Statement : public Stackable{
 			cerr << endl << flush;
 			if(exi) exit(1);
 		}
-		virtual Value* evaluate(RData& a) = 0;
+		virtual DATA evaluate(RData& a) = 0;
 		virtual Statement* simplify()  = 0;
 		virtual void registerClasses(RData& a) = 0;
 		virtual void registerFunctionArgs(RData& a) = 0;
@@ -44,8 +41,8 @@ class Statement : public Stackable{
 		virtual void setClassProto(ClassProto* a) = 0;
 		virtual AllocaInst* getAlloc() = 0;
 		virtual void setAlloc(AllocaInst* a) = 0;
-		virtual Value* getResolve() = 0;
-		virtual void setResolve(Value* v) = 0;
+		virtual DATA getResolve() = 0;
+		virtual void setResolve(DATA v) = 0;
 		virtual String getObjName() = 0;
 };
 
@@ -53,7 +50,7 @@ class Statement : public Stackable{
 class VoidStatement : public Statement{
 	public:
 		VoidStatement() : Statement(PositionID(0,0,"#Void")){}
-		Value* evaluate(RData& a) override{
+		DATA evaluate(RData& a) override{
 			error("Attempted evaluation of void statement");
 			return NULL;
 		}
@@ -80,8 +77,8 @@ class VoidStatement : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 		ClassProto* checkTypes() override final;
 };
 

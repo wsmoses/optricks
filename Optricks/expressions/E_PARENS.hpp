@@ -17,8 +17,8 @@ public:
 	AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
 	void setAlloc(AllocaInst* f) override final { inner->setAlloc(f); }
 	String getObjName() override final { return inner->getObjName(); }
-	void setResolve(Value* v) override final { inner->setResolve(v); }
-	Value* getResolve() override final { return inner->getResolve(); }
+	void setResolve(DATA v) override final { inner->setResolve(v); }
+	DATA getResolve() override final { return inner->getResolve(); }
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}
@@ -31,7 +31,7 @@ public:
 	void resolvePointers() override final{
 		inner->resolvePointers();
 	}
-	Value* evaluate(RData& a) override {
+	DATA evaluate(RData& a) override {
 		return inner->evaluate(a);
 	}
 	//TODO verify that this is valid and does not call order of ops again

@@ -46,8 +46,8 @@ class E_SET: public Statement{
 			variable->resolvePointers();
 			if(value!=NULL) value->resolvePointers();
 		};
-		Value* evaluate(RData& r) final override{
-			Value* nex = value->returnType->castTo(r, value->evaluate(r), variable->returnType);
+		DATA evaluate(RData& r) final override{
+			auto nex = value->returnType->castTo(r, value->evaluate(r), variable->returnType);
 			AllocaInst* aloc = variable->getAlloc();
 			if(aloc==NULL) error("Cannot set variable of non-alloc");
 			r.builder.CreateStore(nex, aloc);
@@ -73,8 +73,8 @@ class E_SET: public Statement{
 		AllocaInst* getAlloc() override final{ return value->getAlloc(); };
 		void setAlloc(AllocaInst* f) override final { value->setAlloc(f); }
 		String getObjName() override final { return value->getObjName(); }
-		void setResolve(Value* v) override final { value->setResolve(v); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { value->setResolve(v); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* E_SET_HPP_ */

@@ -7,7 +7,7 @@
 
 #ifndef STACKABLE_HPP_
 #define STACKABLE_HPP_
-#include "../containers/settings.hpp"
+#include "../containers/all.hpp"
 class Stackable{
 	public:
 		//virtual ~Stackable();

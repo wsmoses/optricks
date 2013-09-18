@@ -112,9 +112,6 @@ class externFunction : public ofunction{
 			return self->getResolve();
 		}
 };
-class nativeFunction : public ofunction{
-
-};
 class lambdaFunction : public ofunction{
 	public:
 		Statement* ret;
@@ -156,7 +153,7 @@ class lambdaFunction : public ofunction{
 			ofunction::checkTypes();
 			return prototype->returnType = ret->checkTypes();
 		}
-		Value* evaluate(RData& ar) override{
+		Function* evaluate(RData& ar) override{
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
 				Type* cl = b->classV->getClassProto()->type;
@@ -242,7 +239,7 @@ class userFunction : public ofunction{
 			ret->checkTypes();
 			return prototype->returnType;
 		}
-		Value* evaluate(RData& ra) override{
+		Function* evaluate(RData& ra) override{
 			// Set names for all arguments.
 //			Function* F = dynamic_cast<Function*>(self->getResolve());
 	//		if(F==NULL) error("Could not re-resolve");

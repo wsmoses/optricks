@@ -34,7 +34,7 @@ class ForEachLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOREACH;
 		}
-		Value* evaluate(RData& a) override{
+		DATA evaluate(RData& a) override{
 			//TODO iterators not implemented yet
 			error("For-each loop eval not implented");
 /*			while((bool)condition->evaluate()){
@@ -72,8 +72,8 @@ class ForEachLoop : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

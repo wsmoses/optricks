@@ -29,7 +29,7 @@ class DoWhileLoop : public Statement{
 		const Token getToken() const override {
 			return T_WHILE;
 		}
-		Value* evaluate(RData& r) override{
+		DATA evaluate(RData& r) override{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 
 			BasicBlock *loopBlock = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
@@ -54,7 +54,7 @@ class DoWhileLoop : public Statement{
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return afterBlock;
+			return NULL;
 		}
 
 		void registerClasses(RData& r) override final{
@@ -87,8 +87,8 @@ class DoWhileLoop : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

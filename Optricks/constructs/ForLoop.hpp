@@ -31,7 +31,7 @@ class ForLoop : public Statement{
 		const Token getToken() const override {
 			return T_FOR;
 		}
-		Value* evaluate(RData& r) override{
+		DATA evaluate(RData& r) override{
 			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->evaluate(r);
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 
@@ -57,7 +57,7 @@ class ForLoop : public Statement{
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return afterBlock;
+			return NULL;
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
@@ -99,8 +99,8 @@ class ForLoop : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

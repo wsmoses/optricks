@@ -1,7 +1,7 @@
 #ifndef O_STREAM_HPP_
 #define O_STREAM_HPP_
 
-#include "primitives/odec.hpp"
+#include "primitives/odouble.hpp"
 #include "primitives/oint.hpp"
 #include "primitives/oslice.hpp"
 #include "expressions/E_BINOP.hpp"
@@ -685,7 +685,7 @@ public:
 		if(base==-1) base=10;
 		//hi.pop_back();
 		if(decimal){
-			return new odec(this->pos(), strtod(hi.c_str(),NULL));
+			return new odouble(this->pos(), strtod(hi.c_str(),NULL));
 		}
 		else{
 			return new oint(this->pos(), strtoll(hi.c_str(),NULL, base));

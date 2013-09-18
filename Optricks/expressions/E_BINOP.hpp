@@ -80,7 +80,7 @@ class E_BINOP : public Statement{
 		const Token getToken() const override{
 			return T_BINOP;
 		}
-		Value* evaluate(RData& a) override final{
+		DATA evaluate(RData& a) override final{
 			//TODO allow short-circuit lookup of E_VAR
 			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);
 			return temp.first->apply(
@@ -164,8 +164,8 @@ class E_BINOP : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 

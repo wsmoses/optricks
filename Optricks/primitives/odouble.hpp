@@ -5,14 +5,14 @@
  *      Author: wmoses
  */
 
-#ifndef ODEC_HPP_
-#define ODEC_HPP_
+#ifndef ODOUBLE_HPP_
+#define ODOUBLE_HPP_
 
 #include "oobjectproto.hpp"
-class odec : public oobject{
+class odouble : public oobject{
 	public:
 		double value;
-		odec(PositionID a, double i): oobject(a, decClass), value(i){}
+		odouble(PositionID a, double i): oobject(a, doubleClass), value(i){}
 
 		void write(ostream& ss, String b) const override{
 			ss << value;
@@ -20,9 +20,9 @@ class odec : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
-		Value* evaluate(RData &a) override final{
+		ConstantFP* evaluate(RData &a) override final{
 			return ConstantFP::get(a.lmod->getContext(), APFloat(value));
 		}
 };
 
-#endif /* ODEC_HPP_ */
+#endif /* ODOUBLE_HPP_ */

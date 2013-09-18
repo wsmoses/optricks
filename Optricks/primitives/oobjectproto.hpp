@@ -8,13 +8,7 @@
 #ifndef OOBJECTPROTO_HPP_
 #define OOBJECTPROTO_HPP_
 
-#include "../containers/settings.hpp"
 #include "../constructs/Statement.hpp"
-
-#ifndef OCLASS_P_
-#define OCLASS_P_
-class ClassProto;
-#endif
 
 #define OOBJECT_P_
 class oobject: public Statement{
@@ -28,8 +22,8 @@ class oobject: public Statement{
 		AllocaInst* getAlloc() override{ return NULL; };
 		void setAlloc(AllocaInst* f) override { error("Cannot set allocated instance"); }
 		String getObjName() override { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override { error("Cannot set resolve"); }
-		Value* getResolve() override { error("Cannot get resolve"); return NULL; }
+		void setResolve(DATA v) override { error("Cannot set resolve"); }
+		DATA getResolve() override { error("Cannot get resolve"); return NULL; }
 
 		//TODO
 		void registerClasses(RData& r) override final{};

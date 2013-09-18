@@ -2,7 +2,7 @@
 #ifndef O_IO_HPP_
 #define O_IO_HPP_
 #include "O_Token.hpp"
-#include "containers/settings.hpp"
+#include "containers/all.hpp"
 
 
 bool writeByte(FILE* f, byte a){

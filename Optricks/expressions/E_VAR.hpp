@@ -24,14 +24,14 @@ class E_VAR : public Statement{
 		Statement* simplify() override final{
 			return this;
 		}
-		Value* evaluate(RData& r) override final{
+		DATA evaluate(RData& r) override final{
 			//TODO variables not implemented
-			Value* ans = pointer->resolve();
 			if(pointer->resolveAlloc()!=NULL) return r.builder.CreateLoad(pointer->resolveAlloc());
+			auto ans = pointer->resolve();
 			if(ans==NULL){
 				error("Could not resolve pointer "+pointer->name);
 			}
-			return ans;
+			return ans;//TODO check
 		}
 		void write(ostream& f,String t="") const override{
 			f  << pointer->name;
@@ -70,7 +70,7 @@ class E_VAR : public Statement{
 		AllocaInst* getAlloc() override final{ return pointer->resolveAlloc(); };
 		void setAlloc(AllocaInst* f) override final { pointer->resolveAlloc() = f; }
 		String getObjName() override final { return pointer->name; }
-		void setResolve(Value* v) override final { pointer->resolve() = v; }
-		Value* getResolve() override final { return pointer->resolve(); }
+		void setResolve(DATA v) override final { pointer->resolve() = v; }
+		DATA getResolve() override final { return pointer->resolve(); }
 };
 #endif /* E_VAR_HPP_ */

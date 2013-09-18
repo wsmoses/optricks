@@ -8,8 +8,6 @@
 #ifndef LEXER_HPP_
 #define LEXER_HPP_
 
-#include "containers/settings.hpp"
-
 #include "O_Stream.hpp"
 #include "constructs/Declaration.hpp"
 #include "constructs/WhileLoop.hpp"
@@ -667,11 +665,18 @@ class Lexer{
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
 				char te;
 				if((te = f->read())!=']') f->error("Cannot end '[' array with "+te,true);
-
+				Statement* nex = getIndex(f, exp, stack);
+				f->trim(endWith);
+				auto mark = f->getMarker();
+				if(f->read()=='=' && f->peek()!='='){
+					//TODO ternary operator #[#] = #
+					cerr << "TODO ternary operator #[#] = #" << endl << flush;
+					exit(1);
+				} else f->undoMarker(mark);
 				bool semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
 				f->trim(endWith);
-				if(!semi) return operatorCheck(endWith, mod, getIndex(f, exp, stack));
+				if(!semi) return operatorCheck(endWith, mod, nex);
 				else return getIndex(f,exp,stack);
 			}
 			else if(tchar=='('){

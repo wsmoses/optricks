@@ -13,12 +13,14 @@
 class oarray : public oobject{
 	public:
 		std::vector<oobject*> data;
-		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id, arrayClass),data(dat){}
+		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id,
+				NULL //TODO arrayClass
+		),data(dat){}
 		ClassProto* checkTypes() override{
 			error("Implement forced array typing");
 			return NULL;
 		}
-		Value* evaluate(RData& a) override final{
+		ConstantArray* evaluate(RData& a) override final{
 			//TODO
 			error("Array not implemented");
 			return NULL;
@@ -63,8 +65,12 @@ class oarray : public oobject{
 class E_ARR : public Statement{
 	public:
 		std::vector<Statement*> values;
-		E_ARR(PositionID id) : Statement(id, arrayClass),values() { };
-		E_ARR(PositionID id, const std::vector<Statement*>& a) : Statement(id, arrayClass),values(a) { };
+		E_ARR(PositionID id) : Statement(id,
+				NULL //TODO arrayClass
+				),values() { };
+		E_ARR(PositionID id, const std::vector<Statement*>& a) : Statement(id,
+				NULL //TODO arrayClass
+				),values(a) { };
 		const  Token getToken() const override{
 			return T_ARR;
 		};
@@ -76,7 +82,7 @@ class E_ARR : public Statement{
 			}
 			f << "]";
 		}
-		Value* evaluate(RData& a) override {
+		DATA evaluate(RData& a) override {
 			//TODO
 			error("E_ARR not implemented");
 			/*
@@ -130,7 +136,7 @@ class E_ARR : public Statement{
 				a->checkTypes();
 			}
 			error("Implement forced E_ARR typing");
-			return arrayClass;
+//			return arrayClass;
 		}
 		FunctionProto* getFunctionProto() override final{ return NULL; }
 		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
@@ -139,8 +145,8 @@ class E_ARR : public Statement{
 		AllocaInst* getAlloc() override final{ return NULL; };
 		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
 		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(Value* v) override final { error("Cannot set resolve"); }
-		Value* getResolve() override final { error("Cannot get resolve"); return NULL;}
+		void setResolve(DATA v) override final { error("Cannot set resolve"); }
+		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OARRAY_HPP_ */

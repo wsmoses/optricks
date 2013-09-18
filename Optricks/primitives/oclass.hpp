@@ -8,7 +8,6 @@
 #ifndef OCLASS_HPP_
 #define OCLASS_HPP_
 
-#include "../containers/settings.hpp"
 #include "oobjectproto.hpp"
 #include "../constructs/Module.hpp"
 
@@ -25,7 +24,7 @@ class oclass: public Stackable
 		oclass(ClassProto* p){
 			proto = p;
 			if(p->name!=""){
-				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, (Value*)NULL,classClass, NULL,proto, 0U);
+				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, NULL,classClass, NULL,proto, 0U);
 			} else cerr << "String this has no name " << p->name << endl << flush;
 			//TODO redo oclass as oobject;
 		}
@@ -51,10 +50,12 @@ void initClasses(){
 	//oclass* boolClassO =
 			new oclass(boolClass);
 	//oclass* arrayClassO =
-			new oclass(arrayClass);
+			//TODO
+//			new oclass(arrayClass);
 	//oclass* functionClassO =
 			new oclass(functionClass);
-	 new oclass(decClass);
+			new oclass(doubleClass);
+			new oclass(complexClass);
 	//oclass* intClassO =
 			new oclass(intClass);
 	//oclass* stringClassO =

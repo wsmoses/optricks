@@ -1,8 +1,10 @@
 #define MAIN_CPP
 
-#include "containers/settings.hpp"
+#include "containers/all.hpp"
+#include "containers/basic_functions.hpp"
 #include <fstream>
 #include <iostream>
+#include "Lexer.hpp"
 /**
  * TODO resolution
  * a) register class names
@@ -13,22 +15,6 @@
  * d) switch to opointers instead of late-resolves
  * e) type check everything
  */
-
-template <class T>
-ostream& operator<<(ostream&os, std::vector<T>& v)
-{
-		bool first = true;
-		os<<"[";
-		for(const auto& a:v){
-			if(first){
-				first= false;
-				os<<a;
-			}else os<<", "<<a;
-		}
-		return os<<"]";
-}
-
-#include "Lexer.hpp"
 
 void execF(RData& r, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
@@ -56,6 +42,10 @@ void execF(RData& r, Statement* n,bool debug){
 	else
 		r.builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
+	if(debug){
+	F->dump();
+	cerr << flush;
+	}
 	verifyFunction(*F);
 	//cout << "verified" << endl << flush;
 	r.fpm->run(*F);
@@ -71,28 +61,42 @@ void execF(RData& r, Statement* n,bool debug){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 		if(debug) cout <<  "Evaluated" << endl << flush;
-	} else if(n->returnType==decClass){
+	} else if(n->returnType==doubleClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
 	} else if(n->returnType==intClass){
-		uint64_t (*FP)() = (uint64_t (*)())(intptr_t)FPtr;
+		int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
-		printi(t, true);
+		cout << t << endl << flush;
 	} else if(n->returnType==boolClass){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
+	} else if(n->returnType==complexClass){
+		auto (*FP)() = (ComplexStruct (*)())(intptr_t)FPtr;
+		ComplexStruct t = FP();
+		if(debug) cout <<  "Evaluated to ";
+		printf("%f+%f i",t.real, t.complex);
+		cout << endl << flush;
+	} else if(n->returnType==charClass){
+		auto (*FP)() = (char (*)())(intptr_t)FPtr;
+		auto t = FP();
+		if(debug) cout <<  "Evaluated to ";
+		printf("\'%c\'",t);
+		cout << endl << flush;
 	} else if(n->returnType==stringClass){
-		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
+		auto (*FP)() = (char* (*)())(intptr_t)FPtr;
+		//StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
 		auto t = FP();
 		//cout << "String length of " << (int)(* (int*)(t.length)) << endl << flush;
-		String temp(t.data, t.length);
+		//String temp(t.data, t.length);
 		if(debug) cout <<  "Evaluated to ";
-		//cout << temp << endl << flush;
+		printf("\"%s\"",t);
+		cout << endl << flush;
 	} else{
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 	}
