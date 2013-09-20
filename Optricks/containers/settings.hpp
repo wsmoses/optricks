@@ -10,7 +10,9 @@
 
 #include "basic_functions.hpp"
 
-#include <stdio.h>
+#include <cstdio>
+#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
@@ -58,13 +60,19 @@ using namespace llvm;
 
 #define DATA Value*
 
-#include "../O_TOKEN.hpp"
+#include "../O_Token.hpp"
 #include "types.hpp"
 //#include "indexed_map.hpp"
 
 struct ComplexStruct{
 		double real, complex;
 };
+template<typename C>
+String str(C a){
+	std::stringstream ss;
+	ss << a;
+	return ss.str();
+}
 template<typename C> bool in(const std::vector<C> a, C b){
 	for(const auto& e: a)
 		if(e==b) return true;
@@ -147,6 +155,15 @@ class Statement;
 #ifndef CLASSPROTO_C_
 #define CLASSPROTO_C_
 class ClassProto;
+#endif
+
+#ifndef REFERENCEELEM_C_
+#define REFERENCEELEM_C_
+class ReferenceElement;
+#endif
+#ifndef FUNCTIONPROTO_C_
+#define FUNCTIONPROTO_C_
+class FunctionProto;
 #endif
 
 #ifndef DECLR_P_

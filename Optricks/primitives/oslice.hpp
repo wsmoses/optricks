@@ -13,6 +13,7 @@
 class oslice : public oobject{
 	public:
 		Statement* start, *stop, *step;
+		virtual ~oslice(){};
 		oslice(PositionID id, Statement* a, Statement* b, Statement* c): oobject(id, sliceClass),
 				start(a), stop(b),step(c){
 			if(step==0){
@@ -38,11 +39,12 @@ class oslice : public oobject{
 		}
 };
 
-class E_SLICE : public Statement{
+class E_SLICE : public Construct{
 public:
 	Statement* start, *stop, *step;
-	E_SLICE(PositionID id, Statement* a, Statement* b, Statement* c): Statement(id, sliceClass),
+	E_SLICE(PositionID id, Statement* a, Statement* b, Statement* c): Construct(id, sliceClass),
 			start(a), stop(b),step(c){}
+	virtual ~E_SLICE(){};
 	const Token getToken() const override{
 		return T_SLICE;
 	};
@@ -133,15 +135,6 @@ public:
 		step->write(f,"");
 		f << ")";
 	}
-	FunctionProto* getFunctionProto() override final{ return NULL; }
-	void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-	ClassProto* getClassProto() override final{ return NULL; }
-	void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-	AllocaInst* getAlloc() override final{ return NULL; };
-	void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-	String getObjName() override final { error("Cannot get name"); return ""; }
-	void setResolve(DATA v) override final { error("Cannot set resolve"); }
-	DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OSLICE_HPP_ */

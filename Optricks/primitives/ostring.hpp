@@ -13,6 +13,7 @@
 class ostring : public oobject{
 	public:
 		String value;
+		virtual ~ostring(){};
 		ostring(PositionID id, String i): oobject(id, stringClass), value(i){}
 		void write(ostream& f, String b) const override{
 			f<<"\"";

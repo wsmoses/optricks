@@ -5,20 +5,14 @@
 class E_PARENS : public Statement{
 public:
 	Statement* inner;
+	virtual ~E_PARENS(){};
 	E_PARENS(PositionID id, Statement* t) : Statement(id, t->returnType), inner(t) { };
 	const Token getToken() const override{
 		return T_PARENS;
 	};
-
-	FunctionProto* getFunctionProto() override final{ return inner->getFunctionProto(); }
-	void setFunctionProto(FunctionProto* f) override final { inner->setFunctionProto(f); }
-	ClassProto* getClassProto() override final{ return inner->getClassProto(); }
-	void setClassProto(ClassProto* f) override final { inner->setClassProto(f); }
-	AllocaInst* getAlloc() override final{ return inner->getAlloc(); };
-	void setAlloc(AllocaInst* f) override final { inner->setAlloc(f); }
-	String getObjName() override final { return inner->getObjName(); }
-	void setResolve(DATA v) override final { inner->setResolve(v); }
-	DATA getResolve() override final { return inner->getResolve(); }
+	ReferenceElement* getMetadata() override final{
+		return inner->getMetadata();
+	}
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}

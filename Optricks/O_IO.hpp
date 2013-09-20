@@ -102,8 +102,9 @@ bool readString(FILE* f, String* a){
 }
 
 bool returnString(FILE* f, String c){
-	for(unsigned int i = c.length()-1; i>=0; i--){
+	for(unsigned int i = c.length()-1; ; i--){
 		if(returnChar(f, (char)c[i])) return true;
+		if(i==0) break;
 	}
 	return false;
 }

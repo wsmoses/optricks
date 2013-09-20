@@ -26,7 +26,7 @@ void execF(RData& r, Statement* n,bool debug){
 	n->registerFunctionDefaultArgs();
 	n->checkTypes();
 	Type* type;
-	type = n->returnType->type;
+	type = n->returnType->getType(r);
 	if(type==NULL){
 		cout << "Error null return type for class " + n->returnType->name ;
 		type = VOIDTYPE;
@@ -242,7 +242,7 @@ int main(int argc, char** argv){
 	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	std::vector<String> files = {"./stdlib/stdlib.opt"};
+	std::vector<String> files = {/*"./stdlib/stdlib.opt"*/};
 	if(!interactive){
 		files.push_back(file);
 		lexer.execFiles(files, outStream,debug,output!="");

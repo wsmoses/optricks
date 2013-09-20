@@ -9,57 +9,66 @@
 #define E_LOOKUP_HPP_
 
 #include "../constructs/Statement.hpp"
-
+//TODO only applies to data, allow for functions
 class E_LOOKUP : public Statement{
-	public:
-		const Token getToken() const override{ return T_LOOKUP; }
-		Statement* left;
-		String right;
-		String operation;
-		E_LOOKUP(PositionID id, Statement* a,  String b, String o): Statement(id),
-				left(a), right(b), operation(o){};//TODO allow more detail
+public:
+	const Token getToken() const override{ return T_LOOKUP; }
+	Statement* left;
+	String right;
+	String operation;
+	virtual ~E_LOOKUP(){};
+	E_LOOKUP(PositionID id, Statement* a,  String b, String o): Statement(id),
+			left(a), right(b), operation(o){};//TODO allow more detail
 
-		void write(ostream& f,String a="") const override{
-			f << left;
-			f << operation;
-			f << right;
-		}
+	void write(ostream& f,String a="") const override{
+		f << left;
+		f << operation;
+		f << right;
+	}
 
-		void registerClasses(RData& r) override final{
-			error("E_LOOKUP rC");
-		}
-		void registerFunctionArgs(RData& r) override final{
-			error("E_LOOKUP rFA");
-		};
-		void registerFunctionDefaultArgs() override final{
-			error("E_LOOKUP rFDA");
-		};
-		void resolvePointers() override final{
-			error("E_LOOKUP rP");
-		}
-		ClassProto* checkTypes(){
-			error("Check types for lookup");
+	void registerClasses(RData& r) override final{
+		left->registerClasses(r);
+	}
+	void registerFunctionArgs(RData& r) override final{
+		left->registerFunctionArgs(r);
+	};
+	void registerFunctionDefaultArgs() override final{
+		left->registerFunctionDefaultArgs();
+	};
+	void resolvePointers() override final{
+		left->resolvePointers();
+	}
+	ClassProto* checkTypes(){
+		ClassProto* superC = left->checkTypes();
+		return returnType = superC->getDataClass(right,filePos);
+	}
+	DATA evaluate(RData& a) override{
+		return getMetadata()->getValue(a);
+	}
+	Statement* simplify() override{
+		return this;
+	}
+	Value* getLocation() override final {
+		return getMetadata()->llvmLocation;
+		auto lT = left->checkTypes();
+		auto lM = left->getMetadata();
+		//TODO add additional 0 if global or pointer
+		std::vector<Value*> look = {ConstantInt::get(INTTYPE,0),ConstantInt::get(INTTYPE,lT->getDataClassIndex(right,filePos))};
+		if(lM->llvmLocation!=NULL){
+			//TODO is this even close to right?
+			return GetElementPtrInst::Create(lM->llvmLocation, ArrayRef<Value*>(look), "lookup");
+		} else if(lM->llvmObject!=NULL){
+			return GetElementPtrInst::Create(lM->llvmObject, ArrayRef<Value*>(look), "lookup2");
+		} else {
+			error("Could not find Value to get");
 			return NULL;
 		}
-		DATA evaluate(RData& a) override{
-			//TODO lookup variables
-			error("Variable lookup not implemented");
-			return NULL;
-		}
-		Statement* simplify() override{
-			//TODO lookup variables
-			return this;
-		}
-
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
+	};
+	ReferenceElement* getMetadata(){
+		auto lT = left->checkTypes();
+		auto lM = left->getMetadata();
+		return new ReferenceElement(NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), NULL, NULL, NULL);
+	}
 };
 
 

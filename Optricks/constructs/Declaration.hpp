@@ -12,27 +12,18 @@
 #include "../expressions/E_VAR.hpp"
 
 #define DECLR_P_
-class Declaration: public Statement{
+class Declaration: public Construct{
 	public:
 		Statement* classV;
 		E_VAR* variable;
 		Statement* value;
 		AllocaInst* Alloca;
-		Declaration(PositionID id, Statement* v, E_VAR* loc, Statement* e=NULL) : Statement(id, voidClass){
+		Declaration(PositionID id, Statement* v, E_VAR* loc, Statement* e=NULL) : Construct(id, voidClass){
 			classV = v;
 			variable = loc;
 			value = e;
 			Alloca = NULL;
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 		const Token getToken() const final override{
 			return T_DECLARATION;
 		}
@@ -42,12 +33,12 @@ class Declaration: public Statement{
 			if(value!=NULL){
 				value->checkTypes();
 				if(value->returnType==NULL)error("Declaration of inconsistent types");
-				else if(classV->getClassProto()==autoClass){
-					variable->pointer->resolveReturnClass() = variable->returnType = value->returnType;
+				else if(classV->getMetadata()->selfClass==autoClass){
+					variable->pointer->resolve()->returnClass = variable->returnType = value->returnType;
 					variable->checkTypes();
 				}
-				else if(!value->returnType->hasCast(classV->getClassProto()) )
-					error("Declaration of inconsistent types - variable of type "+classV->getClassProto()->name+" and value of "+value->returnType->name);
+				else if(!value->returnType->hasCast(classV->getMetadata()->selfClass) )
+					error("Declaration of inconsistent types - variable of type "+classV->getMetadata()->name+" and value of "+value->returnType->name);
 			}
 			return returnType;
 		}
@@ -62,8 +53,8 @@ class Declaration: public Statement{
 			variable->registerFunctionArgs(r);
 			if(value!=NULL) value->registerFunctionArgs(r);
 			classV->checkTypes();
-			if(classV->getClassProto()==NULL) error("Argument " + classV->getObjName() + "is not a class DC");
-			variable->pointer->resolveReturnClass() = variable->returnType = classV->getClassProto();
+			if(classV->getMetadata()->selfClass==NULL) error("Argument " + classV->getMetadata()->name + "is not a class DC");
+			variable->getMetadata()->returnClass = variable->returnType = classV->getMetadata()->selfClass;
 			variable->checkTypes();
 			//TODO add name in table of args?
 		};
@@ -81,11 +72,11 @@ class Declaration: public Statement{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
-			Alloca = TmpB.CreateAlloca(variable->returnType->type, 0,variable->pointer->name);
+			Alloca = TmpB.CreateAlloca(variable->returnType->getType(r), 0,variable->pointer->name);
 			if(value!=NULL && value->getToken()!=T_VOID){
 				r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), variable->returnType) , Alloca);
 			}
-			variable->pointer->resolveAlloc() = Alloca;
+			variable->getMetadata()->llvmLocation = Alloca;
 			r.guarenteedReturn = false;
 			return NULL;
 			//variable->pointer->resolve() = r.builder.CreateLoad(Alloca);

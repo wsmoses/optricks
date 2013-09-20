@@ -14,17 +14,11 @@
 class oobject: public Statement{
 	public:
 		oobject(PositionID a, ClassProto* cl):Statement(a, cl){}
-
-		FunctionProto* getFunctionProto() override{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override{ error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override{ return NULL; }
-		void setClassProto(ClassProto* f) override { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override{ return NULL; };
-		void setAlloc(AllocaInst* f) override { error("Cannot set allocated instance"); }
-		String getObjName() override { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override { error("Cannot set resolve"); }
-		DATA getResolve() override { error("Cannot get resolve"); return NULL; }
-
+		virtual ~oobject(){};
+		ReferenceElement* getMetadata(){
+			error("Cannot getMetadata() for oobject");
+			return NULL;
+		}
 		//TODO
 		void registerClasses(RData& r) override final{};
 		void registerFunctionArgs(RData& r) override{};

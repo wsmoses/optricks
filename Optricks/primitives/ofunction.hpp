@@ -20,18 +20,21 @@ class ofunction:public oobject{
 		ofunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec):oobject(id, functionClass),
 				self(s),returnV(r){
 
-			prototype = new FunctionProto((self==NULL)?"unknown":(self->getObjName()), dec, NULL);
+			prototype = new FunctionProto((self==NULL)?"unknown":(self->getMetadata()->name), dec, NULL);
 		}
 
+		ReferenceElement* getMetadata(){
+			return new ReferenceElement(NULL,"lambda",NULL,NULL,prototype,NULL,NULL);
+		}
 		void registerFunctionArgs(RData& r) override{
 			if(prototype==NULL) error("Function prototype should not be null");
-			if(returnV!=NULL) prototype->returnType = returnV->getClassProto();
+			if(returnV!=NULL) prototype->returnType = returnV->getMetadata()->selfClass;
 			for(Declaration* d: prototype->declarations){
 				d->registerFunctionArgs(r);
 			}
 			//if(prototype->returnType==NULL) error("Function prototype-return should not be null");
-			if(self!=NULL && self->getObjName()!=""){
-				self->setFunctionProto(prototype);
+			if(self!=NULL && self->getMetadata()->name!=""){
+				self->getMetadata()->function = prototype;
 				self->returnType = functionClass;
 			}
 
@@ -50,7 +53,6 @@ class ofunction:public oobject{
 			}
 			if(returnV!=NULL) returnV->resolvePointers();
 		};
-		FunctionProto* getFunctionProto() override final{ return prototype; }
 		ClassProto* checkTypes() override{
 			for(auto& a:prototype->declarations){
 				a->checkTypes();
@@ -58,7 +60,7 @@ class ofunction:public oobject{
 			if(self!=NULL) self->checkTypes();
 			if(returnV!=NULL){
 				returnV->checkTypes();
-				prototype->returnType = returnV->getClassProto();
+				prototype->returnType = returnV->getMetadata()->selfClass;
 				if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->returnType->name);
 			} //else if(prototype->returnType==NULL) error("Could not p-resolve return type");
 			return returnType;
@@ -87,13 +89,13 @@ class externFunction : public ofunction{
 			ofunction::registerFunctionArgs(a);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getClassProto()->type;
-				if(cl==NULL) error("Type argument "+b->classV->getObjName()+" is null");
+				Type* cl = b->classV->getMetadata()->selfClass->getType(a);
+				if(cl==NULL) error("Type argument "+b->classV->getMetadata()->name+" is null");
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getClassProto();
+			ClassProto* cp = returnV->getMetadata()->selfClass;
 			if(cp==NULL) error("Cannot use void class proto in extern");
-			Type* r = cp->type;
+			Type* r = cp->getType(a);
 			if(r==NULL) error("Type argument "+cp->name+" is null");
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);//todo check this
@@ -102,14 +104,14 @@ class externFunction : public ofunction{
 			if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
 			if(prototype->name=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 			if(F->getName().str()!=prototype->name) error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
-			self->setResolve(F);
+			self->getMetadata()->setValue(F,a);
 		}
 
 		oobject* simplify() override final{
 			return this;
 		}
 		Value* evaluate(RData& a) override{
-			return self->getResolve();
+			return self->getMetadata()->getValue(a);
 		}
 };
 class lambdaFunction : public ofunction{
@@ -156,11 +158,11 @@ class lambdaFunction : public ofunction{
 		Function* evaluate(RData& ar) override{
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getClassProto()->type;
-				if(cl==NULL) error("Type argument "+b->classV->getObjName()+" is null", true);
+				Type* cl = b->classV->getMetadata()->selfClass->getType(ar);
+				if(cl==NULL) error("Type argument "+b->classV->getMetadata()->name+" is null", true);
 				args.push_back(cl);
 			}
-			Type* r = prototype->returnType->type;
+			Type* r = prototype->returnType->getType(ar);
 			if(r==NULL){
 				error("Error null return type for class " + prototype->returnType->name);
 				r = VOIDTYPE;
@@ -172,7 +174,7 @@ class lambdaFunction : public ofunction{
 			for (Function::arg_iterator AI = F->arg_begin(); Idx != args.size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
-				prototype->declarations[Idx]->variable->pointer->resolve() = AI;
+				prototype->declarations[Idx]->variable->getMetadata()->setValue(AI,ar);
 			}
 
 			//BasicBlock *Parent = ar.builder.GetInsertBlock();
@@ -247,19 +249,19 @@ class userFunction : public ofunction{
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
 				b->classV->checkTypes();
-				Type* cl = b->classV->getClassProto()->type;
-				if(cl==NULL) error("Type argument "+b->classV->getObjName()+" is null", true);
+				Type* cl = b->classV->getMetadata()->selfClass->getType(ra);
+				if(cl==NULL) error("Type argument "+b->classV->getMetadata()->name+" is null", true);
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getClassProto();
+			ClassProto* cp = returnV->getMetadata()->selfClass;
 			if(cp==NULL) error("Unknown return type");
 			if(cp==autoClass) error("Cannot support auto return for function");
-			Type* r = cp->type;
+			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, (self==NULL)?"anonymousfunc":(self->getObjName()), ra.lmod);
+			Function *F = Function::Create(FT, Function::ExternalLinkage, (self==NULL)?"anonymousfunc":(self->getMetadata()->name), ra.lmod);
 
-			if(self!=NULL) self->setResolve(F);
+			if(self!=NULL) self->getMetadata()->setValue(F, ra);
 			//BasicBlock *Parent = ar.builder.GetInsertBlock();
 			//	ar.builder.SetInsertPoint(Parent);
 
@@ -267,7 +269,7 @@ class userFunction : public ofunction{
 			for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
-				prototype->declarations[Idx]->variable->pointer->resolve() = AI;
+				prototype->declarations[Idx]->variable->getMetadata()->setValue(AI,ra);
 			}
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB =
@@ -292,7 +294,7 @@ class userFunction : public ofunction{
 			F->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
 			if(r!=VOIDTYPE){
-				auto functionReturnType = prototype->returnType->type;
+				auto functionReturnType = prototype->returnType->getType(ra);
 				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j->endings.size(), "funcRet" );
 				for(auto &a : j->endings){
 					phi->addIncoming(a.second, a.first);

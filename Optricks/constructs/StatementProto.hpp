@@ -17,7 +17,7 @@ class Statement : public Stackable{
 		PositionID filePos;
 		Statement(PositionID a, ClassProto* rt=NULL) :
 			returnType(rt), filePos(a)	{}
-		~Statement(){}
+		virtual ~Statement(){};
 		void error(String s="Compile error", bool exi=true){
 			cerr << s << " in ";
 			cerr << filePos.fileName;
@@ -35,15 +35,11 @@ class Statement : public Stackable{
 		virtual void registerFunctionDefaultArgs() = 0;
 		virtual void resolvePointers() = 0;
 		virtual ClassProto* checkTypes() = 0;
-		virtual FunctionProto* getFunctionProto() = 0;
-		virtual void setFunctionProto(FunctionProto* a) = 0;
-		virtual ClassProto* getClassProto() = 0;
-		virtual void setClassProto(ClassProto* a) = 0;
-		virtual AllocaInst* getAlloc() = 0;
-		virtual void setAlloc(AllocaInst* a) = 0;
-		virtual DATA getResolve() = 0;
-		virtual void setResolve(DATA v) = 0;
-		virtual String getObjName() = 0;
+
+		virtual ReferenceElement* getMetadata() = 0;
+		virtual Value* getLocation(){
+			return getMetadata()->llvmLocation;
+		};
 };
 
 
@@ -70,16 +66,9 @@ class VoidStatement : public Statement{
 		void registerFunctionArgs(RData& r) override final{};
 		void registerFunctionDefaultArgs() override final{};
 		void resolvePointers() override final{};
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 		ClassProto* checkTypes() override final;
+		ReferenceElement* getMetadata() override final { error("Cannot get ReferenceElement of void"); return NULL; }
+
 };
 
 static VoidStatement* VOID = new VoidStatement();

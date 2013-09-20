@@ -15,7 +15,8 @@ bool isStartName(int i){
 	return isalpha(i) || i=='_' || i=='$';
 }
 void initClassesMeta(){
-
+	complexClass->addElement("real",doubleClass,PositionID());
+	complexClass->addElement("imaginary",doubleClass,PositionID());
 
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{

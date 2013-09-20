@@ -15,23 +15,23 @@ class E_VAR : public Statement{
 	public:
 		Resolvable* pointer;
 		//	Resolvable* type;
+		virtual ~E_VAR(){};
 		E_VAR(PositionID id, Resolvable* a) : Statement(id),pointer(a){
 			//	type = ty;
 		};
 		const Token getToken() const override{
 			return T_VAR;
 		}
+		ReferenceElement* getMetadata() final override{
+			return pointer->resolve();
+		}
 		Statement* simplify() override final{
 			return this;
 		}
 		DATA evaluate(RData& r) override final{
-			//TODO variables not implemented
-			if(pointer->resolveAlloc()!=NULL) return r.builder.CreateLoad(pointer->resolveAlloc());
-			auto ans = pointer->resolve();
-			if(ans==NULL){
-				error("Could not resolve pointer "+pointer->name);
-			}
-			return ans;//TODO check
+			auto ans = pointer->resolve()->getValue(r);
+			if(ans==NULL) error("No data stored for "+pointer->name);
+			return ans;
 		}
 		void write(ostream& f,String t="") const override{
 			f  << pointer->name;
@@ -48,29 +48,16 @@ class E_VAR : public Statement{
 			//TODO
 		};
 		ClassProto* checkTypes() override{
-			ClassProto* temp = pointer->resolveReturnClass();
+			ClassProto* temp = pointer->resolve()->returnClass;
 			if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
 			return returnType = temp;
 		}
 		void resolvePointers() override{
 			LateResolve* r = dynamic_cast<LateResolve*>(pointer);
 			if(r!=NULL){
-				pointer = r->resolvePointer();
+				pointer = r->resolve();
 			}
 			if(pointer == NULL) error("What?? Pointer is null? for " + pointer->name);
 		}
-		FunctionProto* getFunctionProto() override final{ return pointer->resolveFunction(); }
-		void setFunctionProto(FunctionProto* f) override final { pointer->resolveFunction() = f; }
-		ClassProto* getClassProto() override final{
-			auto t = pointer->resolveSelfClass();
-			if(t==NULL) error("Could not resolve class proto");
-			return t;
-		}
-		void setClassProto(ClassProto* f) override final { pointer->resolveSelfClass() = f; }
-		AllocaInst* getAlloc() override final{ return pointer->resolveAlloc(); };
-		void setAlloc(AllocaInst* f) override final { pointer->resolveAlloc() = f; }
-		String getObjName() override final { return pointer->name; }
-		void setResolve(DATA v) override final { pointer->resolve() = v; }
-		DATA getResolve() override final { return pointer->resolve(); }
 };
 #endif /* E_VAR_HPP_ */

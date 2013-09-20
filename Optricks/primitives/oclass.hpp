@@ -21,6 +21,7 @@ class oclass: public Stackable
 		}*/
 		ClassProto* proto;
 		//OModule* module;
+		virtual ~oclass(){};
 		oclass(ClassProto* p){
 			proto = p;
 			if(p->name!=""){
@@ -65,8 +66,8 @@ void initClasses(){
 	//oclass* voidClassO =
 			new oclass(voidClass);
 
-	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->resolveReturnClass() = classClass;
-	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->resolveReturnClass() = classClass;
+	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->returnClass = classClass;
+	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->returnClass = classClass;
 }
 
 #endif /* OCLASS_HPP_ */

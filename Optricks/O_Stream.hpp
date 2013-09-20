@@ -177,7 +177,7 @@ public:
 	PositionID pos(){
 		return PositionID(readChars.size(), readChars.back().size(),fileName);
 	}
-	~Stream(){
+	virtual ~Stream(){
 		close();
 	}
 	void close(){

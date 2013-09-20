@@ -12,47 +12,13 @@
 #include "../containers/all.hpp"
 #include "../primitives/oobjectproto.hpp"
 
-
-class Resolvable{
-	public:
-	OModule* module;
-	String name;
-	virtual DATA& resolve() const = 0;
-	virtual ClassProto*& resolveReturnClass() const = 0;
-	virtual FunctionProto*& resolveFunction() const = 0;
-	virtual ClassProto*& resolveSelfClass() const = 0;
-	virtual AllocaInst*& resolveAlloc() const = 0;
-};
-
-class opointer: public Resolvable{
-	public:
-		unsigned int index;
-		opointer(OModule* a, unsigned int b, String c) : index(b){
-			module = a;
-			name = c;
-		}
-		ostream& operator << ( ostream& a){
-			a << "(*" << name << "|" << index << ")";
-			return a;
-		}
-		DATA& resolve() const final override;
-		ClassProto*& resolveReturnClass() const final override;
-		ClassProto*& resolveSelfClass() const final override;
-		FunctionProto*& resolveFunction() const final override;
-		AllocaInst*& resolveAlloc() const final override;
-};
-
 class OModule : public Stackable{
 	public:
+		virtual ~OModule(){};
 		OModule* super;
-		std::map<String, opointer*> mapping;
-		std::vector<ClassProto*> returnClasses;
-		std::vector<AllocaInst*> allocs;
-		std::vector<ClassProto*> selfClasses;
-		std::vector<FunctionProto*> functions;
-		std::vector<DATA> data;
+		std::map<String, ReferenceElement*> mapping;
 		OModule(const OModule& c) = delete;
-		OModule(OModule* before): mapping(),returnClasses(),allocs(), selfClasses(),data(){
+		OModule(OModule* before): mapping(){
 			super = before;
 		}
 		const Token getToken() const override{
@@ -73,25 +39,20 @@ class OModule : public Stackable{
 			return -1;
 		}
 		void setPointer(PositionID a, String index, DATA value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
-			auto p = findPointer(a, index);
-			p->resolve() = value;
-			p->resolveReturnClass() = cl;
-			p->resolveFunction() = fun;
-			p->resolveSelfClass() = selfCl;
-			p->resolveAlloc() = al;
+			ReferenceElement* p = findPointer(a, index);
+			p->llvmObject = value;
+			p->returnClass = cl;
+			p->function = fun;
+			p->selfClass = selfCl;
+			p->llvmLocation = al;
 		}
-		opointer* addPointer(PositionID a, String index, DATA value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
+		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()){
 					todo("The variable "+index+" has already been defined in this scope", a);
 				}
-				opointer* nex = new opointer(this, data.size(), index);
-				data.push_back(value);
-				returnClasses.push_back(cla);
-				functions.push_back(fun);
-				selfClasses.push_back(selfCl);
-				allocs.push_back(al);
-				mapping.insert(std::pair<String,opointer*>(index, nex));
+				auto nex = new ReferenceElement(this, index,value, cla, fun, selfCl, al);
+				mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
 				return nex;
 			} else {
 				if(super==NULL){
@@ -102,7 +63,7 @@ class OModule : public Stackable{
 				return super->addPointer(a, index, value, cla, fun, selfCl, al, level-1);
 			}
 		}
-		opointer* findPointer(PositionID a, String index) {
+		ReferenceElement* findPointer(PositionID a, String index) {
 			const OModule* search = this;
 			while(search!=NULL){
 				auto paired = search->mapping.find(index);
@@ -114,7 +75,7 @@ class OModule : public Stackable{
 			}
 			return addPointer(a, index, NULL,NULL, NULL,NULL,NULL);
 		}
-		opointer* getPointer(PositionID id, String index) {
+		ReferenceElement* getPointer(PositionID id, String index) {
 			OModule* search = this;
 			while(search!=NULL){
 				auto paired = search->mapping.find(index);
@@ -143,50 +104,24 @@ class OModule : public Stackable{
 		}
 };
 
-DATA& opointer::resolve() const {
-	return module->data[index];
-}
-ClassProto*& opointer::resolveReturnClass() const {
-	return module->returnClasses[index];
-}
-FunctionProto*& opointer::resolveFunction() const {
-	return module->functions[index];
-}
-ClassProto*& opointer::resolveSelfClass() const {
-	return module->selfClasses[index];
-}
-AllocaInst*& opointer::resolveAlloc() const {
-	return module->allocs[index];
-}
+ReferenceElement* ReferenceElement::resolve(){
+	return this;
+	//if(module==NULL) return this;
+	//return module->mapping[name];
+};
 
 class LateResolve : public Resolvable{
 	public:
 		PositionID filePos;
-		LateResolve(OModule* m,String n, PositionID id): filePos(id){
-			name = n;
-			module = m;
-		}
-		opointer* resolvePointer() const{
+		virtual ~LateResolve(){};
+		LateResolve(OModule* m,String n, PositionID id): Resolvable(m,n),filePos(id){};
+		ReferenceElement* resolve(){
 			auto a =  module->getPointer(filePos, name);
 			if(a==NULL) todo("Could not resolve late pointer for "+name,filePos);
 			return a;
 		}
-		DATA& resolve() const override final{
-			return resolvePointer()->resolve();
-		}
-		ClassProto*& resolveReturnClass() const override final{
-			return resolvePointer()->resolveReturnClass();
-		}
-		FunctionProto*& resolveFunction() const override final{
-			return resolvePointer()->resolveFunction();
-		}
-		ClassProto*& resolveSelfClass() const override final{
-			return resolvePointer()->resolveSelfClass();
-		}
-		AllocaInst*& resolveAlloc() const override final{
-			return resolvePointer()->resolveAlloc();
-		}
 };
+
 OModule* LANG_M = new OModule(NULL);
 
 RData::RData():

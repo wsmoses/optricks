@@ -74,6 +74,7 @@ class E_BINOP : public Statement{
 		Statement* left;
 		Statement* right;
 		String operation;
+		virtual ~E_BINOP(){};
 		E_BINOP(PositionID a, Statement* t, Statement* ind,String op) :
 			Statement(a),left(t), right(ind),operation(op){
 		}
@@ -157,15 +158,10 @@ class E_BINOP : public Statement{
 			}
 			return self;
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
+		ReferenceElement* getMetadata(){
+			error("Cannot getMetadata() for E_BINOP");
+			return NULL;
+		}
 };
 
 

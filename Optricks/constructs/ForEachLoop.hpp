@@ -10,14 +10,15 @@
 
 #include "./Statement.hpp"
 //TODO implement iterator
-class ForEachLoop : public Statement{
+class ForEachLoop : public Construct{
 	public:
 		E_VAR* localVariable;
 		Statement* iterable;
 		Statement* toLoop;
 		String name;
+		virtual ~ForEachLoop();
 		ForEachLoop(PositionID id, E_VAR* var, Statement* it,Statement* tL, String n="") :
-			Statement(id, voidClass), localVariable(var), iterable(it),toLoop(tL){
+			Construct(id, voidClass), localVariable(var), iterable(it),toLoop(tL){
 			/*if(condition->returnType!=boolClass){
 				cerr << "Cannot make non-bool type argument of conditional" << endl << flush;
 				exit(0);
@@ -65,15 +66,6 @@ class ForEachLoop : public Statement{
 			//TODO [loop unrolloing]
 			return NULL;
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

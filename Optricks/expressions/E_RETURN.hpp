@@ -10,6 +10,7 @@
 #include "../constructs/Statement.hpp"
 class E_RETURN : public Statement{
 	public:
+		virtual ~E_RETURN(){};
 		Statement* inner;
 		String name;
 		JumpType jump;
@@ -19,34 +20,10 @@ class E_RETURN : public Statement{
 			return T_RETURN;
 		};
 
-		FunctionProto* getFunctionProto() override final{
-			error("Cannot getFunctionProto() for E_RETURN");
-			return inner->getFunctionProto();
+		ReferenceElement* getMetadata() override final{
+			error("Cannot getMetadata() for E_RETURN");
+			return inner->getMetadata();
 		}
-		void setFunctionProto(FunctionProto* f) override final {
-			error("Cannot setFunctionProto() for E_RETURN");
-			inner->setFunctionProto(f); }
-		ClassProto* getClassProto() override final{
-			error("Cannot getClassProto() for E_RETURN");
-			return inner->getClassProto(); }
-		void setClassProto(ClassProto* f) override final {
-			error("Cannot setClassProto() for E_RETURN");
-			inner->setClassProto(f); }
-		AllocaInst* getAlloc() override final{
-			error("Cannot getAlloc() for E_RETURN");
-			return inner->getAlloc(); };
-		void setAlloc(AllocaInst* f) override final {
-			error("Cannot setAlloc() for E_RETURN");
-			inner->setAlloc(f); }
-		String getObjName() override final {
-			error("Cannot getObjName() for E_RETURN");
-			return inner->getObjName(); }
-		void setResolve(DATA v) override final {
-			error("Cannot setResolve() for E_RETURN");
-			inner->setResolve(v); }
-		DATA getResolve() override final {
-			error("Cannot getResolve() for E_RETURN");
-			return inner->getResolve(); }
 
 		void registerClasses(RData& r) override final{
 			if(inner!=NULL)

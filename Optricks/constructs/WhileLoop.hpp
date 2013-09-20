@@ -10,13 +10,14 @@
 
 #include "./Statement.hpp"
 
-class DoWhileLoop : public Statement{
+class DoWhileLoop : public Construct{
 	public:
 		Statement* const condition;
 		Statement* const statement;
 		String name;
+		virtual ~DoWhileLoop(){};
 		DoWhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
-			Statement(a, voidClass),
+			Construct(a, voidClass),
 			condition(cond), statement(stat){
 			name = n;
 		}
@@ -80,15 +81,6 @@ class DoWhileLoop : public Statement{
 		DoWhileLoop* simplify() override final{
 			return new DoWhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

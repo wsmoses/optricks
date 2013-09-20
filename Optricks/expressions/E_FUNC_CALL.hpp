@@ -3,11 +3,12 @@
 #include "../constructs/Statement.hpp"
 #include "../primitives/ofunction.hpp"
 
-class E_FUNC_CALL : public Statement{
+class E_FUNC_CALL : public Construct{
 	public:
 		Statement* toCall;
 		std::vector<Statement*> vals;
-		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a),
+		virtual ~E_FUNC_CALL(){};
+		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Construct(a,NULL),
 				toCall(t), vals(val){
 		};
 		const Token getToken() const override{
@@ -59,23 +60,23 @@ class E_FUNC_CALL : public Statement{
 				for(unsigned int i = 0; i<vals.size(); i++){
 								vals[i]->checkTypes();
 				}
-				return returnType = toCall->getClassProto();
-			}
-			FunctionProto* proto = toCall->getFunctionProto();
+				return returnType = toCall->getMetadata()->selfClass;
+			} //TODO oh -- constructor
+			FunctionProto* proto = toCall->getMetadata()->function;
 			if(proto==NULL) error("Non-existent function prototype");
 			if(proto->declarations.size() < vals.size()) error("Function "+proto->name+" called with too many arguments");
 			for(unsigned int i = 0; i<vals.size(); i++){
 				vals[i]->checkTypes();
-				if(proto->declarations[i]->classV->getClassProto()==NULL){
-					error("Argument " + proto->declarations[i]->classV->getObjName() + " is not a class FC");
+				if(proto->declarations[i]->classV->getMetadata()->selfClass==NULL){
+					error("Argument " + proto->declarations[i]->classV->getMetadata()->name + " is not a class FC");
 				}
-				ClassProto* t = proto->declarations[i]->classV->getClassProto();
+				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
 				if(t==NULL || ! ( t==autoClass || vals[i]->returnType==autoClass || vals[i]->returnType->hasCast(t) ))
 					error("Called function "+proto->name+" with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
 							" got "+ vals[i]->returnType->name);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
-				if(proto->declarations[i]->value==NULL) error("Argument "+i, " non-optional");
+				if(proto->declarations[i]->value==NULL) error("Argument "+str<unsigned int>(i), " non-optional");
 			}
 			return returnType = proto->returnType;
 		}
@@ -107,33 +108,24 @@ class E_FUNC_CALL : public Statement{
 				return temp->ret->evaluate(a);
 			}
 			if(toCall->returnType==classClass){
-				return toCall->getClassProto()->construct(a,vals,filePos);
+				return toCall->getMetadata()->selfClass->construct(a,vals,filePos);
 			}
 			Value* callee = toCall->evaluate(a);
-			FunctionProto* proto = toCall->getFunctionProto();
+			FunctionProto* proto = toCall->getMetadata()->function;
 			std::vector<Value*> Args;
 
 			for(unsigned int i = 0; i<vals.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getClassProto();
+				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
 				Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
 				if (Args.back() == 0) error("Error in eval of args");
 			}
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getClassProto();
+				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
 				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 			}
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
 			else return a.builder.CreateCall(callee, Args, "calltmp");
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 

@@ -13,6 +13,7 @@
 class oarray : public oobject{
 	public:
 		std::vector<oobject*> data;
+		virtual ~oarray(){};
 		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id,
 				NULL //TODO arrayClass
 		),data(dat){}
@@ -62,13 +63,14 @@ class oarray : public oobject{
 		}
 };
 
-class E_ARR : public Statement{
+class E_ARR : public Construct{
 	public:
 		std::vector<Statement*> values;
-		E_ARR(PositionID id) : Statement(id,
+		virtual ~E_ARR(){};
+		E_ARR(PositionID id) : Construct(id,
 				NULL //TODO arrayClass
 				),values() { };
-		E_ARR(PositionID id, const std::vector<Statement*>& a) : Statement(id,
+		E_ARR(PositionID id, const std::vector<Statement*>& a) : Construct(id,
 				NULL //TODO arrayClass
 				),values(a) { };
 		const  Token getToken() const override{
@@ -136,17 +138,8 @@ class E_ARR : public Statement{
 				a->checkTypes();
 			}
 			error("Implement forced E_ARR typing");
-//			return arrayClass;
+			return NULL;//TODO array typing
 		}
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* OARRAY_HPP_ */

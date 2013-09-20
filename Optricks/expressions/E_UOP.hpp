@@ -10,12 +10,13 @@
 
 #include "../constructs/Statement.hpp"
 
-class E_PREOP : public Statement{
+class E_PREOP : public Construct{
 	public:
 		const Token getToken() const override final{ return T_UOP; }
 		Statement *value;
 		String operation;
-		E_PREOP(PositionID id, String o, Statement* a): Statement(id),
+		virtual ~E_PREOP(){};
+		E_PREOP(PositionID id, String o, Statement* a): Construct(id,NULL),
 				value(a), operation(o)
 		{};//possible refinement of return type
 		Statement* simplify() override final {
@@ -47,24 +48,16 @@ class E_PREOP : public Statement{
 		void resolvePointers() override final{
 			value->resolvePointers();
 		};
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 
-class E_POSTOP : public Statement{
+class E_POSTOP : public Construct{
 	public:
 		const Token getToken() const override final{ return T_UOP; }
 		Statement *value;
 		String operation;
-		E_POSTOP(PositionID id, String o, Statement* a): Statement(id),
+		virtual ~E_POSTOP(){};
+		E_POSTOP(PositionID id, String o, Statement* a): Construct(id,NULL),
 				value(a), operation(o)
 		{};
 		Statement* simplify() override final {
@@ -96,15 +89,6 @@ class E_POSTOP : public Statement{
 		void resolvePointers() override final{
 			value->resolvePointers();
 		};
-		FunctionProto* getFunctionProto() override final{ return NULL; }
-		void setFunctionProto(FunctionProto* f) override final { error("Cannot set function prototype"); }
-		ClassProto* getClassProto() override final{ return NULL; }
-		void setClassProto(ClassProto* f) override final { error("Cannot set class prototype"); }
-		AllocaInst* getAlloc() override final{ return NULL; };
-		void setAlloc(AllocaInst* f) override final { error("Cannot set allocated instance"); }
-		String getObjName() override final { error("Cannot get name"); return ""; }
-		void setResolve(DATA v) override final { error("Cannot set resolve"); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL; }
 };
 
 #endif /* E_BINOP_HPP_ */

@@ -16,19 +16,46 @@
 #define CLASSPROTO_C_
 class ClassProto{
 	private:
-		std::map<String,std::map<ClassProto*, obinop*> > binops;
-		std::map<ClassProto*, ouop*> casts;
+	std::map<String,std::map<ClassProto*, obinop*> > binops;
+	std::map<ClassProto*, ouop*> casts;
+
 		DATA (*constructor)(RData&, std::vector<Statement*>,PositionID,String);
+		ClassProto* superClass;
+		Type* type;
+		std::map<String, unsigned int> innerDataIndex;
+		std::vector<ClassProto*> innerData;
+		std::map<String, ReferenceElement* > functions;
 		//		std::map<String,std::map<ClassProto*, obinop*> > binops;
 	public:
+		String name;
+		std::map<String,ouop* > preops;
+		std::map<String,ouop* > postops;
+		virtual ~ClassProto(){};
+		unsigned int getDataClassIndex(String nam, PositionID id){
+			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
+			return innerDataIndex[nam];
+		}
+		ClassProto* getDataClass(String nam, PositionID id){
+			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
+			return innerData[innerDataIndex[nam]];
+		}
+		void addElement(String nam, ClassProto* typ,PositionID id){
+			if(innerDataIndex.find(nam)!=innerDataIndex.end()) todo("Cannot create another inner data type for class "+name+" named "+nam,id);
+			auto a = innerData.size();
+			innerData.push_back(typ);
+			innerDataIndex[nam]=a;
+		}
 		DATA construct(RData& r, std::vector<Statement*> s, PositionID i) const{
 			return constructor(r,s,i,name);
 		}
-		ClassProto* superClass;
-		std::map<String,ouop* > preops;
-		std::map<String,ouop* > postops;
-		Type* type;
-		String name;
+		Type* getType(RData& r){
+			if(type!=NULL) return type;
+			else{
+				std::vector<Type*> types;
+				for(auto& a: innerData) types.push_back(a->getType(r));
+				return StructType::create(ArrayRef<Type*>(types),name);
+			}
+		}
 		virtual bool operator == (ClassProto*& b){
 			return this == b;
 		}
@@ -111,7 +138,12 @@ class ClassProto{
 			}
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, DATA (*co)(RData&, std::vector<Statement*>,PositionID,String), Type* t=NULL) : constructor(co), superClass(sC), type(t), name(n) {
+		ClassProto(ClassProto* sC, String n, DATA (*co)(RData&, std::vector<Statement*>,PositionID,String), Type* t=NULL) : constructor(co), superClass(sC), type(t),
+				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
+				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
+				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
+				name(n)
+				 {
 			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> Value*{	return a; }
 								, this)));
 		}

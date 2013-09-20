@@ -35,6 +35,7 @@ class Lexer{
 			//endWith=EOF;
 			myMod = new OModule(LANG_M);
 		}
+		virtual ~Lexer(){};
 		void execFiles(std::vector<String> fileNames, ostream& file, bool debug, bool toFile, unsigned int optLevel = 3){
 			std::vector<Statement*> stats;
 			for(auto& fileName:fileNames){
@@ -353,7 +354,7 @@ class Lexer{
 						}
 						Statement* blocks = getNextBlock(endWith, module);
 						f->error("Implement for-each loop");
-						//return new ForEachLoop(new E_VAR(module->addPointer(varName,NULL,NULL,NULL)),iterable,blocks,"");
+						//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
 						//TODO implement for loop naming
 					}
 				}
@@ -438,7 +439,7 @@ class Lexer{
 					Statement* retV = getNextType(EOF, mod);
 					f->trim(endWith);
 					E_VAR* externName = getNextVariable(endWith, mod,false);
-					externName->pointer->resolveReturnClass() = functionClass;
+					externName->getMetadata()->returnClass = functionClass;
 					f->trim(endWith);
 					if(f->peek()!='('){
 						f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -664,7 +665,7 @@ class Lexer{
 				}
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
 				char te;
-				if((te = f->read())!=']') f->error("Cannot end '[' array with "+te,true);
+				if((te = f->read())!=']') f->error("Cannot end '[' array with "+str<char>(te),true);
 				Statement* nex = getIndex(f, exp, stack);
 				f->trim(endWith);
 				auto mark = f->getMarker();

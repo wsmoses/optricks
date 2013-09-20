@@ -15,6 +15,7 @@ class E_SET: public Statement{
 	public:
 		Statement* variable;
 		Statement* value;
+		virtual ~E_SET(){}
 		E_SET(PositionID id, Statement* loc, Statement* e) : Statement(id){
 			variable = loc;
 			value = e;
@@ -48,13 +49,17 @@ class E_SET: public Statement{
 		};
 		DATA evaluate(RData& r) final override{
 			auto nex = value->returnType->castTo(r, value->evaluate(r), variable->returnType);
-			AllocaInst* aloc = variable->getAlloc();
+			auto aloc = variable->getLocation();
 			if(aloc==NULL) error("Cannot set variable of non-alloc");
 			r.builder.CreateStore(nex, aloc);
 			return nex;
 		}
 		E_SET* simplify() final override{
 			return new E_SET(filePos, variable,(value->simplify()) );
+		}
+		ReferenceElement* getMetadata(){
+			error("Cannot getMetadata() for E_set");
+			return NULL;
 		}
 		void write(ostream& f, String s="") const final override{
 			//f << "SET(";
@@ -65,16 +70,6 @@ class E_SET: public Statement{
 			}
 			//f << ")";
 		}
-
-		FunctionProto* getFunctionProto() override final{ return value->getFunctionProto(); }
-		void setFunctionProto(FunctionProto* f) override final { value->setFunctionProto(f); }
-		ClassProto* getClassProto() override final{ return value->getClassProto(); }
-		void setClassProto(ClassProto* f) override final { value->setClassProto(f); }
-		AllocaInst* getAlloc() override final{ return value->getAlloc(); };
-		void setAlloc(AllocaInst* f) override final { value->setAlloc(f); }
-		String getObjName() override final { return value->getObjName(); }
-		void setResolve(DATA v) override final { value->setResolve(v); }
-		DATA getResolve() override final { error("Cannot get resolve"); return NULL;}
 };
 
 #endif /* E_SET_HPP_ */
