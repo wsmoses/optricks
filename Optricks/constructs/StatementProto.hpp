@@ -37,7 +37,8 @@ class Statement : public Stackable{
 		virtual ClassProto* checkTypes() = 0;
 
 		virtual ReferenceElement* getMetadata() = 0;
-		virtual Value* getLocation(){
+		virtual Value* getLocation(RData& a){
+//			cout << "getting location..." << endl << flush;
 			return getMetadata()->llvmLocation;
 		};
 };

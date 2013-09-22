@@ -61,6 +61,7 @@ void initClasses(){
 			new oclass(intClass);
 	//oclass* stringClassO =
 			new oclass(stringClass);
+			new oclass(charClass);
 	//oclass* sliceClassO =
 			new oclass(sliceClass);
 	//oclass* voidClassO =

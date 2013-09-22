@@ -49,7 +49,7 @@ class ClassProto{
 			return constructor(r,s,i,name);
 		}
 		Type* getType(RData& r){
-			if(type!=NULL) return type;
+			if(type!=NULL || innerData.size()==0) return type;
 			else{
 				std::vector<Type*> types;
 				for(auto& a: innerData) types.push_back(a->getType(r));
@@ -223,7 +223,7 @@ class GeneralClass: public ClassProto{
 
 		}
 };
-/*
+/// *
 class GenericClass: public ClassProto{
 	public:
 		GeneralClass* containerClass;

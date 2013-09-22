@@ -10,7 +10,7 @@
 #include "../containers/all.hpp"
 class Stackable{
 	public:
-		//virtual ~Stackable();
+		virtual ~Stackable(){};
 		virtual const Token getToken() const = 0;
 		virtual void write(ostream& s,String start="") const = 0;
 };

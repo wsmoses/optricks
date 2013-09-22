@@ -3,14 +3,22 @@
 #include "../constructs/Statement.hpp"
 #include "../primitives/ofunction.hpp"
 
-class E_FUNC_CALL : public Construct{
+class E_FUNC_CALL : public Statement{
 	public:
 		Statement* toCall;
 		std::vector<Statement*> vals;
 		virtual ~E_FUNC_CALL(){};
-		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Construct(a,NULL),
+		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
+		ReferenceElement* getMetadata() override final {
+			error("getting metadata of func-call");
+			return NULL;
+		}
+		Value* getLocation(RData& a) override final{
+			//TODO
+			return NULL;
+		}
 		const Token getToken() const override{
 			return T_FUNC_CALL;
 		};
@@ -86,6 +94,9 @@ class E_FUNC_CALL : public Construct{
 			for(auto a:vals) g.push_back(a->simplify());
 			return new E_FUNC_CALL(filePos, tem, g);
 		}
+//		Value* getLocation(RData& a) override{
+	//TODO make data a struct {Value (data), Value (location) }
+//		}
 		DATA evaluate(RData& a) override{
 			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
 			if(temp!=NULL){

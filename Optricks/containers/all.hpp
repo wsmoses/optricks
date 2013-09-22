@@ -52,7 +52,7 @@ public:
 	}
 	DATA setValue(DATA d, RData& r){
 		if(llvmLocation==NULL) return llvmObject=d;
-		else return r.builder.CreateStore(llvmLocation,d);
+		else return r.builder.CreateStore(d,llvmLocation);
 	}
 };
 #endif /* ALL_HPP_ */

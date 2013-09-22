@@ -16,7 +16,7 @@ bool isStartName(int i){
 }
 void initClassesMeta(){
 	complexClass->addElement("real",doubleClass,PositionID());
-	complexClass->addElement("imaginary",doubleClass,PositionID());
+	complexClass->addElement("imag",doubleClass,PositionID());
 
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
@@ -26,21 +26,28 @@ void initClassesMeta(){
 
 	intClass->addCast(complexClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
-				return m.builder.CreateSIToFP(a,DOUBLETYPE);
+			auto v = m.builder.CreateSIToFP(a,DOUBLETYPE);
+			double data[2] = {0, 0} ;
+			auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
+			return m.builder.CreateInsertElement(vec,v,ConstantInt::get(INTTYPE,0));
 	}
 	,complexClass);
 
 	doubleClass->addCast(complexClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
-		//Value* data[2] = {a, odouble(0.).evaluate(m)} ;
-		return NULL;
-//		return ConstantDataVector::get(m.lmod->getContext(), ArrayRef<Value*>(data));
+		double data[2] = {0, 0} ;
+		auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
+		return m.builder.CreateInsertElement(vec,a,ConstantInt::get(INTTYPE,0));
 	}
 	,complexClass);
 
 	complexClass->addBinop("+", complexClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 				return m.builder.CreateFAdd(a,b);
+	},complexClass);
+	complexClass->addBinop("-", complexClass) = new obinopNative(
+			[](DATA a, DATA b, RData& m) -> DATA{
+				return m.builder.CreateFSub(a,b);
 	},complexClass);
 	complexClass->addBinop("[]",intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{

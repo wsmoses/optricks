@@ -44,7 +44,7 @@ extern double	llrint	(double a);
 extern double 	nearbyint(double a);
 extern double	remainder(double a);
 extern double	remquo	(double a);
-extern int 		putchar	(int i);
+extern int 		putchar	(char i);
 extern void exit(int i=0);
 def void quit(int i){ return exit(i); }
 /*
@@ -64,3 +64,60 @@ extern void printi(int i, bool b=true);
 extern void printd(double i, bool b=true);
 extern void printb(bool i, bool b=true);
 extern void prints(string i, bool b=true);
+extern void printc(complex i, bool b=true);
+def double mag2(complex z){
+	return z.real*z.real+z.imag+z.imag;
+}
+
+def complex operator*(complex a, double b){
+	a.real*=b;
+	a.imag*=b;
+	return a;
+}
+def complex operator/(complex a, double b){
+	a.real/=b;
+	a.imag/=b;
+	return a;
+}
+def complex operator*(double b, complex a){
+	a.real*=b;
+	a.imag*=b;
+	return a;
+}
+def complex operator/(double b, complex a){
+	a.real/=b;
+	a.imag/=b;
+	return a;
+}
+def complex operator*(complex a, complex b){
+	complex z = complex();
+	z.real = a.real*b.real-a.imag*b.imag;
+	z.imag = a.imag*b.real+b.imag*a.real;
+	return z;
+}
+def complex conjugate(complex a){
+	a.imag*=-1;
+	return a;
+}
+def complex operator/(complex a, complex b){
+	complex z = a*conjugate(b);
+	return z/(b.real*b.real+b.imag*b.imag);
+}
+def bool operator==(complex a, double b){
+	if(a.imag!=0) return false;
+	return a.real==b;
+}
+def bool operator==(double b, complex a){
+	if(a.imag!=0) return false;
+	return a.real==b;
+}
+def bool operator==(complex a, complex b){
+	if(a.imag!=b.imag) return false;
+	return a.real==b.real;
+}
+def complex expc(complex c){
+	complex z = complex();
+	z.real = cos(c.imag);
+	z.imag = sin(c.imag);
+	return exp(c.real)*z
+}

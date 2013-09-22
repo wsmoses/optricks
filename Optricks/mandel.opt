@@ -1,3 +1,42 @@
+def complex comp(double a=0, double b=0){
+	complex z = complex()
+	z.real = a
+	z.imag = b
+	return z
+}
+
+def void printdensity(int d):
+	if    d > 999	putchar('*')
+	elif  d > 200	putchar('+')
+	elif  d > 020	putchar('.')
+	else         	putchar(' ')
+
+
+def int mandleconverge(complex z, complex z0, int iters=0){
+	if (iters > 255 | ( mag2(z) > 4)) return iters 
+	return mandleconverge(z*z  + z0, z0, iters+1)
+}                           
+
+def int mand(complex z0){
+	auto z = z0
+	for(auto iter=0; iter<1000; iter+=1)
+		if( mag2(z) > 4 ) return iter
+		else z = expc(z*z*z) - .59 //+ z0
+//		else z = z*z*z*z*z*z*z + z0
+	return 1000
+}
+
+def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.25, double ymax=1.25, double ystep=.04){
+	for(auto z = comp(xmin,ymin) z.imag<ymax z.imag+=ystep){
+		for( z.real = xmin z.real<xmax z.real+=xstep)
+			printdensity(mand(z))
+		putchar('\n')
+	}
+}
+mandel()
+
+
+/*
 def void printdensity(int d):
 	if    d > 999	putchar(42)
 	elif  d > 200	putchar(43)
@@ -36,3 +75,4 @@ def void mandel(double xmin=-1, double xmax=2, double xstep=.02, double ymin=-1,
 	}
 }
 mandel()
+*/

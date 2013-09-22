@@ -23,6 +23,7 @@
 #include "expressions/E_TERNARY.hpp"
 #include "primitives/oobject.hpp"
 #include "primitives/obool.hpp"
+#include "primitives/ochar.hpp"
 
 class Lexer{
 	public:
@@ -405,6 +406,11 @@ class Lexer{
 					if(isStartName(f->peek())){
 						methodName = getNextName(endWith);
 						f->trim(EOF);
+						if(methodName=="operator"){
+							String t = f->getNextOperator(endWith);
+							methodName = "~"+t;
+							f->trim(EOF);
+						}
 					}
 					std::vector<Declaration*> arguments;
 					if(!f->done){
@@ -425,7 +431,14 @@ class Lexer{
 					}
 					bool paren;
 					Statement* methodBody = getNextBlock(endWith, module, &paren);
-					E_VAR* funcName = (methodName=="")?NULL:(new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL)));
+					E_VAR* funcName;
+					if(methodName!=""){
+						if(methodName[0]=='~'){
+							funcName = new E_VAR(pos(), new ReferenceElement(NULL, methodName,NULL,functionClass,NULL,NULL,NULL));
+						} else {
+							funcName = new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL));
+						}
+					} else funcName = NULL;
 					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody);
 					f->trim(endWith);
 					semi  = false;
@@ -526,7 +539,10 @@ class Lexer{
 					}
 					case '\'':
 					case '"':{
-						ostring* str = new ostring(pos(), f->readString(endWith));
+						oobject* str;
+						auto tmp = f->readString(endWith);
+						if(tmp.length()==1) str = new ochar(pos(), tmp[0]);
+						else str = new ostring(pos(), tmp);
 						f->trim(endWith);
 						semi  = false;
 						if(!f->done && f->peek()==';'){ semi = true; }

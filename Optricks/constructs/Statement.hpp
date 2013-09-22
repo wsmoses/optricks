@@ -18,6 +18,6 @@ class Construct : public Statement{
 public:
 	virtual ~Construct(){};
 	Construct(PositionID a, ClassProto* pr) : Statement(a, pr){};
-	ReferenceElement* getMetadata() override final { error("Cannot get ReferenceElement of void"); return NULL; }
+	ReferenceElement* getMetadata() override final { error("Cannot get ReferenceElement of construct "+str<Token>(getToken())); return NULL; }
 };
 #endif /* STATEMENT_HPP_ */

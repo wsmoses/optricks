@@ -9,6 +9,9 @@ struct StringStruct{
 		int length;
 		char* data;
 };
+struct complex{
+		double real, imag;
+};
 void prints(StringStruct i, bool b){
 		std::cout << "String length is " << i.length << std::endl << std::flush;
 		std::cout << std::string(i.data, i.length);
@@ -22,6 +25,11 @@ void prints(StringStruct i, bool b){
 	}
 	void printd(double i, bool b){
 		std::cout << i;
+		if(b) std::cout << std::endl;
+		std::cout << std::flush;
+	}
+	void printc(complex i, bool b){
+		std::cout << i.real << "+" << i.imag << "i";
 		if(b) std::cout << std::endl;
 		std::cout << std::flush;
 	}

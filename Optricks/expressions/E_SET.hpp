@@ -49,7 +49,10 @@ class E_SET: public Statement{
 		};
 		DATA evaluate(RData& r) final override{
 			auto nex = value->returnType->castTo(r, value->evaluate(r), variable->returnType);
-			auto aloc = variable->getLocation();
+			auto aloc = variable->getLocation(r);
+	//		if(auto t = dynamic_cast<E_LOOKUP*>(variable)){
+		//		cout << "IS LOOKUP " << t << endl << flush;
+			//} else cout << "Not lookup " << variable->getToken() << endl << flush ;
 			if(aloc==NULL) error("Cannot set variable of non-alloc");
 			r.builder.CreateStore(nex, aloc);
 			return nex;

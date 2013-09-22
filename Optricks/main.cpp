@@ -16,7 +16,7 @@
  * e) type check everything
  */
 
-void execF(RData& r, Statement* n,bool debug){
+void execF(RData& r, OModule* mod, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
 	if(debug && n->getToken()!=T_VOID) cout << n << endl << flush;
 	n = n->simplify();
@@ -27,12 +27,23 @@ void execF(RData& r, Statement* n,bool debug){
 	n->checkTypes();
 	Type* type;
 	type = n->returnType->getType(r);
-	if(type==NULL){
+	if(type==NULL && n->returnType!=functionClass){
 		cout << "Error null return type for class " + n->returnType->name ;
 		type = VOIDTYPE;
 	}
+
+	if(n->returnType == complexClass){
+		n = new E_FUNC_CALL(PositionID(), new E_VAR(PositionID(), mod->getPointer(PositionID(), "printc")), {n});
+		n = n->simplify();
+		n->resolvePointers();
+		n->registerClasses(r);
+		n->registerFunctionArgs(r);
+		n->registerFunctionDefaultArgs();
+		n->checkTypes();
+		type = VOIDTYPE;
+	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
-	Function *F = Function::Create(FT, Function::ExternalLinkage, "", r.lmod);//todo check this
+	Function *F = Function::Create(FT, Function::ExternalLinkage, "", r.lmod);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	r.builder.SetInsertPoint(BB);
 	Value* v = n->evaluate(r);
@@ -51,6 +62,7 @@ void execF(RData& r, Statement* n,bool debug){
 	r.fpm->run(*F);
 	//cout << "fpm" << endl << flush;
 	if(debug){
+		r.lmod->dump();
 		F->dump();
 		cerr << flush;
 	}
@@ -60,8 +72,11 @@ void execF(RData& r, Statement* n,bool debug){
 	if(n==NULL || type==VOIDTYPE){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
-		if(debug) cout <<  "Evaluated" << endl << flush;
-	} else if(n->returnType==doubleClass){
+	} else if(n->returnType==functionClass){
+		auto (*FP)() = (void* (*)())(intptr_t)FPtr;
+		FP();
+	}
+	else if(n->returnType==doubleClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
@@ -77,11 +92,10 @@ void execF(RData& r, Statement* n,bool debug){
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
 	} else if(n->returnType==complexClass){
-		auto (*FP)() = (ComplexStruct (*)())(intptr_t)FPtr;
-		ComplexStruct t = FP();
+		auto (*FP)() = (complex (*)())(intptr_t)FPtr;
+		complex t = FP();
 		if(debug) cout <<  "Evaluated to ";
-		printf("%f+%f i",t.real, t.complex);
-		cout << endl << flush;
+		printc(t,true);
 	} else if(n->returnType==charClass){
 		auto (*FP)() = (char (*)())(intptr_t)FPtr;
 		auto t = FP();
@@ -242,7 +256,9 @@ int main(int argc, char** argv){
 	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	std::vector<String> files = {/*"./stdlib/stdlib.opt"*/};
+	std::vector<String> files =
+		{"./stdlib/stdlib.opt"};
+		//{};
 	if(!interactive){
 		files.push_back(file);
 		lexer.execFiles(files, outStream,debug,output!="");
@@ -279,6 +295,11 @@ int main(int argc, char** argv){
 		//st->force("for(int i = 0; i<1000 i+=1) printd((def double (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
 		//st->force("for(int i = 0; i<1000 i+=1) printd((def auto (int i){ double a=1 auto b=a for(int j=3 j<=i j+=1){ auto tmp = a+b a = b b = tmp} return b})(i))\n");
 		//st->force("\"hi\"\n"); debug = true;
+		//st->force("(lambda complex a: a.real)(complex())\n");
+		//st->force("(complex()).real\n");
+		//st->force("(def complex (complex a){ a.real = 3; return a})(complex())\n");
+		//st->force("def complex operator/(complex c, complex b){ return c; }\n");
+		//st->force("complex()*complex()\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);
@@ -287,7 +308,7 @@ int main(int argc, char** argv){
 			bool first = true;
 			while(n->getToken()!=T_VOID){
 				first = false;
-				execF(lexer.rdata,n,debug);
+				execF(lexer.rdata,lexer.myMod, n,debug);
 				st->done = false;
 				if(st->last()=='\n') break;
 				while(st->peek()==';') st->read();

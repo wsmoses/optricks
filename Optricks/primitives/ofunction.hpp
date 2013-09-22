@@ -17,10 +17,15 @@ class ofunction:public oobject{
 		Statement* self;
 		Statement* returnV;
 		FunctionProto* prototype;
+		Function* myFunction;
 		ofunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec):oobject(id, functionClass),
 				self(s),returnV(r){
-
+			myFunction = NULL;
 			prototype = new FunctionProto((self==NULL)?"unknown":(self->getMetadata()->name), dec, NULL);
+			if(self!=NULL && self->getMetadata()!=NULL && self->getMetadata()->name!="" && self->getMetadata()->name[0]!='~'){
+				self->getMetadata()->function = prototype;
+				self->returnType = functionClass;
+			}
 		}
 
 		ReferenceElement* getMetadata(){
@@ -33,11 +38,6 @@ class ofunction:public oobject{
 				d->registerFunctionArgs(r);
 			}
 			//if(prototype->returnType==NULL) error("Function prototype-return should not be null");
-			if(self!=NULL && self->getMetadata()->name!=""){
-				self->getMetadata()->function = prototype;
-				self->returnType = functionClass;
-			}
-
 		};
 		void registerFunctionDefaultArgs() override{
 			if(self!=NULL) self->registerFunctionDefaultArgs();
@@ -103,7 +103,9 @@ class externFunction : public ofunction{
 			if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
 			if(prototype->name=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
+			if(prototype->name=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
 			if(F->getName().str()!=prototype->name) error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
+			myFunction = F;
 			self->getMetadata()->setValue(F,a);
 		}
 
@@ -227,27 +229,15 @@ class userFunction : public ofunction{
 		void registerFunctionArgs(RData& ra) override{
 			ofunction::registerFunctionArgs(ra);
 			ret->registerFunctionArgs(ra);
-		};
-		void registerFunctionDefaultArgs() override final{
-			ofunction::registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
-		};
-		void resolvePointers() override final{
-			ofunction::resolvePointers();
-			ret->resolvePointers();
-		};
-		ClassProto* checkTypes() override{
-			ofunction::checkTypes();
-			ret->checkTypes();
-			return prototype->returnType;
-		}
-		Function* evaluate(RData& ra) override{
-			// Set names for all arguments.
-//			Function* F = dynamic_cast<Function*>(self->getResolve());
-	//		if(F==NULL) error("Could not re-resolve");
 
+			ret->registerFunctionArgs(ra);
+			ret->registerFunctionDefaultArgs();
+			ret->checkTypes();
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
+				b->registerFunctionArgs(ra);
+				b->registerFunctionDefaultArgs();
+				b->checkTypes();
 				b->classV->checkTypes();
 				Type* cl = b->classV->getMetadata()->selfClass->getType(ra);
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata()->name+" is null", true);
@@ -259,18 +249,22 @@ class userFunction : public ofunction{
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, (self==NULL)?"anonymousfunc":(self->getMetadata()->name), ra.lmod);
-
-			if(self!=NULL) self->getMetadata()->setValue(F, ra);
+			Function *F = Function::Create(FT, Function::ExternalLinkage, (self==NULL)?"afunc":(self->getMetadata()->name), ra.lmod);
+			if(self!= NULL){
+				if(self->getMetadata()->name.size()>0 && self->getMetadata()->name[0]=='~'){
+					if(prototype->declarations.size()==1){
+						error("User-defined unary operators not supported");
+					} else if (prototype->declarations.size()==2){
+						prototype->declarations[0]->classV->getMetadata()->selfClass->addBinop(
+								self->getMetadata()->name.substr(1),
+								prototype->declarations[1]->classV->getMetadata()->selfClass
+						) = new obinopUser(F, cp);
+					} else error("Cannot make operator with argument count of "+str<unsigned int>(prototype->declarations.size()));
+				} else self->getMetadata()->setValue(F, ra);
+			}
 			//BasicBlock *Parent = ar.builder.GetInsertBlock();
 			//	ar.builder.SetInsertPoint(Parent);
 
-			unsigned Idx = 0;
-			for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
-					++AI, ++Idx) {
-				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
-				prototype->declarations[Idx]->variable->getMetadata()->setValue(AI,ra);
-			}
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB =
 					//	ar.builder.GetInsertBlock();
@@ -281,6 +275,19 @@ class userFunction : public ofunction{
 			Jumpable* j = new Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
 			ra.addJump(j);
 			ra.builder.SetInsertPoint(BB);
+
+			unsigned Idx = 0;
+
+			//			IRBuilder<> TmpB(& F->getEntryBlock(),
+			//				F->getEntryBlock().begin());
+			for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
+					++AI, ++Idx) {
+				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
+				auto met = prototype->declarations[Idx]->variable->getMetadata();
+				met->llvmLocation = ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
+						0,prototype->declarations[Idx]->variable->pointer->name);
+				met->setValue(AI,ra);
+			}
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
@@ -308,9 +315,24 @@ class userFunction : public ofunction{
 			verifyFunction(*F);
 			//cout << "verified" << endl << flush;
 			ra.fpm->run(*F);
-
-			ra.builder.SetInsertPoint( Parent );
-			return F;
+			myFunction = F;
+			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
+		};
+		void registerFunctionDefaultArgs() override final{
+			ofunction::registerFunctionDefaultArgs();
+			ret->registerFunctionDefaultArgs();
+		};
+		void resolvePointers() override final{
+			ofunction::resolvePointers();
+			ret->resolvePointers();
+		};
+		ClassProto* checkTypes() override{
+			ofunction::checkTypes();
+			ret->checkTypes();
+			return prototype->returnType;
+		}
+		Function* evaluate(RData& ra) override{
+			return myFunction;
 		}
 };
 

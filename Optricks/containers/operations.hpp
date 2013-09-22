@@ -15,6 +15,7 @@
 #define OPERATIONS_C_
 class ouop{
 	public:
+		virtual ~ouop(){};
 		virtual DATA apply(DATA a, RData& mod) = 0;
 		ClassProto* returnType;
 };
@@ -31,8 +32,21 @@ class ouopNative: public ouop{
 		}
 };
 
+class ouopUser: public ouop{
+	public:
+		Function* func;
+		ouopUser(Function* fun,ClassProto* a){
+			func = fun;
+			returnType = a;
+		}
+		DATA apply(DATA a,RData& m){
+			return m.builder.CreateCall(func, a, "uop");
+		}
+};
+
 class obinop{
 	public:
+		virtual ~obinop(){};
 		virtual DATA apply(DATA a, DATA b, RData& mod) = 0;
 		ClassProto* returnType;
 };
@@ -49,4 +63,15 @@ class obinopNative : public obinop{
 		}
 };
 
+class obinopUser: public obinop{
+	public:
+		Function* func;
+		obinopUser(Function* fun,ClassProto* a){
+			func = fun;
+			returnType = a;
+		}
+		DATA apply(DATA a,DATA b, RData& m) override final{
+			return m.builder.CreateCall2(func, a, b, "binop");
+		}
+};
 #endif /* OPERATIONS_HPP_ */

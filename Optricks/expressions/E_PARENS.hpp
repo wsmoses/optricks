@@ -13,6 +13,9 @@ public:
 	ReferenceElement* getMetadata() override final{
 		return inner->getMetadata();
 	}
+	Value* getLocation(RData& a) override final {
+		return inner->getLocation(a);
+	}
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}
@@ -28,7 +31,6 @@ public:
 	DATA evaluate(RData& a) override {
 		return inner->evaluate(a);
 	}
-	//TODO verify that this is valid and does not call order of ops again
 	Statement* simplify() override{
 		return inner->simplify();
 	}

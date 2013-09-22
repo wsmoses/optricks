@@ -34,7 +34,8 @@
 									<listOptionValue builtIn="false" value="__STDC_LIMIT_MACROS"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.53034376" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/include"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/local/include"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.948904686" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -43,55 +44,59 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.1286362061" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.misc.other.34235811" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<option id="gnu.c.compiler.option.include.paths.150080038" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/include"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/local/include"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/include"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.25793914" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1073850621" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
 							<tool command="g++" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser" id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.1268638917" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.libs.63124535" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86Disassembler"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMInstrumentation"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMLinker"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMIRReader"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMBitReader"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMAsmParser"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMDebugInfo"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMOption"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMipo"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMVectorize"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMBitWriter"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMTableGen"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86AsmParser"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86CodeGen"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMSelectionDAG"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMAsmPrinter"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMMCParser"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86Desc"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86Info"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86AsmPrinter"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMX86Utils"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMJIT"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMRuntimeDyld"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMExecutionEngine"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMCodeGen"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMObjCARCOpts"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMScalarOpts"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMInstCombine"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMTransformUtils"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMipa"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMAnalysis"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMTarget"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMMC"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMObject"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMCore"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="LLVMSupport"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="z"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="m"/>
+									<listOptionValue builtIn="false" value="LLVMX86Disassembler"/>
+									<listOptionValue builtIn="false" value="LLVMInstrumentation"/>
+									<listOptionValue builtIn="false" value="LLVMLinker"/>
+									<listOptionValue builtIn="false" value="LLVMIRReader"/>
+									<listOptionValue builtIn="false" value="LLVMBitReader"/>
+									<listOptionValue builtIn="false" value="LLVMAsmParser"/>
+									<listOptionValue builtIn="false" value="LLVMDebugInfo"/>
+									<listOptionValue builtIn="false" value="LLVMOption"/>
+									<listOptionValue builtIn="false" value="LLVMipo"/>
+									<listOptionValue builtIn="false" value="LLVMVectorize"/>
+									<listOptionValue builtIn="false" value="LLVMBitWriter"/>
+									<listOptionValue builtIn="false" value="LLVMTableGen"/>
+									<listOptionValue builtIn="false" value="LLVMX86AsmParser"/>
+									<listOptionValue builtIn="false" value="LLVMX86CodeGen"/>
+									<listOptionValue builtIn="false" value="LLVMSelectionDAG"/>
+									<listOptionValue builtIn="false" value="LLVMAsmPrinter"/>
+									<listOptionValue builtIn="false" value="LLVMMCParser"/>
+									<listOptionValue builtIn="false" value="LLVMX86Desc"/>
+									<listOptionValue builtIn="false" value="LLVMX86Info"/>
+									<listOptionValue builtIn="false" value="LLVMX86AsmPrinter"/>
+									<listOptionValue builtIn="false" value="LLVMX86Utils"/>
+									<listOptionValue builtIn="false" value="LLVMJIT"/>
+									<listOptionValue builtIn="false" value="LLVMRuntimeDyld"/>
+									<listOptionValue builtIn="false" value="LLVMExecutionEngine"/>
+									<listOptionValue builtIn="false" value="LLVMCodeGen"/>
+									<listOptionValue builtIn="false" value="LLVMObjCARCOpts"/>
+									<listOptionValue builtIn="false" value="LLVMScalarOpts"/>
+									<listOptionValue builtIn="false" value="LLVMInstCombine"/>
+									<listOptionValue builtIn="false" value="LLVMTransformUtils"/>
+									<listOptionValue builtIn="false" value="LLVMipa"/>
+									<listOptionValue builtIn="false" value="LLVMAnalysis"/>
+									<listOptionValue builtIn="false" value="LLVMTarget"/>
+									<listOptionValue builtIn="false" value="LLVMMC"/>
+									<listOptionValue builtIn="false" value="LLVMObject"/>
+									<listOptionValue builtIn="false" value="LLVMCore"/>
+									<listOptionValue builtIn="false" value="LLVMSupport"/>
+									<listOptionValue builtIn="false" value="z"/>
+									<listOptionValue builtIn="false" value="pthread"/>
+									<listOptionValue builtIn="false" value="psapi"/>
+									<listOptionValue builtIn="false" value="imagehlp"/>
+									<listOptionValue builtIn="false" value="m"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.778769996" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/usr/local/lib"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/lib"/>
+									<listOptionValue builtIn="false" value="C:/POSIX/local/lib"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1787131381" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

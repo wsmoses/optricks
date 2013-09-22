@@ -91,7 +91,6 @@ class ForLoop : public Construct{
 		}
 		ForLoop* simplify() override{
 			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
-			//TODO [loop unrolloing]
 		}
 };
 
