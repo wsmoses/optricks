@@ -21,8 +21,8 @@ def int mand(complex z0){
 	auto z = z0
 	for(auto iter=0; iter<1000; iter+=1)
 		if( mag2(z) > 4 ) return iter
-		else z = expc(z*z*z) - .59 //+ z0
-//		else z = z*z*z*z*z*z*z + z0
+//		else z = z*z*z - .59 //+ z0
+		else z = z*z*z*z*z*z + z0
 	return 1000
 }
 

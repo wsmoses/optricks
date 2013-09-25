@@ -20,9 +20,13 @@ class E_RETURN : public Statement{
 			return T_RETURN;
 		};
 
-		ReferenceElement* getMetadata() override final{
+		String getFullName() override final{
+			error("Cannot get full name of return");
+			return "";
+		}
+		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_RETURN");
-			return inner->getMetadata();
+			return inner->getMetadata(r);
 		}
 
 		void registerClasses(RData& r) override final{
@@ -80,8 +84,8 @@ class E_RETURN : public Statement{
 					return;
 			}
 		}
-		ClassProto* checkTypes() override final{
-			if(inner!=NULL) inner->checkTypes();
+		ClassProto* checkTypes(RData& r) override final{
+			if(inner!=NULL) inner->checkTypes(r);
 			return NULL;
 		}
 };

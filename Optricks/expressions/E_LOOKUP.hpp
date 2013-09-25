@@ -26,6 +26,9 @@ public:
 		f << right;
 	}
 
+	String getFullName() override final{
+		return left->getFullName()+operation+right;
+	}
 	void registerClasses(RData& r) override final{
 		left->registerClasses(r);
 	}
@@ -38,12 +41,12 @@ public:
 	void resolvePointers() override final{
 		left->resolvePointers();
 	}
-	ClassProto* checkTypes(){
-		ClassProto* superC = left->checkTypes();
+	ClassProto* checkTypes(RData& r){
+		ClassProto* superC = left->checkTypes(r);
 		return returnType = superC->getDataClass(right,filePos);
 	}
 	DATA evaluate(RData& a) override{
-		auto lT = left->checkTypes();
+		auto lT = left->checkTypes(a);
 		auto lloc = left->getLocation(a);
 		if(lloc!=NULL){
 			std::vector<Value*> look = {ConstantInt::get(INTTYPE,0),ConstantInt::get(INTTYPE,lT->getDataClassIndex(right,filePos))};
@@ -73,7 +76,7 @@ public:
 		return this;
 	}
 	Value* getLocation(RData& a) override final {
-		auto lT = left->checkTypes();
+		auto lT = left->checkTypes(a);
 		auto lloc = left->getLocation(a);
 		//TODO add additional 0 if global or pointer
 		if(lloc!=NULL){
@@ -85,10 +88,10 @@ public:
 			return NULL;
 		}
 	};
-	ReferenceElement* getMetadata(){
-		auto lT = left->checkTypes();
-//		auto lM = left->getMetadata();
-		return new ReferenceElement(NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), NULL, NULL, NULL);
+	ReferenceElement* getMetadata(RData& r){
+		auto lT = left->checkTypes(r);
+		//TODO support getting class functions by moving funcMap
+		return new ReferenceElement("", NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), funcMap(), NULL, NULL);
 	}
 };
 

@@ -60,7 +60,7 @@ class Lexer{
 			for(auto& n: stats) n->registerClasses(rdata);
 			for(auto& n: stats) n->registerFunctionArgs(rdata);
 			for(auto& n: stats) n->registerFunctionDefaultArgs();
-			for(auto& n: stats) n->checkTypes();
+			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, "main", rdata.lmod);//todo check this
@@ -157,7 +157,7 @@ class Lexer{
 		E_VAR* getNextVariable(char endWith, OModule* mod, bool late=true){
 			Resolvable* pointer;
 			if(late) pointer = new LateResolve(mod, getNextName(endWith), pos());
-			else pointer = mod->addPointer(pos(), getNextName(endWith),NULL,NULL,NULL,NULL,NULL);
+			else pointer = mod->addPointer(pos(), getNextName(endWith),NULL,NULL,NULL,NULL);
 			return new E_VAR(pos(), pointer);
 		}
 		Declaration* getNextDeclaration(char endWith, OModule* mod){
@@ -171,7 +171,7 @@ class Lexer{
 				f->read();
 				value = getNextStatement(EOF, mod, true,false);
 			}
-			E_VAR* variable = new E_VAR(pos(), mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL,NULL)); // TODO look at
+			E_VAR* variable = new E_VAR(pos(), mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL)); // TODO look at
 			return new Declaration(pos(), declarationType, variable, value);
 		}
 		Statement* getNextStatement(char endWith){
@@ -395,7 +395,7 @@ class Lexer{
 						if(f->trim(EOF)) f->error("Lambda Function without body (c)");
 					}
 					Statement* methodBody = getNextBlock(endWith, module);
-					return new lambdaFunction(pos(), arguments, methodBody);
+					return new lambdaFunction(pos(), arguments, methodBody, rdata);
 				}
 				else if (temp == "def" || temp=="function" || temp=="method" ){
 					if(f->trim(EOF)) f->error("Uncompleted function");
@@ -434,12 +434,12 @@ class Lexer{
 					E_VAR* funcName;
 					if(methodName!=""){
 						if(methodName[0]=='~'){
-							funcName = new E_VAR(pos(), new ReferenceElement(NULL, methodName,NULL,functionClass,NULL,NULL,NULL));
+							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName,NULL,functionClass,funcMap(),NULL,NULL));
 						} else {
-							funcName = new E_VAR(pos(), mod->addPointer(pos(), methodName,NULL,functionClass,NULL,NULL,NULL));
+							funcName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName));
 						}
 					} else funcName = NULL;
-					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody);
+					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody,rdata);
 					f->trim(endWith);
 					semi  = false;
 					if(!f->done && f->peek()==';'){ semi = true; }
@@ -451,8 +451,9 @@ class Lexer{
 					if(f->trim(endWith)) f->error("Extern without name");
 					Statement* retV = getNextType(EOF, mod);
 					f->trim(endWith);
-					E_VAR* externName = getNextVariable(endWith, mod,false);
-					externName->getMetadata()->returnClass = functionClass;
+					String methodName = getNextName(EOF);
+					E_VAR* externName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName));
+					externName->getMetadata(rdata)->returnClass = functionClass;
 					f->trim(endWith);
 					if(f->peek()!='('){
 						f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -468,7 +469,7 @@ class Lexer{
 						if(f->peek()==',') f->read();
 					}
 					if(f->read()!=')') f->error("Need ending ')' for extern", true);
-					return new externFunction(pos(), externName, retV, dec);
+					return new externFunction(pos(), externName, retV, dec,rdata);
 					//TODO allow multiple externs
 				}
 				else if (temp=="true" || temp=="false"){

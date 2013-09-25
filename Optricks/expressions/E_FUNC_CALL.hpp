@@ -11,7 +11,18 @@ class E_FUNC_CALL : public Statement{
 		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
-		ReferenceElement* getMetadata() override final {
+		FunctionProto* generateFunctionProto(RData& r) const{
+			std::vector<Declaration*> dec;
+			for(auto& a:vals){
+				auto cp=a->checkTypes(r);
+				if(cp==NULL) error("TYPE IS NULL!!");
+				ClassProtoWrapper* cpw = new ClassProtoWrapper(cp);
+				E_VAR* var = new E_VAR(filePos,cpw->getMetadata(r));
+				dec.push_back(new Declaration(filePos,cpw,var,NULL));
+			}
+			return new FunctionProto(toCall->getFullName(),dec,NULL);
+		}
+		ReferenceElement* getMetadata(RData& r) override final {
 			error("getting metadata of func-call");
 			return NULL;
 		}
@@ -62,30 +73,20 @@ class E_FUNC_CALL : public Statement{
 			toCall->resolvePointers();
 			for(auto &a : vals) a->resolvePointers();
 		}
-		ClassProto* checkTypes() override{
-			toCall->checkTypes();
+		String getFullName() override final{
+			error("Cannot get full name of func_call");
+			return "";
+		}
+		ClassProto* checkTypes(RData& r) override{
+			toCall->checkTypes(r);
 			if(toCall->returnType==classClass){
 				for(unsigned int i = 0; i<vals.size(); i++){
-								vals[i]->checkTypes();
+								vals[i]->checkTypes(r);
 				}
-				return returnType = toCall->getMetadata()->selfClass;
+				return returnType = toCall->getMetadata(r)->selfClass;
 			} //TODO oh -- constructor
-			FunctionProto* proto = toCall->getMetadata()->function;
+			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos,r).second;
 			if(proto==NULL) error("Non-existent function prototype");
-			if(proto->declarations.size() < vals.size()) error("Function "+proto->name+" called with too many arguments");
-			for(unsigned int i = 0; i<vals.size(); i++){
-				vals[i]->checkTypes();
-				if(proto->declarations[i]->classV->getMetadata()->selfClass==NULL){
-					error("Argument " + proto->declarations[i]->classV->getMetadata()->name + " is not a class FC");
-				}
-				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
-				if(t==NULL || ! ( t==autoClass || vals[i]->returnType==autoClass || vals[i]->returnType->hasCast(t) ))
-					error("Called function "+proto->name+" with incorrect arguments: needed "+((t==NULL)?"NULL":(t->name))+
-							" got "+ vals[i]->returnType->name);
-			}
-			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
-				if(proto->declarations[i]->value==NULL) error("Argument "+str<unsigned int>(i), " non-optional");
-			}
 			return returnType = proto->returnType;
 		}
 		Statement* simplify() override{
@@ -119,19 +120,24 @@ class E_FUNC_CALL : public Statement{
 				return temp->ret->evaluate(a);
 			}
 			if(toCall->returnType==classClass){
-				return toCall->getMetadata()->selfClass->construct(a,vals,filePos);
+				return toCall->getMetadata(a)->selfClass->construct(a,vals,filePos);
 			}
-			Value* callee = toCall->evaluate(a);
-			FunctionProto* proto = toCall->getMetadata()->function;
+			if(toCall->returnType==classClass){
+					return toCall->getMetadata(a)->selfClass->construct(a,vals,filePos);
+			}
+			auto funcs = toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos,a);
+			FunctionProto* proto = funcs.second;
+			Value* callee = funcs.first;
+//			Value* callee = toCall->evaluate(a);
 			std::vector<Value*> Args;
 
 			for(unsigned int i = 0; i<vals.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
+				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
 				Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
 				if (Args.back() == 0) error("Error in eval of args");
 			}
 			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getMetadata()->selfClass;
+				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
 				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 			}
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);

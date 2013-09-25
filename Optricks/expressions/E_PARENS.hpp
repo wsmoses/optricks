@@ -10,8 +10,8 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
-	ReferenceElement* getMetadata() override final{
-		return inner->getMetadata();
+	ReferenceElement* getMetadata(RData& r) override final{
+		return inner->getMetadata(r);
 	}
 	Value* getLocation(RData& a) override final {
 		return inner->getLocation(a);
@@ -34,11 +34,15 @@ public:
 	Statement* simplify() override{
 		return inner->simplify();
 	}
+
+	String getFullName() override final{
+		return inner->getFullName();
+	}
 	void write (ostream& f,String b="") const override{
 		f  << "(" << inner << ")";
 	}
-	ClassProto* checkTypes() override final{
-		return returnType = inner->checkTypes();
+	ClassProto* checkTypes(RData& r) override final{
+		return returnType = inner->checkTypes(r);
 	}
 };
 

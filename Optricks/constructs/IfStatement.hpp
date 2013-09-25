@@ -44,10 +44,10 @@ class IfStatement : public Construct{
 			then->resolvePointers();
 			finalElse->resolvePointers();
 		}
-		ClassProto* checkTypes() override{
-			if(condition->checkTypes()!=boolClass) error("Cannot have non-bool as condition for if "+condition->returnType->name);
-			then->checkTypes();
-			finalElse->checkTypes();
+		ClassProto* checkTypes(RData& r) override{
+			if(condition->checkTypes(r)!=boolClass) error("Cannot have non-bool as condition for if "+condition->returnType->name);
+			then->checkTypes(r);
+			finalElse->checkTypes(r);
 			return returnType;
 		}
 		DATA evaluate(RData& r) override{

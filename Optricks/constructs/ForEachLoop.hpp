@@ -26,9 +26,9 @@ class ForEachLoop : public Construct{
 			name = n;
 		}
 
-		ClassProto* checkTypes(){
-			iterable->checkTypes();
-			toLoop->checkTypes();
+		ClassProto* checkTypes(RData& r){
+			iterable->checkTypes(r);
+			toLoop->checkTypes(r);
 			error("Type checking for foreach incomplete due to lack of iterator");
 			return returnType;
 		}

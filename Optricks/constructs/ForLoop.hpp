@@ -21,12 +21,12 @@ class ForLoop : public Construct{
 			Construct(a, voidClass), initialize(init),condition(cond),increment(inc),toLoop(tL){
 			name = n;
 		}
-		ClassProto* checkTypes(){
-			initialize->checkTypes();
-			condition->checkTypes();
+		ClassProto* checkTypes(RData& r){
+			initialize->checkTypes(r);
+			condition->checkTypes(r);
 			if(condition->returnType != boolClass) error("Cannot have non-bool condition of for-loop "+condition->returnType->name);
-			increment->checkTypes();
-			toLoop->checkTypes();
+			increment->checkTypes(r);
+			toLoop->checkTypes(r);
 			return returnType;
 		}
 		const Token getToken() const override {

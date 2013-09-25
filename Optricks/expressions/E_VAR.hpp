@@ -19,10 +19,13 @@ class E_VAR : public Statement{
 		E_VAR(PositionID id, Resolvable* a) : Statement(id),pointer(a){
 			//	type = ty;
 		};
+		String getFullName() override final{
+			return pointer->name;
+		}
 		const Token getToken() const override{
 			return T_VAR;
 		}
-		ReferenceElement* getMetadata() final override{
+		ReferenceElement* getMetadata(RData& r) final override{
 			return pointer->resolve();
 		}
 		Statement* simplify() override final{
@@ -47,7 +50,7 @@ class E_VAR : public Statement{
 		void registerFunctionDefaultArgs() override final{
 			//TODO
 		};
-		ClassProto* checkTypes() override{
+		ClassProto* checkTypes(RData& r) override{
 			ClassProto* temp = pointer->resolve()->returnClass;
 			if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
 			return returnType = temp;

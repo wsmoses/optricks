@@ -90,9 +90,9 @@ class E_BINOP : public Statement{
 					a
 			);
 		}
-		ClassProto* checkTypes() override final{
-			auto leftT = left->checkTypes();
-			auto rightT = right->checkTypes();
+		ClassProto* checkTypes(RData& r) override final{
+			auto leftT = left->checkTypes(r);
+			auto rightT = right->checkTypes(r);
 			auto temp = leftT->getBinop(filePos, operation, rightT);
 			return returnType = temp.first->returnType;
 		}
@@ -128,7 +128,6 @@ class E_BINOP : public Statement{
 			}
 		}
 
-		//TODO CHECK IF WORKS
 		Statement* fixOrderOfOperations(){
 			Statement* tl = left;
 			Statement* tr = right;
@@ -158,7 +157,11 @@ class E_BINOP : public Statement{
 			}
 			return self;
 		}
-		ReferenceElement* getMetadata(){
+		String getFullName() override final{
+			error("Cannot get full name of binop");
+			return "";
+		}
+		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_BINOP");
 			return NULL;
 		}

@@ -17,7 +17,7 @@ class oarray : public oobject{
 		oarray(PositionID id, const std::vector<oobject*>& dat) : oobject(id,
 				NULL //TODO arrayClass
 		),data(dat){}
-		ClassProto* checkTypes() override{
+		ClassProto* checkTypes(RData& r) override{
 			error("Implement forced array typing");
 			return NULL;
 		}
@@ -133,9 +133,9 @@ class E_ARR : public Construct{
 				a->resolvePointers();
 			}
 		};
-		ClassProto* checkTypes() override{
+		ClassProto* checkTypes(RData& r) override{
 			for(auto& a:values){
-				a->checkTypes();
+				a->checkTypes(r);
 			}
 			error("Implement forced E_ARR typing");
 			return NULL;//TODO array typing

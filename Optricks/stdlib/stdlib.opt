@@ -1,3 +1,24 @@
+def void print(bool i, bool b=true){
+	(extern void printb(bool i, bool b))(i,b);
+}
+def void print(string i, bool b=true){
+	(extern void prints(string i, bool b))(i,b);
+}
+extern void printc(complex i, bool b=true);
+def void print(complex i, bool b=true){
+	printc(i,b);
+}
+def void print(int i, bool b=true){
+	(extern void printi(int i, bool b))(i,b);
+}
+def void print(double i, bool b=true){
+	(extern void printd(double i, bool b))(i,b);
+}
+def void print(char i, bool b=true){
+	extern void putchar(char i);
+	putchar(i);
+	if(b) putchar('\n');
+}
 extern double	cos		(double a);
 extern double	sin		(double a);
 extern double	tan		(double a);
@@ -44,27 +65,8 @@ extern double	llrint	(double a);
 extern double 	nearbyint(double a);
 extern double	remainder(double a);
 extern double	remquo	(double a);
-extern int 		putchar	(char i);
 extern void exit(int i=0);
 def void quit(int i){ return exit(i); }
-/*
-def void printi(int i, bool b=true){
-	int z;
-	if(i<0){
-		putchar(45);
-		z = -i;
-	} else z=i;
-	do{
-		putchar(z%10+48);
-		z/=10;
-	}while(z>0);
-	if(b) putchar(10);
-}*/
-extern void printi(int i, bool b=true);
-extern void printd(double i, bool b=true);
-extern void printb(bool i, bool b=true);
-extern void prints(string i, bool b=true);
-extern void printc(complex i, bool b=true);
 def double mag2(complex z){
 	return z.real*z.real+z.imag+z.imag;
 }
@@ -103,6 +105,7 @@ def complex operator/(complex a, complex b){
 	complex z = a*conjugate(b);
 	return z/(b.real*b.real+b.imag*b.imag);
 }
+
 def bool operator==(complex a, double b){
 	if(a.imag!=0) return false;
 	return a.real==b;
@@ -115,9 +118,46 @@ def bool operator==(complex a, complex b){
 	if(a.imag!=b.imag) return false;
 	return a.real==b.real;
 }
-def complex expc(complex c){
+def complex exp(complex c){
 	complex z = complex();
 	z.real = cos(c.imag);
 	z.imag = sin(c.imag);
 	return exp(c.real)*z
+}
+def complex imag(){
+	auto c = complex();
+	c.imag = 1;
+	return c;
+}
+def complex cos(complex z){
+	return .5*(exp(imag()*z)+exp(-imag()*z));
+}
+
+def int pow(int a, int b){
+	if(b<=0) return 1;
+	if(b==1) return a;
+	int tmp = b/2;
+	auto tmpow = pow(a,tmp); //TODO allow recursive operators
+	if(tmp*2==b){
+		return tmpow*tmpow;
+	} else return tmpow*tmpow*a;
+}
+
+def complex pow(complex a, int b){
+	if(b<0) return pow(1/a,-b);
+	if(b==0) return 1;
+	if(b==1) return a;
+	int tmp = b/2;
+	auto tmpow = pow(a,tmp); //TODO allow recursive operators
+	if(tmp*2==b){
+		return tmpow*tmpow;
+	} else return tmpow*tmpow*a;
+}
+
+def int operator ** (int a, int b){
+	return pow(a, b);
+}
+
+def complex operator ** (complex a, int b){
+	return pow(a, b);
 }

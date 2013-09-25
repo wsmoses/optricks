@@ -29,8 +29,8 @@ class E_PREOP : public Construct{
 		void write(ostream& f,String s="") const override{
 			f << "(" << operation << value << ")";
 		}
-		ClassProto* checkTypes() override{
-			value->checkTypes();
+		ClassProto* checkTypes(RData& r) override{
+			value->checkTypes(r);
 			auto found = value->returnType->preops.find(operation);
 			if(found==value->returnType->preops.end())
 				error("Pre operator "+operation+" not implemented for class "+value->returnType->name);
@@ -70,8 +70,8 @@ class E_POSTOP : public Construct{
 		void write(ostream& f,String s="") const override{
 			f << "(" << value << " " << operation << ")";
 		}
-		ClassProto* checkTypes() override{
-			value->checkTypes();
+		ClassProto* checkTypes(RData& r) override{
+			value->checkTypes(r);
 			auto found = value->returnType->postops.find(operation);
 			if(found==value->returnType->postops.end())
 				error("Post operator "+operation+" not implemented for class "+value->returnType->name);

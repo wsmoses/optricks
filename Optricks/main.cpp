@@ -24,7 +24,7 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 	n->registerClasses(r);
 	n->registerFunctionArgs(r);
 	n->registerFunctionDefaultArgs();
-	n->checkTypes();
+	n->checkTypes(r);
 	Type* type;
 	type = n->returnType->getType(r);
 	if(type==NULL && n->returnType!=functionClass){
@@ -39,7 +39,7 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		n->registerClasses(r);
 		n->registerFunctionArgs(r);
 		n->registerFunctionDefaultArgs();
-		n->checkTypes();
+		n->checkTypes(r);
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
@@ -238,7 +238,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.1.6" << endl << flush;
+		cout << "Optricks version 0.1.8" << endl << flush;
 		cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision

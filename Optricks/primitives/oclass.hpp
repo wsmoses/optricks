@@ -25,7 +25,7 @@ class oclass: public Stackable
 		oclass(ClassProto* p){
 			proto = p;
 			if(p->name!=""){
-				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, NULL,classClass, NULL,proto, 0U);
+				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, NULL,classClass, proto, 0U);
 			} else cerr << "String this has no name " << p->name << endl << flush;
 			//TODO redo oclass as oobject;
 		}

@@ -19,7 +19,11 @@ class TernaryOperator : public Statement{
 		TernaryOperator(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			Statement(a), condition(cond), then(th), finalElse(stat){
 		}
-		ReferenceElement* getMetadata(){
+		String getFullName() override final{
+			error("Cannot get full name of ternary");
+			return "";
+		}
+		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_TERNARY");
 			return NULL;
 		}
@@ -47,10 +51,10 @@ class TernaryOperator : public Statement{
 			then->resolvePointers();
 			finalElse->resolvePointers();
 		}
-		ClassProto* checkTypes() override{
-			if(condition->checkTypes()!=boolClass) error("Cannot have non-bool as condition for ternary "+condition->returnType->name);
-			auto g = then->checkTypes();
-			auto b = finalElse->checkTypes();
+		ClassProto* checkTypes(RData& r) override{
+			if(condition->checkTypes(r)!=boolClass) error("Cannot have non-bool as condition for ternary "+condition->returnType->name);
+			auto g = then->checkTypes(r);
+			auto b = finalElse->checkTypes(r);
 			if(g!= b) error("Need matching types for ternary operator "+g->name+" and "+ b->name);
 			return returnType = g;
 		}

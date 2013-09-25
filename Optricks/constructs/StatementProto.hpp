@@ -18,7 +18,7 @@ class Statement : public Stackable{
 		Statement(PositionID a, ClassProto* rt=NULL) :
 			returnType(rt), filePos(a)	{}
 		virtual ~Statement(){};
-		void error(String s="Compile error", bool exi=true){
+		void error(String s="Compile error", bool exi=true) const{
 			cerr << s << " in ";
 			cerr << filePos.fileName;
 			cerr << " line:";
@@ -28,18 +28,19 @@ class Statement : public Stackable{
 			cerr << endl << flush;
 			if(exi) exit(1);
 		}
+		virtual String getFullName() =0;
 		virtual DATA evaluate(RData& a) = 0;
 		virtual Statement* simplify()  = 0;
 		virtual void registerClasses(RData& a) = 0;
 		virtual void registerFunctionArgs(RData& a) = 0;
 		virtual void registerFunctionDefaultArgs() = 0;
 		virtual void resolvePointers() = 0;
-		virtual ClassProto* checkTypes() = 0;
+		virtual ClassProto* checkTypes(RData& r) = 0;
 
-		virtual ReferenceElement* getMetadata() = 0;
+		virtual ReferenceElement* getMetadata(RData& r) = 0;
 		virtual Value* getLocation(RData& a){
 //			cout << "getting location..." << endl << flush;
-			return getMetadata()->llvmLocation;
+			return getMetadata(a)->llvmLocation;
 		};
 };
 
@@ -67,8 +68,9 @@ class VoidStatement : public Statement{
 		void registerFunctionArgs(RData& r) override final{};
 		void registerFunctionDefaultArgs() override final{};
 		void resolvePointers() override final{};
-		ClassProto* checkTypes() override final;
-		ReferenceElement* getMetadata() override final { error("Cannot get ReferenceElement of void"); return NULL; }
+		ClassProto* checkTypes(RData& r) override final;
+		String getFullName() override final{ return "void"; }
+		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }
 
 };
 

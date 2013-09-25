@@ -41,7 +41,8 @@ enum Token {
 	T_DECLARATION = 34,
 	T_TERNARY = 35,
 	T_SET = 36,
-	T_RETURN = 37
+	T_RETURN = 37,
+	T_CLASSPROTO = 38
 };
 
 #endif /* O_TOKEN_HPP_ */

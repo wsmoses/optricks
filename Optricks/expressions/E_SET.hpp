@@ -23,9 +23,13 @@ class E_SET: public Statement{
 		const Token getToken() const final override{
 			return T_SET;
 		}
-		ClassProto* checkTypes() final override{
-			returnType = variable->checkTypes();
-			value->checkTypes();
+		String getFullName() override final{
+			error("Cannot get full name of set");
+			return "";
+		}
+		ClassProto* checkTypes(RData& r) final override{
+			returnType = variable->checkTypes(r);
+			value->checkTypes(r);
 			if(!( variable->returnType == autoClass || value->returnType->hasCast(returnType)))
 				error("E_SET of inconsistent types");
 			return returnType;
@@ -60,7 +64,7 @@ class E_SET: public Statement{
 		E_SET* simplify() final override{
 			return new E_SET(filePos, variable,(value->simplify()) );
 		}
-		ReferenceElement* getMetadata(){
+		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_set");
 			return NULL;
 		}

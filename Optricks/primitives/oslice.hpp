@@ -111,17 +111,17 @@ public:
 		stop->resolvePointers();
 		step->resolvePointers();
 	}
-	ClassProto* checkTypes(){
+	ClassProto* checkTypes(RData& r){
 		if(start!=NULL){
-			start->checkTypes();
+			start->checkTypes(r);
 			if(start->returnType!=intClass) error("Cannot have non-int type in slice "+start->returnType->name);
 		}
 		if(stop!=NULL){
-			stop->checkTypes();
+			stop->checkTypes(r);
 			if(stop->returnType!=intClass) error("Cannot have non-int type in slice "+stop->returnType->name);
 		}
 		if(step!=NULL){
-			step->checkTypes();
+			step->checkTypes(r);
 			if(step->returnType!=intClass) error("Cannot have non-int type in slice "+step->returnType->name);
 		}
 		return returnType;

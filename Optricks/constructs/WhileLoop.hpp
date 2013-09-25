@@ -21,10 +21,10 @@ class DoWhileLoop : public Construct{
 			condition(cond), statement(stat){
 			name = n;
 		}
-		ClassProto* checkTypes() override final{
-			condition->checkTypes();
+		ClassProto* checkTypes(RData& r) override final{
+			condition->checkTypes(r);
 			if(condition->returnType!=boolClass) error("Cannot make non-bool type condition for while loop");
-			statement->checkTypes();
+			statement->checkTypes(r);
 			return returnType;
 		}
 		const Token getToken() const override {

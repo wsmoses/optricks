@@ -18,6 +18,16 @@ void initClassesMeta(){
 	complexClass->addElement("real",doubleClass,PositionID());
 	complexClass->addElement("imag",doubleClass,PositionID());
 
+	complexClass->preops["-"] = new ouopNative(
+				[](DATA a, RData& m) -> DATA{
+					return m.builder.CreateFNeg(a,"negtmp");
+	},complexClass);
+
+	complexClass->preops["+"] = new ouopNative(
+				[](DATA a, RData& m) -> DATA{
+					return a;
+	},complexClass);
+
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
 				return m.builder.CreateSIToFP(a,DOUBLETYPE);

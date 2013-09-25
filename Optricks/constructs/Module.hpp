@@ -38,20 +38,24 @@ class OModule : public Stackable{
 			}
 			return -1;
 		}
-		void setPointer(PositionID a, String index, DATA value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
+		/*void ssetPointer(PositionID a, String index, DATA value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
 			ReferenceElement* p = findPointer(a, index);
 			p->llvmObject = value;
 			p->returnClass = cl;
 			p->function = fun;
 			p->selfClass = selfCl;
 			p->llvmLocation = al;
+		}*/
+		ReferenceElement* getFuncPointer(PositionID a, String name){
+			if(exists(name)==-1) return addPointer(a,name,NULL,functionClass,NULL,NULL,0);
+			else return findPointer(a,name);
 		}
-		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, FunctionProto* fun, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
+		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
 			if(level == 0){
 				if(mapping.find(index)!=mapping.end()){
 					todo("The variable "+index+" has already been defined in this scope", a);
 				}
-				auto nex = new ReferenceElement(this, index,value, cla, fun, selfCl, al);
+				auto nex = new ReferenceElement("",this, index,value, cla, funcMap(), selfCl, al);
 				mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
 				return nex;
 			} else {
@@ -60,7 +64,7 @@ class OModule : public Stackable{
 					exit(1);
 				}
 				else
-				return super->addPointer(a, index, value, cla, fun, selfCl, al, level-1);
+				return super->addPointer(a, index, value, cla, selfCl, al, level-1);
 			}
 		}
 		ReferenceElement* findPointer(PositionID a, String index) {
@@ -73,7 +77,7 @@ class OModule : public Stackable{
 					return paired->second;
 				}
 			}
-			return addPointer(a, index, NULL,NULL, NULL,NULL,NULL);
+			return addPointer(a, index, NULL,NULL, NULL,NULL);
 		}
 		ReferenceElement* getPointer(PositionID id, String index) {
 			OModule* search = this;

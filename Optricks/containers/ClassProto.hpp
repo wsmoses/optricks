@@ -9,7 +9,6 @@
 #include "settings.hpp"
 #include "RData.hpp"
 #include "operations.hpp"
-
 #ifndef CLASSPROTO_HPP_
 #define CLASSPROTO_HPP_
 
@@ -31,6 +30,16 @@ class ClassProto{
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
 		virtual ~ClassProto(){};
+		virtual bool equals(ClassProto* c) const{
+			return this==c;
+		}
+		virtual ClassProto* getSuper() const{
+			return superClass;
+		}
+		/**
+		 * Checks if this can be casted to C
+		 */
+		virtual std::pair<bool, unsigned int> compatable(ClassProto* c) const;
 		unsigned int getDataClassIndex(String nam, PositionID id){
 			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
 			return innerDataIndex[nam];
@@ -203,7 +212,7 @@ ClassProto* sliceClass = new ClassProto(objectClass, "slice", ([](RData& r, std:
 ClassProto* voidClass = new ClassProto(objectClass, "void", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
 	todo("Cannot instantiate class "+s,id);
 	return NULL;
-}),VOIDTYPE); //todo check?
+}),VOIDTYPE);
 
 
 String getGenericName(ClassProto* a, std::vector<ClassProto*>& b){
@@ -216,6 +225,17 @@ String getGenericName(ClassProto* a, std::vector<ClassProto*>& b){
 	}
 	return t+">";
 }
+std::pair<bool, unsigned int> ClassProto::compatable(ClassProto* c) const{
+			if(c==autoClass) return std::pair<bool, unsigned int>(true, UINT_MAX);
+			const ClassProto* temp = this;
+			int count = 0;
+			while(temp!=NULL){
+				if(temp->equals(c)) return std::pair<bool, unsigned int>(true,count);
+				count++;
+				temp = temp->getSuper();
+			}
+			return std::pair<bool, unsigned int>(false, 0);
+		}
 /*
 class GeneralClass: public ClassProto{
 	public:
@@ -243,6 +263,5 @@ class GenericClass: public ClassProto{
 				}
 };
 */
-
 
 #endif /* CLASSPROTO_HPP_ */

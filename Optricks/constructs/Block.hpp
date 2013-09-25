@@ -36,16 +36,6 @@ class Block : public Construct{
 			}
 			r.guarenteedReturn = ret;
 			return NULL;
-				//TODO check;
-//			error("Block eval not implemented");
-			/*
-			for(auto& a:values){
-				a->evaluate(jump);
-				if(jump.type!=NJUMP){
-					return VOID;
-				}
-			}
-			return VOID;*/
 		}
 		Statement* simplify() override{
 			Block* b = new Block(filePos);
@@ -70,9 +60,9 @@ class Block : public Construct{
 			}
 			s << start << "}";
 		}
-		ClassProto* checkTypes(){
+		ClassProto* checkTypes(RData& r){
 			for(auto& a:values){
-				a->checkTypes();
+				a->checkTypes(r);
 			}
 			return returnType;
 		}

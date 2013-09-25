@@ -25,6 +25,7 @@
 #include <exception>
 #include <stdexcept>
 #include <unordered_map>
+#include <array>
 #include <unordered_set>
 #include "basic_functions.hpp"
 
@@ -166,10 +167,6 @@ class ReferenceElement;
 class FunctionProto;
 #endif
 
-#ifndef DECLR_P_
-#define DECLR_P_
-class Declaration;
-#endif
 
 
 /*

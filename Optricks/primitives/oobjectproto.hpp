@@ -15,9 +15,13 @@ class oobject: public Statement{
 	public:
 		oobject(PositionID a, ClassProto* cl):Statement(a, cl){}
 		virtual ~oobject(){};
-		ReferenceElement* getMetadata(){
+		ReferenceElement* getMetadata(RData& r) override{
 			error("Cannot getMetadata() for oobject");
 			return NULL;
+		}
+		String getFullName() override{
+			error("Cannot get full name of oobject");
+			return "";
 		}
 		//TODO
 		void registerClasses(RData& r) override final{};
@@ -27,7 +31,7 @@ class oobject: public Statement{
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}
-		ClassProto* checkTypes() override{
+		ClassProto* checkTypes(RData& r) override{
 			return returnType;
 		}
 };
