@@ -31,8 +31,7 @@ void initClassesMeta(){
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
 				return m.builder.CreateSIToFP(a,DOUBLETYPE);
-	}
-	,doubleClass);
+	},doubleClass);
 
 	intClass->addCast(complexClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
