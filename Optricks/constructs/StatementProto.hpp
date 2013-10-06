@@ -36,7 +36,7 @@ class Statement : public Stackable{
 		virtual void registerFunctionDefaultArgs() = 0;
 		virtual void resolvePointers() = 0;
 		virtual ClassProto* checkTypes(RData& r) = 0;
-
+		virtual ClassProto* getSelfClass() = 0;
 		virtual ReferenceElement* getMetadata(RData& r) = 0;
 		virtual Value* getLocation(RData& a){
 //			cout << "getting location..." << endl << flush;
@@ -71,7 +71,7 @@ class VoidStatement : public Statement{
 		ClassProto* checkTypes(RData& r) override final;
 		String getFullName() override final{ return "void"; }
 		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }
-
+		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of void"); return NULL; }
 };
 
 static VoidStatement* VOID = new VoidStatement();

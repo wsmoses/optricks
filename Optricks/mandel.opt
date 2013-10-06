@@ -1,36 +1,34 @@
-def complex comp(double a=0, double b=0){
-	complex z = complex()
-	z.real = a
-	z.imag = b
-	return z
-}
+#test
+//test
+// testing
+// defitfasfdasf fdas fda fa
+#def ala
 
 def void printdensity(int d):
-	if    d > 999	putchar('*')
-	elif  d > 200	putchar('+')
-	elif  d > 020	putchar('.')
-	else         	putchar(' ')
+	if    d > 999	print('*',false)
+	elif  d > 200	print('+',false)
+	elif  d > 020	print('.',false)
+	else         	print(' ',false)
 
 
 def int mandleconverge(complex z, complex z0, int iters=0){
-	if (iters > 255 | ( mag2(z) > 4)) return iters 
+	if (iters > 255 | ( z.mag2() > 4)) return iters 
 	return mandleconverge(z*z  + z0, z0, iters+1)
 }                           
 
 def int mand(complex z0){
 	auto z = z0
 	for(auto iter=0; iter<1000; iter+=1)
-		if( mag2(z) > 4 ) return iter
-//		else z = z*z*z - .59 //+ z0
-		else z = z*z*z*z*z*z + z0
+		if( z.mag2() > 4 ) return iter
+		else z = z**6 + z0
 	return 1000
 }
 
 def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.25, double ymax=1.25, double ystep=.04){
-	for(auto z = comp(xmin,ymin) z.imag<ymax z.imag+=ystep){
+	for(auto z = complex(xmin,ymin) z.imag<ymax z.imag+=ystep){
 		for( z.real = xmin z.real<xmax z.real+=xstep)
 			printdensity(mand(z))
-		putchar('\n')
+		print()
 	}
 }
 mandel()

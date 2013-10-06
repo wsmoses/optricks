@@ -3,6 +3,7 @@
 #include "../constructs/Statement.hpp"
 #include "../primitives/ofunction.hpp"
 
+#define E_FUNC_CALL_C_
 class E_FUNC_CALL : public Statement{
 	public:
 		Statement* toCall;
@@ -11,6 +12,7 @@ class E_FUNC_CALL : public Statement{
 		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
+		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		FunctionProto* generateFunctionProto(RData& r) const{
 			std::vector<Declaration*> dec;
 			for(auto& a:vals){
@@ -74,8 +76,7 @@ class E_FUNC_CALL : public Statement{
 			for(auto &a : vals) a->resolvePointers();
 		}
 		String getFullName() override final{
-			error("Cannot get full name of func_call");
-			return "";
+			return toCall->getFullName()+"(...)";
 		}
 		ClassProto* checkTypes(RData& r) override{
 			toCall->checkTypes(r);
@@ -85,7 +86,7 @@ class E_FUNC_CALL : public Statement{
 				}
 				return returnType = toCall->getMetadata(r)->selfClass;
 			} //TODO oh -- constructor
-			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos,r).second;
+			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos).second;
 			if(proto==NULL) error("Non-existent function prototype");
 			return returnType = proto->returnType;
 		}
@@ -119,31 +120,64 @@ class E_FUNC_CALL : public Statement{
 				}
 				return temp->ret->evaluate(a);
 			}
-			if(toCall->returnType==classClass){
-				return toCall->getMetadata(a)->selfClass->construct(a,vals,filePos);
-			}
-			if(toCall->returnType==classClass){
-					return toCall->getMetadata(a)->selfClass->construct(a,vals,filePos);
-			}
-			auto funcs = toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos,a);
+			std::pair<Value*,FunctionProto*> funcs = (toCall->returnType==classClass)?(
+					toCall->getMetadata(a)->selfClass->constructors.get(generateFunctionProto(a),filePos))
+					:(toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos));
 			FunctionProto* proto = funcs.second;
 			Value* callee = funcs.first;
-//			Value* callee = toCall->evaluate(a);
 			std::vector<Value*> Args;
-
+			if(auto T=dynamic_cast<E_LOOKUP*>(toCall)){
+				auto tp = T->left->checkTypes(a);
+				if(tp->hasFunction(T->right)){
+					//TODO make better check (e.g. static functions)
+					auto loc = T->left->getLocation(a);
+					if(loc==NULL){
+						//TODO allow for second function of type instead of type*
+						//thereby reducing number of allocas/loads/stores
+						//error("Could not find location of object to insert into class function - using automatic pointer creation",false);
+						Function *TheFunction = a.builder.GetInsertBlock()->getParent();
+						IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
+						loc = TmpB.CreateAlloca(T->left->returnType->getType(a), 0,"tmp");
+						a.builder.CreateStore(T->left->evaluate(a),loc);
+					}
+					Args.push_back(loc);
+				}
+			}
+			//cout << proto->toString() << endl << flush;
 			for(unsigned int i = 0; i<vals.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
-				Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
+				if(vals[i]->returnType==voidClass)
+					Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
+				else
+					Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
 				if (Args.back() == 0) error("Error in eval of args");
+				a.lmod->dump();
+				Args.back()->dump();
 			}
-			for(unsigned int i = Args.size(); i<proto->declarations.size(); i++){
+			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
 				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 			}
+
 			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
-			else return a.builder.CreateCall(callee, Args, "calltmp");
+			else{
+				auto t = a.builder.CreateCall(callee, Args, "calltmp");
+				return t;
+			}
 		}
 };
 
+/*
+DATA ClassProto::construct(RData& r, E_FUNC_CALL* call) const{
+	if(nativeConstructor!=NULL) return nativeConstructor(r,call->vals,call->filePos,name);
+	else{
+		auto func = constructors.get(call->generateFunctionProto(r),call->filePos,r);
+		FunctionProto* proto = func.second;
+		Value* callee = func.first;
+		Type* t = getType(r);
+		DATA val = get
+		//TODO finish
+	}
+}*/
 
 #endif /* E_FUNC_CALL_HPP_ */

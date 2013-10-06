@@ -14,15 +14,17 @@
 bool isStartName(int i){
 	return isalpha(i) || i=='_' || i=='$';
 }
+//Function* strLen = NULL;
 void initClassesMeta(){
 	complexClass->addElement("real",doubleClass,PositionID());
 	complexClass->addElement("imag",doubleClass,PositionID());
+	stringClass->addElement("cstr",c_stringClass,PositionID());
+	stringClass->addElement("length",intClass,PositionID());
 
 	complexClass->preops["-"] = new ouopNative(
 				[](DATA a, RData& m) -> DATA{
 					return m.builder.CreateFNeg(a,"negtmp");
 	},complexClass);
-
 	complexClass->preops["+"] = new ouopNative(
 				[](DATA a, RData& m) -> DATA{
 					return a;
@@ -38,7 +40,7 @@ void initClassesMeta(){
 			auto v = m.builder.CreateSIToFP(a,DOUBLETYPE);
 			double data[2] = {0, 0} ;
 			auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
-			return m.builder.CreateInsertElement(vec,v,ConstantInt::get(INTTYPE,0));
+			return m.builder.CreateInsertElement(vec,v,getInt(0));
 	}
 	,complexClass);
 
@@ -46,7 +48,7 @@ void initClassesMeta(){
 			[](DATA a, RData& m) -> DATA{
 		double data[2] = {0, 0} ;
 		auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
-		return m.builder.CreateInsertElement(vec,a,ConstantInt::get(INTTYPE,0));
+		return m.builder.CreateInsertElement(vec,a,getInt(0));
 	}
 	,complexClass);
 
@@ -67,7 +69,7 @@ void initClassesMeta(){
 			[](DATA a, DATA b, RData& m) -> DATA{
 
 //		return m.builder.CreateExtractElement(a,b);
-				std::vector<Value*> z = {/*ConstantInt::get(INTTYPE,0),*/b};
+				std::vector<Value*> z = {/*getInt(0),*/b};
 				auto t = m.builder.CreateGEP(a,z,"tmpind");
 				return m.builder.CreateLoad(t);
 //				return m.builder.CreateAnd(a,b,"andtmp");

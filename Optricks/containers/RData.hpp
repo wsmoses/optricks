@@ -56,6 +56,23 @@ struct RData{
 		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd);
 };
 
+class funcMap{
+	private:
+		std::vector<std::pair<Value*,FunctionProto*>> data;
+	public:
+		unsigned int size() const{
+			return data.size();
+		}
+		funcMap(std::pair<Value*,FunctionProto*> a):data(){
+			data.push_back(a);
+		}
+		funcMap():data(){
+		}
+		void add(FunctionProto* f, Value* t, PositionID id);
+		bool set(FunctionProto* in, Value* t);
+		std::pair<Value*,FunctionProto*>  get(FunctionProto* func,PositionID id) const;
+};
+
 #include "ClassProto.hpp"
 BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd){
 	if(name==""){
@@ -92,4 +109,5 @@ BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBl
 		return NULL;
 	}
 }
+
 #endif /* RDATA_HPP_ */

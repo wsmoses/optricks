@@ -1,8 +1,16 @@
+/*
+def complex.complex(double a=0, double b=0){
+  this.real = a
+  this.imag = b
+}
+
+
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
 }
+extern void prints(string i, bool b)
 def void print(string i, bool b=true){
-	(extern void prints(string i, bool b))(i,b);
+	prints(i,b);
 }
 extern void printc(complex i, bool b=true);
 def void print(complex i, bool b=true){
@@ -14,8 +22,11 @@ def void print(int i, bool b=true){
 def void print(double i, bool b=true){
 	(extern void printd(double i, bool b))(i,b);
 }
-def void print(char i, bool b=true){
 	extern void putchar(char i);
+def void print(){
+	putchar('\n');
+}
+def void print(char i, bool b=true){
 	putchar(i);
 	if(b) putchar('\n');
 }
@@ -66,11 +77,8 @@ extern double 	nearbyint(double a);
 extern double	remainder(double a);
 extern double	remquo	(double a);
 extern void exit(int i=0);
-def void quit(int i){ return exit(i); }
-def double mag2(complex z){
-	return z.real*z.real+z.imag+z.imag;
-}
-
+def void quit(int i=0){ return exit(i); }
+      
 def complex operator*(complex a, double b){
 	a.real*=b;
 	a.imag*=b;
@@ -158,6 +166,42 @@ def int operator ** (int a, int b){
 	return pow(a, b);
 }
 
+def double operator ** (double a, double b){
+	return pow(a, b);
+}
+
 def complex operator ** (complex a, int b){
 	return pow(a, b);
 }
+
+def double complex.mag2( ) {
+	return this.real*this.real+this.imag*this.imag;
+}
+def int abs(int a){
+	return (a<0)?(-a):a;
+}
+def double abs(double a){
+	return (a<0)?(-a):a;
+}
+def double abs(complex z){
+	return sqrt(z.real*z.real+z.imag*z.imag);
+}
+def double complex.mag(){
+	return sqrt(this.real*this.real+this.imag*this.imag);
+}
+def double complex.angle(){
+	return atan2(this.imag,this.real);
+}
+def complex operator ** (complex a, double b){
+	double mag = a.mag()**b;
+	double angle = a.angle()*b;
+	auto c = complex()
+	c.real = cos(angle)*mag
+	c.imag = sin(angle)*mag
+	return c
+}
+def double double.print(bool newline=true){
+	print(this,newline);
+	return this;
+}
+*/

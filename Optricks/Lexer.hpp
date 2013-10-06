@@ -88,14 +88,14 @@ class Lexer{
 			if(toFile){
 				llvm::raw_os_ostream raw_stream(file);
 				WriteBitcodeToFile(rdata.lmod, raw_stream);
-//				rdata.lmod->print(raw_stream, 0);
+				//				rdata.lmod->print(raw_stream, 0);
 			} else {
 				void *FPtr = rdata.exec->getPointerToFunction(F);
 				void (*FP)() = (void (*)())(intptr_t)FPtr;
 				FP();
 			}
 		}
-	/*	void generateIR(bool debug){
+		/*	void generateIR(bool debug){
 		}
 		void execFile(String fileName, bool newModa, bool newModb, bool debug, bool run){
 			Stream* tmp = f;
@@ -246,7 +246,8 @@ class Lexer{
 					break;
 				}
 				f->trim(endWith);
-				if(f->done || isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
+				if(f->done)  f->error("Could not find alphanumeric start for type parsing -ended");
+				if(!isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
 				auto nextVariable = getNextName(endWith);
 				currentType = new E_LOOKUP(pos(), currentType, nextVariable, typeOperation);
 			}while(true);
@@ -255,7 +256,7 @@ class Lexer{
 		Statement* getNextStatement(char endWith, OModule* mod, bool opCheck, bool allowDeclaration){
 			if(f->done || f->trim(EOF)) return VOID;
 			int nex = f->peek();
-			if(f->done || nex==EOF /*|| nex==endWith*/) return VOID;
+			if(f->done || nex==EOF || nex==','||nex==')' ||nex==']'/*|| nex==endWith*/) return VOID;
 			if(nex==';') return VOID;
 			bool semi;
 			if (isStartName(nex)) {
@@ -399,18 +400,39 @@ class Lexer{
 				}
 				else if (temp == "def" || temp=="function" || temp=="method" ){
 					if(f->trim(EOF)) f->error("Uncompleted function");
+					auto mark = f->getMarker();
 					Statement* returnName = getNextType(endWith, mod);
-					OModule* module = new OModule(mod);
 					f->trim(EOF);
-					String methodName = "";
-					if(isStartName(f->peek())){
-						methodName = getNextName(endWith);
-						f->trim(EOF);
-						if(methodName=="operator"){
-							String t = f->getNextOperator(endWith);
-							methodName = "~"+t;
-							f->trim(EOF);
+					{
+						auto nex = f->peek();
+						if(!isStartName(nex)){
+							f->undoMarker(mark);
+							returnName = new ClassProtoWrapper(autoClass);
 						}
+					}
+
+					OModule* module = new OModule(mod);
+					std::vector<std::pair<String,String> > methodName;
+					bool isOperator = false;
+					while(isStartName(f->peek())){
+						String method = getNextName(EOF);
+						if(method.length()==0) break;
+						f->trim(EOF);
+						auto mark = f->getMarker();
+						String op = f->getNextOperator(EOF);
+						if(! in<String>(TYPE_OPERATORS, op)){
+							op="";
+							f->undoMarker(mark);
+						}
+						f->trim(EOF);
+						if(method=="operator"){
+							String t = f->getNextOperator(endWith);
+							method = "~"+t;
+							f->trim(EOF);
+							isOperator = true;
+						}
+						methodName.push_back(std::pair<String,String>(method,op));
+						if(isOperator || op.length()==0) break;
 					}
 					std::vector<Declaration*> arguments;
 					if(!f->done){
@@ -418,11 +440,7 @@ class Lexer{
 							f->read();
 							arguments = parseArguments(EOF, module);
 						}
-						else{
-							f->trim(endWith);
-							methodName="";
-							arguments = parseArguments(EOF, module, ':');
-						}
+						else f->error("Need '(' in function declaration",true);
 					}
 					if(f->trim(endWith)) f->error("Function without body");
 					if(!f->done && f->peek()==':'){
@@ -430,16 +448,36 @@ class Lexer{
 						if(f->trim(endWith)) f->error("Function without body (c)");
 					}
 					bool paren;
-					Statement* methodBody = getNextBlock(endWith, module, &paren);
-					E_VAR* funcName;
-					if(methodName!=""){
-						if(methodName[0]=='~'){
-							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName,NULL,functionClass,funcMap(),NULL,NULL));
-						} else {
-							funcName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName));
+					Statement* funcName;
+					ofunction* func;
+					if(methodName.size()<=1){
+						if(methodName.size()==0) funcName = NULL;
+						else if(methodName.size()==1){
+							if(isOperator){
+								funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,NULL,functionClass,funcMap(),NULL,NULL));
+							} else {
+								funcName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName[0].first));
+							}
 						}
-					} else funcName = NULL;
-					userFunction* func = new userFunction(pos(), funcName, returnName, arguments, methodBody,rdata);
+						Statement* methodBody = getNextBlock(endWith, module, &paren);
+						auto tmp = pos();
+						func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
+					}
+					else {
+						//TODO change scope
+						//myMod = NULL;//make combined scope
+						funcName = new E_VAR(pos(), new LateResolve(mod, methodName[0].first, pos()));
+						for(unsigned int i = 0; i<methodName.size()-2; i++)
+							funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+						auto thisPointer = module->addPointer(pos(),"this",NULL,NULL,NULL,NULL);
+						Statement* methodBody = getNextBlock(endWith, module, &paren);
+						auto tmp = pos();
+						if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
+							func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
+						}
+						else
+							func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
+					}
 					f->trim(endWith);
 					semi  = false;
 					if(!f->done && f->peek()==';'){ semi = true; }

@@ -96,6 +96,7 @@ class TernaryOperator : public Statement{
 		Statement* simplify() override{
 			return new TernaryOperator(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}
+		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		void write(ostream& a,String t) const override{
 			a << condition << "?" << then << ":" << finalElse;
 		}

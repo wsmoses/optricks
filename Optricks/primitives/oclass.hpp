@@ -38,14 +38,14 @@ class oclass: public Stackable
 		}
 };
 
-
+oclass* autoClassV;
 void initClasses(){
 	//classClass->module = new OModule(objectClass->module);
 	initClassesMeta();
 
 	new oclass(classClass);
 	new oclass(objectClass);
-	new oclass(autoClass);
+	autoClassV = new oclass(autoClass);
 	//oclass* nullClassO =
 	//		new oclass(nullClass);
 	//oclass* boolClassO =
@@ -66,6 +66,10 @@ void initClasses(){
 			new oclass(sliceClass);
 	//oclass* voidClassO =
 			new oclass(voidClass);
+			new oclass(c_stringClass);
+			new oclass(c_intClass);
+			new oclass(c_longClass);
+			new oclass(c_long_longClass);
 
 	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->returnClass = classClass;
 	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->returnClass = classClass;

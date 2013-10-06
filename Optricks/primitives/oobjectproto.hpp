@@ -24,6 +24,7 @@ class oobject: public Statement{
 			return "";
 		}
 		//TODO
+		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
 		void registerClasses(RData& r) override final{};
 		void registerFunctionArgs(RData& r) override{};
 		void registerFunctionDefaultArgs() override{};

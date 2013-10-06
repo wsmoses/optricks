@@ -25,6 +25,9 @@ class E_VAR : public Statement{
 		const Token getToken() const override{
 			return T_VAR;
 		}
+		ClassProto* getSelfClass() override final{
+			return pointer->resolve()->selfClass;
+		}
 		ReferenceElement* getMetadata(RData& r) final override{
 			return pointer->resolve();
 		}

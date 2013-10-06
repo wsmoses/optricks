@@ -24,6 +24,9 @@ class E_RETURN : public Statement{
 			error("Cannot get full name of return");
 			return "";
 		}
+		ClassProto* getSelfClass() override final{
+			error("Cannot get selfClass of return"); return NULL;
+		}
 		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_RETURN");
 			return inner->getMetadata(r);

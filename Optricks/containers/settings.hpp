@@ -162,12 +162,16 @@ class ClassProto;
 #define REFERENCEELEM_C_
 class ReferenceElement;
 #endif
+
+#ifndef E_FUNC_CALL_C_
+#define E_FUNC_CALL_C_
+class E_FUNC_CALL;
+#endif
+
 #ifndef FUNCTIONPROTO_C_
 #define FUNCTIONPROTO_C_
 class FunctionProto;
 #endif
-
-
 
 /*
 auto& getLLVMString(String s){

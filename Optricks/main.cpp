@@ -83,7 +83,7 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		cout << t << endl << flush;
 	} else if(n->returnType==intClass){
 		int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
-		auto t = FP();
+		int64_t t = FP();
 		if(debug) cout <<  "Evaluated to ";
 		cout << t << endl << flush;
 	} else if(n->returnType==boolClass){
@@ -256,6 +256,7 @@ int main(int argc, char** argv){
 	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
+	initFuncsMeta(lexer.rdata);
 	std::vector<String> files =
 		{"./stdlib/stdlib.opt"};
 		//{};
@@ -300,6 +301,7 @@ int main(int argc, char** argv){
 		//st->force("(def complex (complex a){ a.real = 3; return a})(complex())\n");
 		//st->force("def complex operator/(complex c, complex b){ return c; }\n");
 		//st->force("complex()*complex()\n");
+		st->force("(lambda string s: s.length)('c')\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

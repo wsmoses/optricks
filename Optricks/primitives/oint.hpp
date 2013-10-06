@@ -21,7 +21,7 @@ class oint : public oobject{
 			return this;
 		}
 		ConstantInt* evaluate(RData& a) override final{
-			return ConstantInt::get(INTTYPE, value, true);
+			return getInt(value);
 		}
 };
 #endif /* OINT_HPP_ */

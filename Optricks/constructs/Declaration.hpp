@@ -102,7 +102,7 @@ class Declaration: public Construct{
 		}
 };
 
-std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(FunctionProto* func,RData& r) const{
+std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(FunctionProto* func) const{
 			unsigned int optional;
 			if(func->declarations.size()!=declarations.size()){
 				if(declarations.size()>func->declarations.size()) return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
@@ -113,22 +113,28 @@ std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(Funct
 			} else optional = 0;
 			unsigned int count=0;
 			for(unsigned int a=0; a<declarations.size(); ++a){
-				ClassProto* class1 = declarations[a]->classV->getMetadata(r)->selfClass;
-				ClassProto* class2 = func->declarations[a]->classV->getMetadata(r)->selfClass;
-				auto t = class1->compatable(class2);
-				if(!t.first)  return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
+				ClassProto* class1 = declarations[a]->classV->getSelfClass();
+				ClassProto* class2 = func->declarations[a]->classV->getSelfClass();
+				if(class1==voidClass){
+					if(!func->declarations[a]->hasValue())
+					return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
+				}
 				else{
-					if(t.second>0) count++;
+					auto t = class1->compatable(class2);
+					if(!t.first)  return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
+					else{
+						if(t.second>0) count++;
+					}
 				}
 			}
 			return std::pair<bool,std::pair<unsigned int, unsigned int> >(true,std::pair<unsigned int, unsigned int>(optional,count));
 		}
 
-bool FunctionProto::equals(const FunctionProto* f,RData& r) const{
+bool FunctionProto::equals(const FunctionProto* f) const{
 	if(declarations.size()!=f->declarations.size()) return false;
 	for(unsigned int i = 0; i<declarations.size(); ++i){
-		ClassProto* class1 = declarations[i]->classV->getMetadata(r)->selfClass;
-		ClassProto* class2 = f->declarations[i]->classV->getMetadata(r)->selfClass;
+		ClassProto* class1 = declarations[i]->classV->getSelfClass();
+		ClassProto* class2 = f->declarations[i]->classV->getSelfClass();
 		if(class1==NULL || class2==NULL) todo("ERROR: NULL PROTO",PositionID());
 		if(!class1->equals(class2))
 			return false;
@@ -145,5 +151,64 @@ String FunctionProto::toString() const{
 		t+=a->classV->getFullName();
 	}
 	return t+")";
+}
+
+Function* strLen;
+void initFuncsMeta(RData& rd){
+	cout << "SIZE OF C_STR: " <<rd.lmod->getPointerSize() << endl << flush;
+	cout << "SIZE OF ANY: " << Module::PointerSize::AnyPointerSize << endl << flush;
+	cout << "SIZE OF x32: " << Module::PointerSize::Pointer32 << endl << flush;
+	cout << "SIZE OF x64: " << Module::PointerSize::Pointer64 << endl << flush;
+	cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
+	{
+		FunctionProto* intIntP = new FunctionProto("int",intClass);
+		intIntP->declarations.push_back(new Declaration(PositionID(),new ClassProtoWrapper(doubleClass),NULL,NULL));
+
+		std::vector<Type*> args = {DOUBLETYPE};
+		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
+		Function *F = Function::Create(FT, Function::ExternalLinkage,"!int", rd.lmod);
+		BasicBlock *Parent = rd.builder.GetInsertBlock();
+		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+		rd.builder.SetInsertPoint(BB);
+		rd.builder.CreateRet(rd.builder.CreateFPToSI(F->arg_begin(), INTTYPE));
+		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
+		intClass->constructors.add(intIntP,F,PositionID());
+	}
+	{
+			std::vector<Type*> t = {C_STRINGTYPE};
+			FunctionType *FT = FunctionType::get(INTTYPE, t, false);
+			strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
+		}
+
+		charClass->addCast(stringClass) = new ouopNative(
+				[](DATA a, RData& m) -> DATA{
+					DATA str = UndefValue::get(stringClass->getType(m));
+					Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "a");
+					Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
+					Module &M = *N;
+					GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
+					true, GlobalValue::PrivateLinkage,StrConstant);
+					GV->setName("idk");
+					GV->setUnnamedAddr(true);
+					Value *zero = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 0);
+							Value *Args[] = { zero, zero };
+
+					DATA st = m.builder.CreateInBoundsGEP(GV, Args);
+
+					m.builder.CreateStore(a,st);
+
+					str= m.builder.CreateInsertValue(str,st,{0});
+					str= m.builder.CreateInsertValue(str,getInt(1),{1});
+
+					return str;
+		},stringClass);
+		c_stringClass->addCast(stringClass) = new ouopNative(
+				[](DATA a, RData& m) -> DATA{
+					Value* len = m.builder.CreateCall(strLen, a);
+					DATA str = UndefValue::get(stringClass->getType(m));
+					str= m.builder.CreateInsertValue(str,a,{0});
+					str= m.builder.CreateInsertValue(str,len,{0});
+					return str;
+		},stringClass);
 }
 #endif /* Declaration_HPP_ */

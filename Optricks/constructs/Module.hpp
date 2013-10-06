@@ -24,71 +24,43 @@ class OModule : public Stackable{
 		const Token getToken() const override{
 			return T_MODULE;
 		}
-		const int exists(String index) const{
-			const OModule* search = this;
-			int level = 0;
-			while(search!=NULL){
-				auto paired = search->mapping.find(index);
-				if(paired== search->mapping.end()){
-					search = search->super;
-					level++;
-				} else {
-					return level;
-				}
-			}
-			return -1;
+		const bool exists(String index) const{
+			auto paired = mapping.find(index);
+			if(paired!= mapping.end()) return true;
+			if(super==NULL) return false;
+			return super->exists(index);
 		}
-		/*void ssetPointer(PositionID a, String index, DATA value, ClassProto* cl, FunctionProto* fun, ClassProto* selfCl,AllocaInst* al){
-			ReferenceElement* p = findPointer(a, index);
-			p->llvmObject = value;
-			p->returnClass = cl;
-			p->function = fun;
-			p->selfClass = selfCl;
-			p->llvmLocation = al;
-		}*/
 		ReferenceElement* getFuncPointer(PositionID a, String name){
-			if(exists(name)==-1) return addPointer(a,name,NULL,functionClass,NULL,NULL,0);
+			if(!exists(name)) return addPointer(a,name,NULL,functionClass,NULL,NULL);
 			else return findPointer(a,name);
 		}
-		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, ClassProto* selfCl, AllocaInst* al, unsigned int level=0){
-			if(level == 0){
-				if(mapping.find(index)!=mapping.end()){
-					todo("The variable "+index+" has already been defined in this scope", a);
-				}
-				auto nex = new ReferenceElement("",this, index,value, cla, funcMap(), selfCl, al);
-				mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
-				return nex;
-			} else {
-				if(super==NULL){
-					cerr << "Null module to add pointer to" << endl << flush;
-					exit(1);
-				}
-				else
-				return super->addPointer(a, index, value, cla, selfCl, al, level-1);
+		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, ClassProto* selfCl, AllocaInst* al){
+			if(mapping.find(index)!=mapping.end()){
+				todo("The variable "+index+" has already been defined in this scope", a);
 			}
+			auto nex = new ReferenceElement("",this, index,value, cla, funcMap(), selfCl, al);
+			mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
+			return nex;
 		}
-		ReferenceElement* findPointer(PositionID a, String index) {
-			const OModule* search = this;
-			while(search!=NULL){
-				auto paired = search->mapping.find(index);
-				if(paired== search->mapping.end()){
-					search = search->super;
-				} else {
-					return paired->second;
-				}
+		ReferenceElement* findPointer(PositionID a, String index,bool createIfNeeded=true) {
+			auto paired = mapping.find(index);
+			if(paired!= mapping.end())
+				return paired->second;
+			if(super!=NULL){
+				auto tmp = super->findPointer(a, index,false);
+				if(tmp!=NULL) return tmp;
 			}
-			return addPointer(a, index, NULL,NULL, NULL,NULL);
+			if(createIfNeeded) return addPointer(a, index, NULL,NULL, NULL,NULL);
+			else return NULL;
 		}
-		ReferenceElement* getPointer(PositionID id, String index) {
-			OModule* search = this;
-			while(search!=NULL){
-				auto paired = search->mapping.find(index);
-				if(paired== search->mapping.end()){
-					search = search->super;
-				} else {
-					return paired->second;
-				}
+		ReferenceElement* getPointer(PositionID id, String index,bool top=true) {
+			auto paired = mapping.find(index);
+			if(paired!=mapping.end()) return paired->second;
+			if(super!=NULL){
+				auto tmp = super->getPointer(id,index,false);
+				if(tmp!=NULL) return tmp;
 			}
+			if(!top) return NULL;
 			cerr << "Could not resolve variable: " << index << flush << endl;
 			write(cerr, "");
 			cerr << endl << flush;
@@ -106,12 +78,6 @@ class OModule : public Stackable{
 			a << "]|" << flush;
 			if(super!=NULL) super->write(a,t);
 		}
-};
-
-ReferenceElement* ReferenceElement::resolve(){
-	return this;
-	//if(module==NULL) return this;
-	//return module->mapping[name];
 };
 
 class LateResolve : public Resolvable{
@@ -135,7 +101,7 @@ RData::RData():
 			lmod(new Module("main",getGlobalContext())),
 			builder(IRBuilder<>(lmod->getContext()))
 			{
-
+lmod->setDataLayout("p:64:64:64");
 	  InitializeNativeTarget();
 			exec = EngineBuilder(lmod).create();
 			fpm = new FunctionPassManager(lmod);

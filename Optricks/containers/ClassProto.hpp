@@ -17,19 +17,19 @@ class ClassProto{
 	private:
 	std::map<String,std::map<ClassProto*, obinop*> > binops;
 	std::map<ClassProto*, ouop*> casts;
-
-		DATA (*constructor)(RData&, std::vector<Statement*>,PositionID,String);
-		ClassProto* superClass;
 		Type* type;
 		std::map<String, unsigned int> innerDataIndex;
 		std::vector<ClassProto*> innerData;
 		std::map<String, ReferenceElement* > functions;
 		//		std::map<String,std::map<ClassProto*, obinop*> > binops;
+		ClassProto* superClass;
 	public:
+		funcMap constructors;
 		String name;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
 		virtual ~ClassProto(){};
+
 		virtual bool equals(ClassProto* c) const{
 			return this==c;
 		}
@@ -48,21 +48,60 @@ class ClassProto{
 			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
 			return innerData[innerDataIndex[nam]];
 		}
+		const bool hasFunction(String name) const{
+			return functions.find(name)!=functions.end();
+		}
+		ReferenceElement* getFunction(String nam){
+			if(!hasFunction(nam)) return NULL;
+			return functions[nam];
+		}
+		ReferenceElement* addFunction(String nam, PositionID id);
 		void addElement(String nam, ClassProto* typ,PositionID id){
+			if(nam==name) todo("Cannot make data type with same name as class "+name,id);
 			if(innerDataIndex.find(nam)!=innerDataIndex.end()) todo("Cannot create another inner data type for class "+name+" named "+nam,id);
+			if(functions.find(nam)!=functions.end()) todo("Cannot create another inner data type for class "+name+" named "+nam,id);
 			auto a = innerData.size();
 			innerData.push_back(typ);
 			innerDataIndex[nam]=a;
 		}
-		DATA construct(RData& r, std::vector<Statement*> s, PositionID i) const{
-			return constructor(r,s,i,name);
+		DATA generateData(RData& r){
+//			Type* mt = getType(r);
+			return UndefValue::get(getType(r));
+			/*
+			if(mt->isVectorTy()){
+				VectorType* vt = dynamic_cast<VectorType*>(mt);
+				Type* t = vt->getElementType();
+				auto count = vt->getNumElements();
+				std::vector<Constant*> vals;
+				for(unsigned int i = 0; i<count; i++)
+					vals.push_back(UndefValue::get(t));
+				return ConstantVector::get(ArrayRef<Constant*>(vals));
+			} else if(mt->isArrayTy()){
+				ArrayType* vt = dynamic_cast<ArrayType*>(mt);
+				Type* t = vt->getElementType();
+				auto count = vt->getNumElements();
+				std::vector<Constant*> vals;
+				for(unsigned int i = 0; i<count; i++)
+					vals.push_back(UndefValue::get(t));
+				return ConstantArray::get(vt, ArrayRef<Constant*>(vals));
+			} else if(mt->isStructTy()){
+				StructType* vt = dynamic_cast<StructType*>(mt);
+				auto count = vt->getNumElements();
+				std::vector<Constant*> vals;
+				for(unsigned int i = 0; i<count; i++)
+					vals.push_back(UndefValue::get(vt->getElementType(i)));
+				return ConstantStruct::get(vt, ArrayRef<Constant*>(vals));
+			}*/
 		}
+		DATA construct(RData& r, E_FUNC_CALL* call) const;
 		Type* getType(RData& r){
 			if(type!=NULL || innerData.size()==0) return type;
 			else{
 				std::vector<Type*> types;
+				cerr << "hmm" << endl << flush;
 				for(auto& a: innerData) types.push_back(a->getType(r));
-				return StructType::create(ArrayRef<Type*>(types),name);
+				cerr << "end hmm" << endl << flush;
+				return type = StructType::create(r.lmod->getContext(), ArrayRef<Type*>(types),name);
 			}
 		}
 		virtual bool operator == (ClassProto*& b){
@@ -147,7 +186,7 @@ class ClassProto{
 			}
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, DATA (*co)(RData&, std::vector<Statement*>,PositionID,String), Type* t=NULL) : constructor(co), superClass(sC), type(t),
+		ClassProto(ClassProto* sC, String n, Type* t=NULL) : constructors(), superClass(sC), type(t),
 				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
 				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
@@ -158,61 +197,24 @@ class ClassProto{
 		}
 };
 
-ClassProto* objectClass = new ClassProto(NULL, "object", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}));
-ClassProto* autoClass = new ClassProto(NULL, "auto", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}));
-ClassProto* classClass = new ClassProto(objectClass, "class", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}));
+ClassProto* objectClass = new ClassProto(NULL, "object");
+ClassProto* autoClass = new ClassProto(NULL, "auto");
+ClassProto* classClass = new ClassProto(objectClass, "class");
 //ClassProto* autoClass = new ClassProto("auto"); todo auto class
 //ClassProto* nullClass = new ClassProto("None");
-ClassProto* boolClass = new ClassProto(objectClass, "bool", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}) ,BOOLTYPE);
-ClassProto* functionClass = new ClassProto(objectClass, "function", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}));
-ClassProto* complexClass = new ClassProto(objectClass,"complex", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	//todo("Cannot instantiate class "+s,id);
-	//return NULL;
-	double data[2] = {0, 0} ;
-	return ConstantDataVector::get(r.lmod->getContext(), ArrayRef<double>(data));
-			//	for(unsigned int i = 0; i<value.length(); ++i){
-			//		data[0] = ConstantInt::get(CHARTYPE, value[0], false);
-			//	}
-}),COMPLEXTYPE);
-ClassProto* doubleClass = new ClassProto(complexClass, "double", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}), DOUBLETYPE);
-ClassProto* intClass = new ClassProto(doubleClass, "int", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}), INTTYPE);
-ClassProto* stringClass = new ClassProto(objectClass, "string", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}),STRINGTYPE);
-ClassProto* charClass = new ClassProto(stringClass, "char", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}), CHARTYPE);
-ClassProto* sliceClass = new ClassProto(objectClass, "slice", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}));
-ClassProto* voidClass = new ClassProto(objectClass, "void", ([](RData& r, std::vector<Statement*> vals,PositionID id,String s) -> DATA {
-	todo("Cannot instantiate class "+s,id);
-	return NULL;
-}),VOIDTYPE);
+ClassProto* boolClass = new ClassProto(objectClass, "bool",BOOLTYPE);
+ClassProto* functionClass = new ClassProto(objectClass, "function");
+ClassProto* complexClass = new ClassProto(objectClass,"complex",COMPLEXTYPE);
+ClassProto* doubleClass = new ClassProto(complexClass, "double",DOUBLETYPE);
+ClassProto* intClass = new ClassProto(doubleClass, "int", INTTYPE);
+ClassProto* c_intClass = new ClassProto(intClass,"c_int",C_LONGTYPE);
+ClassProto* c_longClass = new ClassProto(intClass,"c_long",C_INTTYPE);
+ClassProto* c_long_longClass = new ClassProto(intClass,"c_long_long",C_LONG_LONGTYPE);
+ClassProto* stringClass = new ClassProto(objectClass,"string");
+ClassProto* c_stringClass = new ClassProto(stringClass, "c_string",C_STRINGTYPE);
+ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE);
+ClassProto* sliceClass = new ClassProto(objectClass, "slice");
+ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE);
 
 
 String getGenericName(ClassProto* a, std::vector<ClassProto*>& b){

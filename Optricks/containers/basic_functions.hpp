@@ -6,14 +6,15 @@
 #include <stdlib.h>
 #include <stdint.h>
 struct StringStruct{
-		int length;
 		char* data;
+		int64_t length;
 };
 struct complex{
 		double real, imag;
 };
 void prints(StringStruct i, bool b){
 		std::cout << "String length is " << i.length << std::endl << std::flush;
+		std::cout << "String pos is " << (size_t)i.data << std::endl << std::flush;
 		std::cout << std::string(i.data, i.length);
 		if(b) std::cout << std::endl;
 		std::cout << std::flush;

@@ -113,6 +113,7 @@ class E_ARR : public Construct{
 			return new oarray(filePos, vals);
 		}
 
+		//ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		void registerClasses(RData& r) override final{
 			for(auto& a:values){
 				a->registerClasses(r);

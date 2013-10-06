@@ -765,7 +765,7 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 			}
 		}
 		stack.clear();
-		E_SLICE* e = new E_SLICE(f->pos(), start,end,step);
+		oslice* e = new oslice(f->pos(), start,end,step);
 		return new E_BINOP(f->pos(), toIndex,e,"[]");
 	}
 }

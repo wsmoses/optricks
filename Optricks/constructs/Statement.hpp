@@ -18,6 +18,7 @@ class Construct : public Statement{
 public:
 	virtual ~Construct(){};
 	Construct(PositionID a, ClassProto* pr) : Statement(a, pr){};
+	ClassProto* getSelfClass() override { error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 	String getFullName() override{ error("Cannot get full name of construct "+str<Token>(getToken())); return ""; }
 	ReferenceElement* getMetadata(RData& r) override{ error("Cannot get ReferenceElement of construct "+str<Token>(getToken())); return NULL; }
 };
@@ -27,6 +28,9 @@ class ClassProtoWrapper : public Construct{
 		ReferenceElement* getMetadata(RData& r) override final{
 			//TODO make resolvable for class with class-functions / constructors
 			return new ReferenceElement("",NULL,cp->name, NULL, classClass, funcMap(), cp, NULL);
+		}
+		ClassProto* getSelfClass() override{
+			return cp;
 		}
 		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(),classClass){
 			cp = c;

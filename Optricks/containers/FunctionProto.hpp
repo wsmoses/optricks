@@ -21,9 +21,10 @@ class FunctionProto{
 		 * Checks if this can be casted to F, and how well
 		 * In Declaration.hpp
 		 */
-		std::pair<bool,std::pair<unsigned int, unsigned int>> match(FunctionProto* func,RData& r) const;
-		bool equals(const FunctionProto* f,RData& r) const;
+		std::pair<bool,std::pair<unsigned int, unsigned int>> match(FunctionProto* func) const;
+		bool equals(const FunctionProto* f) const;
 		String toString() const;
+
 };
 
 #endif /* FUNCTIONPROTO_HPP_ */

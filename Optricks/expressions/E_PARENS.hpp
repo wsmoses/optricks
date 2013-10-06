@@ -19,6 +19,9 @@ public:
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}
+	ClassProto* getSelfClass() override final{
+		return inner->getSelfClass();
+	}
 	void registerFunctionArgs(RData& r) override final{
 		inner->registerFunctionArgs(r);
 	}
