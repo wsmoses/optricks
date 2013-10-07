@@ -130,7 +130,7 @@ class E_FUNC_CALL : public Statement{
 				auto tp = T->left->checkTypes(a);
 				if(tp->hasFunction(T->right)){
 					//TODO make better check (e.g. static functions)
-					auto loc = T->left->getLocation(a);
+					DATA loc = (tp->isPointer)?(T->left->evaluate(a)):(T->left->getLocation(a));
 					if(loc==NULL){
 						//TODO allow for second function of type instead of type*
 						//thereby reducing number of allocas/loads/stores
@@ -151,8 +151,6 @@ class E_FUNC_CALL : public Statement{
 				else
 					Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
 				if (Args.back() == 0) error("Error in eval of args");
-				a.lmod->dump();
-				Args.back()->dump();
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;

@@ -155,11 +155,11 @@ String FunctionProto::toString() const{
 
 Function* strLen;
 void initFuncsMeta(RData& rd){
-	cout << "SIZE OF C_STR: " <<rd.lmod->getPointerSize() << endl << flush;
-	cout << "SIZE OF ANY: " << Module::PointerSize::AnyPointerSize << endl << flush;
-	cout << "SIZE OF x32: " << Module::PointerSize::Pointer32 << endl << flush;
-	cout << "SIZE OF x64: " << Module::PointerSize::Pointer64 << endl << flush;
-	cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
+	//cout << "SIZE OF C_STR: " <<rd.lmod->getPointerSize() << endl << flush;
+	//cout << "SIZE OF ANY: " << Module::PointerSize::AnyPointerSize << endl << flush;
+	//cout << "SIZE OF x32: " << Module::PointerSize::Pointer32 << endl << flush;
+	//cout << "SIZE OF x64: " << Module::PointerSize::Pointer64 << endl << flush;
+	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
 	{
 		FunctionProto* intIntP = new FunctionProto("int",intClass);
 		intIntP->declarations.push_back(new Declaration(PositionID(),new ClassProtoWrapper(doubleClass),NULL,NULL));
@@ -179,7 +179,19 @@ void initFuncsMeta(RData& rd){
 			FunctionType *FT = FunctionType::get(INTTYPE, t, false);
 			strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
 		}
+		c_stringClass->addFunction("length",PositionID())->funcs.add(new FunctionProto("length",intClass),strLen,PositionID());
+		{
 
+				std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
+				FunctionType *FT = FunctionType::get(INTTYPE, args, false);
+				Function *F = Function::Create(FT, Function::ExternalLinkage,"!return1", rd.lmod);
+				BasicBlock *Parent = rd.builder.GetInsertBlock();
+				BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+				rd.builder.SetInsertPoint(BB);
+				rd.builder.CreateRet(ConstantInt::get(INTTYPE,1));
+				if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
+				charClass->addFunction("length",PositionID())->funcs.add(new FunctionProto("length",intClass),F,PositionID());
+			}
 		charClass->addCast(stringClass) = new ouopNative(
 				[](DATA a, RData& m) -> DATA{
 					DATA str = UndefValue::get(stringClass->getType(m));
@@ -190,8 +202,7 @@ void initFuncsMeta(RData& rd){
 					true, GlobalValue::PrivateLinkage,StrConstant);
 					GV->setName("idk");
 					GV->setUnnamedAddr(true);
-					Value *zero = ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 0);
-							Value *Args[] = { zero, zero };
+					Value *Args[] = {getInt32(0),getInt32(0)};
 
 					DATA st = m.builder.CreateInBoundsGEP(GV, Args);
 
@@ -199,15 +210,41 @@ void initFuncsMeta(RData& rd){
 
 					str= m.builder.CreateInsertValue(str,st,{0});
 					str= m.builder.CreateInsertValue(str,getInt(1),{1});
-
 					return str;
 		},stringClass);
+		charClass->addBinop("+",charClass) = new obinopNative(
+						[](DATA a, DATA b, RData& m) -> DATA{
+							DATA str = UndefValue::get(stringClass->getType(m));
+							Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
+							Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
+							Module &M = *N;
+							GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
+							true, GlobalValue::PrivateLinkage,StrConstant);
+							GV->setName("idk");
+							GV->setUnnamedAddr(true);
+							Value *Args[] = {getInt32(0),getInt32(0)};
+							DATA st = m.builder.CreateInBoundsGEP(GV, Args);
+							m.builder.CreateStore(a,st);
+							Value *Args2[] = {getInt32(0),getInt32(1)};
+							DATA st2 = m.builder.CreateInBoundsGEP(GV, Args2);
+							m.builder.CreateStore(b,st2);
+							return st;
+				},c_stringClass);
+
+		/*c_stringClass->addBinop("+",stringClass) = new ouopNative(
+				[](DATA a, RData& m) -> DATA{
+					Value* len = m.builder.CreateCall(strLen, a);
+					DATA str = UndefValue::get(stringClass->getType(m));
+					str= m.builder.CreateInsertValue(str,a,{0});
+					str= m.builder.CreateInsertValue(str,len,{1});
+					return str;
+		},stringClass);*/
 		c_stringClass->addCast(stringClass) = new ouopNative(
 				[](DATA a, RData& m) -> DATA{
 					Value* len = m.builder.CreateCall(strLen, a);
 					DATA str = UndefValue::get(stringClass->getType(m));
 					str= m.builder.CreateInsertValue(str,a,{0});
-					str= m.builder.CreateInsertValue(str,len,{0});
+					str= m.builder.CreateInsertValue(str,len,{1});
 					return str;
 		},stringClass);
 }

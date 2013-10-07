@@ -102,7 +102,7 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		if(debug) cout <<  "Evaluated to ";
 		printf("\'%c\'",t);
 		cout << endl << flush;
-	} else if(n->returnType==stringClass){
+	} else if(n->returnType==c_stringClass){
 		auto (*FP)() = (char* (*)())(intptr_t)FPtr;
 		//StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
 		auto t = FP();
@@ -110,6 +110,14 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		//String temp(t.data, t.length);
 		if(debug) cout <<  "Evaluated to ";
 		printf("\"%s\"",t);
+		cout << endl << flush;
+	} else if(n->returnType==stringClass){
+		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
+		auto t = FP();
+		cout << "String length of " << (int)(* (int*)(t.length)) << endl << flush;
+		String temp(t.data, t.length);
+		if(debug) cout <<  "Evaluated to " ;
+		cout << temp;
 		cout << endl << flush;
 	} else{
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
@@ -301,7 +309,7 @@ int main(int argc, char** argv){
 		//st->force("(def complex (complex a){ a.real = 3; return a})(complex())\n");
 		//st->force("def complex operator/(complex c, complex b){ return c; }\n");
 		//st->force("complex()*complex()\n");
-		st->force("(lambda string s: s.length)('c')\n");
+		//st->force("(lambda string s: s.length)('c')\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

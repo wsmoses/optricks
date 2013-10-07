@@ -16,10 +16,10 @@ class oslice : public oobject{
 		virtual ~oslice(){};
 		oslice(PositionID id, Statement* a, Statement* b, Statement* c): oobject(id, sliceClass),
 				start(a), stop(b),step(c){
-			if(step==0){
-				cerr << "Step in slice cannot be 0";
-				exit(0);
-			}
+			//if(step==0){
+			//	cerr << "Step in slice cannot be 0";
+			//	exit(0);
+			//}
 		}
 		oobject* simplify() override final{
 			return this;

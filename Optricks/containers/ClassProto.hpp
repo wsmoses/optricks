@@ -25,6 +25,7 @@ class ClassProto{
 		ClassProto* superClass;
 	public:
 		funcMap constructors;
+		bool isPointer;
 		String name;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
@@ -98,10 +99,13 @@ class ClassProto{
 			if(type!=NULL || innerData.size()==0) return type;
 			else{
 				std::vector<Type*> types;
-				cerr << "hmm" << endl << flush;
+				//TODO allow recursive type
+				//cerr << "hmm" << endl << flush;
 				for(auto& a: innerData) types.push_back(a->getType(r));
-				cerr << "end hmm" << endl << flush;
-				return type = StructType::create(r.lmod->getContext(), ArrayRef<Type*>(types),name);
+				//cerr << "end hmm" << endl << flush;
+				type = StructType::create(r.lmod->getContext(), ArrayRef<Type*>(types),name);
+				if(isPointer) type = type->getPointerTo(0);
+				return type;
 			}
 		}
 		virtual bool operator == (ClassProto*& b){
@@ -186,7 +190,7 @@ class ClassProto{
 			}
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, Type* t=NULL) : constructors(), superClass(sC), type(t),
+		ClassProto(ClassProto* sC, String n, Type* t=NULL,bool pointer=false) : isPointer(pointer), constructors(), superClass(sC), type(t),
 				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
 				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
@@ -211,7 +215,7 @@ ClassProto* c_intClass = new ClassProto(intClass,"c_int",C_LONGTYPE);
 ClassProto* c_longClass = new ClassProto(intClass,"c_long",C_INTTYPE);
 ClassProto* c_long_longClass = new ClassProto(intClass,"c_long_long",C_LONG_LONGTYPE);
 ClassProto* stringClass = new ClassProto(objectClass,"string");
-ClassProto* c_stringClass = new ClassProto(stringClass, "c_string",C_STRINGTYPE);
+ClassProto* c_stringClass = new ClassProto(stringClass, "c_string",C_STRINGTYPE,true);
 ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE);
 ClassProto* sliceClass = new ClassProto(objectClass, "slice");
 ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE);

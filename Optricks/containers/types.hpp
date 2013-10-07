@@ -26,12 +26,17 @@ auto C_STRINGTYPE = PointerType::get(C_CHARTYPE, 0);
 
 auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
+auto INT32TYPE = IntegerType::get(getGlobalContext(), 32);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 8*INT_LENGTH);
 //auto LONGTYPE = IntegerType::get(getGlobalContext(), 8*INT_LENGTH);
 auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
 auto CHARTYPE = IntegerType::get(getGlobalContext(), 8*CHAR_LENGTH);
 auto COMPLEXTYPE = VectorType::get(DOUBLETYPE,2);
 
+
+ConstantInt* getInt32(uint32_t t){
+	return ConstantInt::get(INT32TYPE,t,true);
+}
 ConstantInt* getInt(uint64_t t){
 	return ConstantInt::get(INTTYPE,t,true);
 }

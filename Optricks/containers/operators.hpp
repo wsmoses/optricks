@@ -18,8 +18,8 @@ bool isStartName(int i){
 void initClassesMeta(){
 	complexClass->addElement("real",doubleClass,PositionID());
 	complexClass->addElement("imag",doubleClass,PositionID());
-	stringClass->addElement("cstr",c_stringClass,PositionID());
-	stringClass->addElement("length",intClass,PositionID());
+	stringClass->addElement("_cstr",c_stringClass,PositionID());
+	stringClass->addElement("_size",intClass,PositionID());
 
 	complexClass->preops["-"] = new ouopNative(
 				[](DATA a, RData& m) -> DATA{
@@ -40,7 +40,7 @@ void initClassesMeta(){
 			auto v = m.builder.CreateSIToFP(a,DOUBLETYPE);
 			double data[2] = {0, 0} ;
 			auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
-			return m.builder.CreateInsertElement(vec,v,getInt(0));
+			return m.builder.CreateInsertElement(vec,v,getInt32(0));
 	}
 	,complexClass);
 
@@ -48,7 +48,7 @@ void initClassesMeta(){
 			[](DATA a, RData& m) -> DATA{
 		double data[2] = {0, 0} ;
 		auto vec = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data));
-		return m.builder.CreateInsertElement(vec,a,getInt(0));
+		return m.builder.CreateInsertElement(vec,a,getInt32(0));
 	}
 	,complexClass);
 
@@ -62,18 +62,27 @@ void initClassesMeta(){
 	},complexClass);
 	complexClass->addBinop("[]",intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateExtractElement(a,b);
+					return m.builder.CreateExtractElement(a,m.builder.CreateTruncOrBitCast(b,INT32TYPE));
 		},doubleClass);
 	///////******************************* String ********************************////////
 	stringClass->addBinop("[]",intClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 
 //		return m.builder.CreateExtractElement(a,b);
-				std::vector<Value*> z = {/*getInt(0),*/b};
+				std::vector<Value*> z = {getInt32(0),m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
 				auto t = m.builder.CreateGEP(a,z,"tmpind");
 				return m.builder.CreateLoad(t);
 //				return m.builder.CreateAnd(a,b,"andtmp");
 	},charClass);
+	c_stringClass->addBinop("[]",intClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+
+	//		return m.builder.CreateExtractElement(a,b);
+					std::vector<Value*> z = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
+					auto t = m.builder.CreateGEP(a,z,"tmpind");
+					return m.builder.CreateLoad(t);
+	//				return m.builder.CreateAnd(a,b,"andtmp");
+		},charClass);
 
 
 	///////******************************* Boolean ********************************////////

@@ -19,9 +19,11 @@ class oobject: public Statement{
 			error("Cannot getMetadata() for oobject");
 			return NULL;
 		}
+		DATA getLocation(RData& r) override{
+			return NULL;
+		}
 		String getFullName() override{
-			error("Cannot get full name of oobject");
-			return "";
+			return returnType->name;
 		}
 		//TODO
 		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }

@@ -58,23 +58,9 @@ public:
 		}
 		auto lloc = left->getLocation(a);
 		if(lloc!=NULL){
-			auto l =getInt(lT->getDataClassIndex(right,filePos));
-			std::vector<Value*> look = {getInt(0),l};
-
-			if(lloc->getType()->getPointerElementType()->isStructTy()){
-				cerr << "IS POINTER TO STRUCT" << endl << flush;
-				//look = {getInt(0),l};
-			}
-
-			a.lmod->dump();
-			lloc->dump();
-			for(auto& a:look) a->dump();
-
-			auto pos = GetElementPtrInst::Create(lloc,look,"tmp");
-			//auto pos = a.builder.CreateGEP(lloc,look);
-			pos->dump();
-			cerr << flush << endl;
-
+			auto l =getInt32(lT->getDataClassIndex(right,filePos));
+			std::vector<Value*> look = {getInt32(0),l};
+			auto pos = a.builder.CreateGEP(lloc,look);
 			return a.builder.CreateLoad(pos);
 		}
 		auto lVal = left->evaluate(a);
@@ -109,7 +95,7 @@ public:
 		auto lloc = left->getLocation(a);
 		//TODO add additional 0 if global or pointer
 		if(lloc!=NULL){
-			std::vector<Value*> look = {getInt(0),getInt(lT->getDataClassIndex(right,filePos))};
+			std::vector<Value*> look = {getInt32(0),getInt32(lT->getDataClassIndex(right,filePos))};
 			return a.builder.CreateGEP(lloc,look);
 			//return GetElementPtrInst::Create(lM->llvmLocation, ArrayRef<Value*>(look), "lookup",a.builder.GetInsertBlock());
 		} else {
