@@ -24,6 +24,7 @@ class E_RETURN : public Statement{
 			error("Cannot get full name of return");
 			return "";
 		}
+		Constant* getConstant(RData& r) override final { return NULL; }
 		ClassProto* getSelfClass() override final{
 			error("Cannot get selfClass of return"); return NULL;
 		}

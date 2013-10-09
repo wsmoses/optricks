@@ -28,6 +28,10 @@ class Statement : public Stackable{
 			cerr << endl << flush;
 			if(exi) exit(1);
 		}
+		/**
+		 * returns null if not possible
+		 */
+		virtual Constant* getConstant(RData& r)=0;
 		virtual String getFullName() =0;
 		virtual DATA evaluate(RData& a) = 0;
 		virtual Statement* simplify()  = 0;
@@ -64,6 +68,7 @@ class VoidStatement : public Statement{
 		void write(ostream& a,String r="") const override{
 			a << "void";
 		}
+		Constant* getConstant(RData& r) override final{ return NULL; }
 		void registerClasses(RData& r) override final{}
 		void registerFunctionArgs(RData& r) override final{};
 		void registerFunctionDefaultArgs() override final{};

@@ -50,6 +50,7 @@ public:
 	ClassProto* getSelfClass() override final{
 		error("Cannot get selfClass of lookup"); return NULL;
 	}
+	Constant* getConstant(RData& r) override final { return NULL; }
 	DATA evaluate(RData& a) override{
 		registerClasses(a);
 		ClassProto* lT = left->checkTypes(a);

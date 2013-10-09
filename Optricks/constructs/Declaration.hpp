@@ -17,11 +17,13 @@ class Declaration: public Construct{
 		Statement* classV;
 		E_VAR* variable;
 		Statement* value;
-		AllocaInst* Alloca;
-		Declaration(PositionID id, Statement* v, E_VAR* loc, Statement* e=NULL) : Construct(id, voidClass){
+		Value* Alloca;
+		bool global = false;
+		Declaration(PositionID id, Statement* v, E_VAR* loc, bool glob, Statement* e) : Construct(id, voidClass){
 			classV = v;
 			variable = loc;
 			value = e;
+			global = glob;
 			Alloca = NULL;
 		}
 		//TODO check
@@ -73,12 +75,31 @@ class Declaration: public Construct{
 			if(value!=NULL) value->resolvePointers();
 		};
 		DATA evaluate(RData& r) final override{
+			if(global){
+
+				Module *N = (r.builder.GetInsertBlock()->getParent()->getParent());
+				Module &M = *N;
+				//TODO introduce constant expressions
+				//Constant* cons = getConstant(r);
+				//(tmp==NULL)?NULL:dynamic_cast<Constant*>(tmp);
+				DATA tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->returnType->castTo(r, value->evaluate(r), variable->returnType));
+
+				GlobalVariable *GV = new GlobalVariable(M, variable->returnType->getType(r),
+				false, GlobalValue::PrivateLinkage,UndefValue::get(variable->returnType->getType(r)));
+				GV->setName(variable->getFullName());
+				//if(cons==NULL && tmp!=NULL){
+					r.builder.CreateStore(tmp,GV);
+				//}
+				variable->getMetadata(r)->llvmLocation = Alloca = GV;
+			}
+			else{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
 			Alloca = TmpB.CreateAlloca(variable->returnType->getType(r), 0,variable->pointer->name);
 			if(value!=NULL && value->getToken()!=T_VOID){
 				r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), variable->returnType) , Alloca);
+			}
 			}
 			variable->getMetadata(r)->llvmLocation = Alloca;
 			r.guarenteedReturn = false;
@@ -87,7 +108,7 @@ class Declaration: public Construct{
 //			error("Todo: allow declaration evaluation");
 		}
 		Declaration* simplify() final override{
-			return new Declaration(filePos, classV, variable, (value==NULL)?NULL:(value->simplify()) );
+			return new Declaration(filePos, classV, variable, global, (value==NULL)?NULL:(value->simplify()));
 		}
 		void write(ostream& f, String s="") const final override{
 			//f << "d(";
@@ -162,7 +183,7 @@ void initFuncsMeta(RData& rd){
 	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
 	{
 		FunctionProto* intIntP = new FunctionProto("int",intClass);
-		intIntP->declarations.push_back(new Declaration(PositionID(),new ClassProtoWrapper(doubleClass),NULL,NULL));
+		intIntP->declarations.push_back(new Declaration(PositionID(),new ClassProtoWrapper(doubleClass),NULL,false,NULL));
 
 		std::vector<Type*> args = {DOUBLETYPE};
 		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
@@ -212,9 +233,25 @@ void initFuncsMeta(RData& rd){
 					str= m.builder.CreateInsertValue(str,getInt(1),{1});
 					return str;
 		},stringClass);
+		/*c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
+						[](DATA a, DATA b, RData& m) -> DATA{
+							Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
+							Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
+							Module &M = *N;
+							GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
+							true, GlobalValue::PrivateLinkage,StrConstant);
+							GV->setName("idk");
+							GV->setUnnamedAddr(true);
+							Value *Args[] = {getInt32(0),getInt32(0)};
+							DATA st = m.builder.CreateInBoundsGEP(GV, Args);
+							m.builder.CreateStore(a,st);
+							Value *Args2[] = {getInt32(0),getInt32(1)};
+							DATA st2 = m.builder.CreateInBoundsGEP(GV, Args2);
+							m.builder.CreateStore(b,st2);
+							return st;
+				},c_stringClass);*/
 		charClass->addBinop("+",charClass) = new obinopNative(
 						[](DATA a, DATA b, RData& m) -> DATA{
-							DATA str = UndefValue::get(stringClass->getType(m));
 							Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
 							Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
 							Module &M = *N;

@@ -20,6 +20,9 @@ class ochar : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
+		ConstantInt* getConstant(RData& r) override final{
+			return ConstantInt::get(CHARTYPE, value, false);
+		}
 		ConstantInt* evaluate(RData& a) override final{
 			return ConstantInt::get(CHARTYPE, value, false);
 		}

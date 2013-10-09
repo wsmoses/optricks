@@ -10,6 +10,8 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
+
+	Constant* getConstant(RData& r) override final{ return inner->getConstant(r); }
 	ReferenceElement* getMetadata(RData& r) override final{
 		return inner->getMetadata(r);
 	}

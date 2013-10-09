@@ -31,6 +31,7 @@ class ofunction:public oobject{
 			}
 
 		}
+		Constant* getConstant(RData& r) override final { return NULL; }
 		String getFullName() override final{
 			return prototype->name;
 		}
@@ -362,7 +363,7 @@ class classFunction : public ofunction{
 		void write(ostream& f, String b) const override{
 			f << "def ";
 			f << returnV << " ";
-			f << (prototype->name) << operation << name ;
+			f << (prototype->name);
 			f << "(" ;
 			bool first = true;
 			for(auto &a: prototype->declarations){
@@ -486,7 +487,7 @@ class constructorFunction : public ofunction{
 		void write(ostream& f, String b) const override{
 			f << "def ";
 			f << returnV << " ";
-//			f << (prototype->name) << operation << name ;
+			f << (prototype->name) << "." << prototype->name ;
 			f << "(" ;
 			bool first = true;
 			for(auto &a: prototype->declarations){

@@ -1,3 +1,7 @@
+def void print(bool b=true){
+	(extern void printb(bool i, bool b))(b,b);
+}
+auto hi="hello"
 
 def complex.complex(double a=0, double b=0){
   this.real = a
@@ -6,10 +10,11 @@ def complex.complex(double a=0, double b=0){
 def int string.length(){
 	return this._size;
 }
-
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
 }
+
+
 extern void prints(string i, bool b)
 def void print(string i, bool b=true){
 	prints(i,b);
@@ -206,4 +211,3 @@ def double double.print(bool newline=true){
 	print(this,newline);
 	return this;
 }
-

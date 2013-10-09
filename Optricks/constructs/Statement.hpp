@@ -21,6 +21,7 @@ public:
 	ClassProto* getSelfClass() override { error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 	String getFullName() override{ error("Cannot get full name of construct "+str<Token>(getToken())); return ""; }
 	ReferenceElement* getMetadata(RData& r) override{ error("Cannot get ReferenceElement of construct "+str<Token>(getToken())); return NULL; }
+	Constant* getConstant(RData& r) override final{ return NULL; }
 };
 class ClassProtoWrapper : public Construct{
 	public:

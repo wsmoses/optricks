@@ -69,7 +69,7 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 	//cout << "dumped" << endl << flush;
 	void *FPtr = r.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
-	if(n==NULL || type==VOIDTYPE){
+	if(v==NULL || type==VOIDTYPE || n->returnType==voidClass){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 	} else if(n->returnType==functionClass){
@@ -270,10 +270,10 @@ int main(int argc, char** argv){
 		//{};
 	if(!interactive){
 		files.push_back(file);
-		lexer.execFiles(files, outStream,debug,output!="");
+		lexer.execFiles(false,files, outStream,debug,output!="");
 	}
 	else{
-		lexer.execFiles(files, outStream,debug,false);
+		lexer.execFiles(true,files, outStream,debug,false);
 		Statement* n;
 		Stream* st = new Stream(file, true);
 		lexer.f = st;
@@ -310,10 +310,11 @@ int main(int argc, char** argv){
 		//st->force("def complex operator/(complex c, complex b){ return c; }\n");
 		//st->force("complex()*complex()\n");
 		//st->force("(lambda string s: s.length)('c')\n");
+		//st->force("int i=7;\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);
-			n = lexer.getNextStatement('\n');
+			n = lexer.getNextStatement('\n',true);
 			st->enableOut = false;
 			bool first = true;
 			while(n->getToken()!=T_VOID){
@@ -324,7 +325,7 @@ int main(int argc, char** argv){
 				while(st->peek()==';') st->read();
 				st->done = false;
 				st->enableOut = true;
-				n = lexer.getNextStatement('\n');
+				n = lexer.getNextStatement('\n',true);
 				st->enableOut = false;
 			}
 			st->done = false;

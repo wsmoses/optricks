@@ -1,5 +1,5 @@
 all: 
-	g++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -static-libgcc -static
+	g++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb
 
 clang: 
 	clang++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config-3.4 --cppflags --libs all` `llvm-config-3.4 --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -static-libgcc -static

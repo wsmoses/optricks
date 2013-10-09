@@ -36,6 +36,10 @@ class oclass: public Stackable
 		const Token getToken() const override final {
 			return T_OOBJECT;//TODO change to oclass?
 		}
+
+		Constant* getConstant(RData& r){
+			return NULL;
+		}
 };
 
 oclass* autoClassV;

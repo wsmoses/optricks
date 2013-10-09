@@ -93,6 +93,10 @@ class TernaryOperator : public Statement{
 			PN->addIncoming(ElseV, ElseBB);
 			return PN;
 		}
+
+		Constant* getConstant(RData& a) override final {
+			return NULL;
+		}
 		Statement* simplify() override{
 			return new TernaryOperator(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}

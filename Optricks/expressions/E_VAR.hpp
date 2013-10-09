@@ -28,6 +28,9 @@ class E_VAR : public Statement{
 		ClassProto* getSelfClass() override final{
 			return pointer->resolve()->selfClass;
 		}
+		Constant* getConstant(RData& a) override final {
+			return NULL;
+		}
 		ReferenceElement* getMetadata(RData& r) final override{
 			return pointer->resolve();
 		}

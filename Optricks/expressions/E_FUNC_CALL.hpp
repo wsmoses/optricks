@@ -12,6 +12,9 @@ class E_FUNC_CALL : public Statement{
 		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
+		Constant* getConstant(RData& a) override final {
+			return NULL;
+		}
 		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		FunctionProto* generateFunctionProto(RData& r) const{
 			std::vector<Declaration*> dec;
@@ -20,7 +23,7 @@ class E_FUNC_CALL : public Statement{
 				if(cp==NULL) error("TYPE IS NULL!!");
 				ClassProtoWrapper* cpw = new ClassProtoWrapper(cp);
 				E_VAR* var = new E_VAR(filePos,cpw->getMetadata(r));
-				dec.push_back(new Declaration(filePos,cpw,var,NULL));
+				dec.push_back(new Declaration(filePos,cpw,var,false, NULL));
 			}
 			return new FunctionProto(toCall->getFullName(),dec,NULL);
 		}
@@ -114,7 +117,7 @@ class E_FUNC_CALL : public Statement{
 				//for(int i=0; i<7; i+=1){ auto tmp = (lambda int z: z*z) printi(tmp(i)) }
 				for(unsigned int i = 0; i<temp->prototype->declarations.size(); i++){
 					Declaration* decl = temp->prototype->declarations[i];
-					if(i<vals.size()) decl = new Declaration(decl->filePos, decl->classV, decl->variable, vals[i]);
+					if(i<vals.size()) decl = new Declaration(decl->filePos, decl->classV, decl->variable, false, vals[i]);
 					else if(decl->value==NULL || decl->value->getToken()==T_VOID) error("No argument for lambda function!");
 					decl->evaluate(a);
 				}

@@ -23,6 +23,9 @@ class E_SET: public Statement{
 		const Token getToken() const final override{
 			return T_SET;
 		}
+		Constant* getConstant(RData& a) override final {
+			return NULL;
+		}
 		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		String getFullName() override final{
 			error("Cannot get full name of set");

@@ -96,6 +96,8 @@ class E_BINOP : public Statement{
 			auto temp = leftT->getBinop(filePos, operation, rightT);
 			return returnType = temp.first->returnType;
 		}
+
+		Constant* getConstant(RData& r) override final{ return NULL; }//TODO allow constant folding
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
 		}

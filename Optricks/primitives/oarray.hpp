@@ -21,8 +21,10 @@ class oarray : public oobject{
 			error("Implement forced array typing");
 			return NULL;
 		}
+
+		Constant* getConstant(RData& r) override final{ return NULL; } //TODO fix for array eval
 		ConstantArray* evaluate(RData& a) override final{
-			//TODO
+			//TODO allow array eval
 			error("Array not implemented");
 			return NULL;
 		}
@@ -76,6 +78,7 @@ class E_ARR : public Construct{
 		const  Token getToken() const override{
 			return T_ARR;
 		};
+
 		void write(ostream& f,String a="") const override{
 			f << "[";
 			for(unsigned int i = 0; i<values.size(); ++i){

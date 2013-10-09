@@ -25,6 +25,34 @@
 #include "primitives/obool.hpp"
 #include "primitives/ochar.hpp"
 
+enum ParseLoc{
+	PARSE_GLOBAL = 1,
+	PARSE_LOCAL = 2,
+	PARSE_EXPR = 3
+};
+class ParseData{
+	public:
+		char endWith;
+		OModule* mod;
+		bool operatorCheck;
+		ParseLoc loc;
+		ParseData(char a, OModule* b, bool c, ParseLoc d):endWith(a),mod(b),operatorCheck(c),loc(d){};
+		inline bool allowsDec() const{
+			return loc==PARSE_GLOBAL || loc==PARSE_LOCAL;
+		}
+		inline ParseData getEndWith(char c) const{
+			return ParseData(c, mod, operatorCheck, loc);
+		}
+		inline ParseData getLoc(ParseLoc c) const{
+			return ParseData(endWith,mod, operatorCheck, c);
+		}
+		inline ParseData getModule(OModule* c) const{
+			return ParseData(endWith,c, operatorCheck, loc);
+		}
+		inline ParseData getOperator(bool c) const{
+			return ParseData(endWith,mod,c, loc);
+		}
+};
 class Lexer{
 	public:
 		Stream* f;
@@ -37,7 +65,7 @@ class Lexer{
 			myMod = new OModule(LANG_M);
 		}
 		virtual ~Lexer(){};
-		void execFiles(std::vector<String> fileNames, ostream& file, bool debug, bool toFile, unsigned int optLevel = 3){
+		void execFiles(bool global, std::vector<String> fileNames, ostream& file, bool debug, bool toFile, unsigned int optLevel = 3){
 			std::vector<Statement*> stats;
 			for(auto& fileName:fileNames){
 				Stream* tmp = f;
@@ -45,7 +73,7 @@ class Lexer{
 				f = &next;
 				while(true){
 					while(f->peek()==';') f->read();
-					Statement* s = getNextStatement(EOF);
+					Statement* s = getNextStatement(EOF,global);
 					if(s==NULL || s->getToken()==T_VOID) break;
 					if(debug && s->getToken()!=T_VOID){
 						cout << s << ";" << endl << endl << flush;
@@ -154,46 +182,46 @@ class Lexer{
 			if(in<String>(BINARY_OPERATORS, temp)) f->error("Variable name is a binary operator");
 			return temp;
 		}
-		E_VAR* getNextVariable(char endWith, OModule* mod, bool late=true){
+		E_VAR* getNextVariable(ParseData data, bool late=true){
 			Resolvable* pointer;
-			if(late) pointer = new LateResolve(mod, getNextName(endWith), pos());
-			else pointer = mod->addPointer(pos(), getNextName(endWith),NULL,NULL,NULL,NULL);
+			if(late) pointer = new LateResolve(data.mod, getNextName(data.endWith), pos());
+			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),NULL,NULL,NULL,NULL);
 			return new E_VAR(pos(), pointer);
 		}
-		Declaration* getNextDeclaration(char endWith, OModule* mod){
-			f->trim(endWith);
-			Statement* declarationType = getNextType(EOF, mod);
-			f->trim(EOF);
-			String varName = getNextName(endWith);
-			f->trim(endWith);
+		Declaration* getNextDeclaration(ParseData data,bool global=false){
+			trim(data);
+			Statement* declarationType = getNextType(data.getEndWith(EOF));
+			trim(EOF);
+			String varName = getNextName(data.endWith);
+			trim(data);
 			Statement* value = NULL;
 			if(f->peek()=='='){
 				f->read();
-				value = getNextStatement(EOF, mod, true,false);
+				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			E_VAR* variable = new E_VAR(pos(), mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL)); // TODO look at
-			return new Declaration(pos(), declarationType, variable, value);
+			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL));
+			return new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
 		}
-		Statement* getNextStatement(char endWith){
-			return getNextStatement(endWith, myMod, true, true);
+		Statement* getNextStatement(char endWith,bool global){
+			return getNextStatement(ParseData(endWith,myMod,true,global?PARSE_GLOBAL:PARSE_LOCAL));
 		}
-		std::vector<Declaration*> parseArguments(char endWith, OModule* m, char finish=')'){
+		std::vector<Declaration*> parseArguments(ParseData data, char finish=')'){
 			std::vector<Declaration*> args;
 			if(f->done) return args;
 			while(true){
-				if(f->trim(endWith)) return args;
+				trim(data);
 				if(f->peek()==finish){
 					f->read();
 					return args;
 				}
-				Declaration* d = getNextDeclaration(EOF, m);
+				Declaration* d = getNextDeclaration(data.getEndWith(EOF));
 				for(auto& a:args){
 					if(d->variable->pointer->name == a->variable->pointer->name){
 						f->error("Cannot have duplicate argument name: "+a->variable->pointer->name, true);
 					}
 				}
 				args.push_back(d);
-				f->trim(endWith);
+				trim(data);
 				char tchar = f->peek();
 				if(tchar==finish || tchar==','){
 					f->read();
@@ -206,486 +234,356 @@ class Lexer{
 		PositionID pos(){
 			return f->pos();
 		}
-		Statement* getNextBlock(char endWith, OModule* m, bool*par=NULL){
-			OModule* module = new OModule(m);
+		inline void trim(char c){
+	//		if(
+					f->trim(c)
+					//) f->error("Found EOF while parsing")
+							;
+		}
+		inline void trim(ParseData data){
+		//	if(
+					f->trim(data.endWith)
+					//) f->error("Found EOF while parsing")
+							;
+		}
+		Statement* getNextBlock(ParseData data, bool*par=NULL){
+			OModule* module = new OModule(data.mod);
 			f->trim(EOF);
 			bool paren = f->peek()=='{';
 			if(paren) f->read();
 			if(par!=NULL) *par=paren;
 			if(paren){
 				Block* blocks = new Block(pos());
-				f->trim(EOF);
+				trim(EOF);
 				while(f->peek()!='}'){
-					Statement* e = getNextStatement(EOF, module, true, true);
+					Statement* e = getNextStatement(data.getModule(module));
 					if(e!=NULL && e->getToken()!=T_VOID) blocks->values.push_back(e);
-					f->trim(EOF);
-					while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
-					f->trim(EOF);
+					trim(EOF);
+					while(!f->done && f->peek()==';'){f->read();trim(data);}
+					trim(EOF);
 				}
-				f->trim(endWith);
+				trim(data);
 				if(paren && f->read()!='}') f->error("Need '}' for ending block statement");
 				return blocks;
 			}
 			else{
-				Statement* s = getNextStatement(endWith, module, true, true);//todo check
-				while(!f->done && f->peek()==';'){f->read();f->trim(endWith);}
-				f->trim(endWith);
+				Statement* s = getNextStatement(data.getModule(module));//todo check
+				while(!f->done && f->peek()==';'){f->read();trim(data);}
+				trim(data);
 				return s;
 			}
 		}
-		Statement* getNextType(char endWith, OModule* mod){
-			f->trim(EOF);
+		Statement* getNextType(ParseData data){
+			trim(EOF);
 			if(f->done || !isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
-			Statement* currentType = getNextVariable(endWith, mod);
+			Statement* currentType = getNextVariable(data);
 			do{
-				f->trim(endWith);
+				trim(data);
 				auto marker = f->getMarker();
-				String typeOperation = f->getNextOperator(endWith);
+				String typeOperation = f->getNextOperator(data.endWith);
 				if(typeOperation=="" || !in<String>(TYPE_OPERATORS, typeOperation)){
 					f->undoMarker(marker);
 					break;
 				}
-				f->trim(endWith);
+				trim(data);
 				if(f->done)  f->error("Could not find alphanumeric start for type parsing -ended");
 				if(!isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
-				auto nextVariable = getNextName(endWith);
+				auto nextVariable = getNextName(data.endWith);
 				currentType = new E_LOOKUP(pos(), currentType, nextVariable, typeOperation);
 			}while(true);
 			return currentType;
 		}
-		Statement* getNextStatement(char endWith, OModule* mod, bool opCheck, bool allowDeclaration){
-			if(f->done || f->trim(EOF)) return VOID;
-			int nex = f->peek();
-			if(f->done || nex==EOF || nex==','||nex==')' ||nex==']'/*|| nex==endWith*/) return VOID;
-			if(nex==';') return VOID;
-			bool semi;
-			if (isStartName(nex)) {
-				auto undoRead = f->getMarker();
-				String temp = f->getNextName(endWith);
-				if(temp=="if"){
-					if(f->trim(EOF)) f->error("Uncompleted if");
-					std::vector<std::pair<Statement*,Statement* >> statements;
-					Statement* c = getNextStatement(EOF, mod, true,false);
-					if(c->getToken()==T_VOID) f->error("Need condition for if");
+		Statement* getNextStatement(ParseData parse);
+		Statement* getIfStatement(ParseData data,bool read=false){
+			if(!read && f->getNextName(data.endWith)!="if") f->error("Could not find 'if' for if statement");
+			if(f->trim(EOF)) f->error("Uncompleted if");
+			std::vector<std::pair<Statement*,Statement* >> statements;
+			Statement* c = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+			if(c->getToken()==T_VOID) f->error("Need condition for if");
+			if(!f->done && f->peek()==':') f->read();
+			Statement* s = getNextBlock(data);
+			if(c->getToken()==T_VOID) f->error("Need expression for if");
+			statements.push_back(std::pair<Statement*,Statement* >(c,s));
+			trim(data);
+			while(!f->done && f->peek()==';') f->read();
+			auto marker = f->getMarker();
+			String test = f->getNextName(data.endWith);
+			Statement* finalElse = VOID;
+			while(!f->done && (test=="else" || test=="elif")){
+				f->trim(EOF);
+				bool elif = test=="elif";
+				if(!elif){
+					auto m = f->getMarker();
+					String yy = f->getNextName(data.endWith);
+					if(yy=="if"){ elif=true; f->trim(EOF); }
+					else { f->undoMarker(m); }
+				}
+				if(elif){
+					c = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 					if(!f->done && f->peek()==':') f->read();
-					Statement* s = getNextBlock(endWith, mod);
-					if(c->getToken()==T_VOID) f->error("Need expression for if");
+					s = getNextBlock(data);
 					statements.push_back(std::pair<Statement*,Statement* >(c,s));
-					f->trim(endWith);
+					trim(data.endWith);
 					while(!f->done && f->peek()==';') f->read();
-					auto marker = f->getMarker();
-					String test = f->getNextName(endWith);
-					Statement* finalElse = VOID;
-					while(!f->done && (test=="else" || test=="elif")){
-						f->trim(EOF);
-						bool elif = test=="elif";
-						if(!elif){
-							auto m = f->getMarker();
-							String yy = f->getNextName(endWith);
-							if(yy=="if"){ elif=true; f->trim(EOF); }
-							else { f->undoMarker(m); }
-						}
-						if(elif){
-							c = getNextStatement(EOF, mod, true,false);
-							if(!f->done && f->peek()==':') f->read();
-							s = getNextBlock(endWith, mod);
-							statements.push_back(std::pair<Statement*,Statement* >(c,s));
-							f->trim(endWith);
-							while(!f->done && f->peek()==';') f->read();
-						}
-						else{
-							if(!f->done && f->peek()==':') f->read();
-							f->trim(EOF);
-							finalElse = getNextBlock(endWith, mod);
-							f->trim(endWith);
-							while(!f->done && f->peek()==';') f->read();
-						}
-						marker = f->getMarker();
-						test = f->getNextName(endWith);
-					}
-					f->undoMarker(marker);
-					Statement* building = finalElse;
-					for(unsigned int i = statements.size()-1; ; i--){
-						building = new IfStatement(pos(), statements[i].first, statements[i].second, building);
-						if(i==0) break;
-					}
-					return building;
-				}
-				else if(temp=="for"){
-					if(f->trim(EOF)) f->error("Uncompleted for",true);
-					bool paren = f->peek()=='(';
-					//Standard for(i = 0; i<7; i++)
-					OModule* module = new OModule(mod);
-					if(paren){
-						f->read();
-						f->trim(EOF);
-						Statement* init = VOID;
-						if(f->peek()!=';') init = getNextStatement(EOF, module, true, true);
-						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						f->trim(EOF);
-						Statement* cond = VOID;
-						if(f->peek()!=';') cond = getNextStatement(EOF, module, true, false);
-						if(cond->getToken()==T_VOID) cond = new obool(pos(), true);
-						if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
-						f->trim(EOF);
-						Statement* inc = VOID;
-						if(f->peek()!=')') inc = getNextStatement(EOF, module, true, false);
-						f->trim(EOF);
-						if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
-						Statement* blocks = getNextBlock(endWith, module);
-						return new ForLoop(pos(), init,cond,inc,blocks);
-						//TODO implement for loop naming
-					}
-					else{
-						String iterName = getNextName(EOF);
-						f->trim(EOF);
-						bool as = f->getNextName(endWith)=="in";
-						f->trim(EOF);
-						bool col = false;
-						if(!f->done && f->peek()==':'){
-							f->read(); f->trim(EOF);
-						}
-						if(as==col){
-							f->error("Need either ':' or 'in' to separate iterator variable from iterable");
-						}
-						Statement* iterable = getNextStatement(EOF, mod, true,false);
-						f->trim(EOF);
-						if(!f->done && f->peek()==':'){
-							f->read();
-							f->trim(EOF);
-						}
-						Statement* blocks = getNextBlock(endWith, module);
-						f->error("Implement for-each loop");
-						//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
-						//TODO implement for loop naming
-					}
-				}
-				else if(temp=="while"){
-					if(f->trim(EOF)) f->error("Uncompleted while",true);
-					bool paren = f->peek()=='(';
-					if(paren) f->read();
-					Statement* cond = getNextStatement(EOF, mod, true,false);
-					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of while",true);
-					if(f->trim(EOF)) f->error("Uncompleted while",true);
-					if(f->peek()==':') f->read();
-					return new IfStatement(pos(), cond, new DoWhileLoop(pos(), cond,getNextBlock(endWith, mod)),VOID);
-					//TODO implement while loop naming
-				}
-				else if(temp=="do"){
-					if(f->trim(EOF)) f->error("Uncompleted do-while",true);
-					if(f->peek()==':') f->read();
-					if(f->trim(EOF)) f->error("Uncompleted do-while",true);
-					Statement* blocks = getNextBlock(endWith, mod);
-					f->trim(EOF);
-					if(f->getNextName(EOF)!="while") f->error("Must complete 'while' part of do{...}while",true);
-					bool paren = f->peek()=='(';
-					if(paren) f->read();
-					Statement* cond = getNextStatement((paren)?EOF:endWith, mod, true,false);
-					if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of do-while",true);
-					if(!f->done && f->peek()==';') f->read();
-					return new DoWhileLoop(pos(), cond, blocks);
-				}
-				else if(temp=="lambda"){
-					if(f->trim(EOF)) f->error("Uncompleted lambda function");
-					OModule* module = new OModule(mod);
-					std::vector<Declaration*> arguments;
-					if(!f->done) arguments = parseArguments(endWith, module, ':');
-					if(f->trim(EOF)) f->error("Lambda Function without body");
-					if(!f->done && f->peek()==':'){
-						f->read();
-						if(f->trim(EOF)) f->error("Lambda Function without body (c)");
-					}
-					Statement* methodBody = getNextBlock(endWith, module);
-					return new lambdaFunction(pos(), arguments, methodBody, rdata);
-				}
-				else if (temp == "def" || temp=="function" || temp=="method" ){
-					if(f->trim(EOF)) f->error("Uncompleted function");
-					auto mark = f->getMarker();
-					Statement* returnName = getNextType(endWith, mod);
-					f->trim(EOF);
-					{
-						auto nex = f->peek();
-						if(!isStartName(nex)){
-							f->undoMarker(mark);
-							returnName = new ClassProtoWrapper(autoClass);
-						}
-					}
-
-					OModule* module = new OModule(mod);
-					std::vector<std::pair<String,String> > methodName;
-					bool isOperator = false;
-					while(isStartName(f->peek())){
-						String method = getNextName(EOF);
-						if(method.length()==0) break;
-						f->trim(EOF);
-						auto mark = f->getMarker();
-						String op = f->getNextOperator(EOF);
-						if(! in<String>(TYPE_OPERATORS, op)){
-							op="";
-							f->undoMarker(mark);
-						}
-						f->trim(EOF);
-						if(method=="operator"){
-							String t = f->getNextOperator(endWith);
-							method = "~"+t;
-							f->trim(EOF);
-							isOperator = true;
-						}
-						methodName.push_back(std::pair<String,String>(method,op));
-						if(isOperator || op.length()==0) break;
-					}
-					std::vector<Declaration*> arguments;
-					if(!f->done){
-						if(f->peek()=='('){
-							f->read();
-							arguments = parseArguments(EOF, module);
-						}
-						else f->error("Need '(' in function declaration",true);
-					}
-					if(f->trim(endWith)) f->error("Function without body");
-					if(!f->done && f->peek()==':'){
-						f->read();
-						if(f->trim(endWith)) f->error("Function without body (c)");
-					}
-					bool paren;
-					Statement* funcName;
-					ofunction* func;
-					if(methodName.size()<=1){
-						if(methodName.size()==0) funcName = NULL;
-						else if(methodName.size()==1){
-							if(isOperator){
-								funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,NULL,functionClass,funcMap(),NULL,NULL));
-							} else {
-								funcName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName[0].first));
-							}
-						}
-						Statement* methodBody = getNextBlock(endWith, module, &paren);
-						auto tmp = pos();
-						func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
-					}
-					else {
-						//TODO change scope
-						//myMod = NULL;//make combined scope
-						funcName = new E_VAR(pos(), new LateResolve(mod, methodName[0].first, pos()));
-						for(unsigned int i = 0; i<methodName.size()-2; i++)
-							funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
-						auto thisPointer = module->addPointer(pos(),"this",NULL,NULL,NULL,NULL);
-						Statement* methodBody = getNextBlock(endWith, module, &paren);
-						auto tmp = pos();
-						if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
-							func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
-						}
-						else
-							func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
-					}
-					f->trim(endWith);
-					semi  = false;
-					if(!f->done && f->peek()==';'){ semi = true; }
-					f->trim(endWith);
-					if(opCheck && !semi) return operatorCheck(endWith, mod, func);
-					return func;
-				}
-				else if (temp == "extern"){
-					if(f->trim(endWith)) f->error("Extern without name");
-					Statement* retV = getNextType(EOF, mod);
-					f->trim(endWith);
-					String methodName = getNextName(EOF);
-					E_VAR* externName = new E_VAR(pos(), mod->getFuncPointer(pos(), methodName));
-					externName->getMetadata(rdata)->returnClass = functionClass;
-					f->trim(endWith);
-					if(f->peek()!='('){
-						f->error("'(' required after extern not "+String(1,f->peek()),true);
-					}
-					f->read();
-					std::vector<Declaration*> dec;
-					OModule* m2 = new OModule(mod);
-					while(true){
-						if(f->trim(endWith) || f->peek()==')') break;
-						Declaration* d= getNextDeclaration(EOF, m2);
-						dec.push_back(d);
-						if(f->trim(endWith)) break;
-						if(f->peek()==',') f->read();
-					}
-					if(f->read()!=')') f->error("Need ending ')' for extern", true);
-					return new externFunction(pos(), externName, retV, dec,rdata);
-					//TODO allow multiple externs
-				}
-				else if (temp=="true" || temp=="false"){
-					Statement* te = new obool(pos(), temp=="true");
-					f->trim(endWith);
-					semi  = false;
-					if(!f->done && f->peek()==';'){ semi = true; }
-					f->trim(endWith);
-					if(opCheck && !semi)
-						return operatorCheck(endWith, mod, te);
-					else return te;
-				}
-				else if(temp=="return"){
-					if(!allowDeclaration) f->error("Cannot have return here");
-					f->trim(endWith);
-					Statement* t = VOID;
-					if(f->peek()!='}' && f->peek()!=',' && f->peek()!=':' && f->peek()!=')') t = getNextStatement(endWith, mod, true, false);
-					return new E_RETURN(pos(), t, "", RETURN);
-				}
-				else if(temp=="break" || temp=="continue"){
-					if(!allowDeclaration) f->error("Cannot have return here");
-					f->trim(endWith);
-					String name = "";
-					if(isStartName(f->peek())){
-						name = getNextName(EOF);
-					}
-					return new E_RETURN(pos(), NULL, name, (temp=="break")?BREAK:CONTINUE );
 				}
 				else{
-					auto start = f->getMarker();
-					f->trim(endWith);
-					if(allowDeclaration && start!=f->getMarker() && isStartName(f->peek()) ){
-						f->undoMarker(undoRead);
-						return getNextDeclaration(endWith, mod);
-					} else {
-						f->undoMarker(undoRead);
-						E_VAR* nextVar = getNextVariable(endWith, mod);
-						semi  = false;
-						if(!f->done && f->peek()==';'){ semi = true; }
-						f->trim(endWith);
-						if(opCheck && !semi)
-							return operatorCheck(endWith, mod, nextVar);
-						else return nextVar;
-					}
+					if(!f->done && f->peek()==':') f->read();
+					f->trim(EOF);
+					finalElse = getNextBlock(data);
+					trim(data.endWith);
+					while(!f->done && f->peek()==';') f->read();
 				}
+				marker = f->getMarker();
+				test = f->getNextName(data.endWith);
+			}
+			f->undoMarker(marker);
+			Statement* building = finalElse;
+			for(unsigned int i = statements.size()-1; ; i--){
+				building = new IfStatement(pos(), statements[i].first, statements[i].second, building);
+				if(i==0) break;
+			}
+			return building;
+		}
+		Statement* getForLoop(ParseData data, bool read=false){
+			if(!read && f->getNextName(data.endWith)!="for") f->error("Could not find 'for' for for-loop");
+			if(f->trim(EOF)) f->error("Uncompleted for",true);
+			bool paren = f->peek()=='(';
+			//Standard for(i = 0; i<7; i++)
+			OModule* module = new OModule(data.mod);
+			if(paren){
+				f->read();
+				f->trim(EOF);
+				Statement* init = VOID;
+				if(f->peek()!=';') init = getNextStatement(ParseData(EOF, module, true, PARSE_LOCAL));
+				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
+				f->trim(EOF);
+				Statement* cond = VOID;
+				if(f->peek()!=';') cond = getNextStatement(ParseData(EOF, module, true, PARSE_EXPR));
+				if(cond->getToken()==T_VOID) cond = new obool(pos(), true);
+				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
+				f->trim(EOF);
+				Statement* inc = VOID;
+				if(f->peek()!=')') inc = getNextStatement(ParseData(EOF, module, true, PARSE_EXPR));
+				f->trim(EOF);
+				if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
+				Statement* blocks = getNextBlock(data.getModule(module));
+				return new ForLoop(pos(), init,cond,inc,blocks);
+				//TODO implement for loop naming
 			}
 			else{
-				bool forceAr;
-				switch(nex){
-					case '.':
-					case '0':
-					case '1':
-					case '2':
-					case '3':
-					case '4':
-					case '5':
-					case '6':
-					case '7':
-					case '8':
-					case '9':{
-						oobject* num = f->readNumber(endWith);
-						f->trim(endWith);
-						semi  = false;
-						if(!f->done && f->peek()==';'){ semi = true; }
-						f->trim(endWith);
-						if(opCheck && !semi) return operatorCheck(endWith, mod, num);
-						else return num;
-					}
-					case '\'':
-					case '"':{
-						oobject* str;
-						auto tmp = f->readString(endWith);
-						if(tmp.length()==1) str = new ochar(pos(), tmp[0]);
-						else str = new ostring(pos(), tmp);
-						f->trim(endWith);
-						semi  = false;
-						if(!f->done && f->peek()==';'){ semi = true; }
-						f->trim(endWith);
-						if(opCheck && !semi) return operatorCheck(endWith, mod, str);
-						else return str;
-					}
-					case '{':
-					case '[':
-					case '(':{
-						char open = f->read();
-						char close = (open=='{')?'}':((open=='[')?']':')');
-						f->trim(endWith);
-						E_ARR* arr = new E_ARR(pos());
-						Statement* temp;
-						char te;
-						if(f->peek()==close) f->read();
-						else{
-							temp = getNextStatement(EOF, mod, true,false);
-							forceAr = false;
-							while(temp->getToken()!=T_EOF){
-								arr->values.push_back(temp);
-								bool comma = true;
-								if(!f->done && f->peek()==','){
-									f->read();
-									forceAr = true;
-								}
-								else comma = false;
-								if(f->trim(endWith)) f->error("Uncompleted inline array",true);
-
-								if(f->peek()==close) break;
-								if(!comma){
-									f->error("Missing , in inline array or wrong end char",true);
-								}
-								if(f->trim(endWith)) f->error("Uncompleted '(' array",true);
-								temp = getNextStatement(EOF, mod, true,false);
-							}
-							if(open=='(' && !forceAr && arr->values.size()==1){
-								Statement* temp = arr->values[0];
-								//delete arr;
-								if((te = f->read())!=close) f->error("Cannot end inline paren with "+
-										String(1,te)+" instead of "+String(1,close)
-								);
-								temp = new E_PARENS(pos(), temp);
-								f->trim(endWith);
-								semi  = false;
-								if(!f->done && f->peek()==';'){ semi = true; }
-								f->trim(endWith);
-								if(opCheck && !semi) return operatorCheck(endWith, mod, temp);
-								else return temp;
-							}
-							if(f->done) f->error("Uncompleted inline 2");
-							if((te = f->read())!=close) f->error("Cannot end inline array with "+
-									String(1,te)+" instead of "+String(1,close));
-						}
-						f->trim(endWith);
-						semi  = false;
-						if(!f->done && f->peek()==';'){ semi = true; }
-						f->trim(endWith);
-						if(opCheck && !semi) return operatorCheck(endWith, mod, arr);
-						else return arr;
-					}
-					case '+':
-					case '-':
-					case '~':
-					case '!':
-					case '*':
-					case '&':
-						//		case '@':
-					{
-						char n = f->read();
-						if((n=='-' || n=='+') && f->peek()>='0' && f->peek()<='9'){
-							if(n=='-') f->write(n);
-							Statement* toReturn = f->readNumber(endWith);
-							f->trim(endWith);
-							semi  = false;
-							if(!f->done && f->peek()==';'){ semi = true; }
-							f->trim(endWith);
-							if(opCheck && !semi)
-								toReturn = operatorCheck(endWith, mod, toReturn);
-							return toReturn;
-						}
-						else{
-							Statement* toReturn = new E_PREOP(pos(), String(1,n),getNextStatement(endWith, mod, true,false));
-							f->trim(endWith);
-							semi  = false;
-							if(!f->done && f->peek()==';'){ semi = true; }
-							f->trim(endWith);
-							if(opCheck && !semi)
-								toReturn = operatorCheck(endWith, mod, toReturn);
-							return toReturn;
-						}
+				String iterName = getNextName(EOF);
+				f->trim(EOF);
+				bool as = f->getNextName(data.endWith)=="in";
+				f->trim(EOF);
+				bool col = false;
+				if(!f->done && f->peek()==':'){
+					f->read(); f->trim(EOF);
+				}
+				if(as==col){
+					f->error("Need either ':' or 'in' to separate iterator variable from iterable");
+				}
+				Statement* iterable = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+				f->trim(EOF);
+				if(!f->done && f->peek()==':'){
+					f->read();
+					f->trim(EOF);
+				}
+				Statement* blocks = getNextBlock(ParseData(data.endWith, data.mod, true,PARSE_LOCAL));
+				f->error("Implement for-each loop");
+				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
+				//TODO implement for loop naming
+				return NULL;
+			}
+		}
+		Statement* getWhileLoop(ParseData data, bool read=false){
+			if(!read && f->getNextName(data.endWith)!="while") f->error("Could not find 'while' for while-loop");
+			if(f->trim(EOF)) f->error("Uncompleted while",true);
+			bool paren = f->peek()=='(';
+			if(paren) f->read();
+			Statement* cond = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+			if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of while",true);
+			if(f->trim(EOF)) f->error("Uncompleted while",true);
+			if(f->peek()==':') f->read();
+			return new IfStatement(pos(), cond, new DoWhileLoop(pos(), cond,getNextBlock(data)),VOID);
+			//TODO implement while loop naming
+		}
+		Statement* getDoLoop(ParseData data, bool read=false){
+			if(!read && f->getNextName(data.endWith)!="do") f->error("Could not find 'do' for do-while-loop");
+			if(f->trim(EOF)) f->error("Uncompleted do-while",true);
+			if(f->peek()==':') f->read();
+			if(f->trim(EOF)) f->error("Uncompleted do-while",true);
+			Statement* blocks = getNextBlock(data);
+			f->trim(EOF);
+			if(f->getNextName(EOF)!="while") f->error("Must complete 'while' part of do{...}while",true);
+			bool paren = f->peek()=='(';
+			if(paren) f->read();
+			Statement* cond = getNextStatement(ParseData((paren)?EOF:data.endWith, data.mod, true,PARSE_EXPR));
+			if(paren && f->read()!=')') f->error("Need terminating ')' for conditional of do-while",true);
+			if(!f->done && f->peek()==';') f->read();
+			return new DoWhileLoop(pos(), cond, blocks);
+			//TODO implement do loop naming
+		}
+		Statement* getLambdaFunction(ParseData data, bool read=false){
+			if(!read && f->getNextName(data.endWith)!="do") f->error("Could not find 'do' for do-while-loop");
+			if(f->trim(EOF)) f->error("Uncompleted lambda function");
+			OModule* module = new OModule(data.mod);
+			std::vector<Declaration*> arguments;
+			if(!f->done) arguments = parseArguments(ParseData(data.endWith, module, true,PARSE_LOCAL),':');
+			if(f->trim(EOF)) f->error("Lambda Function without body");
+			if(!f->done && f->peek()==':'){
+				f->read();
+				if(f->trim(EOF)) f->error("Lambda Function without body (c)");
+			}
+			Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL));
+			return new lambdaFunction(pos(), arguments, methodBody, rdata);
+		}
+		Statement* getFunction(ParseData data, String temp=""){
+			if(temp=="") temp = f->getNextName(EOF);
+			trim(EOF);
+			if (temp == "def" || temp=="function" || temp=="method" ){
+				auto mark = f->getMarker();
+				Statement* returnName = getNextType(data);
+				f->trim(EOF);
+				{
+					auto nex = f->peek();
+					if(!isStartName(nex)){
+						f->undoMarker(mark);
+						returnName = new ClassProtoWrapper(autoClass);
 					}
 				}
+
+				OModule* module = new OModule(data.mod);
+				std::vector<std::pair<String,String> > methodName;
+				bool isOperator = false;
+				while(isStartName(f->peek())){
+					String method = getNextName(EOF);
+					if(method.length()==0) break;
+					f->trim(EOF);
+					auto mark = f->getMarker();
+					String op = f->getNextOperator(EOF);
+					if(! in<String>(TYPE_OPERATORS, op)){
+						op="";
+						f->undoMarker(mark);
+					}
+					f->trim(EOF);
+					if(method=="operator"){
+						String t = f->getNextOperator(data.endWith);
+						method = "~"+t;
+						f->trim(EOF);
+						isOperator = true;
+					}
+					methodName.push_back(std::pair<String,String>(method,op));
+					if(isOperator || op.length()==0) break;
+				}
+				std::vector<Declaration*> arguments;
+				if(!f->done){
+					if(f->peek()=='('){
+						f->read();
+						arguments = parseArguments(ParseData(EOF, module,true,PARSE_LOCAL),')');
+					}
+					else f->error("Need '(' in function declaration",true);
+				}
+				trim(data);
+				if(!f->done && f->peek()==':'){
+					f->read();
+					trim(data);
+				}
+				bool paren;
+				Statement* funcName;
+				ofunction* func;
+				if(methodName.size()<=1){
+					if(methodName.size()==0) funcName = NULL;
+					else if(methodName.size()==1){
+						if(isOperator){
+							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,NULL,functionClass,funcMap(),NULL,NULL));
+						} else {
+							funcName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName[0].first));
+						}
+					}
+					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_EXPR),&paren);
+					auto tmp = pos();
+					func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
+				}
+				else {
+					//TODO change scope
+					//myMod = NULL;//make combined scope
+					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
+					for(unsigned int i = 0; i<methodName.size()-2; i++)
+						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+					auto thisPointer = module->addPointer(pos(),"this",NULL,NULL,NULL,NULL);
+					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_EXPR), &paren);
+					auto tmp = pos();
+					if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
+						func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
+					}
+					else
+						func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
+				}
+				trim(data);
+				bool semi  = false;
+				if(!f->done && f->peek()==';'){ semi = true; }
+				trim(data);
+				if(data.operatorCheck && !semi) return operatorCheck(data, func);
+				return func;
 			}
-			f->error("Unknown rest of file");
-			fprintf(stderr, "$$ %d %c (before had %d %c) \n", nex, nex, f->last(), f->last());
-			fflush(stderr);
-			return VOID;
+			else if (temp == "extern"){
+				Statement* retV = getNextType(ParseData(EOF, data.mod,true,data.loc));
+				trim(data);
+				String methodName = getNextName(EOF);
+				E_VAR* externName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName));
+				externName->getMetadata(rdata)->returnClass = functionClass;
+				trim(data);
+				if(f->peek()!='('){
+					f->error("'(' required after extern not "+String(1,f->peek()),true);
+				}
+				f->read();
+				std::vector<Declaration*> dec;
+				OModule* m2 = new OModule(data.mod);
+				while(true){
+					trim(data);
+					if(f->peek()==')') break;
+					Declaration* d= getNextDeclaration(ParseData(EOF, m2, true,PARSE_LOCAL));
+					dec.push_back(d);
+					trim(data);
+					if(f->peek()==',') f->read();
+				}
+				if(f->read()!=')') f->error("Need ending ')' for extern", true);
+				return new externFunction(pos(), externName, retV, dec,rdata);
+				//TODO allow multiple externs
+			}
+			else{
+				f->error("Invalid function start -- used "+temp);
+				return NULL;
+			}
+
 		}
-		Statement* operatorCheck(char endWith, OModule* mod, Statement* exp){
-			if(f->done || f->trim(endWith))	return exp;
-			if(f->last()==endWith){
-				f->write(endWith);
+		Statement* getClass(ParseData data, bool read=false){
+			if(!read && f->getNextName(data.endWith)!="class") f->error("Could not find 'class' for class declaration");
+			Statement* name = getNextType(data.getEndWith(EOF));
+			if(f->trim(EOF)) f->error("No class defined!");
+			Statement* superClass=NULL;
+			if(f->peek()==':'){
+				f->read();
+				superClass = getNextType(data.getEndWith(EOF));
+				f->trim(EOF);
+			}
+			if(f->peek()!='{') f->error("Need opening brace for class definition");
+			f->trim(EOF);
+			while(f->peek()!='}'){
+				auto mark = f->getMarker();
+				String temp = f->getNextName(EOF);
+				f->error("TODO");
+				if(temp=="static"){
+					//TODO
+				}
+			}
+			//			if(f->peek()!='}') f->error("Need closing brace for class definition");
+
+		}
+		Statement* operatorCheck(ParseData data, Statement* exp){
+			if(f->done || f->trim(data.endWith))	return exp;
+			if(f->last()==data.endWith){
+				f->write(data.endWith);
 				return exp;
 			}
 			char tchar = f->peek();
@@ -696,7 +594,7 @@ class Lexer{
 				while(true){
 					bool comma = true;
 					while(!f->done){
-						if(f->trim(endWith)) f->error("Indexed operator check hit EOF",true);
+						if(f->trim(data.endWith)) f->error("Indexed operator check hit EOF",true);
 						char t = f->peek();
 						if(t==',' || t==':'){
 							f->read();
@@ -714,15 +612,15 @@ class Lexer{
 						}
 						else break;
 					}
-					if(f->trim(endWith)) f->error("Uncompleted '[' index",true);
+					if(f->trim(data.endWith)) f->error("Uncompleted '[' index",true);
 					if(!comma) break;
-					stack.push_back(getNextStatement(endWith, mod, true,false));
+					stack.push_back(getNextStatement(data.getLoc(PARSE_EXPR)));
 				}
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
 				char te;
 				if((te = f->read())!=']') f->error("Cannot end '[' array with "+str<char>(te),true);
 				Statement* nex = getIndex(f, exp, stack);
-				f->trim(endWith);
+				f->trim(data.endWith);
 				auto mark = f->getMarker();
 				if(f->read()=='=' && f->peek()!='='){
 					//TODO ternary operator #[#] = #
@@ -731,40 +629,42 @@ class Lexer{
 				} else f->undoMarker(mark);
 				bool semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
-				f->trim(endWith);
-				if(!semi) return operatorCheck(endWith, mod, nex);
+				f->trim(data.endWith);
+				if(!semi) return operatorCheck(data, nex);
 				else return getIndex(f,exp,stack);
 			}
 			else if(tchar=='('){
 				//TODO parse function args,  cannot do getNextStatement
 				// due to operatorCheck on tuple
-				Statement* e = getNextStatement(endWith, mod, false,false);
+				Statement* e = getNextStatement(ParseData(data.endWith, data.mod, false,PARSE_EXPR));
 				Statement* ret;
 				if(e->getToken()==T_PARENS)
 					ret = new E_FUNC_CALL(pos(), exp, std::vector<Statement*>(1,
 							((E_PARENS*)e)->inner));
 				else ret = new E_FUNC_CALL(pos(), exp, ((E_ARR*)e)->values);
-				f->trim(endWith);
+
+				f->trim(data.endWith);
 
 				bool semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
-				f->trim(endWith);
-				if(!semi) return operatorCheck(endWith, mod, ret);
+				f->trim(data.endWith);
+				if(!semi) return operatorCheck(data, ret);
 				else return ret;
 			}
 			else if(tchar=='{'){
 				f->read();
-				f->trim(endWith);
+				f->trim(data.endWith);
 				cerr << " '{' operatorCheck not implemented yet" << endl << flush;
 				exit(0);
 			}
 			else if (tchar=='?'){
 				f->read();
-				f->trim(endWith);
-				Statement* op1 = getNextStatement(EOF, mod, true, false);
-				f->trim(endWith);
+				f->trim(data.endWith);
+				Statement* op1 = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
+
+				f->trim(data.endWith);
 				if(f->read()!=':') f->error("Ternary operator requires ':'",true);
-				Statement* op2 = getNextStatement(endWith, mod, true, false);
+				Statement* op2 = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
 				return new TernaryOperator(pos(), exp, op1, op2);
 			}
 			//TODO implement generics
@@ -787,7 +687,7 @@ class Lexer{
 					tchar = f->peek();
 				}
 			}*/
-			String tmp = f->getNextOperator(endWith);
+			String tmp = f->getNextOperator(data.endWith);
 
 			if(tmp.length()==0) return exp;
 			Statement* fixed;
@@ -802,12 +702,12 @@ class Lexer{
 			}
 			 */ //TODO implement custom operators (a and b,  r if g else b )
 			else if (in<String>(TYPE_OPERATORS, tmp)){
-				String name = getNextName(endWith);
+				String name = getNextName(data.endWith);
 				if(name.length()==0) f->error("Name for lookup cannot be "+name);
 				fixed = (new E_LOOKUP(pos(), exp, name, tmp));
 			}
 			else if(tmp=="="){
-				Statement* post = getNextStatement(endWith, mod, true,false);
+				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
 				fixed = new E_SET(pos(), exp, post);
 			}
 			else if(tmp=="++" || tmp=="--"){
@@ -815,22 +715,206 @@ class Lexer{
 			}
 			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && !(tmp[tmp.size()-2]=='=' || tmp[tmp.size()-2]=='!' || (tmp.size()==2 && (tmp[0]=='<' || tmp[0]=='>')))){
 				tmp = tmp.substr(0,tmp.size()-1);
-				Statement* post = getNextStatement(endWith, mod, true,false);
+				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
 				fixed = new E_SET(pos(), exp, new E_BINOP(pos(), exp, post, tmp));
 			}
 			else{
-				Statement* post = getNextStatement(endWith, mod, true,false);
+				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
 				if(post->getToken()==T_VOID)
 					fixed = new E_POSTOP(pos(), tmp, exp);
 				else fixed = (new E_BINOP(pos(), exp, post,tmp))->fixOrderOfOperations();
 			}
-			f->trim(endWith);
+			f->trim(data.endWith);
 			bool semi  = false;
 			if(!f->done && f->peek()==';'){ semi = true; }
-			f->trim(endWith);
-			if(!semi) fixed = operatorCheck(endWith, mod, fixed);
+			f->trim(data.endWith);
+			if(!semi) fixed = operatorCheck(data, fixed);
 			return fixed;
 		}
 };
 
+Statement* Lexer::getNextStatement(ParseData data){
+	if(f->done || f->trim(EOF)) return VOID;
+	int nex = f->peek();
+	if(f->done || nex==EOF || nex==','||nex==')' ||nex==']'/*|| nex==endWith*/) return VOID;
+	if(nex==';') return VOID;
+	bool semi;
+	if (isStartName(nex)) {
+		auto undoRead = f->getMarker();
+		String temp = f->getNextName(data.endWith);
+		if(temp=="class") return getClass(data, true);
+		else if(temp=="if") return getIfStatement(data,true);
+		else if(temp=="for") return getForLoop(data,true);
+		else if(temp=="while") return getWhileLoop(data,true);
+		else if(temp=="do") return getDoLoop(data,true);
+		else if(temp=="lambda") return getLambdaFunction(data,true);
+		else if(temp=="def" || temp=="function" || temp=="method" || temp=="extern") return getFunction(data,temp);
+		else if (temp=="true" || temp=="false"){
+			Statement* te = new obool(pos(), temp=="true");
+			trim(data);
+			semi  = false;
+			if(!f->done && f->peek()==';'){ semi = true; }
+			trim(data);
+			if(data.operatorCheck && !semi) return operatorCheck(data, te);
+			else return te;
+		}
+		else if(temp=="return"){
+			if(data.allowsDec()) f->error("Cannot have return here");
+			trim(data);
+			Statement* t = VOID;
+			if(f->peek()!='}' && f->peek()!=',' && f->peek()!=':' && f->peek()!=')') t = getNextStatement(data.getLoc(PARSE_EXPR));
+			return new E_RETURN(pos(), t, "", RETURN);
+		}
+		else if(temp=="break" || temp=="continue"){
+			if(data.allowsDec()) f->error("Cannot have return here");
+			trim(data.endWith);
+			String name = (isStartName(f->peek()))?(getNextName(EOF)):"";
+			return new E_RETURN(pos(), NULL, name, (temp=="break")?BREAK:CONTINUE );
+		}
+		else{
+			auto start = f->getMarker();
+			trim(data);
+			if(data.allowsDec() && start!=f->getMarker() && isStartName(f->peek()) ){
+				f->undoMarker(undoRead);
+				return getNextDeclaration(data);
+			} else {
+				f->undoMarker(undoRead);
+				E_VAR* nextVar = getNextVariable(data);
+				semi  = false;
+				if(!f->done && f->peek()==';'){ semi = true; }
+				trim(data);
+				if(data.operatorCheck && !semi)
+					return operatorCheck(data, nextVar);
+				else return nextVar;
+			}
+		}
+	}
+	else{
+		bool forceAr;
+		switch(nex){
+			case '.':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':{
+				oobject* num = f->readNumber(data.endWith);
+				trim(data);
+				semi  = false;
+				if(!f->done && f->peek()==';'){ semi = true; }
+				trim(data);
+				if(data.operatorCheck && !semi) return operatorCheck(data, num);
+				else return num;
+			}
+			case '\'':
+			case '"':{
+				oobject* str;
+				String tmp = f->readString(data.endWith);
+				if(tmp.length()==1) str = new ochar(pos(), tmp[0]);
+				else str = new ostring(pos(), tmp);
+				trim(data);
+				semi  = false;
+				if(!f->done && f->peek()==';'){ semi = true; }
+				trim(data);
+				if(data.operatorCheck && !semi) return operatorCheck(data, str);
+				else return str;
+			}
+			case '{':
+			case '[':
+			case '(':{
+				char open = f->read();
+				char close = (open=='{')?'}':((open=='[')?']':')');
+				trim(data);
+				E_ARR* arr = new E_ARR(pos());
+				Statement* temp;
+				char te;
+				if(f->peek()==close) f->read();
+				else{
+					temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+					forceAr = false;
+					while(temp->getToken()!=T_EOF){
+						arr->values.push_back(temp);
+						bool comma = true;
+						if(!f->done && f->peek()==','){
+							f->read();
+							forceAr = true;
+						}
+						else comma = false;
+						if(f->trim(data.endWith)) f->error("Uncompleted inline array",true);
+
+						if(f->peek()==close) break;
+						if(!comma){
+							f->error("Missing , in inline array or wrong end char",true);
+						}
+						if(f->trim(data.endWith)) f->error("Uncompleted '(' array",true);
+						temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+					}
+					if(open=='(' && !forceAr && arr->values.size()==1){
+						Statement* temp = arr->values[0];
+						//delete arr;
+						if((te = f->read())!=close) f->error("Cannot end inline paren with "+
+								String(1,te)+" instead of "+String(1,close)
+						);
+						temp = new E_PARENS(pos(), temp);
+						trim(data);
+						semi  = false;
+						if(!f->done && f->peek()==';'){ semi = true; }
+						trim(data);
+						if(data.operatorCheck && !semi) return operatorCheck(data, temp);
+						else return temp;
+					}
+					if(f->done) f->error("Uncompleted inline 2");
+					if((te = f->read())!=close) f->error("Cannot end inline array with "+
+							String(1,te)+" instead of "+String(1,close));
+				}
+				trim(data);
+				semi  = false;
+				if(!f->done && f->peek()==';'){ semi = true; }
+				trim(data);
+				if(data.operatorCheck && !semi) return operatorCheck(data, arr);
+				else return arr;
+			}
+			case '+':
+			case '-':
+			case '~':
+			case '!':
+			case '*':
+			case '&':
+				//		case '@':
+			{
+				char n = f->read();
+				if((n=='-' || n=='+') && f->peek()>='0' && f->peek()<='9'){
+					if(n=='-') f->write(n);
+					Statement* toReturn = f->readNumber(data.endWith);
+					trim(data);
+					semi  = false;
+					if(!f->done && f->peek()==';'){ semi = true; }
+					trim(data);
+					if(data.operatorCheck && !semi)
+						toReturn = operatorCheck(data, toReturn);
+					return toReturn;
+				}
+				else{
+					Statement* toReturn = new E_PREOP(pos(), String(1,n),getNextStatement(data.getLoc(PARSE_EXPR)));
+					trim(data);
+					semi  = false;
+					if(!f->done && f->peek()==';'){ semi = true; }
+					trim(data);
+					if(data.operatorCheck && !semi)
+						toReturn = operatorCheck(data, toReturn);
+					return toReturn;
+				}
+			}
+		}
+	}
+	f->error("Unknown rest of file");
+	fprintf(stderr, "$$ %d %c (before had %d %c) \n", nex, nex, f->last(), f->last());
+	fflush(stderr);
+	return VOID;
+}
 #endif /* LEXER_HPP_ */

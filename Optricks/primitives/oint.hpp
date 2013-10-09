@@ -20,6 +20,7 @@ class oint : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
+		Constant* getConstant(RData& r) override final{ return getInt(value); }
 		ConstantInt* evaluate(RData& a) override final{
 			return getInt(value);
 		}
