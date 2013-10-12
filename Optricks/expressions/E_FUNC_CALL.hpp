@@ -19,8 +19,11 @@ class E_FUNC_CALL : public Statement{
 		FunctionProto* generateFunctionProto(RData& r) const{
 			std::vector<Declaration*> dec;
 			for(auto& a:vals){
-				auto cp=a->checkTypes(r);
+				ClassProto* cp=a->checkTypes(r);
 				if(cp==NULL) error("TYPE IS NULL!!");
+				else if(cp==autoClass){
+					error("TYPE IS AUTO!");
+				}
 				ClassProtoWrapper* cpw = new ClassProtoWrapper(cp);
 				E_VAR* var = new E_VAR(filePos,cpw->getMetadata(r));
 				dec.push_back(new Declaration(filePos,cpw,var,false, NULL));
@@ -102,6 +105,8 @@ class E_FUNC_CALL : public Statement{
 //		Value* getLocation(RData& a) override{
 	//TODO make data a struct {Value (data), Value (location) }
 //		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+}
 		DATA evaluate(RData& a) override{
 			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
 			if(temp!=NULL){

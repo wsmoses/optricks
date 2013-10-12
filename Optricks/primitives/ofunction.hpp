@@ -113,6 +113,7 @@ class externFunction : public ofunction{
 			if(r==NULL) error("Type argument "+cp->name+" is null");
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);
+//			Function *F = Function::Create(FT, Function::DLLImportLinkage, prototype->name, a.lmod);
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			else if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			else if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
@@ -193,7 +194,7 @@ class lambdaFunction : public ofunction{
 				r = VOIDTYPE;
 			}
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, "!lambda", ar.lmod);
+			Function *F = Function::Create(FT, Function::PrivateLinkage, "!lambda", ar.lmod);
 			// Set names for all arguments.
 			unsigned Idx = 0;
 			for (Function::arg_iterator AI = F->arg_begin(); Idx != args.size();
@@ -237,7 +238,9 @@ class userFunction : public ofunction{
 		void write(ostream& f, String b) const override{
 			f << "def ";
 			f << returnV << " ";
-			f << (prototype->name) ;
+			if(prototype->name.length()>0 && prototype->name[0]=='~')
+				f << "operator " << prototype->name.substr(1);
+			else f << (prototype->name) ;
 			f << "(" ;
 			bool first = true;
 			for(auto &a: prototype->declarations){
@@ -263,14 +266,14 @@ class userFunction : public ofunction{
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getMetadata(ra)->selfClass;
+			ClassProto* cp = returnV->getSelfClass();
 			if(cp==NULL) error("Unknown return type");
 			if(cp==autoClass) error("Cannot support auto return for function");
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
+			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
 			if(self!= NULL){
 				if(self->getMetadata(ra)->name.size()>0 && self->getMetadata(ra)->name[0]=='~'){
 					if(prototype->declarations.size()==1){
@@ -278,7 +281,8 @@ class userFunction : public ofunction{
 					} else if (prototype->declarations.size()==2){
 						prototype->declarations[0]->classV->getMetadata(ra)->selfClass->addBinop(
 								self->getMetadata(ra)->name.substr(1),
-								prototype->declarations[1]->classV->getMetadata(ra)->selfClass
+								prototype->declarations[1]->classV->getMetadata(ra)->selfClass,
+								filePos
 						) = new obinopUser(F, cp);
 					} else error("Cannot make operator with argument count of "+str<unsigned int>(prototype->declarations.size()));
 				} else self->getMetadata(ra)->funcs.set(prototype, F);
@@ -304,7 +308,8 @@ class userFunction : public ofunction{
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
 			if(! ra.guarenteedReturn){
-				if(prototype->returnType==voidClass)	ra.builder.CreateBr(MERGE);
+				if(prototype->returnType==voidClass)
+					ra.builder.CreateBr(MERGE);
 				else error("Could not find return statement");
 			}
 			ra.guarenteedReturn = false;
@@ -346,6 +351,7 @@ class userFunction : public ofunction{
 		}
 };
 
+#define CLASSFUNC_C_
 class classFunction : public ofunction{
 	public:
 		Statement* ret;
@@ -356,6 +362,7 @@ class classFunction : public ofunction{
 			ret = r;
 			name =nam; operation = op;
 			prototype->name =self->getFullName()+"."+name;
+			if(name=="iterator" && prototype->declarations.size()>0) error("Cannot have arguments for iterator");
 		}
 		classFunction* simplify() override final{
 			return this;
@@ -378,16 +385,21 @@ class classFunction : public ofunction{
 			ofunction::registerFunctionArgs(ra);
 			if(self->checkTypes(ra)!=classClass) error("Cannot define function for object whose type is not class");
 			ClassProto* myCl = self->getMetadata(ra)->selfClass;
-			if(myCl==NULL) error("Defining class is null?");
 			thisPointer->returnClass = myCl;
-			ReferenceElement* myMetadata = myCl->addFunction(name, filePos);
-			if(myMetadata==NULL) error("Metadata is null?");
-			myMetadata->funcs.add(prototype,NULL,filePos);
+			if(myCl==NULL) error("Defining class is null?");
 			ret->registerFunctionArgs(ra);
 			ret->registerFunctionDefaultArgs();
 			ret->checkTypes(ra);
+			if(name=="iterator"){
+				myCl->iterator = this;
+				return;
+			}
+			ReferenceElement* myMetadata = myCl->addFunction(name, filePos);
+			myMetadata->funcs.add(prototype,NULL,filePos);
+			if(myMetadata==NULL) error("Metadata is null?");
 			std::vector<Type*> args;
-			args.push_back(myCl->getType(ra)->getPointerTo());
+			if(myCl->isPointer) args.push_back(myCl->getType(ra));
+			else args.push_back(myCl->getType(ra)->getPointerTo());
 			for(auto & b: prototype->declarations){
 				b->registerFunctionArgs(ra);
 				b->registerFunctionDefaultArgs();
@@ -399,12 +411,12 @@ class classFunction : public ofunction{
 			}
 			ClassProto* cp = returnV->getMetadata(ra)->selfClass;
 			if(cp==NULL) error("Unknown return type");
-			if(cp==autoClass) error("Cannot support auto return for function");
+			if(name!="iterator" && cp==autoClass) error("Cannot support auto return for function");
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
+			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
 			myMetadata->funcs.set(prototype, F);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
@@ -416,7 +428,8 @@ class classFunction : public ofunction{
 			unsigned Idx = 0;
 			Function::arg_iterator AI = F->arg_begin();
 			AI->setName("this");
-			thisPointer->llvmLocation = AI;
+			if(myCl->isPointer) thisPointer->setValue(AI, ra,NULL);
+			else thisPointer->llvmLocation = AI;
 			AI++;
 			for (; Idx+1 != F->arg_size();
 					++AI, ++Idx) {
@@ -429,8 +442,9 @@ class classFunction : public ofunction{
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
-			if(! ra.guarenteedReturn){
-				if(prototype->returnType==voidClass)	ra.builder.CreateBr(MERGE);
+			if( !ra.guarenteedReturn){
+				if(prototype->returnType==voidClass)
+					ra.builder.CreateBr(MERGE);
 				else error("Could not find return statement");
 			}
 			ra.guarenteedReturn = false;
@@ -522,7 +536,7 @@ class constructorFunction : public ofunction{
 			Type* r = myCl->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage,"!"+returnV->getFullName(), ra.lmod);
+			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
 			myCl->constructors.set(prototype, F);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
@@ -547,10 +561,8 @@ class constructorFunction : public ofunction{
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
-			if(! ra.guarenteedReturn){
-				ra.builder.CreateBr(MERGE);
-			}
-			else error("Can not have return statement in constructor");
+			if(ra.guarenteedReturn)  error("Can not have return statement in constructor");
+			ra.builder.CreateBr(MERGE);
 			ra.guarenteedReturn = false;
 
 			F->getBasicBlockList().remove(MERGE);

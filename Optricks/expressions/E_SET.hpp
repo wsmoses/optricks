@@ -20,6 +20,8 @@ class E_SET: public Statement{
 			variable = loc;
 			value = e;
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		const Token getToken() const final override{
 			return T_SET;
 		}

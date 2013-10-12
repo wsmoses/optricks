@@ -33,6 +33,7 @@ class Statement : public Stackable{
 		 */
 		virtual Constant* getConstant(RData& r)=0;
 		virtual String getFullName() =0;
+		virtual void collectReturns(RData& r, std::vector<ClassProto*>& vals) = 0;
 		virtual DATA evaluate(RData& a) = 0;
 		virtual Statement* simplify()  = 0;
 		virtual void registerClasses(RData& a) = 0;
@@ -77,6 +78,8 @@ class VoidStatement : public Statement{
 		String getFullName() override final{ return "void"; }
 		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }
 		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of void"); return NULL; }
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 };
 
 static VoidStatement* VOID = new VoidStatement();

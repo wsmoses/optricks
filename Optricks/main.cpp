@@ -1,5 +1,8 @@
 #define MAIN_CPP
-
+//TODO automatic constant detection
+//TODO constant expr
+//TODO auto returns
+//TODO fix parsing orders (esp w/ auto)
 #include "containers/all.hpp"
 #include "containers/basic_functions.hpp"
 #include <fstream>
@@ -16,17 +19,29 @@
  * e) type check everything
  */
 
-void execF(RData& r, OModule* mod, Statement* n,bool debug){
+void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
+	if(n->getToken()==T_IMPORT){
+		ImportStatement* import = dynamic_cast<ImportStatement*>(n);
+		char cwd[1024];
+		if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", import->filePos);
+		String dir, file;
+		getDir(import->toImport, dir, file);
+		if(chdir(dir.c_str())!=0) todo("Could not change directory to "+dir+"/"+file,import->filePos);
+		std::vector<String> pl = {file};
+		lexer.execFiles(true,pl, NULL,debug,0);
+		if(chdir(cwd)!=0) todo("Could not change directory back to "+String(cwd),import->filePos);
+		return;
+	}
 	if(debug && n->getToken()!=T_VOID) cout << n << endl << flush;
 	n = n->simplify();
 	n->resolvePointers();
-	n->registerClasses(r);
-	n->registerFunctionArgs(r);
+	n->registerClasses(lexer.rdata);
+	n->registerFunctionArgs(lexer.rdata);
 	n->registerFunctionDefaultArgs();
-	n->checkTypes(r);
+	n->checkTypes(lexer.rdata);
 	Type* type;
-	type = n->returnType->getType(r);
+	type = n->returnType->getType(lexer.rdata);
 	if(type==NULL && n->returnType!=functionClass){
 		cout << "Error null return type for class " + n->returnType->name ;
 		type = VOIDTYPE;
@@ -36,22 +51,22 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		n = new E_FUNC_CALL(PositionID(), new E_VAR(PositionID(), mod->getPointer(PositionID(), "printc")), {n});
 		n = n->simplify();
 		n->resolvePointers();
-		n->registerClasses(r);
-		n->registerFunctionArgs(r);
+		n->registerClasses(lexer.rdata);
+		n->registerFunctionArgs(lexer.rdata);
 		n->registerFunctionDefaultArgs();
-		n->checkTypes(r);
+		n->checkTypes(lexer.rdata);
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
-	Function *F = Function::Create(FT, Function::ExternalLinkage, "", r.lmod);
+	Function *F = Function::Create(FT, Function::ExternalLinkage, "", lexer.rdata.lmod);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-	r.builder.SetInsertPoint(BB);
-	Value* v = n->evaluate(r);
+	lexer.rdata.builder.SetInsertPoint(BB);
+	Value* v = n->evaluate(lexer.rdata);
 	if(debug)	v->dump();
 	if(type!=VOIDTYPE)
-		r.builder.CreateRet(v);
+		lexer.rdata.builder.CreateRet(v);
 	else
-		r.builder.CreateRetVoid();
+		lexer.rdata.builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
 	if(debug){
 	F->dump();
@@ -59,15 +74,15 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 	}
 	verifyFunction(*F);
 	//cout << "verified" << endl << flush;
-	r.fpm->run(*F);
+	lexer.rdata.fpm->run(*F);
 	//cout << "fpm" << endl << flush;
 	if(debug){
-		r.lmod->dump();
+		lexer.rdata.lmod->dump();
 		F->dump();
 		cerr << flush;
 	}
 	//cout << "dumped" << endl << flush;
-	void *FPtr = r.exec->getPointerToFunction(F);
+	void *FPtr = lexer.rdata.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
 	if(v==NULL || type==VOIDTYPE || n->returnType==voidClass){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
@@ -90,7 +105,8 @@ void execF(RData& r, OModule* mod, Statement* n,bool debug){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
 		if(debug) cout <<  "Evaluated to ";
-		cout << t << endl << flush;
+		if(t) cout << "true\n" << flush;
+		else cout << "false\n" << flush;
 	} else if(n->returnType==complexClass){
 		auto (*FP)() = (complex (*)())(intptr_t)FPtr;
 		complex t = FP();
@@ -166,6 +182,7 @@ int main(int argc, char** argv){
 	String file = "";
 	String command = "";
 	String output = "";
+	bool llvmIR = false;
 	bool interactive = false;
 	bool forceInt = false;
 	bool debug = false;
@@ -174,6 +191,7 @@ int main(int argc, char** argv){
 		if(startsWithEq(s, "--debug")){
 			debug = testFor(s,"--debug");
 		}
+		else if(s=="-ir" || s=="--ir") { llvmIR=true; }
 		else if(s=="-i") { forceInt = true; interactive = true; }
 		else if(s=="-ni") { forceInt = true; interactive = false; }
 		else if(startsWithEq(s, "--inter")){
@@ -241,8 +259,19 @@ int main(int argc, char** argv){
 	}
 	if(!forceInt) interactive = file=="";
 	//ofstream fout (output);
-	std::ofstream tmp(output, std::ofstream::out | std::ofstream::binary);
-	ostream& outStream = (output=="-" || output=="")?cout:(tmp);
+	String error="";
+	raw_fd_ostream* outStream;
+	if(llvmIR){
+		if(output=="-" || output==""){
+			outStream = new raw_fd_ostream(1, true);
+			output = "-";
+		}
+		else outStream = new raw_fd_ostream(output.c_str(), error);
+		if(error.length()>0){
+			cerr << error << endl << flush;
+			exit(1);
+		}
+	}
 	initClasses();
 
 	if(interactive) {
@@ -267,13 +296,13 @@ int main(int argc, char** argv){
 	initFuncsMeta(lexer.rdata);
 	std::vector<String> files =
 		{"./stdlib/stdlib.opt"};
-		//{};
 	if(!interactive){
-		files.push_back(file);
-		lexer.execFiles(false,files, outStream,debug,output!="");
+		files.push_back(files[0]);
+		files[0]=file;
+		lexer.execFiles(false,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
 	}
 	else{
-		lexer.execFiles(true,files, outStream,debug,false);
+		lexer.execFiles(true,files, outStream,debug,0);
 		Statement* n;
 		Stream* st = new Stream(file, true);
 		lexer.f = st;
@@ -311,6 +340,8 @@ int main(int argc, char** argv){
 		//st->force("complex()*complex()\n");
 		//st->force("(lambda string s: s.length)('c')\n");
 		//st->force("int i=7;\n");
+		//st->force("(def void dgah(){print(hi); })()\n");
+		//st->force("'hello'[0];\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);
@@ -319,7 +350,7 @@ int main(int argc, char** argv){
 			bool first = true;
 			while(n->getToken()!=T_VOID){
 				first = false;
-				execF(lexer.rdata,lexer.myMod, n,debug);
+				execF(lexer,lexer.myMod, n,debug);
 				st->done = false;
 				if(st->last()=='\n') break;
 				while(st->peek()==';') st->read();

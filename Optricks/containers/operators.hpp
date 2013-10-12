@@ -60,17 +60,19 @@ void initClassesMeta(){
 			[](DATA a, DATA b, RData& m) -> DATA{
 				return m.builder.CreateFSub(a,b);
 	},complexClass);
-	complexClass->addBinop("[]",intClass) = new obinopNative(
-				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateExtractElement(a,m.builder.CreateTruncOrBitCast(b,INT32TYPE));
-		},doubleClass);
+//	complexClass->addBinop("[]",intClass) = new obinopNative(
+//				[](DATA a, DATA b, RData& m) -> DATA{
+//					return m.builder.CreateExtractElement(a,m.builder.CreateTruncOrBitCast(b,INT32TYPE));
+//		},doubleClass);
 	///////******************************* String ********************************////////
 	stringClass->addBinop("[]",intClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 
 //		return m.builder.CreateExtractElement(a,b);
-				std::vector<Value*> z = {getInt32(0),m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
-				auto t = m.builder.CreateGEP(a,z,"tmpind");
+				std::vector<unsigned int> z = {stringClass->getDataClassIndex("_cstr",PositionID())};
+				auto val = m.builder.CreateExtractValue	(a,z);
+				std::vector<Value*> v = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
+				auto t = m.builder.CreateInBoundsGEP(val,v,"tmpind");
 				return m.builder.CreateLoad(t);
 //				return m.builder.CreateAnd(a,b,"andtmp");
 	},charClass);
@@ -79,7 +81,7 @@ void initClassesMeta(){
 
 	//		return m.builder.CreateExtractElement(a,b);
 					std::vector<Value*> z = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
-					auto t = m.builder.CreateGEP(a,z,"tmpind");
+					auto t = m.builder.CreateInBoundsGEP(a,z,"tmpind");
 					return m.builder.CreateLoad(t);
 	//				return m.builder.CreateAnd(a,b,"andtmp");
 		},charClass);
@@ -306,6 +308,44 @@ void initClassesMeta(){
 				[](DATA a, RData& m) -> DATA{
 				return m.builder.CreateNot(a,"negtmp");
 	},intClass);
+//############################ CHAR
+
+
+	charClass->addBinop("<", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpSLT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	charClass->addBinop(">", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpSGT(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	charClass->addBinop("<=", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpSLE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	charClass->addBinop(">=", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpSGE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	charClass->addBinop("==", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpEQ(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
+
+	charClass->addBinop("!=", charClass) = new obinopNative(
+				[](DATA a, DATA b, RData& m) -> DATA{
+					return m.builder.CreateICmpNE(a,b,"cmptmp");
+					//TODO there is also a CreateFCmpOGT??
+	},boolClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);
 	LANG_M->addPointer("object",objectClass,0);

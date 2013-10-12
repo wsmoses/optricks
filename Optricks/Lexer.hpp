@@ -15,6 +15,7 @@
 #include "constructs/ForEachLoop.hpp"
 #include "constructs/IfStatement.hpp"
 #include "constructs/Block.hpp"
+#include "constructs/ImportStatement.hpp"
 #include "expressions/E_RETURN.hpp"
 #include "expressions/E_BINOP.hpp"
 #include "expressions/E_UOP.hpp"
@@ -64,17 +65,31 @@ class Lexer{
 			//endWith=EOF;
 			myMod = new OModule(LANG_M);
 		}
+		std::vector<String> visitedFiles;
 		virtual ~Lexer(){};
-		void execFiles(bool global, std::vector<String> fileNames, ostream& file, bool debug, bool toFile, unsigned int optLevel = 3){
-			std::vector<Statement*> stats;
-			for(auto& fileName:fileNames){
+		void getStatements(bool global, bool debug, std::vector<String> fileNames,std::vector<Statement*>& stats){
+			while(fileNames.size()>0){
+				String fileName = fileNames.back();
+				fileNames.pop_back();
+				char cwd[1024];
+				if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", pos());
+				String dir, file;
+				getDir(fileName, dir, file);
+				if(dir!="." && chdir(dir.c_str())!=0) todo("Could not change directory to "+dir+"/"+file,pos());
+				//cout << "Opened: " << dir << "/" << file << endl << flush;
 				Stream* tmp = f;
-				Stream next(fileName,false);
+				Stream next(file,false);
 				f = &next;
 				while(true){
 					while(f->peek()==';') f->read();
 					Statement* s = getNextStatement(EOF,global);
 					if(s==NULL || s->getToken()==T_VOID) break;
+					if(s->getToken()==T_IMPORT){
+						ImportStatement* import = dynamic_cast<ImportStatement*>(s);
+						std::vector<String> pl = {import->toImport};
+						getStatements(global, debug, pl, stats);
+						continue;
+					}
 					if(debug && s->getToken()!=T_VOID){
 						cout << s << ";" << endl << endl << flush;
 					}
@@ -83,10 +98,16 @@ class Lexer{
 				}
 				f->close();
 				f = tmp;
+				if(chdir(cwd)!=0) todo("Could not change directory back to "+String(cwd),pos());
 			}
+		}
+		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0, unsigned int optLevel = 3){
+			std::vector<Statement*> stats;
+			getStatements(global, debug, fileNames, stats);
 			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->registerClasses(rdata);
-			for(auto& n: stats) n->registerFunctionArgs(rdata);
+			for(auto& n: stats)
+				n->registerFunctionArgs(rdata);
 			for(auto& n: stats) n->registerFunctionDefaultArgs();
 			for(auto& n: stats) n->checkTypes(rdata);
 
@@ -97,25 +118,37 @@ class Lexer{
 			for(auto& n: stats) n->evaluate(rdata);
 			rdata.builder.CreateRetVoid();
 			verifyFunction(*F);
-			if(toFile) verifyModule(*(rdata.lmod));
+			if(toFile>0) verifyModule(*(rdata.lmod));
 			if(debug){
+				this->myMod->write(cerr,"");
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
-			auto modOpt = new PassManager();
-			FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
+			//auto modOpt = new PassManager();
+			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
 
 			// Set up optimisers
-			PassManagerBuilder pmb;
-			pmb.OptLevel = optLevel;
-			pmb.populateFunctionPassManager(*fnOpt);
-			if(toFile) pmb.populateModulePassManager(*modOpt);
-			fnOpt->run(*F);
-			modOpt->run(*(rdata.lmod));
+			//PassManagerBuilder pmb;
+			//pmb.OptLevel = optLevel;
+			//pmb.populateFunctionPassManager(*fnOpt);
+			//if(toFile>0) pmb.populateModulePassManager(*modOpt);
+			//fnOpt->run(*F);
+			//if(toFile>0) modOpt->run(*(rdata.lmod));
+			rdata.fpm->run(*F);
+			if(toFile>0) rdata.mpm->run(*(rdata.lmod));
 
-			if(toFile){
-				llvm::raw_os_ostream raw_stream(file);
-				WriteBitcodeToFile(rdata.lmod, raw_stream);
+			if(debug){
+				//rdata.lmod->dump();
+			}
+			if(toFile==3){
+				//				llvm::raw_os_ostream raw_stream(file);
+
+				WriteBitcodeToFile(rdata.lmod, *file);
+				//				rdata.lmod->print(raw_stream, 0);
+			} else if(toFile==2){
+				//				llvm::raw_os_ostream raw_stream(file);
+				rdata.lmod->print(*file,0);
+				//				WriteBitcodeToFile(rdata.lmod, file);
 				//				rdata.lmod->print(raw_stream, 0);
 			} else {
 				void *FPtr = rdata.exec->getPointerToFunction(F);
@@ -123,57 +156,6 @@ class Lexer{
 				FP();
 			}
 		}
-		/*	void generateIR(bool debug){
-		}
-		void execFile(String fileName, bool newModa, bool newModb, bool debug, bool run){
-			Stream* tmp = f;
-			Stream next(fileName,false);
-			f = &next;
-			if(newModa) myMod = new OModule(myMod);
-			std::vector<Statement*> stats;
-			while(true){
-				while(f->peek()==';') f->read();
-				Statement* s = getNextStatement(EOF);
-				if(s==NULL || s->getToken()==T_VOID) break;
-				if(debug && s->getToken()!=T_VOID){
-					cout << s << ";" << endl << endl << flush;
-				}
-				s = s->simplify();
-				stats.push_back(s);
-			}
-			for(auto& n: stats) n->resolvePointers();
-			for(auto& n: stats) n->registerClasses(rdata);
-			for(auto& n: stats) n->registerFunctionArgs(rdata);
-			for(auto& n: stats) n->registerFunctionDefaultArgs();
-			for(auto& n: stats) n->checkTypes();
-			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, "", rdata.lmod);//todo check this
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-			rdata.builder.SetInsertPoint(BB);
-			for(auto& n: stats){
-				auto t = n->evaluate(rdata);
-			}
-			rdata.builder.CreateRetVoid();
-
-			if(debug){
-				rdata.lmod->dump();
-				cerr << endl << flush;
-			}
-			verifyFunction(*F);
-			rdata.fpm->run(*F);
-			if(debug){
-				rdata.lmod->dump();
-				cerr << endl << flush;
-			}
-			if(run){
-				void *FPtr = rdata.exec->getPointerToFunction(F);
-				void (*FP)() = (void (*)())(intptr_t)FPtr;
-				FP();
-			}
-			f->close();
-			f = tmp;
-			if(newModb) myMod = new OModule(myMod);
-		}*/
 		String getNextName(char endWith){
 			f->trim(endWith);
 			auto temp = f->getNextName(endWith);
@@ -188,11 +170,15 @@ class Lexer{
 			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),NULL,NULL,NULL,NULL);
 			return new E_VAR(pos(), pointer);
 		}
-		Declaration* getNextDeclaration(ParseData data,bool global=false){
+		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
 			trim(data);
 			Statement* declarationType = getNextType(data.getEndWith(EOF));
 			trim(EOF);
-			String varName = getNextName(data.endWith);
+			String varName;
+			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
+				varName = dynamic_cast<E_VAR*>(declarationType)->pointer->name;
+				declarationType = new ClassProtoWrapper(autoClass);
+			} else varName = getNextName(data.endWith);
 			trim(data);
 			Statement* value = NULL;
 			if(f->peek()=='='){
@@ -214,7 +200,7 @@ class Lexer{
 					f->read();
 					return args;
 				}
-				Declaration* d = getNextDeclaration(data.getEndWith(EOF));
+				Declaration* d = getNextDeclaration(data.getEndWith(EOF),false,true);
 				for(auto& a:args){
 					if(d->variable->pointer->name == a->variable->pointer->name){
 						f->error("Cannot have duplicate argument name: "+a->variable->pointer->name, true);
@@ -235,16 +221,16 @@ class Lexer{
 			return f->pos();
 		}
 		inline void trim(char c){
-	//		if(
-					f->trim(c)
-					//) f->error("Found EOF while parsing")
-							;
+			//		if(
+			f->trim(c)
+							//) f->error("Found EOF while parsing")
+									;
 		}
 		inline void trim(ParseData data){
-		//	if(
-					f->trim(data.endWith)
-					//) f->error("Found EOF while parsing")
-							;
+			//	if(
+			f->trim(data.endWith)
+							//) f->error("Found EOF while parsing")
+									;
 		}
 		Statement* getNextBlock(ParseData data, bool*par=NULL){
 			OModule* module = new OModule(data.mod);
@@ -267,7 +253,7 @@ class Lexer{
 				return blocks;
 			}
 			else{
-				Statement* s = getNextStatement(data.getModule(module));//todo check
+				Statement* s = getNextStatement(data.getModule(module).getLoc(PARSE_EXPR));//todo check
 				while(!f->done && f->peek()==';'){f->read();trim(data);}
 				trim(data);
 				return s;
@@ -388,11 +374,12 @@ class Lexer{
 					f->read();
 					f->trim(EOF);
 				}
-				Statement* blocks = getNextBlock(ParseData(data.endWith, data.mod, true,PARSE_LOCAL));
-				f->error("Implement for-each loop");
+				OModule* nmod = new OModule(data.mod);
+				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,NULL,NULL,NULL,NULL));
+				Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
 				//TODO implement for loop naming
-				return NULL;
+				return new ForEachLoop(pos(),variable, iterable, blocks);
 			}
 		}
 		Statement* getWhileLoop(ParseData data, bool read=false){
@@ -468,6 +455,7 @@ class Lexer{
 					f->trim(EOF);
 					if(method=="operator"){
 						String t = f->getNextOperator(data.endWith);
+						while(f->peek()=='[' || f->peek()=='%' || f->peek()==']') t+=String(1,f->read())+f->getNextOperator(data.endWith);
 						method = "~"+t;
 						f->trim(EOF);
 						isOperator = true;
@@ -481,7 +469,7 @@ class Lexer{
 						f->read();
 						arguments = parseArguments(ParseData(EOF, module,true,PARSE_LOCAL),')');
 					}
-					else f->error("Need '(' in function declaration",true);
+					else f->error("Need '(' in function declaration, found "+String(1,f->read()),true);
 				}
 				trim(data);
 				if(!f->done && f->peek()==':'){
@@ -500,7 +488,7 @@ class Lexer{
 							funcName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName[0].first));
 						}
 					}
-					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_EXPR),&paren);
+					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_LOCAL),&paren);
 					auto tmp = pos();
 					func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
 				}
@@ -511,7 +499,7 @@ class Lexer{
 					for(unsigned int i = 0; i<methodName.size()-2; i++)
 						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
 					auto thisPointer = module->addPointer(pos(),"this",NULL,NULL,NULL,NULL);
-					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_EXPR), &paren);
+					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					auto tmp = pos();
 					if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
 						func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
@@ -592,28 +580,23 @@ class Lexer{
 				f->read();
 				std::vector<Statement*> stack;
 				while(true){
-					bool comma = true;
+					bool done = true;
 					while(!f->done){
 						if(f->trim(data.endWith)) f->error("Indexed operator check hit EOF",true);
 						char t = f->peek();
 						if(t==',' || t==':'){
 							f->read();
-							if(t==','){
-								exp = getIndex(f, exp,stack);
-							}
-							else{
-								stack.push_back(NULL);
-							}
-
+							if(t==',') exp = getIndex(f, exp,stack);
+							else stack.push_back(NULL);
 						}
 						else if(t==']'){
-							comma = false;
+							done = false;
 							break;
 						}
 						else break;
 					}
 					if(f->trim(data.endWith)) f->error("Uncompleted '[' index",true);
-					if(!comma) break;
+					if(!done) break;
 					stack.push_back(getNextStatement(data.getLoc(PARSE_EXPR)));
 				}
 				if(f->done)	f->error("Uncompleted '[' array 2",true);
@@ -631,7 +614,7 @@ class Lexer{
 				if(!f->done && f->peek()==';'){ semi = true; }
 				f->trim(data.endWith);
 				if(!semi) return operatorCheck(data, nex);
-				else return getIndex(f,exp,stack);
+				else return nex;
 			}
 			else if(tchar=='('){
 				//TODO parse function args,  cannot do getNextStatement
@@ -749,6 +732,12 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="do") return getDoLoop(data,true);
 		else if(temp=="lambda") return getLambdaFunction(data,true);
 		else if(temp=="def" || temp=="function" || temp=="method" || temp=="extern") return getFunction(data,temp);
+		else if(temp=="import"){
+			trim(data);
+			String tI = f->readString(data.endWith);
+			if(tI.length()==0) f->error("Could not import file of no length");
+			return new ImportStatement(pos(),tI);
+		}
 		else if (temp=="true" || temp=="false"){
 			Statement* te = new obool(pos(), temp=="true");
 			trim(data);
@@ -758,15 +747,16 @@ Statement* Lexer::getNextStatement(ParseData data){
 			if(data.operatorCheck && !semi) return operatorCheck(data, te);
 			else return te;
 		}
-		else if(temp=="return"){
-			if(data.allowsDec()) f->error("Cannot have return here");
+		else if(temp=="return" || temp=="yield"){
+			//			if(!data.allowsDec()) f->error("Cannot have return here");
 			trim(data);
 			Statement* t = VOID;
+			//TODO prevent returns from use in iterator
 			if(f->peek()!='}' && f->peek()!=',' && f->peek()!=':' && f->peek()!=')') t = getNextStatement(data.getLoc(PARSE_EXPR));
-			return new E_RETURN(pos(), t, "", RETURN);
+			return new E_RETURN(pos(), t, "", (temp=="return")?RETURN:YIELD);
 		}
 		else if(temp=="break" || temp=="continue"){
-			if(data.allowsDec()) f->error("Cannot have return here");
+			//			if(!data.allowsDec()) f->error("Cannot have return here");
 			trim(data.endWith);
 			String name = (isStartName(f->peek()))?(getNextName(EOF)):"";
 			return new E_RETURN(pos(), NULL, name, (temp=="break")?BREAK:CONTINUE );

@@ -19,7 +19,8 @@ public:
 	virtual ~E_LOOKUP(){};
 	E_LOOKUP(PositionID id, Statement* a,  String b, String o): Statement(id),
 			left(a), right(b), operation(o){};
-
+	void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+	}
 	void write(ostream& f,String a="") const override{
 		f << left;
 		f << operation;

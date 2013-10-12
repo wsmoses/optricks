@@ -19,6 +19,8 @@ class oobject: public Statement{
 			error("Cannot getMetadata() for oobject");
 			return NULL;
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		DATA getLocation(RData& r) override{
 			return NULL;
 		}

@@ -58,8 +58,11 @@ class E_VAR : public Statement{
 		};
 		ClassProto* checkTypes(RData& r) override{
 			ClassProto* temp = pointer->resolve()->returnClass;
+			//cout << "LOCATION OF VARIABLE: " << (size_t)(pointer->resolve()) << endl << flush;
 			if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
 			return returnType = temp;
+		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
 		void resolvePointers() override{
 			LateResolve* r = dynamic_cast<LateResolve*>(pointer);

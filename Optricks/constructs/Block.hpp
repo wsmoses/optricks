@@ -16,6 +16,9 @@ class Block : public Construct{
 		void registerClasses(RData& r) override final{
 			for(auto& a: values) a->registerClasses(r);
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+			for(auto& a:values) a->collectReturns(r, vals);
+		}
 		void registerFunctionArgs(RData& r) override final{
 			for(auto& a: values) a->registerFunctionArgs(r);
 		}

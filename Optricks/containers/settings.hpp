@@ -102,6 +102,10 @@ struct PositionID{
 			fileName = c;
 		}
 		PositionID():PositionID(0,0,"<start>"){}
+		void error(String s, bool end=true){
+			cerr << s << " at " << fileName << " on line " << lineN << ", char " << charN << endl << flush;
+			if(end) exit(1);
+		}
 		ostream& operator << (ostream& o){
 			o << fileName;
 			o << " line:";
@@ -163,6 +167,11 @@ class ClassProto;
 class ReferenceElement;
 #endif
 
+#ifndef CLASSFUNC_C_
+#define CLASSFUNC_C_
+class classFunction;
+#endif
+
 #ifndef E_FUNC_CALL_C_
 #define E_FUNC_CALL_C_
 class E_FUNC_CALL;
@@ -172,7 +181,29 @@ class E_FUNC_CALL;
 #define FUNCTIONPROTO_C_
 class FunctionProto;
 #endif
+#include <unistd.h>
 
+#include <limits.h> /* PATH_MAX */
+#include <stdio.h>
+#include <stdlib.h>
+void getDir(String pos, String& dir, String& file){
+	size_t p = pos.find_last_of('/');
+	if(p==pos.npos) p = pos.find_last_of('\\');
+	else{
+		size_t tmp = pos.find_last_of('\\');
+		if(tmp!=pos.npos && tmp>p) p = tmp;
+	}
+	if(p==pos.npos){
+		dir=".";
+		file = pos;
+	} else if(p>0 && pos[p-1]=='/'){
+		cerr << "Do not accept // filepaths" << endl << flush;
+		exit(1);
+	} else{
+		dir = pos.substr(0,p);
+		file = pos.substr(p+1);
+	}
+}
 /*
 auto& getLLVMString(String s){
 	//auto tmp = getArrayRefFromString(s);

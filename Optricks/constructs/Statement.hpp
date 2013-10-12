@@ -36,6 +36,8 @@ class ClassProtoWrapper : public Construct{
 		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(),classClass){
 			cp = c;
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		ClassProto* checkTypes(RData& r) override final{
 			return returnType;
 		}
@@ -46,7 +48,8 @@ class ClassProtoWrapper : public Construct{
 			return T_CLASSPROTO;
 		}
 		void write(ostream& a, String s="") const{
-			error("Cannot write classProto Wrapper");
+			a << cp->name;
+			//error("Cannot write classProto Wrapper");
 		}
 		DATA evaluate(RData& r){
 			error("Can't eval :(");

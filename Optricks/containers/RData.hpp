@@ -13,12 +13,14 @@
 enum JumpType{
 	RETURN = 0,
 	BREAK = 1,
-	CONTINUE = 2
+	CONTINUE = 2,
+	YIELD = 3
 };
 
 enum TJump{
 	FUNC = 0,
-	LOOP = 1
+	LOOP = 1,
+	GENERATOR = 2
 };
 
 struct Jumpable {
@@ -28,6 +30,7 @@ struct Jumpable {
 		BasicBlock* start;
 		BasicBlock* end;
 		ClassProto* returnType;
+		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
 		std::vector<std::pair<BasicBlock*,Value*> > endings;
 		Jumpable(String n, TJump t, BasicBlock* s, BasicBlock* e, ClassProto* p):
 			name(n), toJump(t), start(s), end(e), returnType(p){
@@ -43,6 +46,7 @@ struct RData{
 		bool guarenteedReturn;
 		Module* lmod;
 		FunctionPassManager* fpm;
+		PassManager* mpm;
 		IRBuilder<> builder;
 		ExecutionEngine* exec;
 		void addJump(Jumpable* j){
@@ -53,7 +57,7 @@ struct RData{
 			jumps.pop_back();
 			return a;
 		}
-		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd);
+		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
 };
 
 class funcMap{
@@ -74,30 +78,31 @@ class funcMap{
 };
 
 #include "ClassProto.hpp"
-BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, RData& rd){
+BasicBlock* RData::getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume){
 	if(name==""){
-		if(jump==RETURN){
-			for(unsigned int i = jumps.size()-1; ; i--){
-				if(jumps[i]->toJump == FUNC){
+		if(jump==RETURN || jump==YIELD){
+			for(int i = jumps.size()-1; ; i--){
+				if(jumps[i]->toJump == FUNC || jumps[i]->toJump==GENERATOR){
 					if(ret==NULL || !ret->hasCast(jumps[i]->returnType)){
-						cerr << "Invalid return type, trying to use a " << ((ret==NULL)?"null":(ret->name)) << " instead of a " << jumps[i]->returnType->name << endl << flush;
-						exit(0);
+						id.error("Invalid return type, trying to use a " + ((ret==NULL)?"null":(ret->name)) + " instead of a " + jumps[i]->returnType->name);
+						return NULL;
 					}
-					jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,ret->castTo(rd, val, jumps[i]->returnType)));
+					jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,ret->castTo(*this, val, jumps[i]->returnType)));
+					jumps[i]->resumes.push_back(resume);
 					return jumps[i]->end;
 				}
-				if(i == 0){
+				if(i <= 0){
 					cerr << "Error could not find returning block" << endl << flush;
 					return NULL;
 				}
 			}
 		} else {
-			for(unsigned int i = jumps.size()-1; ; i--){
+			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == LOOP){
 					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
 					return (jump==BREAK)?(jumps[i]->end):(jumps[i]->start);
 				}
-				if(i == 0){
+				if(i <= 0){
 					cerr << "Error could not find continue/break block" << endl << flush;
 					return NULL;
 				}

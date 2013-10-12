@@ -19,7 +19,9 @@ class E_RETURN : public Statement{
 		const Token getToken() const override{
 			return T_RETURN;
 		};
-
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+			if(inner!=NULL) vals.push_back(inner->checkTypes(r));
+		}
 		String getFullName() override final{
 			error("Cannot get full name of return");
 			return "";
@@ -61,12 +63,19 @@ class E_RETURN : public Statement{
 				t = inner->evaluate(r);
 				if(t==NULL) error("Why is t null?");
 			}
-			auto toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t, r);
-	//		auto toBreak = r.getBlock(name, jump, returnType, RETB, t);
+			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock *RESUME = BasicBlock::Create(getGlobalContext(), "postReturn", TheFunction);
 
-			r.builder.CreateBr(toBreak);
+			BasicBlock* toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
+
+			if(toBreak!=NULL) r.builder.CreateBr(toBreak);
 			//if(jump==RETURN)
+			if(jump==YIELD){
+				r.builder.SetInsertPoint(RESUME);
+			} else {
+				RESUME->removeFromParent();
 				r.guarenteedReturn = true;
+			}
 			return NULL;
 	//		return RETB;
 			//if(returnType==voidClass) return r.builder.CreateRetVoid();

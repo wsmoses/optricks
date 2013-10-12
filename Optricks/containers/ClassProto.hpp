@@ -29,6 +29,7 @@ class ClassProto{
 		String name;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
+		classFunction* iterator;
 		virtual ~ClassProto(){};
 
 		virtual bool equals(ClassProto* c) const{
@@ -122,18 +123,17 @@ class ClassProto{
 				return NULL;
 			}
 		}
-		ouop*& addCast(ClassProto* right){
+		ouop*& addCast(ClassProto* right, PositionID id=PositionID()){
 			if(hasCast(right))
-				todo("Error: Redefining cast "+name+" to "+right->name,PositionID());
+				id.error("Error: Redefining cast "+name+" to "+right->name);
 			return casts[right];
 		}
-		obinop*& addBinop(String operation, ClassProto* right){
+		obinop*& addBinop(String operation, ClassProto* right, PositionID id=PositionID()){
 			auto found = binops.find(operation);
 			if(found!=binops.end()){
 				auto found2 = found->second.find(right);
 				if(found2!=found->second.end()){
-					todo("Error: Redefining binary operation '"+operation+"' from "+name+" to "+right->name,
-							PositionID());
+					id.error("Error: Redefining binary operation '"+operation+"' from "+name+" to "+right->name);
 				}
 			}
 			return binops[operation][right];
@@ -194,7 +194,7 @@ class ClassProto{
 				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
 				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
-				name(n)
+				name(n),iterator(NULL)
 				 {
 			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> Value*{	return a; }
 								, this)));
@@ -270,4 +270,12 @@ class GenericClass: public ClassProto{
 };
 */
 
+ClassProto* getMin(std::vector<ClassProto*>& vals){
+	if(vals.size()==0) return voidClass;
+	ClassProto* tmp = vals[0];
+	for(int i =1 ; i<vals.size(); i++){
+		tmp = tmp->leastCommonAncestor(vals[i]);
+	}
+	return tmp;
+}
 #endif /* CLASSPROTO_HPP_ */

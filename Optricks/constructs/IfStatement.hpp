@@ -23,7 +23,10 @@ class IfStatement : public Construct{
 		const Token getToken() const override {
 			return T_IF;
 		}
-
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+			then->collectReturns(r, vals);
+			if(finalElse!=NULL) finalElse->collectReturns(r, vals);
+		}
 		void registerClasses(RData& r) override final{
 			condition->registerClasses(r);
 			then->registerClasses(r);

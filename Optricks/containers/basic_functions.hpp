@@ -1,10 +1,11 @@
 #ifndef __BASICFUNCH
 #define __BASICFUNCH
 
-#include <iostream>
-#include <cmath>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
+extern "C" {
 struct StringStruct{
 		char* data;
 		int64_t length;
@@ -13,31 +14,31 @@ struct complex{
 		double real, imag;
 };
 void prints(StringStruct i, bool b){
-		std::cout << "String length is " << i.length << std::endl << std::flush;
-		std::cout << "String pos is " << (size_t)i.data << std::endl << std::flush;
-		std::cout << std::string(i.data, i.length);
-		if(b) std::cout << std::endl;
-		std::cout << std::flush;
+		if(!b) puts(i.data);
+		else printf("%s\n",i.data);
 	}
 	void printi(int64_t i, bool b){
-		std::cout << i;
-		if(b) std::cout << std::endl;
-		std::cout << std::flush;
+		if(!b) printf("%" PRId64 "", i);
+		else printf("%" PRId64 "\n",i);
 	}
 	void printd(double i, bool b){
-		std::cout << i;
-		if(b) std::cout << std::endl;
-		std::cout << std::flush;
+		if(!b) printf("%f",i);
+		else printf("%f\n",i);
 	}
 	void printc(complex i, bool b){
-		std::cout << i.real << "+" << i.imag << "i";
-		if(b) std::cout << std::endl;
-		std::cout << std::flush;
+		if(!b) printf("%f + %f i",i.real,i.imag);
+		else printf("%f + %f i\n",i.real,i.imag);
 	}
 	void printb(bool i, bool b){
-		if(i) std::cout << "true";
-		else std::cout << "false";
-		if(b) std::cout << std::endl;
-		std::cout << std::flush;
+		if(!b){
+			if(i) puts("true");
+			else puts("false");
+		}
+		else{
+			if(i) puts("true\n");
+			else puts("false\n");
+			fflush(stdout);
+		}
 	}
+}
 #endif

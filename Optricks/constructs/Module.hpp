@@ -73,7 +73,10 @@ class OModule : public Stackable{
 			for(auto & b: mapping){
 				if(first) first = false;
 				else a << ", " << flush;
-				a << b.first << flush;
+				a << b.first << ":";
+				if(b.second->returnClass==NULL)
+				a << "null";
+				else a << b.second->returnClass->name;
 			}
 			a << "]|" << flush;
 			if(super!=NULL) super->write(a,t);
@@ -104,6 +107,15 @@ RData::RData():
 lmod->setDataLayout("p:64:64:64");
 	  InitializeNativeTarget();
 			exec = EngineBuilder(lmod).create();
+
+			fpm = new FunctionPassManager(lmod);
+			mpm = new PassManager();
+			// Set up optimisers
+			PassManagerBuilder pmb;
+			pmb.OptLevel = 3;
+			pmb.populateFunctionPassManager(*fpm);
+			pmb.populateModulePassManager(*mpm);
+			/*
 			fpm = new FunctionPassManager(lmod);
 	fpm->add(new DataLayout(*exec->getDataLayout()));
 	// Provide basic AliasAnalysis support for GVN.
@@ -118,7 +130,7 @@ lmod->setDataLayout("p:64:64:64");
 	// Simplify the control flow graph (deleting unreachable blocks, etc).
 	fpm->add(createCFGSimplificationPass());
 ///HERE ARE NEW ONES
-	///*
+
 	fpm->add(createCFGSimplificationPass()); // Clean up disgusting code
 	    fpm->add(createPromoteMemoryToRegisterPass());// Kill useless allocas
 
@@ -159,7 +171,9 @@ lmod->setDataLayout("p:64:64:64");
 
 	    fpm->add(createAggressiveDCEPass());         // Delete dead instructions
 	    fpm->add(createCFGSimplificationPass());     // Merge & remove BBs
-//*/
-	fpm->doInitialization();
+
+		fpm->add(createFunctionInliningPass());
+
+	fpm->doInitialization();*/
 		}
 #endif /* MODULE_HPP_ */

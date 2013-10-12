@@ -1,0 +1,111 @@
+def int string.length(){
+	return this._size;
+};
+
+def c_string.iterator(){
+  int i = 0;
+	while this[i]!='\0':{
+		yield this[i];
+		i+=1
+	}
+	//yield 1;
+	//yield 2;
+	//yield 3;
+}
+
+def bool operator==(string a,string b){
+	if(a._size!=b._size) return false;
+	for(int i = 0; i<a._size; i+=1)
+		if(a[i]!=b[i]) return false;
+	return true;
+};
+
+def bool operator!=(string a,string b){
+	if(a._size!=b._size) return true;
+	for(int i = 0; i<a._size; i+=1) if(a[i]!=b[i]) return true;
+	return false;
+};
+
+def bool operator < (string a, string b){
+	int n = (a._size<b._size)?a._size:b._size;
+	for(int i=0;i<n;i+=1)
+		if(a[i]!=b[i]) return a[i]<b[i];
+  return a._size<b._size;
+};
+
+def bool operator > (string a, string b){
+	int n = (a._size<b._size)?a._size:b._size;
+	for(int i=0;i<n;i+=1)
+		if(a[i]!=b[i]) return a[i]>b[i];
+  return a._size>b._size;
+};
+
+def bool operator <= (string a, string b){
+	int n = (a._size<b._size)?a._size:b._size;
+	for(int i=0;i<n;i+=1)
+		if(a[i]!=b[i]) return a[i]<b[i];
+  return a._size<=b._size;
+};
+
+def bool operator >= (string a, string b){
+	int n = (a._size<b._size)?a._size:b._size;
+	for(int i=0;i<n;i+=1)
+		if(a[i]!=b[i]) return a[i]<b[i];
+  return a._size>=b._size;
+};
+
+def int operator [] (c_string a, char c){
+	return 3;
+}
+
+def bool operator < (c_string a, c_string b){
+	for(int i=0;;i+=1){
+		if(a[i]!=b[i]) return a[i]<b[i];
+		if(a[i]=='\0') return false;
+	}
+  return true;
+};
+
+def bool operator > (c_string a, c_string b){
+	for(int i=0;;i+=1){
+		if(a[i]!=b[i]) return a[i]>b[i];
+		if(a[i]=='\0') return false;
+	}
+  return true;
+};
+
+def bool operator <= (c_string a, c_string b){
+	for(int i=0;;i+=1){
+		if(a[i]!=b[i]) return a[i]<b[i];
+		if(a[i]=='\0') return true;
+	}
+  return true;
+};
+
+def bool operator >= (c_string a, c_string b){
+	for(int i=0;;i+=1){
+		if(a[i]!=b[i]) return a[i]>b[i];
+		if(a[i]=='\0') return true;
+	}
+  return true;
+};
+
+def bool operator==(c_string a,c_string b){
+	for(int i = 0; ; i+=1){
+		if(a[i]!=b[i]) return false;
+		if(a[i]=='\0') return true;
+	}
+	return true;
+};
+
+def bool operator!=(c_string a,c_string b){
+	for(int i = 0; ; i+=1){
+		if(a[i]!=b[i]) return true;
+		if(a[i]=='\0') return false;
+	}
+	return true;
+};
+//*/
+def char c_string.get1(){
+	return this[0];
+}

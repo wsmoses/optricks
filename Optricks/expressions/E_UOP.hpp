@@ -22,6 +22,8 @@ class E_PREOP : public Construct{
 		Statement* simplify() override final {
 			return new E_PREOP(filePos, operation,value->simplify());
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		DATA evaluate(RData& r) override final {
 			auto a = value->evaluate(r);
 			return value->returnType->preops[operation]->apply(a,r);
@@ -60,6 +62,8 @@ class E_POSTOP : public Construct{
 		E_POSTOP(PositionID id, String o, Statement* a): Construct(id,NULL),
 				value(a), operation(o)
 		{};
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		Statement* simplify() override final {
 			return new E_POSTOP(filePos, operation,value->simplify());
 		}

@@ -89,6 +89,9 @@ public:
 			fileV = fopen(file.c_str(), "r");
 			if(fileV==NULL){
 				cerr << "Error opening file " << file << endl << flush;
+				char cwd[1024];
+				if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", pos());
+				cerr << cwd << endl << flush;
 				exit(1);
 			}
 		}
@@ -486,7 +489,7 @@ public:
 	}
 
 	void error(String a = "Compile error", /*String b="", String c="", String d="",*/ bool end=false){
-		cerr << a /*<< b << c << d*/ << "  on line " << readChars.size() << " character " << readChars.back().size() << endl << flush;
+		cerr << a /*<< b << c << d*/ << " at " << fileName << " on line " << readChars.size() << " character " << readChars.back().size() << endl << flush;
 		if(end) exit(1);
 	}
 
@@ -732,6 +735,7 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 	if(stack.size()==0){
 		//TODO HANDLE APPEND OPERATORS
 		f->error("Append operators not implemented yet",true);
+		//return toIndex;
 	}
 	if(stack.size()==1 && stack[0]!=NULL){
 		Statement* temp = stack[0];

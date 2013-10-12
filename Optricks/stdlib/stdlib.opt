@@ -1,15 +1,23 @@
-def void print(bool b=true){
-	(extern void printb(bool i, bool b))(b,b);
+import "string.opt"
+def void print(int i, bool b=true){
+	(extern void printi(int i, bool b))(i,b);
 }
-auto hi="hello"
 
+
+def int min(int a,int b){
+	return (a<b)?a:b;
+}
+
+//auto hi="hello"
+//def void print(string s='c'){}
+double PI = 3.141592653589793;
+double  E = 2.718281828459045;
+complex I = complex(0,1);
 def complex.complex(double a=0, double b=0){
   this.real = a
   this.imag = b
 }
-def int string.length(){
-	return this._size;
-}
+
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
 }
@@ -22,9 +30,6 @@ def void print(string i, bool b=true){
 extern void printc(complex i, bool b=true);
 def void print(complex i, bool b=true){
 	printc(i,b);
-}
-def void print(int i, bool b=true){
-	(extern void printi(int i, bool b))(i,b);
 }
 def void print(double i, bool b=true){
 	(extern void printd(double i, bool b))(i,b);
@@ -139,13 +144,8 @@ def complex exp(complex c){
 	z.imag = sin(c.imag);
 	return exp(c.real)*z
 }
-def complex imag(){
-	auto c = complex();
-	c.imag = 1;
-	return c;
-}
 def complex cos(complex z){
-	return .5*(exp(imag()*z)+exp(-imag()*z));
+	return .5*(exp(complex(0,1)*z)+exp(-complex(0,1)*z));
 }
 
 def int pow(int a, int b){
@@ -211,3 +211,5 @@ def double double.print(bool newline=true){
 	print(this,newline);
 	return this;
 }
+
+//*/

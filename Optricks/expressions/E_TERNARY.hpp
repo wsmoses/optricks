@@ -19,6 +19,8 @@ class TernaryOperator : public Statement{
 		TernaryOperator(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			Statement(a), condition(cond), then(th), finalElse(stat){
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		String getFullName() override final{
 			error("Cannot get full name of ternary");
 			return "";

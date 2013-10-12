@@ -9,6 +9,7 @@
 #define FORLOOP_HPPO_
 
 #include "./Statement.hpp"
+#include "./ForEachLoop.hpp"
 class ForLoop : public Construct{
 	public:
 		Statement* initialize;
@@ -28,6 +29,9 @@ class ForLoop : public Construct{
 			increment->checkTypes(r);
 			toLoop->checkTypes(r);
 			return returnType;
+		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+			toLoop->collectReturns(r, vals);
 		}
 		const Token getToken() const override {
 			return T_FOR;

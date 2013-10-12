@@ -21,6 +21,9 @@ class DoWhileLoop : public Construct{
 			condition(cond), statement(stat){
 			name = n;
 		}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+			statement->collectReturns(r, vals);
+		}
 		ClassProto* checkTypes(RData& r) override final{
 			condition->checkTypes(r);
 			if(condition->returnType!=boolClass) error("Cannot make non-bool type condition for while loop");

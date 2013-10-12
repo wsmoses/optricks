@@ -96,7 +96,8 @@ class E_BINOP : public Statement{
 			auto temp = leftT->getBinop(filePos, operation, rightT);
 			return returnType = temp.first->returnType;
 		}
-
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
 		Constant* getConstant(RData& r) override final{ return NULL; }//TODO allow constant folding
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
@@ -134,13 +135,15 @@ class E_BINOP : public Statement{
 		}
 
 		Statement* fixOrderOfOperations(){
+			if(operation=="[]") return this;
 			Statement* tl = left;
 			Statement* tr = right;
 			E_BINOP* self = this;
 			while(true){
 				if(tl->getToken()==T_BINOP){
 					E_BINOP* l = (E_BINOP*)(tl);
-					if(operation!="[]" && precedence(l->operation) > precedence(self->operation)){
+					if(l->operation[0]=='[') break;
+					if(precedence(l->operation) > precedence(self->operation)){
 						self->left = l->right;
 						tr = l->right = self;
 						self = l;
@@ -152,7 +155,8 @@ class E_BINOP : public Statement{
 			while(true){
 				if(tr->getToken()==T_BINOP){
 					E_BINOP* r = (E_BINOP*)(tr);
-					if(operation!="[]" && precedence(r->operation) > precedence(self->operation)){
+					if(r->operation[0]=='[') break;
+					if(precedence(r->operation) > precedence(self->operation)){
 						self->right = r->left;
 						tl = r->left = self;
 						self = r;

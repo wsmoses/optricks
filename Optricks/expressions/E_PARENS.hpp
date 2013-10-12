@@ -10,7 +10,9 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
-
+	void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		inner->collectReturns(r, vals);
+	}
 	Constant* getConstant(RData& r) override final{ return inner->getConstant(r); }
 	ReferenceElement* getMetadata(RData& r) override final{
 		return inner->getMetadata(r);
