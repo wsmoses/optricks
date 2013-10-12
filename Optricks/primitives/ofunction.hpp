@@ -268,7 +268,13 @@ class userFunction : public ofunction{
 			}
 			ClassProto* cp = returnV->getSelfClass();
 			if(cp==NULL) error("Unknown return type");
-			if(cp==autoClass) error("Cannot support auto return for function");
+			if(cp==autoClass){
+				std::vector<ClassProto*> yields;
+				ret->collectReturns(ra, yields);
+				cp = getMin(yields);
+				if(cp==autoClass) error("!Cannot support auto return for function");
+				returnV = new ClassProtoWrapper(cp);
+			}
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 
@@ -409,9 +415,15 @@ class classFunction : public ofunction{
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getMetadata(ra)->selfClass;
+			ClassProto* cp = returnV->getSelfClass();
 			if(cp==NULL) error("Unknown return type");
-			if(name!="iterator" && cp==autoClass) error("Cannot support auto return for function");
+			if(name!="iterator" && cp==autoClass){
+				std::vector<ClassProto*> yields;
+				ret->collectReturns(ra, yields);
+				cp = getMin(yields);
+				if(cp==autoClass)  error("!Cannot support auto return for function");
+				returnV = new ClassProtoWrapper(cp);
+			}
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 

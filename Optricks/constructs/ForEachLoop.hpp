@@ -60,7 +60,6 @@ class ForEachLoop : public Construct{
 			//ra.builder.SetInsertPoint(MERGE);
 
 			Type* functionReturnType = theClass->getType(ra);
-			//PHINode* phi = ra.builder.CreatePHI(functionReturnType, j->endings.size(), "funcRet" );
 			for(unsigned int i = 0; i<j->endings.size(); i++){
 				std::pair<BasicBlock*,BasicBlock*> NEXT = j->resumes[i];
 				ra.builder.SetInsertPoint(NEXT.first);

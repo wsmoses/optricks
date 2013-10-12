@@ -563,9 +563,13 @@ class Lexer{
 				f->error("TODO");
 				if(temp=="static"){
 					//TODO
+				} else if(temp=="class"){
+
+				} else if(temp=="def" || temp=="method" || temp=="function"){
+
 				}
 			}
-			//			if(f->peek()!='}') f->error("Need closing brace for class definition");
+			if(f->read()!='}') f->error("Need closing brace for class definition");
 
 		}
 		Statement* operatorCheck(ParseData data, Statement* exp){

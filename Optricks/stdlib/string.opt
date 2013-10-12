@@ -2,15 +2,33 @@ def int string.length(){
 	return this._size;
 };
 
+def int.iterator(){
+	yield this;
+}
+
+def bool.iterator(){
+	yield this;
+}
+
+def complex.iterator(){
+	yield this;
+}
+
+def string.iterator(){
+	for(int i = 0; i<this._size; i+=1)
+		yield this[i];
+}
+
 def c_string.iterator(){
   int i = 0;
 	while this[i]!='\0':{
 		yield this[i];
 		i+=1
 	}
-	//yield 1;
-	//yield 2;
-	//yield 3;
+}
+
+def char.iterator(){
+	yield this;
 }
 
 def bool operator==(string a,string b){

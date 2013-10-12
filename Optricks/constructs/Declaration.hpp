@@ -39,7 +39,7 @@ class Declaration: public Construct{
 			classV->checkTypes(r);
 			variable->checkTypes(r);
 			//cout << "checking declaration types: "<<(size_t)(value) << " and now the class" <<
-				//	((value==NULL)?c_intClass:(value->returnType))->name << endl << flush;
+			//	((value==NULL)?c_intClass:(value->returnType))->name << endl << flush;
 			if(value!=NULL){
 				value->checkTypes(r);
 				if(value->returnType==NULL)error("Declaration of inconsistent types");
@@ -244,23 +244,23 @@ void initFuncsMeta(RData& rd){
 		str= m.builder.CreateInsertValue(str,getInt(1),{1});
 		return str;
 	},stringClass);
-	/*c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
-						[](DATA a, DATA b, RData& m) -> DATA{
-							Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
-							Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
-							Module &M = *N;
-							GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-							true, GlobalValue::PrivateLinkage,StrConstant);
-							GV->setName("idk");
-							GV->setUnnamedAddr(true);
-							Value *Args[] = {getInt32(0),getInt32(0)};
-							DATA st = m.builder.CreateInBoundsGEP(GV, Args);
-							m.builder.CreateStore(a,st);
-							Value *Args2[] = {getInt32(0),getInt32(1)};
-							DATA st2 = m.builder.CreateInBoundsGEP(GV, Args2);
-							m.builder.CreateStore(b,st2);
-							return st;
-				},c_stringClass);*/
+	c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
+			[](DATA a, DATA b, RData& m) -> DATA{
+		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
+		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
+		Module &M = *N;
+		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
+				true, GlobalValue::PrivateLinkage,StrConstant);
+		GV->setName("idk");
+		GV->setUnnamedAddr(true);
+		Value *Args[] = {getInt32(0),getInt32(0)};
+		DATA st = m.builder.CreateInBoundsGEP(GV, Args);
+		m.builder.CreateStore(a,st);
+		Value *Args2[] = {getInt32(0),getInt32(1)};
+		DATA st2 = m.builder.CreateInBoundsGEP(GV, Args2);
+		m.builder.CreateStore(b,st2);
+		return st;
+	},c_stringClass);
 	charClass->addBinop("+",charClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
