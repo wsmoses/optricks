@@ -21,11 +21,14 @@ def complex.complex(double a=0, double b=0){
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
 }
+	extern void putchar(char i);
 
-
-extern void prints(string i, bool b)
+def void print(c_string i, bool b=true){
+	for a in i: putchar(a);
+	if(b) putchar('\n');
+}
 def void print(string i, bool b=true){
-	prints(i,b);
+	print(i._cstr,b);
 }
 extern void printc(complex i, bool b=true);
 def void print(complex i, bool b=true){
@@ -34,7 +37,6 @@ def void print(complex i, bool b=true){
 def void print(double i, bool b=true){
 	(extern void printd(double i, bool b))(i,b);
 }
-	extern void putchar(char i);
 def void print(){
 	putchar('\n');
 }

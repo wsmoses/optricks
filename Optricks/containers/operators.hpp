@@ -34,7 +34,8 @@ void initClassesMeta(){
 			[](DATA a, RData& m) -> DATA{
 				return m.builder.CreateSIToFP(a,DOUBLETYPE);
 	},doubleClass);
-
+	//TODO allow printf
+	//TODO allow auto-casting for type of ternary operator
 	intClass->addCast(complexClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
 			auto v = m.builder.CreateSIToFP(a,DOUBLETYPE);

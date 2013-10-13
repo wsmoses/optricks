@@ -117,13 +117,13 @@ class Lexer{
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(rdata);
 			rdata.builder.CreateRetVoid();
-			verifyFunction(*F);
-			if(toFile>0) verifyModule(*(rdata.lmod));
 			if(debug){
 				this->myMod->write(cerr,"");
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
+			verifyFunction(*F);
+			if(toFile>0) verifyModule(*(rdata.lmod));
 			//auto modOpt = new PassManager();
 			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
 

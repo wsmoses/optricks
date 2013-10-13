@@ -224,6 +224,23 @@ void initFuncsMeta(RData& rd){
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
 		charClass->addFunction("length",PositionID())->funcs.add(new FunctionProto("length",intClass),F,PositionID());
 	}
+	charClass->addCast(c_stringClass) = new ouopNative(
+			[](DATA a, RData& m) -> DATA{
+		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "a");
+		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
+		Module &M = *N;
+		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
+				false, GlobalValue::PrivateLinkage,StrConstant);
+		GV->setName("idk");
+		GV->setUnnamedAddr(true);
+		Value *Args[] = {getInt32(0),getInt32(0)};
+
+		DATA st = m.builder.CreateInBoundsGEP(GV, Args);
+		//TODO allow constant initialization of char
+		m.builder.CreateStore(a,st);
+
+		return st;
+	},c_stringClass);
 	charClass->addCast(stringClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
 		DATA str = UndefValue::get(stringClass->getType(m));
@@ -231,7 +248,7 @@ void initFuncsMeta(RData& rd){
 		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
 		Module &M = *N;
 		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-				true, GlobalValue::PrivateLinkage,StrConstant);
+				false, GlobalValue::PrivateLinkage,StrConstant);
 		GV->setName("idk");
 		GV->setUnnamedAddr(true);
 		Value *Args[] = {getInt32(0),getInt32(0)};
@@ -250,7 +267,7 @@ void initFuncsMeta(RData& rd){
 		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
 		Module &M = *N;
 		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-				true, GlobalValue::PrivateLinkage,StrConstant);
+				false, GlobalValue::PrivateLinkage,StrConstant);
 		GV->setName("idk");
 		GV->setUnnamedAddr(true);
 		Value *Args[] = {getInt32(0),getInt32(0)};
@@ -267,7 +284,7 @@ void initFuncsMeta(RData& rd){
 		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
 		Module &M = *N;
 		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-				true, GlobalValue::PrivateLinkage,StrConstant);
+				false, GlobalValue::PrivateLinkage,StrConstant);
 		GV->setName("idk");
 		GV->setUnnamedAddr(true);
 		Value *Args[] = {getInt32(0),getInt32(0)};

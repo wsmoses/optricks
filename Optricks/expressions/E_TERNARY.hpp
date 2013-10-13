@@ -55,10 +55,11 @@ class TernaryOperator : public Statement{
 		}
 		ClassProto* checkTypes(RData& r) override{
 			if(condition->checkTypes(r)!=boolClass) error("Cannot have non-bool as condition for ternary "+condition->returnType->name);
-			auto g = then->checkTypes(r);
-			auto b = finalElse->checkTypes(r);
-			if(g!= b) error("Need matching types for ternary operator "+g->name+" and "+ b->name);
-			return returnType = g;
+			ClassProto* g = then->checkTypes(r);
+			ClassProto* b = finalElse->checkTypes(r);
+			ClassProto* tog = g->leastCommonAncestor(b);
+			if(tog==NULL || tog==autoClass) error("Need matching types for ternary operator "+g->name+" and "+ b->name);
+			return returnType = tog;
 		}
 		PHINode* evaluate(RData& r) override{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
@@ -71,7 +72,7 @@ class TernaryOperator : public Statement{
 			// Emit then value.
 			r.builder.SetInsertPoint(ThenBB);
 
-			Value* ThenV = then->evaluate(r);
+			Value* ThenV = then->returnType->castTo(r, then->evaluate(r), returnType);
 
 			r.builder.CreateBr(MergeBB);
 			// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
@@ -81,7 +82,7 @@ class TernaryOperator : public Statement{
 			TheFunction->getBasicBlockList().push_back(ElseBB);
 			r.builder.SetInsertPoint(ElseBB);
 
-			Value* ElseV = finalElse->evaluate(r);
+			Value* ElseV = finalElse->returnType->castTo(r, finalElse->evaluate(r), returnType);
 
 			r.builder.CreateBr(MergeBB);
 			// Codegen of 'Else' can change the current block, update ElseBB for the PHI.

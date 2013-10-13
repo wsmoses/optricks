@@ -90,7 +90,7 @@ class ForEachLoop : public Construct{
 			if(iterC->iterator==NULL) error("Could not find iterator for class: "+iterC->name);
 			std::vector<ClassProto*> yields;
 			iterC->iterator->ret->collectReturns(r, yields);
-			theClass = getMin(yields);
+			theClass = getMin(yields,filePos);
 			localVariable->getMetadata(r)->returnClass = theClass;
 			toLoop->checkTypes(r);
 			return voidClass;

@@ -271,7 +271,7 @@ class userFunction : public ofunction{
 			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
 				ret->collectReturns(ra, yields);
-				cp = getMin(yields);
+				cp = getMin(yields,filePos);
 				if(cp==autoClass) error("!Cannot support auto return for function");
 				returnV = new ClassProtoWrapper(cp);
 			}
@@ -420,7 +420,7 @@ class classFunction : public ofunction{
 			if(name!="iterator" && cp==autoClass){
 				std::vector<ClassProto*> yields;
 				ret->collectReturns(ra, yields);
-				cp = getMin(yields);
+				cp = getMin(yields,filePos);
 				if(cp==autoClass)  error("!Cannot support auto return for function");
 				returnV = new ClassProtoWrapper(cp);
 			}

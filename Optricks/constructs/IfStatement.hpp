@@ -60,9 +60,10 @@ class IfStatement : public Construct{
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
-
-			r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
-
+			if(finalElse->getToken()!=T_VOID)
+				r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
+			else
+				r.builder.CreateCondBr(condition->evaluate(r), ThenBB, MergeBB);
 			r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
 			then->evaluate(r);
@@ -72,18 +73,19 @@ class IfStatement : public Construct{
 			ret = ret && r.guarenteedReturn;
 
 			// Emit else block.
-			//TheFunction->getBasicBlockList().push_back(ElseBB);
-			r.builder.SetInsertPoint(ElseBB);
-
-			r.guarenteedReturn = false;
 			if(finalElse->getToken() != T_VOID){
+				r.builder.SetInsertPoint(ElseBB);
+				r.guarenteedReturn = false;
 				finalElse->evaluate(r);
 				ret = ret && r.guarenteedReturn;
+				if(!r.guarenteedReturn) r.builder.CreateBr(MergeBB);
 			}
-			else ret = false;
-			if(!r.guarenteedReturn){
-				r.builder.CreateBr(MergeBB);
-//				TheFunction->getBasicBlockList().push_back(MergeBB);
+			else{
+				ret = false;
+				TheFunction->getBasicBlockList().remove(ElseBB);
+			}
+
+			if(!ret){
 				r.builder.SetInsertPoint(MergeBB);
 			} else{
 				TheFunction->getBasicBlockList().remove(MergeBB);

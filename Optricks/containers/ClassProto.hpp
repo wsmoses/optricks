@@ -270,10 +270,11 @@ class GenericClass: public ClassProto{
 };
 */
 
-ClassProto* getMin(std::vector<ClassProto*>& vals){
+ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 	if(vals.size()==0) return voidClass;
 	ClassProto* tmp = vals[0];
-	for(int i =1 ; i<vals.size(); i++){
+	for(unsigned int i =1 ; i<vals.size(); i++){
+		if(tmp==NULL || tmp==autoClass) id.error("Could not determine minimum type.");
 		tmp = tmp->leastCommonAncestor(vals[i]);
 	}
 	return tmp;
