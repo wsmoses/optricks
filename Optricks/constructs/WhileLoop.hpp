@@ -78,8 +78,9 @@ class DoWhileLoop : public Construct{
 			statement->resolvePointers();
 		}
 		void write(ostream& a, String b) const override{
+			a << "do ";
+			statement->write(a,b+" ");
 			a << "while(" << condition << ")";
-			statement->write(a,b);
 		}
 		DoWhileLoop* simplify() override final{
 			return new DoWhileLoop(filePos, condition->simplify(), statement->simplify(), name);

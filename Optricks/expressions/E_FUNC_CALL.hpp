@@ -35,7 +35,7 @@ class E_FUNC_CALL : public Statement{
 			return NULL;
 		}
 		Value* getLocation(RData& a) override final{
-			//TODO
+			//TODO func_call getLocation
 			return NULL;
 		}
 		const Token getToken() const override{
@@ -91,7 +91,7 @@ class E_FUNC_CALL : public Statement{
 								vals[i]->checkTypes(r);
 				}
 				return returnType = toCall->getMetadata(r)->selfClass;
-			} //TODO oh -- constructor
+			}
 			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos).second;
 			if(proto==NULL) error("Non-existent function prototype");
 			return returnType = proto->returnType;
@@ -102,11 +102,7 @@ class E_FUNC_CALL : public Statement{
 			for(auto a:vals) g.push_back(a->simplify());
 			return new E_FUNC_CALL(filePos, tem, g);
 		}
-//		Value* getLocation(RData& a) override{
-	//TODO make data a struct {Value (data), Value (location) }
-//		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){}
 		DATA evaluate(RData& a) override{
 			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
 			if(temp!=NULL){
@@ -172,18 +168,5 @@ class E_FUNC_CALL : public Statement{
 			}
 		}
 };
-
-/*
-DATA ClassProto::construct(RData& r, E_FUNC_CALL* call) const{
-	if(nativeConstructor!=NULL) return nativeConstructor(r,call->vals,call->filePos,name);
-	else{
-		auto func = constructors.get(call->generateFunctionProto(r),call->filePos,r);
-		FunctionProto* proto = func.second;
-		Value* callee = func.first;
-		Type* t = getType(r);
-		DATA val = get
-		//TODO finish
-	}
-}*/
 
 #endif /* E_FUNC_CALL_HPP_ */

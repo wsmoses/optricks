@@ -2,7 +2,9 @@ import "string.opt"
 def void print(int i, bool b=true){
 	(extern void printi(int i, bool b))(i,b);
 }
-
+def bool isNaN(double d){
+	return !(d==d);
+}
 
 def int min(int a,int b){
 	return (a<b)?a:b;

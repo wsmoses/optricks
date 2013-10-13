@@ -19,7 +19,7 @@ class ForEachLoop : public Construct{
 		Statement* toLoop;
 		String name;
 		ForEachLoop(PositionID id, E_VAR* var, Statement* it,Statement* tL, String n="") :
-			Construct(id, voidClass), localVariable(var), iterable(it),toLoop(tL){
+			Construct(id, voidClass), theClass(NULL),iterC(NULL),localVariable(var), iterable(it),toLoop(tL){
 			name = n;
 		}
 

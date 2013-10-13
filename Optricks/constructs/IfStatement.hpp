@@ -56,7 +56,6 @@ class IfStatement : public Construct{
 		DATA evaluate(RData& r) override{
 			bool ret = true;
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock* myStart = r.builder.GetInsertBlock();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);

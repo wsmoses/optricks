@@ -67,7 +67,6 @@ public:
 		}
 		auto lVal = left->evaluate(a);
 		if(lVal!=NULL){
-			//TODO is this even close to right?
 			if(lVal->getType()->isVectorTy()){
 				return a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV");
 			} else if(lVal->getType()->isStructTy()){
@@ -80,9 +79,8 @@ public:
 				return NULL;
 			//	return a.builder.CreateExtractValue(lVal, Arra)
 			}
-		//	return a.builder.CreateGEP(lM->llvmLocation, getInt(INTTYPE,lT->getDataClassIndex(right,filePos)));
-			//TODO (check if vector or struct) return a.builder.CreateExtractValue(lM->llvmObject, ArrayRef<Value*>(look), "lookup2");
-	//		return GetElementPtrInst::Create(lM->llvmObject,ArrayRef<Value*>(look), "lookup2",a.builder.GetInsertBlock());
+			//return a.builder.CreateGEP(lM->llvmLocation, getInt(INTTYPE,lT->getDataClassIndex(right,filePos)));
+			//return GetElementPtrInst::Create(lM->llvmObject,ArrayRef<Value*>(look), "lookup2",a.builder.GetInsertBlock());
 		} else {
 			error("Could not find Value to get");
 			return NULL;
@@ -108,11 +106,8 @@ public:
 	ReferenceElement* getMetadata(RData& r){
 		auto lT = left->checkTypes(r);
 
-		if(lT->hasFunction(right)){
-			return lT->getFunction(right);
-		}
-		//TODO support getting class functions by moving funcMap
-		return new ReferenceElement("", NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), funcMap(), NULL, NULL);
+		if(lT->hasFunction(right)) return lT->getFunction(right);
+		else return new ReferenceElement("", NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), funcMap(), NULL, NULL);
 	}
 };
 

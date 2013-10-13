@@ -83,6 +83,10 @@ class E_RETURN : public Statement{
 		}
 		void write (ostream& f,String b="") const override{
 			switch(jump){
+				case YIELD:
+					f  << "yield";
+					if(inner!= NULL && inner->getToken()!=T_VOID) f << " " << inner;
+					return;
 				case RETURN:
 					f  << "return";
 					if(inner!= NULL && inner->getToken()!=T_VOID) f << " " << inner;

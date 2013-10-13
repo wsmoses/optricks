@@ -112,7 +112,7 @@ class Lexer{
 			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, "main", rdata.lmod);//todo check this
+			Function *F = Function::Create(FT, Function::ExternalLinkage, "main", rdata.lmod);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(rdata);

@@ -35,7 +35,6 @@ void initClassesMeta(){
 				return m.builder.CreateSIToFP(a,DOUBLETYPE);
 	},doubleClass);
 	//TODO allow printf
-	//TODO allow auto-casting for type of ternary operator
 	intClass->addCast(complexClass) = new ouopNative(
 			[](DATA a, RData& m) -> DATA{
 			auto v = m.builder.CreateSIToFP(a,DOUBLETYPE);
@@ -89,17 +88,18 @@ void initClassesMeta(){
 
 
 	///////******************************* Boolean ********************************////////
-	/* //TODO short-circuit
-	boolClass->binops["&&"][boolClass] = new obinopNative(
+	boolClass->addBinop("&&",boolClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 				return m.builder.CreateAnd(a,b,"andtmp");
+				//still short circuits
 	},boolClass);
 
-	boolClass->binops["||"][boolClass] = new obinopNative(
+	boolClass->addBinop("||",boolClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 				return m.builder.CreateOr(a,b,"ortmp");
+				//still short circuits
 	},boolClass);
-	*/
+
 	boolClass->addBinop("&", boolClass) = new obinopNative(
 			[](DATA a, DATA b, RData& m) -> DATA{
 				return m.builder.CreateAnd(a,b,"andtmp");
@@ -153,38 +153,32 @@ void initClassesMeta(){
 
 	doubleClass->addBinop("<", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpULT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpOLT(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop(">", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpUGT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpOGT(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop("<=", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpULE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpOLE(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop(">=", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpUGE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpOGE(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop("==", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpUEQ(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpOEQ(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop("!=", doubleClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
-					return m.builder.CreateFCmpUNE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
+					return m.builder.CreateFCmpONE(a,b,"cmptmp");
 	},boolClass);
 
 	doubleClass->addBinop("/", doubleClass) = new obinopNative(
@@ -242,37 +236,31 @@ void initClassesMeta(){
 	intClass->addBinop("<", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSLT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop(">", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSGT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop("<=", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSLE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop(">=", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSGE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop("==", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpEQ(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop("!=", intClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpNE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	intClass->addBinop("/", intClass) = new obinopNative(
@@ -315,37 +303,31 @@ void initClassesMeta(){
 	charClass->addBinop("<", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSLT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	charClass->addBinop(">", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSGT(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	charClass->addBinop("<=", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSLE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	charClass->addBinop(">=", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpSGE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	charClass->addBinop("==", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpEQ(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 
 	charClass->addBinop("!=", charClass) = new obinopNative(
 				[](DATA a, DATA b, RData& m) -> DATA{
 					return m.builder.CreateICmpNE(a,b,"cmptmp");
-					//TODO there is also a CreateFCmpOGT??
 	},boolClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);

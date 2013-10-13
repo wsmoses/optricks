@@ -190,10 +190,15 @@ class ClassProto{
 			}
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, Type* t=NULL,bool pointer=false) : isPointer(pointer), constructors(), superClass(sC), type(t),
+		ClassProto(ClassProto* sC, String n, Type* t=NULL,bool pointer=false) :
+			type(t),
 				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
+
 				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
+				superClass(sC),
+				constructors(),
+				isPointer(pointer),
 				name(n),iterator(NULL)
 				 {
 			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> Value*{	return a; }

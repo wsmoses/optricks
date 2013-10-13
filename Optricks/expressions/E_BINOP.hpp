@@ -82,7 +82,34 @@ class E_BINOP : public Statement{
 			return T_BINOP;
 		}
 		DATA evaluate(RData& a) override final{
-			//TODO allow short-circuit lookup of E_VAR
+			if(left->returnType == right->returnType && left->returnType==boolClass && (operation=="&&" || operation=="||")){
+				BasicBlock* StartBB = a.builder.GetInsertBlock();
+				BasicBlock *ElseBB = BasicBlock::Create(a.lmod->getContext(), "else",StartBB->getParent());
+				BasicBlock *MergeBB = BasicBlock::Create(a.lmod->getContext(), "ifcont",StartBB->getParent());
+				if(operation=="&&"){
+					Value* Start = left->evaluate(a);
+					a.builder.CreateCondBr(Start, ElseBB, MergeBB);
+					a.builder.SetInsertPoint(ElseBB);
+					Value* fin = right->evaluate(a);
+					a.builder.CreateBr(MergeBB);
+					a.builder.SetInsertPoint(MergeBB);
+					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
+					PN->addIncoming(Start, StartBB);
+					PN->addIncoming(fin, ElseBB);
+					return PN;
+				}else{
+					Value* Start = left->evaluate(a);
+					a.builder.CreateCondBr(Start, MergeBB, ElseBB);
+					a.builder.SetInsertPoint(ElseBB);
+					Value* fin = right->evaluate(a);
+					a.builder.CreateBr(MergeBB);
+					a.builder.SetInsertPoint(MergeBB);
+					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
+					PN->addIncoming(Start, StartBB);
+					PN->addIncoming(fin, ElseBB);
+					return PN;
+				}
+			}
 			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);
 			return temp.first->apply(
 					temp.second.first->apply(left->evaluate(a), a),
@@ -93,6 +120,8 @@ class E_BINOP : public Statement{
 		ClassProto* checkTypes(RData& r) override final{
 			auto leftT = left->checkTypes(r);
 			auto rightT = right->checkTypes(r);
+			if(leftT == rightT && leftT==boolClass && (operation=="&&" || operation=="||"))
+				return returnType=boolClass;
 			auto temp = leftT->getBinop(filePos, operation, rightT);
 			return returnType = temp.first->returnType;
 		}

@@ -1,7 +1,6 @@
 #define MAIN_CPP
 //TODO automatic constant detection
 //TODO constant expr
-//TODO auto returns
 //TODO fix parsing orders (esp w/ auto)
 #include "containers/all.hpp"
 #include "containers/basic_functions.hpp"
