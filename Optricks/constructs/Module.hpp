@@ -31,14 +31,14 @@ class OModule : public Stackable{
 			return super->exists(index);
 		}
 		ReferenceElement* getFuncPointer(PositionID a, String name){
-			if(!exists(name)) return addPointer(a,name,NULL,functionClass,NULL,NULL);
+			if(!exists(name)) return addPointer(a,name,DATA::getConstant(NULL),functionClass);
 			else return findPointer(a,name);
 		}
-		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla, ClassProto* selfCl, AllocaInst* al){
+		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla){
 			if(mapping.find(index)!=mapping.end()){
 				todo("The variable "+index+" has already been defined in this scope", a);
 			}
-			auto nex = new ReferenceElement("",this, index,value, cla, funcMap(), selfCl, al);
+			ReferenceElement* nex = new ReferenceElement("",this, index,value, cla, funcMap());
 			mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
 			return nex;
 		}
@@ -50,7 +50,7 @@ class OModule : public Stackable{
 				auto tmp = super->findPointer(a, index,false);
 				if(tmp!=NULL) return tmp;
 			}
-			if(createIfNeeded) return addPointer(a, index, NULL,NULL, NULL,NULL);
+			if(createIfNeeded) return addPointer(a, index, DATA::getConstant(NULL),NULL);
 			else return NULL;
 		}
 		ReferenceElement* getPointer(PositionID id, String index,bool top=true) {
@@ -110,8 +110,9 @@ lmod->setDataLayout("p:64:64:64");
 
 			fpm = new FunctionPassManager(lmod);
 			mpm = new PassManager();
-			// Set up optimisers
+			// Set up optimizers
 			PassManagerBuilder pmb;
+			pmb.Inliner = createFunctionInliningPass();
 			pmb.OptLevel = 3;
 			pmb.populateFunctionPassManager(*fpm);
 			pmb.populateModulePassManager(*mpm);

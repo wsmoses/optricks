@@ -35,7 +35,7 @@ class oslice : public oobject{
 		}
 		DATA evaluate(RData& a) override final{
 			error("Not implemented : slice evaluate");
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		Constant* getConstant(RData& r) override final { return NULL; }
 };

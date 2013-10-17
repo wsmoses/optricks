@@ -60,7 +60,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	Function *F = Function::Create(FT, Function::ExternalLinkage, "", lexer.rdata.lmod);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	lexer.rdata.builder.SetInsertPoint(BB);
-	Value* v = n->evaluate(lexer.rdata);
+	Value* v = n->evaluate(lexer.rdata).getValue(lexer.rdata);
 	if(debug)	v->dump();
 	if(type!=VOIDTYPE)
 		lexer.rdata.builder.CreateRet(v);

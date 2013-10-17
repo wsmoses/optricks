@@ -53,12 +53,12 @@ class DoWhileLoop : public Construct{
 
 
 			r.builder.SetInsertPoint(incBlock);
-			Value *EndCond = condition->evaluate(r);
+			Value *EndCond = condition->evaluate(r).getValue(r);
 			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 
 		void registerClasses(RData& r) override final{

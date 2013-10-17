@@ -106,8 +106,9 @@ class Lexer{
 			getStatements(global, debug, fileNames, stats);
 			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->registerClasses(rdata);
-			for(auto& n: stats)
+			for(auto& n: stats){
 				n->registerFunctionArgs(rdata);
+			}
 			for(auto& n: stats) n->registerFunctionDefaultArgs();
 			for(auto& n: stats) n->checkTypes(rdata);
 
@@ -167,7 +168,7 @@ class Lexer{
 		E_VAR* getNextVariable(ParseData data, bool late=true){
 			Resolvable* pointer;
 			if(late) pointer = new LateResolve(data.mod, getNextName(data.endWith), pos());
-			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),NULL,NULL,NULL,NULL);
+			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getConstant(NULL),NULL);
 			return new E_VAR(pos(), pointer);
 		}
 		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
@@ -185,7 +186,7 @@ class Lexer{
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,NULL,NULL,NULL,NULL));
+			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,DATA::getLocation(NULL),NULL));
 			return new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
 		}
 		Statement* getNextStatement(char endWith,bool global){
@@ -375,7 +376,7 @@ class Lexer{
 					f->trim(EOF);
 				}
 				OModule* nmod = new OModule(data.mod);
-				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,NULL,NULL,NULL,NULL));
+				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,DATA::getLocation(NULL),NULL));
 				Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
 				//TODO implement for loop naming
@@ -483,7 +484,7 @@ class Lexer{
 					if(methodName.size()==0) funcName = NULL;
 					else if(methodName.size()==1){
 						if(isOperator){
-							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,NULL,functionClass,funcMap(),NULL,NULL));
+							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,DATA::getFunction(NULL),functionClass,funcMap()));
 						} else {
 							funcName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName[0].first));
 						}
@@ -498,7 +499,7 @@ class Lexer{
 					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
 					for(unsigned int i = 0; i<methodName.size()-2; i++)
 						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
-					auto thisPointer = module->addPointer(pos(),"this",NULL,NULL,NULL,NULL);
+					auto thisPointer = module->addPointer(pos(),"this",DATA::getLocation(NULL),NULL);
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					auto tmp = pos();
 					if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
@@ -537,7 +538,6 @@ class Lexer{
 				}
 				if(f->read()!=')') f->error("Need ending ')' for extern", true);
 				return new externFunction(pos(), externName, retV, dec,rdata);
-				//TODO allow multiple externs
 			}
 			else{
 				f->error("Invalid function start -- used "+temp);

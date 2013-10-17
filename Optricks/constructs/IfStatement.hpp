@@ -60,9 +60,9 @@ class IfStatement : public Construct{
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
 			if(finalElse->getToken()!=T_VOID)
-				r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
+				r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, ElseBB);
 			else
-				r.builder.CreateCondBr(condition->evaluate(r), ThenBB, MergeBB);
+				r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, MergeBB);
 			r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
 			then->evaluate(r);
@@ -93,7 +93,7 @@ class IfStatement : public Construct{
 			// Emit merge block.
 //
 			r.guarenteedReturn = ret;
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		Statement* simplify() override{
 			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());

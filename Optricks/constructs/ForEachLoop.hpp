@@ -38,15 +38,16 @@ class ForEachLoop : public Construct{
 			//BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "eachLoop", TheFunction);
 			BasicBlock *END = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
 
-			if(iterC->isPointer) iterC->iterator->thisPointer->setValue(iterable->evaluate(ra),ra);
+			if(iterC->isPointer) iterC->iterator->thisPointer->llvmObject = DATA::getConstant(iterable->evaluate(ra).getValue(ra));
 			else{
-				iterC->iterator->thisPointer->llvmLocation = iterable->getLocation(ra);
-			if(iterC->iterator->thisPointer->llvmLocation==NULL){
-				iterC->iterator->thisPointer->llvmLocation = ra.builder.CreateAlloca(iterable->checkTypes(ra)->getType(ra), 0);
-				ra.builder.CreateStore(
-						iterable->evaluate(ra)
-						,iterC->iterator->thisPointer->llvmLocation);
-			}
+				Value* tmpLoc = iterable->getLocation(ra);
+				if(tmpLoc==NULL){
+					tmpLoc = ra.builder.CreateAlloca(iterable->checkTypes(ra)->getType(ra), 0);
+					ra.builder.CreateStore(
+							iterable->evaluate(ra).getValue(ra)
+							,tmpLoc);
+				}
+				iterC->iterator->thisPointer->llvmObject = DATA::getLocation(tmpLoc);
 			}
 
 			Jumpable* j = new Jumpable("", GENERATOR, NULL, NULL, theClass);
@@ -63,11 +64,10 @@ class ForEachLoop : public Construct{
 			for(unsigned int i = 0; i<j->endings.size(); i++){
 				std::pair<BasicBlock*,BasicBlock*> NEXT = j->resumes[i];
 				ra.builder.SetInsertPoint(NEXT.first);
-				DATA v = j->endings[i].second;
-					DATA loc = ra.builder.CreateAlloca(functionReturnType,0);
-					ra.builder.CreateStore(v, loc);
-					localVariable->getMetadata(ra)->llvmLocation = loc;
-				//TODO end, continue
+				Value* v = j->endings[i].second;
+				AllocaInst* loc = ra.builder.CreateAlloca(functionReturnType,0);
+				ra.builder.CreateStore(v, loc);
+				localVariable->getMetadata(ra)->llvmObject = DATA::getLocation(loc);
 
 				Jumpable* k = new Jumpable(name, LOOP, NEXT.second, END, NULL);
 				ra.addJump(k);
@@ -80,7 +80,7 @@ class ForEachLoop : public Construct{
 			TheFunction->getBasicBlockList().remove(END);
 			TheFunction->getBasicBlockList().push_back(END);
 			ra.builder.SetInsertPoint(END);
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 			toLoop->collectReturns(r, vals);

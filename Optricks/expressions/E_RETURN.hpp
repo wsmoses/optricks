@@ -60,7 +60,7 @@ class E_RETURN : public Statement{
 	//		BasicBlock *RETB = BasicBlock::Create(getGlobalContext(), "ret");
 	//		r.builder.SetInsertPoint(RETB);
 			if(inner!=NULL && inner->getToken()!=T_VOID){
-				t = inner->evaluate(r);
+				t = inner->evaluate(r).getValue(r);
 				if(t==NULL) error("Why is t null?");
 			}
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
@@ -76,7 +76,7 @@ class E_RETURN : public Statement{
 				RESUME->removeFromParent();
 				r.guarenteedReturn = true;
 			}
-			return NULL;
+			return DATA::getConstant(NULL);
 	//		return RETB;
 			//if(returnType==voidClass) return r.builder.CreateRetVoid();
 			//else return r.builder.CreateRet(t);

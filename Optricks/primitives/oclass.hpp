@@ -25,7 +25,7 @@ class oclass: public Stackable
 		oclass(ClassProto* p){
 			proto = p;
 			if(p->name!=""){
-				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, NULL,classClass, proto, 0U);
+				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, DATA::getClass(proto),classClass);
 			} else cerr << "String this has no name " << p->name << endl << flush;
 			//TODO redo oclass as oobject;
 		}
@@ -34,7 +34,7 @@ class oclass: public Stackable
 			ss << "class<" + proto->name + ">";
 		};
 		const Token getToken() const override final {
-			return T_OOBJECT;//TODO change to oclass?
+			return T_OOBJECT;
 		}
 
 		Constant* getConstant(RData& r){

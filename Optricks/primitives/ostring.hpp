@@ -33,7 +33,7 @@ class ostring : public oobject{
 			//TODO check return a.builder.CreateGlobalStringPtr(value,"tmpstr");
 		}
 		DATA evaluate(RData& a) override final{
-			return a.builder.CreateGlobalStringPtr(value,"tmpstr");
+			return DATA::getConstant(a.builder.CreateGlobalStringPtr(value,"tmpstr"));//TODO maybe make location?
 		}
 };
 

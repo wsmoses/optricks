@@ -61,13 +61,13 @@ class TernaryOperator : public Statement{
 			if(tog==NULL || tog==autoClass) error("Need matching types for ternary operator "+g->name+" and "+ b->name);
 			return returnType = tog;
 		}
-		PHINode* evaluate(RData& r) override{
+		DATA evaluate(RData& r) override{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
 
-			r.builder.CreateCondBr(condition->evaluate(r), ThenBB, ElseBB);
+			r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, ElseBB);
 
 			// Emit then value.
 			r.builder.SetInsertPoint(ThenBB);
@@ -94,7 +94,7 @@ class TernaryOperator : public Statement{
 			PHINode *PN = r.builder.CreatePHI(returnType->getType(r), 2,"iftmp");
 			PN->addIncoming(ThenV, ThenBB);
 			PN->addIncoming(ElseV, ElseBB);
-			return PN;
+			return DATA::getConstant(PN);
 		}
 
 		Constant* getConstant(RData& a) override final {

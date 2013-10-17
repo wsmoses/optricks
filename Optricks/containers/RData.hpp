@@ -60,21 +60,99 @@ struct RData{
 		BasicBlock* getBlock(String name, JumpType jump, ClassProto* ret, BasicBlock* bb, Value* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
 };
 
+class DATA{
+	private:
+		DataType type;
+		PrivateData data;
+		DATA(DataType t, void* v):type(t){data.pointer = v;};
+	public:
+		static DATA getFunction(Function* f){
+			return DATA(R_FUNC, f);
+		};
+		static DATA getConstant(Value* v){
+			return DATA(R_CONST, v);
+		};
+		static DATA getClass(ClassProto* c){
+			return DATA(R_CLASS, c);
+		};
+		static DATA getGenerator(Statement* s){
+			return DATA(R_GEN, s);
+		};
+		static DATA getLocation(Value* v){
+			return DATA(R_LOC, v);
+		};
+		DataType getType() const{
+			return type;
+		};
+		Value* getLocation() const{
+			if(type!=R_LOC){
+				cerr << "Cannot getLocation of non-location "<< type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL location" << endl << flush;
+				exit(1);
+			}
+			return data.location;
+		}
+		Function* getMyFunction() const{
+			if(type!=R_FUNC){
+				cerr << "Cannot getFunction of non-function " << type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL function" << endl << flush;
+				exit(1);
+			}
+			return data.function;
+		}
+		ClassProto* getMyClass() const{
+			if(type!=R_CLASS){
+				cerr << "Cannot getClass of non-class " << type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL class" << endl << flush;
+				exit(1);
+			}
+			return data.classP;
+		}
+		Value* getValue(RData& r) const{
+			assert(data.pointer!=NULL && "Cannot get NULL DATA");
+			if(type==R_CONST) return data.constant;
+			else if(type==R_FUNC) return data.function;
+			else if(type==R_LOC) return r.builder.CreateLoad(data.location);
+			else{
+				cerr << "Cannot get Value of DataType " << type << endl << flush;
+				exit(1);
+			}
+		};
+		void setValue(RData& r, Value* v){
+			if(type==R_CONST) data.constant = v;
+			assert(data.pointer!=NULL && "Cannot set NULL DATA");
+			if(type==R_LOC) r.builder.CreateStore(v, data.location);
+			else{
+				cerr << "Cannot set Value of DataType " << type << endl << flush;
+				exit(1);
+			}
+		};
+};
+
 class funcMap{
 	private:
-		std::vector<std::pair<Value*,FunctionProto*>> data;
+		std::vector<std::pair<DATA,FunctionProto*>> data;
 	public:
 		unsigned int size() const{
 			return data.size();
 		}
-		funcMap(std::pair<Value*,FunctionProto*> a):data(){
+		funcMap(std::pair<DATA,FunctionProto*> a):data(){
 			data.push_back(a);
 		}
 		funcMap():data(){
 		}
-		void add(FunctionProto* f, Value* t, PositionID id);
-		bool set(FunctionProto* in, Value* t);
-		std::pair<Value*,FunctionProto*>  get(FunctionProto* func,PositionID id) const;
+		void add(FunctionProto* f, DATA t, PositionID id);
+		bool set(FunctionProto* in, DATA t);
+		std::pair<DATA,FunctionProto*>  get(FunctionProto* func,PositionID id) const;
 };
 
 #include "ClassProto.hpp"

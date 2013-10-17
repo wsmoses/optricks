@@ -23,10 +23,10 @@ class oarray : public oobject{
 		}
 
 		Constant* getConstant(RData& r) override final{ return NULL; } //TODO fix for array eval
-		ConstantArray* evaluate(RData& a) override final{
+		DATA evaluate(RData& a) override final{
 			//TODO allow array eval
 			error("Array not implemented");
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		oobject* simplify() override final{
 			return this;
@@ -96,7 +96,7 @@ class E_ARR : public Construct{
 				n->data.push_back(a->evaluate(a));
 			}
 			return n;*/
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 
 		Statement* simplify() override{

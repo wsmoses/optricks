@@ -16,18 +16,21 @@
 class ouop{
 	public:
 		virtual ~ouop(){};
-		virtual DATA apply(DATA a, RData& mod) = 0;
+		virtual DATA apply(Value* a, RData& mod) = 0;
+		DATA apply(DATA a, RData& mod){
+			return apply(a.getValue(mod), mod);
+		}
 		ClassProto* returnType;
 };
 
 class ouopNative: public ouop{
 	public:
-		DATA (*temp)(DATA,RData&);
-		ouopNative(DATA (*fun)(DATA,RData&),ClassProto* a){
+		DATA (*temp)(Value*,RData&);
+		ouopNative(DATA (*fun)(Value*,RData&),ClassProto* a){
 			temp = fun;
 			returnType = a;
 		}
-		DATA apply(DATA a,RData& m){
+		DATA apply(Value* a,RData& m) override final{
 			return temp(a,m);
 		}
 };
@@ -39,26 +42,29 @@ class ouopUser: public ouop{
 			func = fun;
 			returnType = a;
 		}
-		DATA apply(DATA a,RData& m){
-			return m.builder.CreateCall(func, a, "uop");
+		DATA apply(Value* a,RData& m) override final{
+			return DATA::getConstant(m.builder.CreateCall(func, a, "uop"));
 		}
 };
 
 class obinop{
 	public:
 		virtual ~obinop(){};
-		virtual DATA apply(DATA a, DATA b, RData& mod) = 0;
+		virtual DATA apply(Value* a, Value* b, RData& mod) = 0;
+		DATA apply(DATA a, DATA b, RData& mod){
+			return apply(a.getValue(mod), b.getValue(mod), mod);
+		}
 		ClassProto* returnType;
 };
 
 class obinopNative : public obinop{
 	public:
-		DATA (*temp)(DATA,DATA,RData&);
-		obinopNative(DATA (*fun)(DATA,DATA,RData&), ClassProto* a){
+		DATA (*temp)(Value*,Value*,RData&);
+		obinopNative(DATA (*fun)(Value*,Value*,RData&), ClassProto* a){
 			temp = fun;
 			returnType = a;
 		}
-		DATA apply(DATA a,DATA b, RData& m){
+		DATA apply(Value* a,Value* b, RData& m) override final{
 			return temp(a,b,m);
 		}
 };
@@ -70,8 +76,8 @@ class obinopUser: public obinop{
 			func = fun;
 			returnType = a;
 		}
-		DATA apply(DATA a,DATA b, RData& m) override final{
-			return m.builder.CreateCall2(func, a, b, "binop");
+		DATA apply(Value* a,Value* b, RData& m) override final{
+			return DATA::getConstant(m.builder.CreateCall2(func, a, b, "binop"));
 		}
 };
 #endif /* OPERATIONS_HPP_ */

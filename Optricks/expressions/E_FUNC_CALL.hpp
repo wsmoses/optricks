@@ -4,6 +4,8 @@
 #include "../primitives/ofunction.hpp"
 
 #define E_FUNC_CALL_C_
+//TODO if calling variables are all constants -- inline the function call
+//TODO make constructors into generators
 class E_FUNC_CALL : public Statement{
 	public:
 		Statement* toCall;
@@ -63,7 +65,7 @@ class E_FUNC_CALL : public Statement{
 				a->write(f);
 			}
 			f<<"])";
-			*/
+			 */
 		}
 		void registerClasses(RData& r) override final{
 			toCall->registerClasses(r);
@@ -88,9 +90,9 @@ class E_FUNC_CALL : public Statement{
 			toCall->checkTypes(r);
 			if(toCall->returnType==classClass){
 				for(unsigned int i = 0; i<vals.size(); i++){
-								vals[i]->checkTypes(r);
+					vals[i]->checkTypes(r);
 				}
-				return returnType = toCall->getMetadata(r)->selfClass;
+				return returnType = toCall->getSelfClass();
 			}
 			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos).second;
 			if(proto==NULL) error("Non-existent function prototype");
@@ -124,32 +126,41 @@ class E_FUNC_CALL : public Statement{
 				}
 				return temp->ret->evaluate(a);
 			}
-			std::pair<Value*,FunctionProto*> funcs = (toCall->returnType==classClass)?(
-					toCall->getMetadata(a)->selfClass->constructors.get(generateFunctionProto(a),filePos))
+			std::pair<DATA,FunctionProto*> funcs = (toCall->returnType==classClass)?(
+					toCall->getSelfClass()->constructors.get(generateFunctionProto(a),filePos))
 					:(toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos));
 			FunctionProto* proto = funcs.second;
-			Value* callee = funcs.first;
+			DATA d_callee = funcs.first;
+			if(d_callee.getType()==R_GEN){
+				filePos.error("TODO -- evaluation of generators");
+			} else if(d_callee.getType()!=R_FUNC){
+				filePos.error("Cannot call function of non function/generator");
+			}
+			Function* callee = d_callee.getMyFunction();
 			std::vector<Value*> Args;
 			if(auto T=dynamic_cast<E_LOOKUP*>(toCall)){
 				auto tp = T->left->checkTypes(a);
 				if(tp->hasFunction(T->right)){
 					//TODO make better check (e.g. static functions)
-					DATA loc = (tp->isPointer)?(T->left->evaluate(a)):(T->left->getLocation(a));
-					if(loc==NULL){
-						//TODO allow for second function of type instead of type*
-						//thereby reducing number of allocas/loads/stores
-						//error("Could not find location of object to insert into class function - using automatic pointer creation",false);
-						Function *TheFunction = a.builder.GetInsertBlock()->getParent();
-						IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
-						loc = TmpB.CreateAlloca(T->left->returnType->getType(a), 0,"tmp");
-						a.builder.CreateStore(T->left->evaluate(a),loc);
+					Value* loc;
+					if(tp->isPointer) loc = T->left->evaluate(a).getValue(a);//TODO check
+					else{
+						loc = T->left->getLocation(a);
+						if(loc==NULL){
+							//TODO allow for second function of type instead of type*
+							//thereby reducing number of allocas/loads/stores
+							Function *TheFunction = a.builder.GetInsertBlock()->getParent();
+							IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
+							loc = TmpB.CreateAlloca(T->left->returnType->getType(a), 0,"tmp");
+							a.builder.CreateStore(T->left->evaluate(a).getValue(a),loc);
+						}
 					}
 					Args.push_back(loc);
 				}
 			}
 			//cout << proto->toString() << endl << flush;
 			for(unsigned int i = 0; i<vals.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
+				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
 				if(vals[i]->returnType==voidClass)
 					Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 				else
@@ -157,14 +168,14 @@ class E_FUNC_CALL : public Statement{
 				if (Args.back() == 0) error("Error in eval of args");
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getMetadata(a)->selfClass;
+				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
 				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
 			}
 
-			if(returnType==voidClass) return a.builder.CreateCall(callee, Args);
+			if(returnType==voidClass) return DATA::getConstant(a.builder.CreateCall(callee, Args));
 			else{
 				auto t = a.builder.CreateCall(callee, Args, "calltmp");
-				return t;
+				return DATA::getConstant(t);
 			}
 		}
 };

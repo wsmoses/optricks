@@ -21,15 +21,15 @@ class oobject: public Statement{
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
-		DATA getLocation(RData& r) override{
+		Value* getLocation(RData& r) override{
 			return NULL;
 		}
 		String getFullName() override{
 			return returnType->name;
 		}
-		//TODO
-		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
-		void registerClasses(RData& r) override final{};
+
+		ClassProto* getSelfClass() override{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
+		void registerClasses(RData& r) override{};
 		void registerFunctionArgs(RData& r) override{};
 		void registerFunctionDefaultArgs() override{};
 		void resolvePointers() override{};

@@ -44,7 +44,7 @@ class ForLoop : public Construct{
 			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
 			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
 
-			Value *Cond1 = condition->evaluate(r);
+			Value *Cond1 = condition->evaluate(r).getValue(r);
 			r.builder.CreateCondBr(Cond1, loopBlock, afterBlock);
 
 			r.builder.SetInsertPoint(loopBlock);
@@ -57,12 +57,12 @@ class ForLoop : public Construct{
 
 			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
-			Value *EndCond = condition->evaluate(r);
+			Value *EndCond = condition->evaluate(r).getValue(r);
 			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";

@@ -37,6 +37,16 @@ auto COMPLEXTYPE = VectorType::get(DOUBLETYPE,2);
 ConstantInt* getInt32(uint32_t t){
 	return ConstantInt::get(INT32TYPE,t,true);
 }
+ConstantInt* getBool(bool b){
+	return ConstantInt::get(BOOLTYPE, b, false);
+}
+ConstantFP* getDouble(APFloat t){
+	return ConstantFP::get(getGlobalContext(), t);
+}
+ConstantFP* getDouble(double t){
+	return ConstantFP::get(getGlobalContext(), APFloat(t));
+//	return ConstantFP::get(DOUBLETYPE, t);
+}
 ConstantInt* getInt(uint64_t t){
 	return ConstantInt::get(INTTYPE,t,true);
 }

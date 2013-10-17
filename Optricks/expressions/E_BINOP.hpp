@@ -87,27 +87,27 @@ class E_BINOP : public Statement{
 				BasicBlock *ElseBB = BasicBlock::Create(a.lmod->getContext(), "else",StartBB->getParent());
 				BasicBlock *MergeBB = BasicBlock::Create(a.lmod->getContext(), "ifcont",StartBB->getParent());
 				if(operation=="&&"){
-					Value* Start = left->evaluate(a);
+					Value* Start = left->evaluate(a).getValue(a);
 					a.builder.CreateCondBr(Start, ElseBB, MergeBB);
 					a.builder.SetInsertPoint(ElseBB);
-					Value* fin = right->evaluate(a);
+					Value* fin = right->evaluate(a).getValue(a);
 					a.builder.CreateBr(MergeBB);
 					a.builder.SetInsertPoint(MergeBB);
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
 					PN->addIncoming(fin, ElseBB);
-					return PN;
+					return DATA::getConstant(PN);
 				}else{
-					Value* Start = left->evaluate(a);
+					Value* Start = left->evaluate(a).getValue(a);
 					a.builder.CreateCondBr(Start, MergeBB, ElseBB);
 					a.builder.SetInsertPoint(ElseBB);
-					Value* fin = right->evaluate(a);
+					Value* fin = right->evaluate(a).getValue(a);
 					a.builder.CreateBr(MergeBB);
 					a.builder.SetInsertPoint(MergeBB);
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
 					PN->addIncoming(fin, ElseBB);
-					return PN;
+					return DATA::getConstant(PN);
 				}
 			}
 			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);

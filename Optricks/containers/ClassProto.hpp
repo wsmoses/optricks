@@ -67,33 +67,7 @@ class ClassProto{
 			innerDataIndex[nam]=a;
 		}
 		DATA generateData(RData& r){
-//			Type* mt = getType(r);
-			return UndefValue::get(getType(r));
-			/*
-			if(mt->isVectorTy()){
-				VectorType* vt = dynamic_cast<VectorType*>(mt);
-				Type* t = vt->getElementType();
-				auto count = vt->getNumElements();
-				std::vector<Constant*> vals;
-				for(unsigned int i = 0; i<count; i++)
-					vals.push_back(UndefValue::get(t));
-				return ConstantVector::get(ArrayRef<Constant*>(vals));
-			} else if(mt->isArrayTy()){
-				ArrayType* vt = dynamic_cast<ArrayType*>(mt);
-				Type* t = vt->getElementType();
-				auto count = vt->getNumElements();
-				std::vector<Constant*> vals;
-				for(unsigned int i = 0; i<count; i++)
-					vals.push_back(UndefValue::get(t));
-				return ConstantArray::get(vt, ArrayRef<Constant*>(vals));
-			} else if(mt->isStructTy()){
-				StructType* vt = dynamic_cast<StructType*>(mt);
-				auto count = vt->getNumElements();
-				std::vector<Constant*> vals;
-				for(unsigned int i = 0; i<count; i++)
-					vals.push_back(UndefValue::get(vt->getElementType(i)));
-				return ConstantStruct::get(vt, ArrayRef<Constant*>(vals));
-			}*/
+			return DATA::getConstant(UndefValue::get(getType(r)));
 		}
 		DATA construct(RData& r, E_FUNC_CALL* call) const;
 		Type* getType(RData& r){
@@ -117,7 +91,14 @@ class ClassProto{
 			return found!=casts.end();
 		}
 		Value* castTo(RData& r, DATA c, ClassProto* right){
-			if(hasCast(right)) return casts[right]->apply(c, r);
+			if(hasCast(right)) return casts[right]->apply(c, r).getValue(r);
+			else{
+				todo("Compile error - could not find cast "+name+" to "+right->name,PositionID());
+				return NULL;
+			}
+		}
+		Value* castTo(RData& r, Value* c, ClassProto* right){
+			if(hasCast(right)) return casts[right]->apply(DATA::getConstant(c), r).getValue(r);
 			else{
 				todo("Compile error - could not find cast "+name+" to "+right->name,PositionID());
 				return NULL;
@@ -201,7 +182,7 @@ class ClassProto{
 				isPointer(pointer),
 				name(n),iterator(NULL)
 				 {
-			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> Value*{	return a; }
+			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> DATA{	return DATA::getConstant(a); }
 								, this)));
 		}
 };
@@ -209,7 +190,6 @@ class ClassProto{
 ClassProto* objectClass = new ClassProto(NULL, "object");
 ClassProto* autoClass = new ClassProto(NULL, "auto");
 ClassProto* classClass = new ClassProto(objectClass, "class");
-//ClassProto* autoClass = new ClassProto("auto"); todo auto class
 //ClassProto* nullClass = new ClassProto("None");
 ClassProto* boolClass = new ClassProto(objectClass, "bool",BOOLTYPE);
 ClassProto* functionClass = new ClassProto(objectClass, "function");

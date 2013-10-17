@@ -25,7 +25,7 @@ class ofunction:public oobject{
 			if(self!=NULL){
 				auto T = self->getMetadata(rd);
 				if(add && T!=NULL && T->name.length()>0 && T->name[0]!='~'){
-					T->funcs.add(prototype,NULL,filePos);
+					T->funcs.add(prototype,DATA::getFunction(NULL),filePos);
 									self->returnType = functionClass;
 				}
 			}
@@ -35,14 +35,13 @@ class ofunction:public oobject{
 		String getFullName() override final{
 			return prototype->name;
 		}
-		virtual Function* evaluate(RData& r)=0;
 		ReferenceElement* getMetadata(RData& r) override{
-			if(myFunction==NULL) myFunction = evaluate(r);
-			return new ReferenceElement("",NULL,"lambda",NULL,functionClass,funcMap(std::pair<Value*, FunctionProto*>(myFunction,prototype)),NULL,NULL);
+			DATA tmp = evaluate(r);
+			return new ReferenceElement("",NULL,"lambda",tmp,functionClass,funcMap(std::pair<DATA, FunctionProto*>(tmp,prototype)));
 		}
 		void registerFunctionArgs(RData& r) override{
 			if(prototype==NULL) error("Function prototype should not be null");
-			if(returnV!=NULL) prototype->returnType = returnV->getMetadata(r)->selfClass;
+			if(returnV!=NULL) prototype->returnType = returnV->getSelfClass();
 			for(Declaration* d: prototype->declarations){
 				d->registerFunctionArgs(r);
 			}
@@ -70,13 +69,13 @@ class ofunction:public oobject{
 			if(self!=NULL) self->checkTypes(r);
 			if(returnV!=NULL){
 				returnV->checkTypes(r);
-				prototype->returnType = returnV->getMetadata(r)->selfClass;
+				prototype->returnType = returnV->getSelfClass();
 				if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->returnType->name);
 			} //else if(prototype->returnType==NULL) error("Could not p-resolve return type");
 			return returnType;
 		}
 };
-//TODO
+
 class externFunction : public ofunction{
 	public:
 		externFunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec,RData& rd):
@@ -102,11 +101,11 @@ class externFunction : public ofunction{
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getMetadata(a)->selfClass->getType(a);
+				Type* cl = b->classV->getSelfClass()->getType(a);
 				if(cl==NULL) error("Type argument "+b->classV->getFullName()+" is null");
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getMetadata(a)->selfClass;
+			ClassProto* cp = returnV->getSelfClass();
 			if(cp==NULL) error("Cannot use void class proto in extern");
 			prototype->returnType = cp;
 			Type* r = cp->getType(a);
@@ -124,16 +123,16 @@ class externFunction : public ofunction{
 				error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
 			}
 			myFunction = F;
-			self->getMetadata(a)->funcs.set(prototype, F);
+			self->getMetadata(a)->funcs.set(prototype, DATA::getFunction(F));
 			if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 		}
 
 		oobject* simplify() override final{
 			return this;
 		}
-		Function* evaluate(RData& a) override{
+		DATA evaluate(RData& a) override{
 			if(myFunction==NULL) registerFunctionArgs(a);
-			return myFunction;
+			return DATA::getFunction(myFunction);
 		}
 };
 class lambdaFunction : public ofunction{
@@ -179,12 +178,12 @@ class lambdaFunction : public ofunction{
 			if((prototype->returnType = ret->checkTypes(r))==NULL) error("Null prototype return");
 			return prototype->returnType;
 		}
-		Function* evaluate(RData& ar) override{
-			if(myFunction!=NULL) return myFunction;
+		DATA evaluate(RData& ar) override{
+			if(myFunction!=NULL) return DATA::getFunction(myFunction);
 			if(prototype->returnType==NULL) checkTypes(ar);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getMetadata(ar)->selfClass->getType(ar);
+				Type* cl = b->classV->getSelfClass()->getType(ar);
 				if(cl==NULL) error("Type argument "+b->classV->getFullName()+" is null", true);
 				args.push_back(cl);
 			}
@@ -211,7 +210,7 @@ class lambdaFunction : public ofunction{
 					//	ar.builder.GetInsertBlock();
 					BasicBlock::Create(getGlobalContext(), "entry", F);
 			ar.builder.SetInsertPoint(BB);
-			Value* v = ret->evaluate(ar);
+			Value* v = ret->evaluate(ar).getValue(ar);
 			if(r!=VOIDTYPE)
 				ar.builder.CreateRet(v);
 			else
@@ -222,7 +221,7 @@ class lambdaFunction : public ofunction{
 			ar.fpm->run(*F);
 
 			ar.builder.SetInsertPoint( Parent );
-			return myFunction=F;
+			return DATA::getFunction(myFunction=F);
 		}
 };
 class userFunction : public ofunction{
@@ -262,7 +261,7 @@ class userFunction : public ofunction{
 				b->registerFunctionDefaultArgs();
 				b->checkTypes(ra);
 				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getMetadata(ra)->selfClass->getType(ra);
+				Type* cl = b->classV->getSelfClass()->getType(ra);
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
 				args.push_back(cl);
 			}
@@ -285,13 +284,13 @@ class userFunction : public ofunction{
 					if(prototype->declarations.size()==1){
 						error("User-defined unary operators not supported");
 					} else if (prototype->declarations.size()==2){
-						prototype->declarations[0]->classV->getMetadata(ra)->selfClass->addBinop(
-								self->getMetadata(ra)->name.substr(1),
-								prototype->declarations[1]->classV->getMetadata(ra)->selfClass,
+						prototype->declarations[0]->classV->getSelfClass()->addBinop(
+								self->getFullName().substr(1),
+								prototype->declarations[1]->classV->getSelfClass(),
 								filePos
 						) = new obinopUser(F, cp);
 					} else error("Cannot make operator with argument count of "+str<unsigned int>(prototype->declarations.size()));
-				} else self->getMetadata(ra)->funcs.set(prototype, F);
+				} else self->getMetadata(ra)->funcs.set(prototype, DATA::getFunction(F));
 			}
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
@@ -305,9 +304,9 @@ class userFunction : public ofunction{
 			for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
-				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmLocation = ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name);
+				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
+				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
+						0,prototype->declarations[Idx]->variable->pointer->name));
 				met->setValue(AI,ra);
 			}
 			ra.guarenteedReturn = false;
@@ -352,8 +351,8 @@ class userFunction : public ofunction{
 			ret->checkTypes(r);
 			return prototype->returnType;
 		}
-		Function* evaluate(RData& ra) override{
-			return myFunction;
+		DATA evaluate(RData& ra) override{
+			return DATA::getFunction(myFunction);
 		}
 };
 
@@ -390,7 +389,7 @@ class classFunction : public ofunction{
 		void registerFunctionArgs(RData& ra) override{
 			ofunction::registerFunctionArgs(ra);
 			if(self->checkTypes(ra)!=classClass) error("Cannot define function for object whose type is not class");
-			ClassProto* myCl = self->getMetadata(ra)->selfClass;
+			ClassProto* myCl = self->getSelfClass();
 			thisPointer->returnClass = myCl;
 			if(myCl==NULL) error("Defining class is null?");
 			ret->registerFunctionArgs(ra);
@@ -401,7 +400,7 @@ class classFunction : public ofunction{
 				return;
 			}
 			ReferenceElement* myMetadata = myCl->addFunction(name, filePos);
-			myMetadata->funcs.add(prototype,NULL,filePos);
+			myMetadata->funcs.add(prototype,DATA::getFunction(NULL),filePos);
 			if(myMetadata==NULL) error("Metadata is null?");
 			std::vector<Type*> args;
 			if(myCl->isPointer) args.push_back(myCl->getType(ra));
@@ -411,7 +410,7 @@ class classFunction : public ofunction{
 				b->registerFunctionDefaultArgs();
 				b->checkTypes(ra);
 				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getMetadata(ra)->selfClass->getType(ra);
+				Type* cl = b->classV->getSelfClass()->getType(ra);
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
 				args.push_back(cl);
 			}
@@ -429,7 +428,7 @@ class classFunction : public ofunction{
 
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
-			myMetadata->funcs.set(prototype, F);
+			myMetadata->funcs.set(prototype, DATA::getFunction(F));
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
@@ -440,15 +439,15 @@ class classFunction : public ofunction{
 			unsigned Idx = 0;
 			Function::arg_iterator AI = F->arg_begin();
 			AI->setName("this");
-			if(myCl->isPointer) thisPointer->setValue(AI, ra,NULL);
-			else thisPointer->llvmLocation = AI;
+			if(myCl->isPointer) thisPointer->llvmObject = DATA::getConstant(AI);
+			else thisPointer->llvmObject = DATA::getLocation(AI);
 			AI++;
 			for (; Idx+1 != F->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
-				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmLocation = ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name);
+				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
+				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
+						0,prototype->declarations[Idx]->variable->pointer->name));
 				met->setValue(AI,ra);
 			}
 			ra.guarenteedReturn = false;
@@ -493,8 +492,8 @@ class classFunction : public ofunction{
 			ret->checkTypes(r);
 			return prototype->returnType;
 		}
-		Function* evaluate(RData& ra) override{
-			return myFunction;
+		DATA evaluate(RData& ra) override{
+			return DATA::getFunction(myFunction);
 		}
 };
 
@@ -527,10 +526,10 @@ class constructorFunction : public ofunction{
 		void registerFunctionArgs(RData& ra) override{
 			ofunction::registerFunctionArgs(ra);
 			if(returnV->checkTypes(ra)!=classClass) error("Cannot define function for object whose type is not class");
-			ClassProto* myCl = returnV->getMetadata(ra)->selfClass;
+			ClassProto* myCl = returnV->getSelfClass();
 			if(myCl==NULL) error("Defining class is null?");
 			thisPointer->returnClass = myCl;
-			myCl->constructors.add(prototype,NULL,filePos);
+			myCl->constructors.add(prototype,DATA::getFunction(NULL),filePos);
 			ret->registerFunctionArgs(ra);
 			ret->registerFunctionDefaultArgs();
 			ret->checkTypes(ra);
@@ -540,7 +539,7 @@ class constructorFunction : public ofunction{
 				b->registerFunctionDefaultArgs();
 				b->checkTypes(ra);
 				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getMetadata(ra)->selfClass->getType(ra);
+				Type* cl = b->classV->getSelfClass()->getType(ra);
 				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
 				args.push_back(cl);
 			}
@@ -549,7 +548,7 @@ class constructorFunction : public ofunction{
 
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
-			myCl->constructors.set(prototype, F);
+			myCl->constructors.set(prototype, DATA::getFunction(F));
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
@@ -563,13 +562,12 @@ class constructorFunction : public ofunction{
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmLocation = ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name);
+				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
+						0,prototype->declarations[Idx]->variable->pointer->name));
 				met->setValue(AI,ra);
 			}
-			auto aloc = ra.builder.CreateAlloca(r, 0,"this*");
-			thisPointer->llvmLocation = aloc;
-			thisPointer->setValue(myCl->generateData(ra),ra,NULL);
+			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(r, 0,"this*"));
+			thisPointer->setValue(myCl->generateData(ra),ra);
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
@@ -600,8 +598,8 @@ class constructorFunction : public ofunction{
 			ret->checkTypes(r);
 			return prototype->returnType;
 		}
-		Function* evaluate(RData& ra) override{
-			return myFunction;
+		DATA evaluate(RData& ra) override{
+			return DATA::getFunction(myFunction);
 		}
 };
 #endif /* OFUNCTION_HPP_ */

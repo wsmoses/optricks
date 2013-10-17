@@ -56,34 +56,34 @@ public:
 		registerClasses(a);
 		ClassProto* lT = left->checkTypes(a);
 		if(lT->hasFunction(right)){
-			return NULL;//lT->getFunction(right);
+			//TODO add wrapper around object which called function
+			return lT->getFunction(right)->llvmObject;
 		}
 		auto lloc = left->getLocation(a);
 		if(lloc!=NULL){
 			auto l =getInt32(lT->getDataClassIndex(right,filePos));
 			std::vector<Value*> look = {getInt32(0),l};
-			auto pos = a.builder.CreateGEP(lloc,look);
-			return a.builder.CreateLoad(pos);
+			return DATA::getLocation(a.builder.CreateGEP(lloc,look));
 		}
-		auto lVal = left->evaluate(a);
+		Value* lVal = left->evaluate(a).getValue(a);
 		if(lVal!=NULL){
 			if(lVal->getType()->isVectorTy()){
-				return a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV");
+				return DATA::getConstant(a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV"));
 			} else if(lVal->getType()->isStructTy()){
 				std::vector<unsigned int> b =  {lT->getDataClassIndex(right,filePos)};
-				auto t= a.builder.CreateExtractValue(lVal,ArrayRef<unsigned int>(b),"getV");
-				return t;
+				Value* t= a.builder.CreateExtractValue(lVal,ArrayRef<unsigned int>(b),"getV");
+				return DATA::getConstant(t);
 			} else {
 				std::vector<Value*> look = {};
 				error("can't fast-lookup non-vector");
-				return NULL;
+				return DATA::getConstant(NULL);
 			//	return a.builder.CreateExtractValue(lVal, Arra)
 			}
 			//return a.builder.CreateGEP(lM->llvmLocation, getInt(INTTYPE,lT->getDataClassIndex(right,filePos)));
 			//return GetElementPtrInst::Create(lM->llvmObject,ArrayRef<Value*>(look), "lookup2",a.builder.GetInsertBlock());
 		} else {
 			error("Could not find Value to get");
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 	}
 	Statement* simplify() override{
@@ -107,7 +107,7 @@ public:
 		auto lT = left->checkTypes(r);
 
 		if(lT->hasFunction(right)) return lT->getFunction(right);
-		else return new ReferenceElement("", NULL,lT->name+operation+right, NULL, lT->getDataClass(right,filePos), funcMap(), NULL, NULL);
+		else return new ReferenceElement("", NULL,lT->name+operation+right, DATA::getLocation(getLocation(r)), lT->getDataClass(right,filePos), funcMap());
 	}
 };
 

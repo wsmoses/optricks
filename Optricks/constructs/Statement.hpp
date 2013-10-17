@@ -27,8 +27,8 @@ class ClassProtoWrapper : public Construct{
 	public:
 		ClassProto* cp;
 		ReferenceElement* getMetadata(RData& r) override final{
-			//TODO make resolvable for class with class-functions / constructors
-			return new ReferenceElement("",NULL,cp->name, NULL, classClass, funcMap(), cp, NULL);
+			//TODO make resolvable for class with static-functions / constructors
+			return new ReferenceElement("",NULL,cp->name, DATA::getClass(cp), classClass, funcMap());
 		}
 		ClassProto* getSelfClass() override{
 			return cp;
@@ -52,8 +52,7 @@ class ClassProtoWrapper : public Construct{
 			//error("Cannot write classProto Wrapper");
 		}
 		DATA evaluate(RData& r){
-			error("Can't eval :(");
-			return NULL;
+			return DATA::getClass(cp);
 		}
 		String getFullName() override final{
 			return cp->name;

@@ -32,13 +32,13 @@ class Resolvable{
 };
 
 
-void funcMap::add(FunctionProto* f, Value* t, PositionID id){
+void funcMap::add(FunctionProto* f, DATA t, PositionID id){
 	if(f==NULL) todo("Error can't add NULL function proto",id);
 	if(set(f,t)){
 		todo("Error overwriting function "+f->toString(),id);
 	}
 }
-bool funcMap::set(FunctionProto* in, Value* t){
+bool funcMap::set(FunctionProto* in, DATA t){
 
 	for(unsigned int i = 0; i<data.size(); i++){
 	//	cout << data.size() <<" " << i << endl << flush;
@@ -47,12 +47,12 @@ bool funcMap::set(FunctionProto* in, Value* t){
 			return true;
 		}
 	}
-	data.push_back(std::pair<Value*,FunctionProto*>(t,in));
+	data.push_back(std::pair<DATA,FunctionProto*>(t,in));
 	return false;
 }
-std::pair<Value*,FunctionProto*> funcMap::get(FunctionProto* func,PositionID id) const{
+std::pair<DATA,FunctionProto*> funcMap::get(FunctionProto* func,PositionID id) const{
 	if(func==NULL) todo("NULL FunctionProto",id);
-	std::vector<std::pair<std::pair<Value*,FunctionProto*>,std::pair<bool,std::pair<unsigned int, unsigned int> > > > possible;
+	std::vector<std::pair<std::pair<DATA,FunctionProto*>,std::pair<bool,std::pair<unsigned int, unsigned int> > > > possible;
 	int bestind = -1;
 	unsigned int count = UINT_MAX;
 	unsigned int toCast = UINT_MAX;
@@ -60,7 +60,7 @@ std::pair<Value*,FunctionProto*> funcMap::get(FunctionProto* func,PositionID id)
 		auto temp = func->match(data[i].second);
 		//cout << i << "*" << func->toString()+"|"+data[i].second->toString() << ":" << temp.first << "," << temp.second.first << "," << temp.second.second << endl << flush;
 		if(temp.first){
-			possible.push_back(std::pair<std::pair<Value*,FunctionProto*>,std::pair<bool,std::pair<unsigned int, unsigned int> > >
+			possible.push_back(std::pair<std::pair<DATA,FunctionProto*>,std::pair<bool,std::pair<unsigned int, unsigned int> > >
 			(data[i],temp));
 			if(temp.second.first < count){
 				bestind = i;
@@ -95,46 +95,44 @@ std::pair<Value*,FunctionProto*> funcMap::get(FunctionProto* func,PositionID id)
 	}
 	return data[bestind];
 }
+
 #define REFERENCEELEM_C_
 class ReferenceElement:public Resolvable{
 	private:
-		DATA llvmObject;
 	public:
+		DATA llvmObject;
 		ClassProto* returnClass;
 		funcMap funcs;
-		ClassProto* selfClass;
-		Value* llvmLocation;
 		virtual ~ReferenceElement(){};
-		ReferenceElement(String c, OModule* mod, String index, DATA value, ClassProto* cl, funcMap fun, ClassProto* selfCl,Value* al=NULL):
-			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun), selfClass(selfCl), llvmLocation(al)
+		ReferenceElement(String c, OModule* mod, String index, DATA value, ClassProto* cl, funcMap fun):
+			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun)
 		{
 		}
-		ReferenceElement(OModule* mod, String index, DATA value, ClassProto* cl, funcMap& fun, ClassProto* selfCl,Value* al=NULL):
-			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun), selfClass(selfCl), llvmLocation(al)
+		ReferenceElement(OModule* mod, String index, DATA value, ClassProto* cl, funcMap& fun):
+			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun)
 		{
 		}
 		ReferenceElement* resolve() override final{
 			return this;
 		}
-		DATA getValue(RData& r,FunctionProto* func=NULL){
-			if(llvmLocation==NULL) return llvmObject;
-			else return r.builder.CreateLoad(llvmLocation);
+		Value* getValue(RData& r/*,FunctionProto* func=NULL*/) const{
+			return llvmObject.getValue(r);
 		}
 		//void ensureFunction(FunctionProto* func){
 
 		//	}
-		DATA setValue(DATA d, RData& r,FunctionProto* func=NULL){
-			if(llvmLocation==NULL) return llvmObject=d;
-			else return r.builder.CreateStore(d,llvmLocation);
+		void setValue(DATA d, RData& r/*,FunctionProto* func=NULL*/){
+			llvmObject.setValue(r,d.getValue(r));
+		}
+		void setValue(Value* d, RData& r/*,FunctionProto* func=NULL*/){
+			llvmObject.setValue(r,d);
 		}
 };
 
 ReferenceElement* ClassProto::addFunction(String nam, PositionID id){
 	if(nam==name) todo("Cannot make function with same name as class "+name,id);
 	if(innerDataIndex.find(nam)!=innerDataIndex.end()) todo("Cannot create another function type for class "+name+" named "+nam,id);
-	if(functions.find(nam)==functions.end()) return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,NULL,functionClass,funcMap(),NULL,NULL);
+	if(functions.find(nam)==functions.end()) return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,DATA::getFunction(NULL),functionClass,funcMap());
 	return functions[nam];
-	//if(functions.find(nam)!=functions.end()) todo("Cannot create another function type for class "+name+" named "+nam,id);
-	//TODO
 }
 #endif /* ALL_HPP_ */

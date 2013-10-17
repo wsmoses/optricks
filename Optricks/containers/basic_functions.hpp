@@ -1,11 +1,11 @@
 #ifndef __BASICFUNCH
 #define __BASICFUNCH
 
+extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
-extern "C" {
 struct StringStruct{
 		char* data;
 		int64_t length;
@@ -18,8 +18,14 @@ void prints(StringStruct i, bool b){
 		else printf("%s\n",i.data);
 	}
 	void printi(int64_t i, bool b){
+#ifndef PRId64
+		if(!b) printf("%lld", i);
+		else printf("%lld\n",i);
+#else
 		if(!b) printf("%" PRId64 "", i);
 		else printf("%" PRId64 "\n",i);
+
+#endif
 	}
 	void printd(double i, bool b){
 		if(!b) printf("%f",i);
@@ -31,12 +37,12 @@ void prints(StringStruct i, bool b){
 	}
 	void printb(bool i, bool b){
 		if(!b){
-			if(i) puts("true");
-			else puts("false");
+			if(i) printf("true");
+			else printf("false");
 		}
 		else{
-			if(i) puts("true\n");
-			else puts("false\n");
+			if(i) puts("true");
+			else puts("false");
 			fflush(stdout);
 		}
 	}

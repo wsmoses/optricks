@@ -45,7 +45,7 @@ class Statement : public Stackable{
 		virtual ReferenceElement* getMetadata(RData& r) = 0;
 		virtual Value* getLocation(RData& a){
 //			cout << "getting location..." << endl << flush;
-			return getMetadata(a)->llvmLocation;
+			return getMetadata(a)->llvmObject.getLocation();
 		};
 };
 
@@ -55,7 +55,7 @@ class VoidStatement : public Statement{
 		VoidStatement() : Statement(PositionID(0,0,"#Void")){}
 		DATA evaluate(RData& a) override{
 			error("Attempted evaluation of void statement");
-			return NULL;
+			return DATA::getConstant(NULL);
 		}
 		Statement* simplify() override final{
 			return this;

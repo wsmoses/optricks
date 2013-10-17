@@ -47,7 +47,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 using namespace llvm;
-
+#include <assert.h>
 #define cout std::cout
 #define cin std::cin
 #define cerr std::cerr
@@ -59,8 +59,33 @@ using namespace llvm;
 #define byte unsigned short
 #define exception std::exception
 
-#define DATA Value*
+#ifndef STATEMENT_P_
+#define STATEMENT_P_
+class Statement;
+#endif
 
+#ifndef CLASSPROTO_C_
+#define CLASSPROTO_C_
+class ClassProto;
+#endif
+
+enum DataType{
+	R_CONST = 5,
+	R_CLASS = 4,
+	R_FUNC = 3,
+	R_GEN = 2,
+	R_LOC = 1,
+	R_UNDEF = 0
+};
+
+union PrivateData{
+	Value* constant;
+	ClassProto* classP;
+	Function* function;
+	Statement* generator;
+	Value* location;
+	void* pointer;
+};
 #include "../O_Token.hpp"
 #include "types.hpp"
 //#include "indexed_map.hpp"
@@ -152,15 +177,6 @@ class ouop;
 class obinopNative;
 class ouopNative;
 #endif
-#ifndef STATEMENT_P_
-#define STATEMENT_P_
-class Statement;
-#endif
-
-#ifndef CLASSPROTO_C_
-#define CLASSPROTO_C_
-class ClassProto;
-#endif
 
 #ifndef REFERENCEELEM_C_
 #define REFERENCEELEM_C_
@@ -204,15 +220,6 @@ void getDir(String pos, String& dir, String& file){
 		file = pos.substr(p+1);
 	}
 }
-/*
-auto& getLLVMString(String s){
-	//auto tmp = getArrayRefFromString(s);
-	//auto dat = ConstantDataArray::get(getGlobalContext(), tmp);
-
-}*/
-
-//PointerType::getUnqual(ConstantDataArray::getString(getGlobalContext(),"")->getType());
-//		ConstantDataArray::getString(getGlobalContext(),"")->getType();
 
 
 

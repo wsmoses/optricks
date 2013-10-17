@@ -26,7 +26,7 @@ class E_VAR : public Statement{
 			return T_VAR;
 		}
 		ClassProto* getSelfClass() override final{
-			return pointer->resolve()->selfClass;
+			return pointer->resolve()->llvmObject.getMyClass();
 		}
 		Constant* getConstant(RData& a) override final {
 			return NULL;
@@ -38,9 +38,7 @@ class E_VAR : public Statement{
 			return this;
 		}
 		DATA evaluate(RData& r) override final{
-			auto ans = pointer->resolve()->getValue(r);
-			if(ans==NULL) error("No data stored for "+pointer->name);
-			return ans;
+			return pointer->resolve()->llvmObject;
 		}
 		void write(ostream& f,String t="") const override{
 			f  << pointer->name;
