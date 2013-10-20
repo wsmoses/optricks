@@ -62,7 +62,7 @@ class ForLoop : public Construct{
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 		void write(ostream& a, String b="") const override{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";

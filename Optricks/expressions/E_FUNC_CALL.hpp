@@ -94,8 +94,10 @@ class E_FUNC_CALL : public Statement{
 				}
 				return returnType = toCall->getSelfClass();
 			}
-			FunctionProto* proto = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos).second;
+			DATA d = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos);
+			FunctionProto* proto = d.getFunctionType();
 			if(proto==NULL) error("Non-existent function prototype");
+			if(d.getType()==R_GEN) return returnType = proto->getGeneratorType(filePos);
 			return returnType = proto->returnType;
 		}
 		Statement* simplify() override{
@@ -105,38 +107,15 @@ class E_FUNC_CALL : public Statement{
 			return new E_FUNC_CALL(filePos, tem, g);
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){}
-		DATA evaluate(RData& a) override{
-			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
-			if(temp!=NULL){
-				//TODO be aware that this makes something like
-				/*
-				 * for(int i=0; i<7; i+=1) printi((lambda int z: z*i)(i)) // VALID
-				 * yet something like
-				 * for(int i=0; i<7; i+=1){
-				 *  auto tmp = (lambda int z: z*i)
-				 *  printi(tmp(i))
-				 *  } 													 // INVALID
-				 */
-				//for(int i=0; i<7; i+=1){ auto tmp = (lambda int z: z*z) printi(tmp(i)) }
-				for(unsigned int i = 0; i<temp->prototype->declarations.size(); i++){
-					Declaration* decl = temp->prototype->declarations[i];
-					if(i<vals.size()) decl = new Declaration(decl->filePos, decl->classV, decl->variable, false, vals[i]);
-					else if(decl->value==NULL || decl->value->getToken()==T_VOID) error("No argument for lambda function!");
-					decl->evaluate(a);
-				}
-				return temp->ret->evaluate(a);
-			}
-			std::pair<DATA,FunctionProto*> funcs = (toCall->returnType==classClass)?(
+		std::pair<std::vector<Value*>,DATA> getArgs(RData& a){
+
+			DATA d_callee = (toCall->returnType==classClass)?(
 					toCall->getSelfClass()->constructors.get(generateFunctionProto(a),filePos))
 					:(toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos));
-			FunctionProto* proto = funcs.second;
-			DATA d_callee = funcs.first;
-			if(d_callee.getType()==R_GEN){
-				filePos.error("TODO -- evaluation of generators");
-			} else if(d_callee.getType()!=R_FUNC){
-				filePos.error("Cannot call function of non function/generator");
+			FunctionProto* proto = d_callee.getFunctionType();
+			if(d_callee.getType()!=R_FUNC && d_callee.getType()!=R_GEN){
+				error("Cannot call function of non function/generator");
 			}
-			Function* callee = d_callee.getMyFunction();
 			std::vector<Value*> Args;
 			if(auto T=dynamic_cast<E_LOOKUP*>(toCall)){
 				auto tp = T->left->checkTypes(a);
@@ -161,21 +140,60 @@ class E_FUNC_CALL : public Statement{
 			//cout << proto->toString() << endl << flush;
 			for(unsigned int i = 0; i<vals.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
-				if(vals[i]->returnType==voidClass)
-					Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
-				else
-					Args.push_back(vals[i]->returnType->castTo(a, vals[i]->evaluate(a), t));
-				if (Args.back() == 0) error("Error in eval of args");
+				if(vals[i]->checkTypes(a)==voidClass)
+					Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
+				else{
+					Args.push_back( vals[i]->evaluate(a).castTo(a, t, filePos).getValue(a) );
+				}
+				assert(Args.back() != NULL);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
-				Args.push_back( proto->declarations[i]->value->returnType->castTo(a, proto->declarations[i]->value->evaluate(a), t));
+				Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
 			}
-
-			if(returnType==voidClass) return DATA::getConstant(a.builder.CreateCall(callee, Args));
+			return std::pair<std::vector<Value*>,DATA>(Args,d_callee);
+		}
+		DATA evaluate(RData& a) override{
+			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
+			if(temp!=NULL){
+				//TODO be aware that this makes something like
+				/*
+				 * for(int i=0; i<7; i+=1) printi((lambda int z: z*i)(i)) // VALID
+				 * yet something like
+				 * for(int i=0; i<7; i+=1){
+				 *  auto tmp = (lambda int z: z*i)
+				 *  printi(tmp(i))
+				 *  } 													 // INVALID
+				 */
+				//for(int i=0; i<7; i+=1){ auto tmp = (lambda int z: z*z) printi(tmp(i)) }
+				for(unsigned int i = 0; i<temp->prototype->declarations.size(); i++){
+					Declaration* decl = temp->prototype->declarations[i];
+					if(i<vals.size()) decl = new Declaration(decl->filePos, decl->classV, decl->variable, false, vals[i]);
+					else if(decl->value==NULL || decl->value->getToken()==T_VOID) error("No argument for lambda function!");
+					decl->evaluate(a);
+				}
+				return temp->ret->evaluate(a);
+			}
+			std::pair<std::vector<Value*>,DATA > tempVal = getArgs(a);
+			std::vector<Value*> &Args = tempVal.first;
+			DATA &d_callee = tempVal.second;
+			if(d_callee.getType()==R_GEN){
+				//TODO allow for auto tmp = "hello".iterator(), storing "hello" in temp struct
+				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(filePos);
+				Value* mine = cla->generateData(a).getValue(a);
+				for(unsigned int i = 0; i<Args.size(); i++){
+					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(std::vector<unsigned>({i})));
+				}
+				return DATA::getConstant(mine, cla);
+			}
+			Function* callee = d_callee.getMyFunction();
+			if(returnType==voidClass){
+				a.builder.CreateCall(callee, Args);
+				return DATA::getNull();
+			}
 			else{
-				auto t = a.builder.CreateCall(callee, Args, "calltmp");
-				return DATA::getConstant(t);
+				Value* t = a.builder.CreateCall(callee, Args, "calltmp");
+				return DATA::getConstant(t, returnType);
 			}
 		}
 };

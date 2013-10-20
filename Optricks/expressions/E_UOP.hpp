@@ -26,7 +26,7 @@ class E_PREOP : public Construct{
 		}
 		DATA evaluate(RData& r) override final {
 			auto a = value->evaluate(r);
-			return value->returnType->preops[operation]->apply(a,r);
+			return value->returnType->preops[operation]->apply(a,r,filePos);
 		}
 		void write(ostream& f,String s="") const override{
 			f << "(" << operation << value << ")";
@@ -69,7 +69,7 @@ class E_POSTOP : public Construct{
 		}
 		DATA evaluate(RData& r) override final {
 			auto a = value->evaluate(r);
-			return value->returnType->postops[operation]->apply(a,r);
+			return value->returnType->postops[operation]->apply(a,r,filePos);
 		}
 		void write(ostream& f,String s="") const override{
 			f << "(" << value << " " << operation << ")";

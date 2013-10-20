@@ -18,16 +18,16 @@ def int mandleconverge(complex z, complex z0, int iters=0){
 
 def int mand(complex z0){
 	auto z = z0
-	for(auto iter=0; iter<1000; iter+=1)
+	for iter in range(1000):
 		if( z.mag2() > 4 ) return iter
 		else z = z**6 + z0
 	return 1000
 }
 
 def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.25, double ymax=1.25, double ystep=.04){
-	for(auto z = complex(xmin,ymin) z.imag<ymax z.imag+=ystep){
-		for( z.real = xmin z.real<xmax z.real+=xstep)
-			printdensity(mand(z))
+	for im in range(ymin,ymax,ystep){
+		for re in range(xmin,xmax,xstep):
+			printdensity(mand(complex(re,im)))
 		print()
 	}
 }

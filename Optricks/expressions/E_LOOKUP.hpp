@@ -43,6 +43,7 @@ public:
 		left->resolvePointers();
 	}
 	ClassProto* checkTypes(RData& r){
+		if(returnType!=NULL) return returnType;
 		ClassProto* superC = left->checkTypes(r);
 		if(superC->hasFunction(right)) return returnType = functionClass;
 		return returnType = superC->getDataClass(right,filePos);
@@ -53,37 +54,38 @@ public:
 	}
 	Constant* getConstant(RData& r) override final { return NULL; }
 	DATA evaluate(RData& a) override{
+		checkTypes(a);
 		registerClasses(a);
 		ClassProto* lT = left->checkTypes(a);
 		if(lT->hasFunction(right)){
 			//TODO add wrapper around object which called function
 			return lT->getFunction(right)->llvmObject;
 		}
-		auto lloc = left->getLocation(a);
+		Value* lloc = left->getLocation(a);
 		if(lloc!=NULL){
 			auto l =getInt32(lT->getDataClassIndex(right,filePos));
 			std::vector<Value*> look = {getInt32(0),l};
-			return DATA::getLocation(a.builder.CreateGEP(lloc,look));
+			return DATA::getLocation(a.builder.CreateGEP(lloc,look), returnType);
 		}
 		Value* lVal = left->evaluate(a).getValue(a);
 		if(lVal!=NULL){
 			if(lVal->getType()->isVectorTy()){
-				return DATA::getConstant(a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV"));
+				return DATA::getConstant(a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV"), returnType);
 			} else if(lVal->getType()->isStructTy()){
 				std::vector<unsigned int> b =  {lT->getDataClassIndex(right,filePos)};
 				Value* t= a.builder.CreateExtractValue(lVal,ArrayRef<unsigned int>(b),"getV");
-				return DATA::getConstant(t);
+				return DATA::getConstant(t, returnType);
 			} else {
 				std::vector<Value*> look = {};
 				error("can't fast-lookup non-vector");
-				return DATA::getConstant(NULL);
+				return DATA::getNull();
 			//	return a.builder.CreateExtractValue(lVal, Arra)
 			}
 			//return a.builder.CreateGEP(lM->llvmLocation, getInt(INTTYPE,lT->getDataClassIndex(right,filePos)));
 			//return GetElementPtrInst::Create(lM->llvmObject,ArrayRef<Value*>(look), "lookup2",a.builder.GetInsertBlock());
 		} else {
 			error("Could not find Value to get");
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 	}
 	Statement* simplify() override{
@@ -104,10 +106,11 @@ public:
 		}
 	};
 	ReferenceElement* getMetadata(RData& r){
+		checkTypes(r);
 		auto lT = left->checkTypes(r);
 
 		if(lT->hasFunction(right)) return lT->getFunction(right);
-		else return new ReferenceElement("", NULL,lT->name+operation+right, DATA::getLocation(getLocation(r)), lT->getDataClass(right,filePos), funcMap());
+		else return new ReferenceElement("", NULL,lT->name+operation+right, DATA::getLocation(getLocation(r), returnType), lT->getDataClass(right,filePos), funcMap());
 	}
 };
 

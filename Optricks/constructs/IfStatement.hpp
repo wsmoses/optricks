@@ -93,7 +93,7 @@ class IfStatement : public Construct{
 			// Emit merge block.
 //
 			r.guarenteedReturn = ret;
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 		Statement* simplify() override{
 			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());

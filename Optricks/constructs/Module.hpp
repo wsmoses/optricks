@@ -31,7 +31,7 @@ class OModule : public Stackable{
 			return super->exists(index);
 		}
 		ReferenceElement* getFuncPointer(PositionID a, String name){
-			if(!exists(name)) return addPointer(a,name,DATA::getConstant(NULL),functionClass);
+			if(!exists(name)) return addPointer(a,name,DATA::getNull(),functionClass);
 			else return findPointer(a,name);
 		}
 		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla){
@@ -50,7 +50,7 @@ class OModule : public Stackable{
 				auto tmp = super->findPointer(a, index,false);
 				if(tmp!=NULL) return tmp;
 			}
-			if(createIfNeeded) return addPointer(a, index, DATA::getConstant(NULL),NULL);
+			if(createIfNeeded) return addPointer(a, index, DATA::getNull(),NULL);
 			else return NULL;
 		}
 		ReferenceElement* getPointer(PositionID id, String index,bool top=true) {

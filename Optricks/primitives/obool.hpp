@@ -26,7 +26,7 @@ class obool: public oobject{
 			return ConstantInt::get(BOOLTYPE, value, false);
 		}
 		DATA evaluate(RData& a) override final{
-			return DATA::getConstant(getBool(value));
+			return DATA::getConstant(getBool(value),boolClass);
 		}
 };
 

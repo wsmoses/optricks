@@ -37,21 +37,23 @@ class Declaration: public Construct{
 		ClassProto* checkTypes(RData& r) final override{
 			classV->checkTypes(r);
 			variable->checkTypes(r);
+			ClassProto* temp = classV->getSelfClass();
 			//cout << "checking declaration types: "<<(size_t)(value) << " and now the class" <<
 			//	((value==NULL)?c_intClass:(value->returnType))->name << endl << flush;
 			if(value!=NULL){
 				value->checkTypes(r);
 				if(value->returnType==NULL)error("Declaration of inconsistent types");
-				else if(classV->getSelfClass()==autoClass){
-					variable->getMetadata(r)->returnClass = variable->returnType = value->returnType;
+				else if(temp==autoClass){
+					temp = value->returnType;
 					//cout << "Location of set" << (size_t)(variable->getMetadata(r)) << endl << flush;
 					//cout << "Setting: " << variable->returnType->name << endl << flush;
 					classV = new ClassProtoWrapper(variable->returnType);
 					//cout << "Finalized as: " << variable->checkTypes(r)->name << endl << flush;
 				}
-				else if(!value->returnType->hasCast(classV->getSelfClass()) )
+				else if(!value->returnType->hasCast(temp) )
 					error("Declaration of inconsistent types - variable of type "+classV->getFullName()+" and value of "+value->returnType->name);
 			}
+			variable->getMetadata(r)->returnClass = variable->returnType = temp;
 			return returnType;
 		}
 
@@ -84,6 +86,7 @@ class Declaration: public Construct{
 		DATA evaluate(RData& r) final override{
 			//cout << "evaling declaration " << endl << flush;
 			checkTypes(r);
+			assert(variable->returnType!=voidClass);
 			if(global){
 
 				Module *N = (r.builder.GetInsertBlock()->getParent()->getParent());
@@ -91,7 +94,7 @@ class Declaration: public Construct{
 				//TODO introduce constant expressions
 				//Constant* cons = getConstant(r);
 				//(tmp==NULL)?NULL:dynamic_cast<Constant*>(tmp);
-				Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->returnType->castTo(r, value->evaluate(r), variable->returnType));
+				Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r));
 
 				GlobalVariable *GV = new GlobalVariable(M, variable->returnType->getType(r),
 						false, GlobalValue::PrivateLinkage,UndefValue::get(variable->returnType->getType(r)));
@@ -107,12 +110,12 @@ class Declaration: public Construct{
 						TheFunction->getEntryBlock().begin());
 				Alloca = TmpB.CreateAlloca(variable->returnType->getType(r), 0,variable->pointer->name);
 				if(value!=NULL && value->getToken()!=T_VOID){
-					r.builder.CreateStore(value->returnType->castTo(r, value->evaluate(r), variable->returnType) , Alloca);
+					r.builder.CreateStore(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r) , Alloca);
 				}
 			}
-			variable->getMetadata(r)->llvmObject = DATA::getLocation(Alloca);
+			variable->getMetadata(r)->llvmObject = DATA::getLocation(Alloca,variable->returnType);
 			r.guarenteedReturn = false;
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 		Declaration* simplify() final override{
 			return new Declaration(filePos, classV, variable, global, (value==NULL)?NULL:(value->simplify()));
@@ -158,12 +161,12 @@ std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(Funct
 	return std::pair<bool,std::pair<unsigned int, unsigned int> >(true,std::pair<unsigned int, unsigned int>(optional,count));
 }
 
-bool FunctionProto::equals(const FunctionProto* f) const{
+bool FunctionProto::equals(const FunctionProto* f, PositionID id) const{
 	if(declarations.size()!=f->declarations.size()) return false;
 	for(unsigned int i = 0; i<declarations.size(); ++i){
 		ClassProto* class1 = declarations[i]->classV->getSelfClass();
 		ClassProto* class2 = f->declarations[i]->classV->getSelfClass();
-		if(class1==NULL || class2==NULL) todo("ERROR: NULL PROTO",PositionID());
+		if(class1==NULL || class2==NULL) id.error("ERROR: NULL PROTO");
 		if(!class1->equals(class2))
 			return false;
 	}
@@ -179,6 +182,16 @@ String FunctionProto::toString() const{
 		t+=a->classV->getFullName();
 	}
 	return t+")";
+}
+
+ClassProto* FunctionProto::getGeneratorType(PositionID id){
+	if(generatorType!=NULL) return generatorType;
+	generatorType = new ClassProto(objectClass,name);
+	generatorType->isGen = true;
+	for(const auto& a: declarations){
+		generatorType->addElement(a->variable->getFullName(),a->classV->getSelfClass(),id);
+	}
+	return generatorType;
 }
 
 Function* strLen;
@@ -201,7 +214,7 @@ void initFuncsMeta(RData& rd){
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(rd.builder.CreateFPToSI(F->arg_begin(), INTTYPE));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		intClass->constructors.add(intIntP,DATA::getFunction(F),PositionID());
+		intClass->constructors.add(DATA::getFunction(F,intIntP),PositionID());
 	}
 	{
 		std::vector<Type*> t = {C_STRINGTYPE};
@@ -209,7 +222,7 @@ void initFuncsMeta(RData& rd){
 		strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
 		rd.exec->addGlobalMapping(strLen, (void*)(&strlen));
 	}
-	c_stringClass->addFunction("length",PositionID())->funcs.add(new FunctionProto("length",intClass),DATA::getFunction(strLen),PositionID());
+	c_stringClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),PositionID());
 	{
 
 		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
@@ -220,19 +233,22 @@ void initFuncsMeta(RData& rd){
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(ConstantInt::get(INTTYPE,1));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		charClass->addFunction("length",PositionID())->funcs.add(new FunctionProto("length",intClass),DATA::getFunction(F),PositionID());
+		charClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(F,new FunctionProto("length",intClass)),PositionID());
 	}
 	charClass->addCast(c_stringClass) = new ouopNative(
-			[](Value* a, RData& m) -> DATA{
+		[](DATA av, RData& m, PositionID id) -> DATA{
+	Value* a = av.getValue(m);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			APInt va = constantInt->getValue();
 			char t = (char)(va.getSExtValue () );
-			return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(1,t),"tmpstr"));
+			return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(1,t),"tmpstr"),c_stringClass);
 		}
-		//TODO
+		id.error("Cannot convert from non-const char to string");
+		return DATA::getNull();
 	},c_stringClass);
 	charClass->addCast(stringClass) = new ouopNative(
-			[](Value* a, RData& m) -> DATA{
+			[](DATA av, RData& m, PositionID id) -> DATA{
+		Value* a = av.getValue(m);
 		if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
 			auto va = c->getValue();
 			char t = (char)(va.getSExtValue () );
@@ -240,7 +256,7 @@ void initFuncsMeta(RData& rd){
 			Value* str = UndefValue::get(stringClass->getType(m));
 			str= m.builder.CreateInsertValue(str,st,{0});
 			str= m.builder.CreateInsertValue(str,getInt(1),{1});
-			return DATA::getConstant(str);
+			return DATA::getConstant(str,stringClass);
 		}
 		Value* str = UndefValue::get(stringClass->getType(m));
 		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "a");
@@ -258,51 +274,59 @@ void initFuncsMeta(RData& rd){
 
 		str= m.builder.CreateInsertValue(str,st,{0});
 		str= m.builder.CreateInsertValue(str,getInt(1),{1});
-		return DATA::getConstant(str);
+		return DATA::getConstant(str,stringClass);
 	},stringClass);
-	c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
-			[](Value* ay, Value* by, RData& m) -> DATA{
-		//TODO
-	},c_stringClass);
+	//c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
+	//		[](Value* ay, Value* by, RData& m) -> DATA{
+		//TODO string addition (need malloc)
+	//},c_stringClass);
 
 	intClass->addBinop("*",charClass) = new obinopNative(
-		[](Value* a, Value* b, RData& m) -> DATA{
+			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+		Value* a = av.getValue(m);
+		Value* b = bv.getValue(m);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(b)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(a)){
 				APInt va = constantInt->getValue();
 				char t = (char)(va.getSExtValue () );
 				APInt va2 = cons2->getValue();
 				auto len = (va2.getSExtValue () );
-				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"));
+				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"),c_stringClass);
 			}
 		}
-		PositionID().error("Could not find constant");
+		PositionID(0,0,"!done").error("Could not find constant");
+		return DATA::getNull();
 		}
 	,c_stringClass);
 	charClass->addBinop("*",intClass) = new obinopNative(
-		[](Value* a, Value* b, RData& m) -> DATA{
+			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+		Value* a = av.getValue(m);
+		Value* b = bv.getValue(m);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
 				APInt va = constantInt->getValue();
 				char t = (char)(va.getSExtValue () );
 				APInt va2 = cons2->getValue();
 				auto len = (va2.getSExtValue () );
-				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"));
+				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"),c_stringClass);
 			}
 		}
-		PositionID().error("Could not find constant");
+		PositionID(0,0,"!done").error("Could not find constant");
+		return DATA::getNull();
 		}
 	,c_stringClass);
 
 	charClass->addBinop("+",charClass) = new obinopNative(
-			[](Value* a, Value* b, RData& m) -> DATA{
+			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+		Value* a = av.getValue(m);
+		Value* b = bv.getValue(m);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
 				APInt va = constantInt->getValue();
 				char t = (char)(va.getSExtValue () );
 				APInt va2 = cons2->getValue();
 				char t2 = (char)(va2.getSExtValue () );
-				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(1,t)+String(1,t2),"tmpstr"));
+				return DATA::getConstant(m.builder.CreateGlobalStringPtr(String(1,t)+String(1,t2),"tmpstr"),c_stringClass);
 			}
 		}
 		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
@@ -318,7 +342,7 @@ void initFuncsMeta(RData& rd){
 		Value *Args2[] = {getInt32(0),getInt32(1)};
 		Value* st2 = m.builder.CreateInBoundsGEP(GV, Args2);
 		m.builder.CreateStore(b,st2);
-		return DATA::getConstant(st);
+		return DATA::getConstant(st,c_stringClass);
 	},c_stringClass);
 
 	/*c_stringClass->addBinop("+",stringClass) = new ouopNative(
@@ -330,12 +354,13 @@ void initFuncsMeta(RData& rd){
 					return str;
 		},stringClass);*/
 	c_stringClass->addCast(stringClass) = new ouopNative(
-			[](Value* a, RData& m) -> DATA{
+			[](DATA av, RData& m, PositionID id) -> DATA{
+		Value* a = av.getValue(m);
 		Value* len = m.builder.CreateCall(strLen, a);
 		Value* str = UndefValue::get(stringClass->getType(m));
 		str= m.builder.CreateInsertValue(str,a,{0});
 		str= m.builder.CreateInsertValue(str,len,{1});
-		return DATA::getConstant(str);
+		return DATA::getConstant(str,stringClass);
 	},stringClass);
 }
 #endif /* Declaration_HPP_ */

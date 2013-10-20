@@ -15,7 +15,7 @@ class ImportStatement:public Construct{
 		ImportStatement(PositionID id, String t):Construct(id,voidClass),toImport(t){};
 		DATA evaluate(RData& r) override final{
 			error("Cannot evaluate IMPORT");
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 		ClassProto* checkTypes(RData& r) override final{
 			error("Cannot checkTypes of IMPORT");

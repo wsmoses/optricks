@@ -96,7 +96,7 @@ class E_BINOP : public Statement{
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
 					PN->addIncoming(fin, ElseBB);
-					return DATA::getConstant(PN);
+					return DATA::getConstant(PN, boolClass);
 				}else{
 					Value* Start = left->evaluate(a).getValue(a);
 					a.builder.CreateCondBr(Start, MergeBB, ElseBB);
@@ -107,14 +107,14 @@ class E_BINOP : public Statement{
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
 					PN->addIncoming(fin, ElseBB);
-					return DATA::getConstant(PN);
+					return DATA::getConstant(PN, boolClass);
 				}
 			}
 			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);
 			return temp.first->apply(
-					temp.second.first->apply(left->evaluate(a), a),
-					temp.second.second->apply(right->evaluate(a), a),
-					a
+					temp.second.first->apply(left->evaluate(a), a,filePos),
+					temp.second.second->apply(right->evaluate(a), a,filePos),
+					a,filePos
 			);
 		}
 		ClassProto* checkTypes(RData& r) override final{

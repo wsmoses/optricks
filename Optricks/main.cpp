@@ -47,7 +47,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	}
 
 	if(n->returnType == complexClass){
-		n = new E_FUNC_CALL(PositionID(), new E_VAR(PositionID(), mod->getPointer(PositionID(), "printc")), {n});
+		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(PositionID(0,0,"#main"), mod->getPointer(PositionID(0,0,"#main"), "printc")), {n});
 		n = n->simplify();
 		n->resolvePointers();
 		n->registerClasses(lexer.rdata);
@@ -60,10 +60,10 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	Function *F = Function::Create(FT, Function::ExternalLinkage, "", lexer.rdata.lmod);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	lexer.rdata.builder.SetInsertPoint(BB);
-	Value* v = n->evaluate(lexer.rdata).getValue(lexer.rdata);
-	if(debug)	v->dump();
-	if(type!=VOIDTYPE)
-		lexer.rdata.builder.CreateRet(v);
+	DATA dat = n->evaluate(lexer.rdata);
+//	Value* v = dat.getValue(lexer.rdata);
+	if( type!=VOIDTYPE)
+		lexer.rdata.builder.CreateRet(dat.getValue(lexer.rdata));
 	else
 		lexer.rdata.builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
@@ -76,19 +76,21 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	lexer.rdata.fpm->run(*F);
 	//cout << "fpm" << endl << flush;
 	if(debug){
-		lexer.rdata.lmod->dump();
+		//lexer.rdata.lmod->dump();
 		F->dump();
 		cerr << flush;
 	}
 	//cout << "dumped" << endl << flush;
 	void *FPtr = lexer.rdata.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
-	if(v==NULL || type==VOIDTYPE || n->returnType==voidClass){
+	if(dat.getPointer()==NULL || type==VOIDTYPE || n->returnType==voidClass){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
+		cout << flush;
 	} else if(n->returnType==functionClass){
 		auto (*FP)() = (void* (*)())(intptr_t)FPtr;
 		FP();
+		cout << flush;
 	}
 	else if(n->returnType==doubleClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
@@ -274,7 +276,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.1.8" << endl << flush;
+		cout << "Optricks version 0.2.0" << endl << flush;
 		cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
@@ -341,6 +343,7 @@ int main(int argc, char** argv){
 		//st->force("int i=7;\n");
 		//st->force("(def void dgah(){print(hi); })()\n");
 		//st->force("'hello'[0];\n");
+		//st->force("for i in range(,10): print(i);\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);

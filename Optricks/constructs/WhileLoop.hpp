@@ -58,7 +58,7 @@ class DoWhileLoop : public Construct{
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 
 		void registerClasses(RData& r) override final{

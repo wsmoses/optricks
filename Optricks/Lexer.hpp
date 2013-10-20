@@ -21,6 +21,7 @@
 #include "expressions/E_UOP.hpp"
 #include "expressions/E_VAR.hpp"
 #include "expressions/E_SET.hpp"
+#include "expressions/E_GEN.hpp"
 #include "expressions/E_TERNARY.hpp"
 #include "primitives/oobject.hpp"
 #include "primitives/obool.hpp"
@@ -168,7 +169,7 @@ class Lexer{
 		E_VAR* getNextVariable(ParseData data, bool late=true){
 			Resolvable* pointer;
 			if(late) pointer = new LateResolve(data.mod, getNextName(data.endWith), pos());
-			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getConstant(NULL),NULL);
+			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull(),NULL);
 			return new E_VAR(pos(), pointer);
 		}
 		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
@@ -186,7 +187,7 @@ class Lexer{
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,DATA::getLocation(NULL),NULL));
+			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,DATA::getNull(),NULL));
 			return new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
 		}
 		Statement* getNextStatement(char endWith,bool global){
@@ -255,7 +256,7 @@ class Lexer{
 			}
 			else{
 				Statement* s = getNextStatement(data.getModule(module).getLoc(PARSE_EXPR));//todo check
-				while(!f->done && f->peek()==';'){f->read();trim(data);}
+				if(!f->done && f->peek()==';'){f->read();trim(data);}
 				trim(data);
 				return s;
 			}
@@ -376,7 +377,7 @@ class Lexer{
 					f->trim(EOF);
 				}
 				OModule* nmod = new OModule(data.mod);
-				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,DATA::getLocation(NULL),NULL));
+				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,DATA::getNull(),NULL));
 				Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
 				//TODO implement for loop naming
@@ -428,7 +429,7 @@ class Lexer{
 		Statement* getFunction(ParseData data, String temp=""){
 			if(temp=="") temp = f->getNextName(EOF);
 			trim(EOF);
-			if (temp == "def" || temp=="function" || temp=="method" ){
+			if (temp == "def" || temp=="function" || temp=="method" || temp=="gen"){
 				auto mark = f->getMarker();
 				Statement* returnName = getNextType(data);
 				f->trim(EOF);
@@ -479,19 +480,22 @@ class Lexer{
 				}
 				bool paren;
 				Statement* funcName;
-				ofunction* func;
+				Statement* func;
 				if(methodName.size()<=1){
 					if(methodName.size()==0) funcName = NULL;
 					else if(methodName.size()==1){
 						if(isOperator){
-							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,DATA::getFunction(NULL),functionClass,funcMap()));
+							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,DATA::getNull(),functionClass,funcMap()));
 						} else {
 							funcName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName[0].first));
 						}
 					}
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_LOCAL),&paren);
 					auto tmp = pos();
-					func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
+					if(temp=="gen")
+						func = new E_GEN(tmp, funcName, returnName, arguments, methodBody,rdata);
+					else
+						func = new userFunction(tmp, funcName, returnName, arguments, methodBody,rdata);
 				}
 				else {
 					//TODO change scope
@@ -499,14 +503,20 @@ class Lexer{
 					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
 					for(unsigned int i = 0; i<methodName.size()-2; i++)
 						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
-					auto thisPointer = module->addPointer(pos(),"this",DATA::getLocation(NULL),NULL);
+					ReferenceElement* thisPointer = module->addPointer(pos(),"this",DATA::getNull(),NULL);
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
-					auto tmp = pos();
+					PositionID tmp = pos();
 					if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
 						func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
 					}
-					else
-						func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
+					else{
+						if(temp=="gen"){
+							func = new E_GEN(tmp, funcName, returnName, arguments, methodBody,rdata, methodName[methodName.size()-1].first,thisPointer);
+						}
+						else
+							func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
+
+					}
 				}
 				trim(data);
 				bool semi  = false;
@@ -735,7 +745,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="while") return getWhileLoop(data,true);
 		else if(temp=="do") return getDoLoop(data,true);
 		else if(temp=="lambda") return getLambdaFunction(data,true);
-		else if(temp=="def" || temp=="function" || temp=="method" || temp=="extern") return getFunction(data,temp);
+		else if(temp=="gen" || temp=="def" || temp=="function" || temp=="method" || temp=="extern") return getFunction(data,temp);
 		else if(temp=="import"){
 			trim(data);
 			String tI = f->readString(data.endWith);
@@ -894,7 +904,11 @@ Statement* Lexer::getNextStatement(ParseData data){
 					return toReturn;
 				}
 				else{
-					Statement* toReturn = new E_PREOP(pos(), String(1,n),getNextStatement(data.getLoc(PARSE_EXPR)));
+					String temp(1,n);
+					while(in<String>(PRE_OPERATORS, temp+String(1,f->peek()))){
+						temp+=String(1,f->read());
+					}
+					Statement* toReturn = new E_PREOP(pos(), temp,getNextStatement(data.getLoc(PARSE_EXPR)));
 					trim(data);
 					semi  = false;
 					if(!f->done && f->peek()==';'){ semi = true; }

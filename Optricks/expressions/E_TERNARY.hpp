@@ -62,6 +62,8 @@ class TernaryOperator : public Statement{
 			return returnType = tog;
 		}
 		DATA evaluate(RData& r) override{
+
+			//TODO support ((true)?a:b)++
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
@@ -72,7 +74,7 @@ class TernaryOperator : public Statement{
 			// Emit then value.
 			r.builder.SetInsertPoint(ThenBB);
 
-			Value* ThenV = then->returnType->castTo(r, then->evaluate(r), returnType);
+			Value* ThenV = then->evaluate(r).castTo(r, returnType, filePos).getValue(r);
 
 			r.builder.CreateBr(MergeBB);
 			// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
@@ -82,7 +84,7 @@ class TernaryOperator : public Statement{
 			TheFunction->getBasicBlockList().push_back(ElseBB);
 			r.builder.SetInsertPoint(ElseBB);
 
-			Value* ElseV = finalElse->returnType->castTo(r, finalElse->evaluate(r), returnType);
+			Value* ElseV = finalElse->evaluate(r).castTo(r, returnType, filePos).getValue(r);
 
 			r.builder.CreateBr(MergeBB);
 			// Codegen of 'Else' can change the current block, update ElseBB for the PHI.
@@ -94,7 +96,7 @@ class TernaryOperator : public Statement{
 			PHINode *PN = r.builder.CreatePHI(returnType->getType(r), 2,"iftmp");
 			PN->addIncoming(ThenV, ThenBB);
 			PN->addIncoming(ElseV, ElseBB);
-			return DATA::getConstant(PN);
+			return DATA::getConstant(PN, returnType);
 		}
 
 		Constant* getConstant(RData& a) override final {

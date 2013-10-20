@@ -9,7 +9,7 @@
 #define OARRAY_HPP_
 
 #include "oobjectproto.hpp"
-
+/*
 class oarray : public oobject{
 	public:
 		std::vector<oobject*> data;
@@ -52,7 +52,7 @@ class oarray : public oobject{
 				cerr << "Array index must be int or slice not " << a << " of class " << a->returnType;
 				exit(0);
 			}
-		}*/
+		}* /
 		void write(ostream& ss, String b) const override{
 			ss << "[";
 			if(data.size()>0) {
@@ -64,7 +64,7 @@ class oarray : public oobject{
 			ss << "]";
 		}
 };
-
+*/
 class E_ARR : public Construct{
 	public:
 		std::vector<Statement*> values;
@@ -96,7 +96,7 @@ class E_ARR : public Construct{
 				n->data.push_back(a->evaluate(a));
 			}
 			return n;*/
-			return DATA::getConstant(NULL);
+			return DATA::getConstant(NULL,sliceClass);
 		}
 
 		Statement* simplify() override{
@@ -113,7 +113,8 @@ class E_ARR : public Construct{
 					return new E_ARR(filePos, val2);
 				}
 			}
-			return new oarray(filePos, vals);
+			return this;
+			//return new oarray(filePos, vals);
 		}
 
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){

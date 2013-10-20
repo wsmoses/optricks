@@ -26,6 +26,7 @@ const std::vector<String> RESERVED_KEYWORDS = {
 		"return","break","continue"
 };
 
+const std::vector<String> PRE_OPERATORS = {"++", "--", "+", "-", "&", "*", "!", "~"};
 const std::vector<String> TYPE_OPERATORS = {
 		".",":","::","->",".*",":*","::*","->*","=>*"
 };

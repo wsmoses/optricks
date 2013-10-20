@@ -25,7 +25,7 @@ class ofunction:public oobject{
 			if(self!=NULL){
 				auto T = self->getMetadata(rd);
 				if(add && T!=NULL && T->name.length()>0 && T->name[0]!='~'){
-					T->funcs.add(prototype,DATA::getFunction(NULL),filePos);
+					T->funcs.add(DATA::getFunction(NULL,prototype),filePos);
 									self->returnType = functionClass;
 				}
 			}
@@ -37,7 +37,7 @@ class ofunction:public oobject{
 		}
 		ReferenceElement* getMetadata(RData& r) override{
 			DATA tmp = evaluate(r);
-			return new ReferenceElement("",NULL,"lambda",tmp,functionClass,funcMap(std::pair<DATA, FunctionProto*>(tmp,prototype)));
+			return new ReferenceElement("",NULL,"lambda",tmp,functionClass,funcMap(tmp));
 		}
 		void registerFunctionArgs(RData& r) override{
 			if(prototype==NULL) error("Function prototype should not be null");
@@ -119,11 +119,10 @@ class externFunction : public ofunction{
 			else if(prototype->name=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 			else if(prototype->name=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
 			else if(F->getName().str()!=prototype->name){
-				a.lmod->dump();
 				error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
 			}
 			myFunction = F;
-			self->getMetadata(a)->funcs.set(prototype, DATA::getFunction(F));
+			self->getMetadata(a)->funcs.set(DATA::getFunction(F,prototype), filePos);
 			if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 		}
 
@@ -132,7 +131,7 @@ class externFunction : public ofunction{
 		}
 		DATA evaluate(RData& a) override{
 			if(myFunction==NULL) registerFunctionArgs(a);
-			return DATA::getFunction(myFunction);
+			return DATA::getFunction(myFunction,prototype);
 		}
 };
 class lambdaFunction : public ofunction{
@@ -179,7 +178,7 @@ class lambdaFunction : public ofunction{
 			return prototype->returnType;
 		}
 		DATA evaluate(RData& ar) override{
-			if(myFunction!=NULL) return DATA::getFunction(myFunction);
+			if(myFunction!=NULL) return DATA::getFunction(myFunction,prototype);
 			if(prototype->returnType==NULL) checkTypes(ar);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
@@ -221,7 +220,7 @@ class lambdaFunction : public ofunction{
 			ar.fpm->run(*F);
 
 			ar.builder.SetInsertPoint( Parent );
-			return DATA::getFunction(myFunction=F);
+			return DATA::getFunction(myFunction=F,prototype);
 		}
 };
 class userFunction : public ofunction{
@@ -290,13 +289,13 @@ class userFunction : public ofunction{
 								filePos
 						) = new obinopUser(F, cp);
 					} else error("Cannot make operator with argument count of "+str<unsigned int>(prototype->declarations.size()));
-				} else self->getMetadata(ra)->funcs.set(prototype, DATA::getFunction(F));
+				} else self->getMetadata(ra)->funcs.set(DATA::getFunction(F,prototype), filePos);
 			}
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
-			Jumpable* j = new Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(j);
+			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
+			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
@@ -305,13 +304,11 @@ class userFunction : public ofunction{
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name));
-				met->setValue(AI,ra);
+				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
 			}
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
-			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
+			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
 			if(! ra.guarenteedReturn){
 				if(prototype->returnType==voidClass)
 					ra.builder.CreateBr(MERGE);
@@ -324,15 +321,14 @@ class userFunction : public ofunction{
 			ra.builder.SetInsertPoint(MERGE);
 			if(r!=VOIDTYPE){
 				auto functionReturnType = prototype->returnType->getType(ra);
-				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j->endings.size(), "funcRet" );
-				for(auto &a : j->endings){
-					phi->addIncoming(a.second, a.first);
+				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetU" );
+				for(auto &a : j.endings){
+					phi->addIncoming(a.second.getValue(ra), a.first);
 				}
 				ra.builder.CreateRet(phi);
 			}
 			else
 				ra.builder.CreateRetVoid();
-			free(j);
 			verifyFunction(*F);
 			ra.fpm->run(*F);
 			myFunction = F;
@@ -352,7 +348,7 @@ class userFunction : public ofunction{
 			return prototype->returnType;
 		}
 		DATA evaluate(RData& ra) override{
-			return DATA::getFunction(myFunction);
+			return DATA::getFunction(myFunction,prototype);
 		}
 };
 
@@ -367,7 +363,6 @@ class classFunction : public ofunction{
 			ret = r;
 			name =nam; operation = op;
 			prototype->name =self->getFullName()+"."+name;
-			if(name=="iterator" && prototype->declarations.size()>0) error("Cannot have arguments for iterator");
 		}
 		classFunction* simplify() override final{
 			return this;
@@ -395,12 +390,8 @@ class classFunction : public ofunction{
 			ret->registerFunctionArgs(ra);
 			ret->registerFunctionDefaultArgs();
 			ret->checkTypes(ra);
-			if(name=="iterator"){
-				myCl->iterator = this;
-				return;
-			}
 			ReferenceElement* myMetadata = myCl->addFunction(name, filePos);
-			myMetadata->funcs.add(prototype,DATA::getFunction(NULL),filePos);
+			myMetadata->funcs.add(DATA::getFunction(NULL,prototype),filePos);
 			if(myMetadata==NULL) error("Metadata is null?");
 			std::vector<Type*> args;
 			if(myCl->isPointer) args.push_back(myCl->getType(ra));
@@ -416,7 +407,7 @@ class classFunction : public ofunction{
 			}
 			ClassProto* cp = returnV->getSelfClass();
 			if(cp==NULL) error("Unknown return type");
-			if(name!="iterator" && cp==autoClass){
+			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
 				ret->collectReturns(ra, yields);
 				cp = getMin(yields,filePos);
@@ -428,31 +419,29 @@ class classFunction : public ofunction{
 
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
-			myMetadata->funcs.set(prototype, DATA::getFunction(F));
+			myMetadata->funcs.set(DATA::getFunction(F,prototype), filePos);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
-			Jumpable* j = new Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(j);
+			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
+			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
 			Function::arg_iterator AI = F->arg_begin();
 			AI->setName("this");
-			if(myCl->isPointer) thisPointer->llvmObject = DATA::getConstant(AI);
-			else thisPointer->llvmObject = DATA::getLocation(AI);
+			if(myCl->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, myCl);
+			else thisPointer->llvmObject = DATA::getLocation(AI, myCl);
 			AI++;
 			for (; Idx+1 != F->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name));
-				met->setValue(AI,ra);
+				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
 			}
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
-			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
+			if(ra.popJump()!= &j) error("Did not receive same func jumpable created");
 			if( !ra.guarenteedReturn){
 				if(prototype->returnType==voidClass)
 					ra.builder.CreateBr(MERGE);
@@ -465,15 +454,14 @@ class classFunction : public ofunction{
 			ra.builder.SetInsertPoint(MERGE);
 			if(r!=VOIDTYPE){
 				auto functionReturnType = prototype->returnType->getType(ra);
-				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j->endings.size(), "funcRet" );
-				for(auto &a : j->endings){
-					phi->addIncoming(a.second, a.first);
+				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetCl" );
+				for(auto &a : j.endings){
+					phi->addIncoming(a.second.getValue(ra), a.first);
 				}
 				ra.builder.CreateRet(phi);
 			}
 			else
 				ra.builder.CreateRetVoid();
-			free(j);
 			verifyFunction(*F);
 			ra.fpm->run(*F);
 			myFunction = F;
@@ -493,7 +481,7 @@ class classFunction : public ofunction{
 			return prototype->returnType;
 		}
 		DATA evaluate(RData& ra) override{
-			return DATA::getFunction(myFunction);
+			return DATA::getFunction(myFunction,prototype);
 		}
 };
 
@@ -529,7 +517,7 @@ class constructorFunction : public ofunction{
 			ClassProto* myCl = returnV->getSelfClass();
 			if(myCl==NULL) error("Defining class is null?");
 			thisPointer->returnClass = myCl;
-			myCl->constructors.add(prototype,DATA::getFunction(NULL),filePos);
+			myCl->constructors.add(DATA::getFunction(NULL,prototype),filePos);
 			ret->registerFunctionArgs(ra);
 			ret->registerFunctionDefaultArgs();
 			ret->checkTypes(ra);
@@ -548,12 +536,12 @@ class constructorFunction : public ofunction{
 
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
-			myCl->constructors.set(prototype, DATA::getFunction(F));
+			myCl->constructors.set(DATA::getFunction(F,prototype), filePos);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
-			Jumpable* j = new Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(j);
+			Jumpable j = Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
+			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
@@ -562,15 +550,13 @@ class constructorFunction : public ofunction{
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(prototype->declarations[Idx]->variable->returnType->getType(ra),
-						0,prototype->declarations[Idx]->variable->pointer->name));
-				met->setValue(AI,ra);
+				met->llvmObject = DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType);
 			}
-			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(r, 0,"this*"));
+			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(r, 0,"this*"), myCl);
 			thisPointer->setValue(myCl->generateData(ra),ra);
 			ra.guarenteedReturn = false;
 			ret->evaluate(ra);
-			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
+			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
 			if(ra.guarenteedReturn)  error("Can not have return statement in constructor");
 			ra.builder.CreateBr(MERGE);
 			ra.guarenteedReturn = false;
@@ -579,7 +565,6 @@ class constructorFunction : public ofunction{
 			F->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
 			ra.builder.CreateRet(thisPointer->getValue(ra));
-			free(j);
 			verifyFunction(*F);
 			ra.fpm->run(*F);
 			myFunction = F;
@@ -599,7 +584,7 @@ class constructorFunction : public ofunction{
 			return prototype->returnType;
 		}
 		DATA evaluate(RData& ra) override{
-			return DATA::getFunction(myFunction);
+			return DATA::getFunction(myFunction,prototype);
 		}
 };
 #endif /* OFUNCTION_HPP_ */

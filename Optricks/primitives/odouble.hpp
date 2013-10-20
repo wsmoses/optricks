@@ -25,7 +25,7 @@ class odouble : public oobject{
 			return ConstantFP::get(a.lmod->getContext(), APFloat(value));
 		}
 		DATA evaluate(RData &a) override final{
-			return DATA::getConstant(getDouble(value));
+			return DATA::getConstant(getDouble(value),doubleClass);
 		}
 };
 

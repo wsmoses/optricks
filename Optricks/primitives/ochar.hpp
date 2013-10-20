@@ -24,7 +24,7 @@ class ochar : public oobject{
 			return ConstantInt::get(CHARTYPE, value, false);
 		}
 		DATA evaluate(RData& a) override final{
-			return DATA::getConstant(ConstantInt::get(CHARTYPE, value, false));
+			return DATA::getConstant(ConstantInt::get(CHARTYPE, value, false),charClass);
 		}
 };
 #endif /* OCHAR_HPP_ */

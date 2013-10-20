@@ -55,18 +55,14 @@ class E_RETURN : public Statement{
 			return this;
 		}
 		DATA evaluate(RData& r) override {
-			Value* t = NULL;
-	//		BasicBlock *Parent = r.builder.GetInsertBlock();
-	//		BasicBlock *RETB = BasicBlock::Create(getGlobalContext(), "ret");
-	//		r.builder.SetInsertPoint(RETB);
+			DATA t = DATA::getNull();
 			if(inner!=NULL && inner->getToken()!=T_VOID){
-				t = inner->evaluate(r).getValue(r);
-				if(t==NULL) error("Why is t null?");
+				t = inner->evaluate(r);
 			}
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *RESUME = BasicBlock::Create(getGlobalContext(), "postReturn", TheFunction);
 
-			BasicBlock* toBreak = r.getBlock(name, jump, (inner==NULL)?voidClass:(inner->returnType), r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
+			BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
 
 			if(toBreak!=NULL) r.builder.CreateBr(toBreak);
 			//if(jump==RETURN)
@@ -76,7 +72,7 @@ class E_RETURN : public Statement{
 				RESUME->removeFromParent();
 				r.guarenteedReturn = true;
 			}
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 	//		return RETB;
 			//if(returnType==voidClass) return r.builder.CreateRetVoid();
 			//else return r.builder.CreateRet(t);

@@ -43,7 +43,8 @@ enum Token {
 	T_SET = 36,
 	T_RETURN = 37,
 	T_CLASSPROTO = 38,
-	T_IMPORT = 39
+	T_IMPORT = 39,
+	T_GEN = 40
 };
 
 #endif /* O_TOKEN_HPP_ */

@@ -22,7 +22,7 @@ class oint : public oobject{
 		}
 		Constant* getConstant(RData& r) override final{ return getInt(value); }
 		DATA evaluate(RData& a) override final{
-			return DATA::getConstant(getInt(value));
+			return DATA::getConstant(getInt(value),intClass);
 		}
 };
 #endif /* OINT_HPP_ */

@@ -64,6 +64,12 @@ using namespace llvm;
 class Statement;
 #endif
 
+
+#ifndef E_GEN_C_
+#define E_GEN_C_
+class E_GEN;
+#endif
+
 #ifndef CLASSPROTO_C_
 #define CLASSPROTO_C_
 class ClassProto;
@@ -82,7 +88,7 @@ union PrivateData{
 	Value* constant;
 	ClassProto* classP;
 	Function* function;
-	Statement* generator;
+	E_GEN* generator;
 	Value* location;
 	void* pointer;
 };
@@ -183,6 +189,11 @@ class ouopNative;
 class ReferenceElement;
 #endif
 
+#ifndef RDATA_C_
+#define RDATA_C_
+class RData;
+#endif
+
 #ifndef CLASSFUNC_C_
 #define CLASSFUNC_C_
 class classFunction;
@@ -222,5 +233,165 @@ void getDir(String pos, String& dir, String& file){
 }
 
 
+enum JumpType{
+	RETURN = 0,
+	BREAK = 1,
+	CONTINUE = 2,
+	YIELD = 3
+};
 
+enum TJump{
+	FUNC = 0,
+	LOOP = 1,
+	GENERATOR = 2
+};
+
+
+union InfoType{
+		ClassProto* classType;
+		FunctionProto* funcType;
+		void* pointer;
+};
+
+
+class DATA{
+	private:
+		DataType type;
+		InfoType info;
+		PrivateData data;
+		DATA(int i):type(R_UNDEF){data.pointer = NULL;info.pointer = NULL; };
+		DATA(DataType t, void* v, void* i):type(t){data.pointer = v;info.pointer = i;};
+	public:
+		DATA(const DATA& d):type(d.type){assert(d.type<6); data.pointer = d.data.pointer; info.pointer = d.info.pointer;}
+		DATA(DATA& d):type(d.type){assert(d.type<6); data.pointer = d.data.pointer; info.pointer = d.info.pointer;}
+		DATA castTo(RData& r, ClassProto* right, PositionID id) const;
+		ClassProto* getReturnType() const;
+		DATA& operator= (const DATA& d) {
+			assert(d.type<6);
+			type = d.type;
+			data.pointer = d.data.pointer; info.pointer = d.info.pointer;
+		    return *this;
+		}
+		DATA& operator= (DATA& d) {
+			assert(d.type<6);
+			type = d.type;
+			data.pointer = d.data.pointer; info.pointer = d.info.pointer;
+		    return *this;
+		}
+		FunctionProto* getFunctionType() const{
+			assert((type==R_GEN || type==R_FUNC));
+			assert(info.funcType !=NULL);
+			return info.funcType;
+		}
+		static DATA getFunction(Function* f, FunctionProto* t){
+			return DATA(R_FUNC, f, t);
+		};
+		static DATA getConstant(Value* v, ClassProto* c){
+			return DATA(R_CONST, v, c);
+		};
+		static DATA getClass(ClassProto* c);
+		static DATA getGenerator(E_GEN* s, FunctionProto* f){
+			return DATA(R_GEN, s, f);
+		};
+		static DATA getLocation(Value* v, ClassProto* c){
+			return DATA(R_LOC, v, c);
+		};
+		static DATA getNull(){
+			return DATA(0);
+		}
+		DATA toLocation(RData& m);
+		DATA toValue(RData& m){
+			if(!(type==R_CONST || type==R_LOC)){
+				cerr << "Cannot toValue of non const/loc "<< type << endl << flush;
+				exit(1);
+			} else if(data.pointer==NULL){
+				cerr << "Cannot toValue of NULL "<< type << endl << flush;
+				exit(1);
+			}
+			if(type==R_CONST){
+				return *this;
+			} else {
+				return DATA::getConstant(getValue(m), getReturnType());
+			}
+		}
+		DataType getType() const{
+			return type;
+		};
+		Value* getMyLocation() const{
+			if(type!=R_LOC){
+				cerr << "Cannot getLocation of non-location "<< type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL location" << endl << flush;
+				exit(1);
+			}
+			return data.location;
+		}
+		void* getPointer() const{
+			return data.pointer;
+		}
+		E_GEN* getMyGenerator() const{
+			if(type!=R_GEN){
+				cerr << "Cannot getGenerator of non-gen " << type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL gen" << endl << flush;
+				exit(1);
+			}
+			return data.generator;
+		}
+		Function* getMyFunction() const{
+			if(type!=R_FUNC){
+				cerr << "Cannot getFunction of non-function " << type << endl << flush;
+				exit(1);
+			}
+			if(data.pointer==NULL){
+				cerr << "Cannot get NULL function" << endl << flush;
+				exit(1);
+			}
+			return data.function;
+		}
+		ClassProto* getMyClass() const;
+		Value* getValue(RData& r) const;
+		void setValue(RData& r, Value* v);
+};
+
+struct Jumpable {
+	public:
+		String name;
+		TJump toJump;
+		BasicBlock* start;
+		BasicBlock* end;
+		ClassProto* returnType;
+		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
+		std::vector<std::pair<BasicBlock*,DATA> > endings;
+		Jumpable(String n, TJump t, BasicBlock* s, BasicBlock* e, ClassProto* p):
+			name(n), toJump(t), start(s), end(e), returnType(p){
+		}
+};
+
+#define RDATA_C_
+struct RData{
+	private:
+		std::vector<Jumpable*> jumps;
+	public:
+		RData();
+		bool guarenteedReturn;
+		Module* lmod;
+		FunctionPassManager* fpm;
+		PassManager* mpm;
+		IRBuilder<> builder;
+		ExecutionEngine* exec;
+		void addJump(Jumpable* j){
+			jumps.push_back(j);
+		}
+		Jumpable* popJump(){
+			auto a = jumps.back();
+			jumps.pop_back();
+			return a;
+		}
+		BasicBlock* getBlock(String name, JumpType jump, BasicBlock* bb, DATA val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
+};
 #endif /* SETTINGS_HPP_ */

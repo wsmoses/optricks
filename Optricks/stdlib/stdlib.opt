@@ -1,7 +1,33 @@
-import "string.opt"
 def void print(int i, bool b=true){
 	(extern void printi(int i, bool b))(i,b);
 }
+
+gen int range(int start=0,int stop,int step=1){
+	if(step>0)
+		for(int i = start; i<stop; i+=step)
+			yield i;
+	else
+		for(int i = start; i>stop; i+=step)
+			yield i;
+}
+
+gen int range(int end){
+	for(int i = 0; i<end; i++) yield i;
+}
+gen double range(double start=0, double stop, double step=1){
+	if(step>0)
+		for(auto i = start; i<stop; i+=step)
+			yield i;
+	else
+		for(auto i = start; i>stop; i+=step)
+			yield i;
+}
+
+gen int range(double end){
+	for(int i = 0; i<end; i++) yield i;
+}
+  
+import "string.opt"
 def bool isNaN(double d){
 	return !(d==d);
 }
@@ -133,9 +159,10 @@ def complex cos(complex z){
 }
 
 def int pow(int a, int b){
-	if(b<=0) return 1;
-	if(b==1) return a;
-	if(b==2) return a*a;
+	if(b<0) return 0;
+	elif(b==0) return 1;
+	elif(b==1) return a;
+	elif(b==2) return a*a;
 	int tmp = b/2;
 	auto tmpow = pow(a,tmp); //TODO allow recursive operators
 	if(tmp*2==b){
@@ -144,15 +171,7 @@ def int pow(int a, int b){
 }
 
 def complex pow(complex a, int b){
-	if(b<0) return pow(1/a,-b);
-	if(b==0) return 1;
-	if(b==1) return a;
-	if(b==2) return a*a;
-	int tmp = b/2;
-	auto tmpow = pow(a,tmp); //TODO allow recursive operators
-	if(tmp*2==b){
-		return tmpow*tmpow;
-	} else return tmpow*tmpow*a;
+	return a**b;
 }
 
 def int operator ** (int a, int b){
@@ -190,5 +209,4 @@ def double double.print(bool newline=true){
 	print(this,newline);
 	return this;
 }
-
-//*/
+// */

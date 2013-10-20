@@ -10,28 +10,23 @@
 
 #include "settings.hpp"
 
-#include "RData.hpp"
-
 #define OPERATIONS_C_
 class ouop{
 	public:
 		virtual ~ouop(){};
-		virtual DATA apply(Value* a, RData& mod) = 0;
-		DATA apply(DATA a, RData& mod){
-			return apply(a.getValue(mod), mod);
-		}
+		virtual DATA apply(DATA a, RData& mod, PositionID id) = 0;
 		ClassProto* returnType;
 };
 
 class ouopNative: public ouop{
 	public:
-		DATA (*temp)(Value*,RData&);
-		ouopNative(DATA (*fun)(Value*,RData&),ClassProto* a){
+		DATA (*temp)(DATA,RData&,PositionID);
+		ouopNative(DATA (*fun)(DATA,RData&,PositionID),ClassProto* a){
 			temp = fun;
 			returnType = a;
 		}
-		DATA apply(Value* a,RData& m) override final{
-			return temp(a,m);
+		DATA apply(DATA a,RData& m, PositionID id) override final{
+			return temp(a,m,id);
 		}
 };
 
@@ -42,30 +37,27 @@ class ouopUser: public ouop{
 			func = fun;
 			returnType = a;
 		}
-		DATA apply(Value* a,RData& m) override final{
-			return DATA::getConstant(m.builder.CreateCall(func, a, "uop"));
+		DATA apply(DATA a,RData& m, PositionID id) override final{
+			return DATA::getConstant(m.builder.CreateCall(func, a.getValue(m), "uop"), returnType);
 		}
 };
 
 class obinop{
 	public:
 		virtual ~obinop(){};
-		virtual DATA apply(Value* a, Value* b, RData& mod) = 0;
-		DATA apply(DATA a, DATA b, RData& mod){
-			return apply(a.getValue(mod), b.getValue(mod), mod);
-		}
+		virtual DATA apply(DATA a, DATA b, RData& mod,PositionID) = 0;
 		ClassProto* returnType;
 };
 
 class obinopNative : public obinop{
 	public:
-		DATA (*temp)(Value*,Value*,RData&);
-		obinopNative(DATA (*fun)(Value*,Value*,RData&), ClassProto* a){
+		DATA (*temp)(DATA,DATA,RData&,PositionID);
+		obinopNative(DATA (*fun)(DATA,DATA,RData&,PositionID), ClassProto* a){
 			temp = fun;
 			returnType = a;
 		}
-		DATA apply(Value* a,Value* b, RData& m) override final{
-			return temp(a,b,m);
+		DATA apply(DATA a,DATA b, RData& m, PositionID id) override final{
+			return temp(a,b,m,id);
 		}
 };
 
@@ -76,8 +68,8 @@ class obinopUser: public obinop{
 			func = fun;
 			returnType = a;
 		}
-		DATA apply(Value* a,Value* b, RData& m) override final{
-			return DATA::getConstant(m.builder.CreateCall2(func, a, b, "binop"));
+		DATA apply(DATA a,DATA b, RData& m, PositionID id) override final{
+			return DATA::getConstant(m.builder.CreateCall2(func, a.getValue(m), b.getValue(m), "binop"), returnType);
 		}
 };
 #endif /* OPERATIONS_HPP_ */

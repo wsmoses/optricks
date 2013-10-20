@@ -7,13 +7,15 @@
 
 
 #include "settings.hpp"
-#include "RData.hpp"
+#include "FunctionProto.hpp"
 #include "operations.hpp"
 #ifndef CLASSPROTO_HPP_
 #define CLASSPROTO_HPP_
 
 #define CLASSPROTO_C_
 class ClassProto{
+		friend class RData;
+		friend class DATA;
 	private:
 	std::map<String,std::map<ClassProto*, obinop*> > binops;
 	std::map<ClassProto*, ouop*> casts;
@@ -26,10 +28,10 @@ class ClassProto{
 	public:
 		funcMap constructors;
 		bool isPointer;
+		bool isGen;
 		String name;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
-		classFunction* iterator;
 		virtual ~ClassProto(){};
 
 		virtual bool equals(ClassProto* c) const{
@@ -42,6 +44,11 @@ class ClassProto{
 		 * Checks if this can be casted to C
 		 */
 		virtual std::pair<bool, unsigned int> compatable(ClassProto* c) const;
+
+		ClassProto* getDataClass(unsigned int nam, PositionID id){
+			if(nam>=innerData.size()) id.error("Too large element searched for");
+			return innerData[nam];
+		}
 		unsigned int getDataClassIndex(String nam, PositionID id){
 			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
 			return innerDataIndex[nam];
@@ -67,7 +74,7 @@ class ClassProto{
 			innerDataIndex[nam]=a;
 		}
 		DATA generateData(RData& r){
-			return DATA::getConstant(UndefValue::get(getType(r)));
+			return DATA::getConstant(UndefValue::get(getType(r)), this);
 		}
 		DATA construct(RData& r, E_FUNC_CALL* call) const;
 		Type* getType(RData& r){
@@ -89,20 +96,6 @@ class ClassProto{
 		bool hasCast(ClassProto* right){
 			auto found = casts.find(right);
 			return found!=casts.end();
-		}
-		Value* castTo(RData& r, DATA c, ClassProto* right){
-			if(hasCast(right)) return casts[right]->apply(c, r).getValue(r);
-			else{
-				todo("Compile error - could not find cast "+name+" to "+right->name,PositionID());
-				return NULL;
-			}
-		}
-		Value* castTo(RData& r, Value* c, ClassProto* right){
-			if(hasCast(right)) return casts[right]->apply(DATA::getConstant(c), r).getValue(r);
-			else{
-				todo("Compile error - could not find cast "+name+" to "+right->name,PositionID());
-				return NULL;
-			}
 		}
 		ouop*& addCast(ClassProto* right, PositionID id=PositionID()){
 			if(hasCast(right))
@@ -179,10 +172,10 @@ class ClassProto{
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
 				superClass(sC),
 				constructors(),
-				isPointer(pointer),
-				name(n),iterator(NULL)
+				isPointer(pointer),isGen(false),
+				name(n)
 				 {
-			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](Value* a, RData& m) -> DATA{	return DATA::getConstant(a); }
+			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](DATA a, RData& m, PositionID id) -> DATA{	return a; }
 								, this)));
 		}
 };
@@ -205,6 +198,10 @@ ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE);
 ClassProto* sliceClass = new ClassProto(objectClass, "slice");
 ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE);
 
+
+DATA DATA::getClass(ClassProto* c){
+	return DATA(R_CLASS, c, classClass);
+};
 
 String getGenericName(ClassProto* a, std::vector<ClassProto*>& b){
 	String t = a->name+"<";
@@ -255,6 +252,24 @@ class GenericClass: public ClassProto{
 };
 */
 
+#include "operations.hpp"
+DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
+	//TODO look into making more efficient
+	if(!(type==R_CONST || type==R_LOC)){
+		id.error("Compile error - could not cast non constant/location");
+	} else if(data.pointer==NULL){
+		id.error("Compiler error - can not cast nonexistant pointer");
+	} else if(info.pointer==NULL){
+		id.error("Compiler error - can not cast to nonexistant class");
+	}
+	assert(right!=NULL);
+	ClassProto* left = getReturnType();
+	if(left->equals(right)) return *this;
+	if(!left->hasCast(right))
+		todo("Compile error - could not find cast from "+left->name+" to "+right->name,id);
+	if(left->isPointer) return *this;
+	return left->casts[right]->apply(*this, r, id);
+}
 ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 	if(vals.size()==0) return voidClass;
 	ClassProto* tmp = vals[0];

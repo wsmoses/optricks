@@ -38,7 +38,7 @@ class Block : public Construct{
 				if(r.guarenteedReturn) ret = true;
 			}
 			r.guarenteedReturn = ret;
-			return DATA::getConstant(NULL);
+			return DATA::getNull();
 		}
 		Statement* simplify() override{
 			Block* b = new Block(filePos);

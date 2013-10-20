@@ -33,7 +33,7 @@ class ClassProtoWrapper : public Construct{
 		ClassProto* getSelfClass() override{
 			return cp;
 		}
-		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(),classClass){
+		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(0,0,"#classWrapper"),classClass){
 			cp = c;
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
