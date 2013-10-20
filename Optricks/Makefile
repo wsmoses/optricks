@@ -13,6 +13,9 @@ shared:
 release: 
 	g++ -std=c++11 main.cpp -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG
 
+release-32: 
+	g++ -std=c++11 main.cpp -o Optricks-32 `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -m32
+
 func:
 	gcc -c containers/basic_functions.hpp -o containers/basic_functions.o
 #	ar ruv libbasic_functions.a containers/basic_functions.o
