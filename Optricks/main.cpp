@@ -258,7 +258,7 @@ int main(int argc, char** argv){
 			file=s;
 		}
 	}
-	if(!forceInt) interactive = file=="";
+	if(!forceInt) interactive = file=="" && command=="";
 	//ofstream fout (output);
 	String error="";
 	raw_fd_ostream* outStream;
@@ -298,8 +298,14 @@ int main(int argc, char** argv){
 	std::vector<String> files =
 		{"./stdlib/stdlib.opt"};
 	if(!interactive){
-		files.push_back(files[0]);
-		files[0]=file;
+		if(command==""){
+			files.push_back(files[0]);
+			files[0]=file;
+		}
+		else{
+			cerr << "Commands not supported yet!" << endl << flush;
+			exit(1);
+		}
 		lexer.execFiles(false,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
 	}
 	else{

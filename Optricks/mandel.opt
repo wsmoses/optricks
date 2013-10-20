@@ -24,9 +24,18 @@ def int mand(complex z0){
 	return 1000
 }
 
+/*
 def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.25, double ymax=1.25, double ystep=.04){
 	for im in range(ymin,ymax,ystep){
 		for re in range(xmin,xmax,xstep):
+			printdensity(mand(complex(re,im)))
+		print()
+	}
+}
+*/
+def void mandel(auto x=range(-2,1,.02), auto y=range(-1.25,1.25,.04)){
+	for im in x{
+		for re in y:
 			printdensity(mand(complex(re,im)))
 		print()
 	}

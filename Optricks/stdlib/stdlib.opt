@@ -1,3 +1,4 @@
+extern int rand();
 def void print(int i, bool b=true){
 	(extern void printi(int i, bool b))(i,b);
 }
