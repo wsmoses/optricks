@@ -23,8 +23,15 @@ class ClassProto{
 		std::map<String, unsigned int> innerDataIndex;
 		std::vector<ClassProto*> innerData;
 		std::map<String, ReferenceElement* > functions;
+		std::map<String, ReferenceElement* > staticClasses;
 		//		std::map<String,std::map<ClassProto*, obinop*> > binops;
 		ClassProto* superClass;
+		bool hasInner(String s) const{
+			if(innerDataIndex.find(s)!=innerDataIndex.end()) return true;
+			if(functions.find(s)!=functions.end()) return true;
+			if(staticClasses.find(s)!=staticClasses.end()) return true;
+			return false;
+		}
 	public:
 		funcMap constructors;
 		bool isPointer;
@@ -50,25 +57,33 @@ class ClassProto{
 			return innerData[nam];
 		}
 		unsigned int getDataClassIndex(String nam, PositionID id){
-			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
+			if(innerDataIndex.find(nam)==innerDataIndex.end())
+				id.error("Cannot find inner data type for class "+name+" named "+nam);
 			return innerDataIndex[nam];
 		}
 		ClassProto* getDataClass(String nam, PositionID id){
-			if(innerDataIndex.find(nam)==innerDataIndex.end()) todo("Cannot find inner data type for class "+name+" named "+nam,id);
+			if(innerDataIndex.find(nam)==innerDataIndex.end())
+				id.error("Cannot find inner data type for class "+name+" named "+nam);
 			return innerData[innerDataIndex[nam]];
+		}
+		const bool hasClass(String name) const{
+			return staticClasses.find(name)!=staticClasses.end();
+		}
+		ReferenceElement* getClass(String nam, PositionID id){
+			if(!hasClass(nam)) id.error("Inner class "+nam+" does not exist in class "+name);
+			return staticClasses[nam];
 		}
 		const bool hasFunction(String name) const{
 			return functions.find(name)!=functions.end();
 		}
-		ReferenceElement* getFunction(String nam){
-			if(!hasFunction(nam)) return NULL;
+		ReferenceElement* getFunction(String nam, PositionID id){
+			if(!hasFunction(nam)) id.error("Function "+nam+" does not exist in class "+name);
 			return functions[nam];
 		}
 		ReferenceElement* addFunction(String nam, PositionID id);
 		void addElement(String nam, ClassProto* typ,PositionID id){
-			if(nam==name) todo("Cannot make data type with same name as class "+name,id);
-			if(innerDataIndex.find(nam)!=innerDataIndex.end()) todo("Cannot create another inner data type for class "+name+" named "+nam,id);
-			if(functions.find(nam)!=functions.end()) todo("Cannot create another inner data type for class "+name+" named "+nam,id);
+			if(nam==name) id.error("Cannot make data type with same name as class "+name);
+			if(hasInner(nam)) id.error("Cannot create another inner data type for class "+name+" named "+nam);
 			auto a = innerData.size();
 			innerData.push_back(typ);
 			innerDataIndex[nam]=a;
@@ -144,8 +159,8 @@ class ClassProto{
 				}
 				self = self->superClass;
 			}
-			todo("Binary operator "+operation+" not implemented for class "+
-					name+ " with right "+ right->name, id);
+			id.error("Binary operator "+operation+" not implemented for class "+
+					name+ " with right "+ right->name);
 			return std::pair<obinop*,std::pair<ouop*,ouop*> >(NULL,
 					std::pair<ouop*,ouop*>(NULL,NULL));
 		}
@@ -192,6 +207,7 @@ ClassProto* intClass = new ClassProto(doubleClass, "int", INTTYPE);
 ClassProto* c_intClass = new ClassProto(intClass,"c_int",C_LONGTYPE);
 ClassProto* c_longClass = new ClassProto(intClass,"c_long",C_INTTYPE);
 ClassProto* c_long_longClass = new ClassProto(intClass,"c_long_long",C_LONG_LONGTYPE);
+ClassProto* c_pointerClass = new ClassProto(objectClass,"c_pointer",C_POINTERTYPE);
 ClassProto* stringClass = new ClassProto(objectClass,"string");
 ClassProto* c_stringClass = new ClassProto(stringClass, "c_string",C_STRINGTYPE,true);
 ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE);
@@ -263,10 +279,10 @@ DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
 		id.error("Compiler error - can not cast to nonexistant class");
 	}
 	assert(right!=NULL);
-	ClassProto* left = getReturnType();
+	ClassProto* left = getReturnType(r);
 	if(left->equals(right)) return *this;
 	if(!left->hasCast(right))
-		todo("Compile error - could not find cast from "+left->name+" to "+right->name,id);
+		id.error("Compile error - could not find cast from "+left->name+" to "+right->name);
 	if(left->isPointer) return *this;
 	return left->casts[right]->apply(*this, r, id);
 }

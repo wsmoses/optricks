@@ -159,6 +159,10 @@ def complex cos(complex z){
 	return .5*(exp(complex(0,1)*z)+exp(-complex(0,1)*z));
 }
 
+def int operator ** (int a, int b){
+	return pow(a, b);
+}
+
 def int pow(int a, int b){
 	if(b<0) return 0;
 	elif(b==0) return 1;
@@ -173,10 +177,6 @@ def int pow(int a, int b){
 
 def complex pow(complex a, int b){
 	return a**b;
-}
-
-def int operator ** (int a, int b){
-	return pow(a, b);
 }
 
 def double operator ** (double a, double b){

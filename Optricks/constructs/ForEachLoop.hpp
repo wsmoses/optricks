@@ -29,15 +29,15 @@ class ForEachLoop : public Construct{
 			iterable->registerClasses(r);
 			toLoop->registerClasses(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			iterable->registerFunctionDefaultArgs();
-			toLoop->registerFunctionDefaultArgs();
+		void registerFunctionPrototype(RData& r) override final{
+			iterable->registerFunctionPrototype(r);
+			toLoop->registerFunctionPrototype(r);
 		}
 		ClassProto* checkTypes(RData& r) override final{
 			iterC = iterable->checkTypes(r);
-			ReferenceElement* ref = iterC->getFunction("iterator");
+			ReferenceElement* ref = iterC->getFunction("iterator", filePos);
 			FunctionProto* f = new FunctionProto("for-each-temp");
-			DATA tmp = ref->funcs.get(f, filePos);
+			DATA tmp = ref->funcs.get(f, r, filePos);
 			if(tmp.getType()!=R_GEN) error("Cannot for-each on non-generator");
 			std::vector<ClassProto*> yields;
 			tmp.getMyGenerator()->ret->collectReturns(r, yields);
@@ -58,7 +58,7 @@ class ForEachLoop : public Construct{
 			DATA toEv = iterable->evaluate(ra);
 			//TODO do not create struct if calling generator function
 			//iterC = toEv.getReturnType();
-			myGen = iterC->getFunction("iterator")->funcs.get(new FunctionProto("iterator"), filePos).getMyGenerator();
+			myGen = iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getMyGenerator();
 			/*if(E_FUNC_CALL* func = dynamic_cast<E_FUNC_CALL*>(iterable)){
 				auto tmpVal = func->getArgs(ra);
 				toEv = tmpVal.second;
@@ -70,7 +70,7 @@ class ForEachLoop : public Construct{
 			if(iterC->isGen){
 				Value* tv = toEv.getValue(ra);
 				if(myGen->thisPointer!=NULL){
-					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), myGen->self->getSelfClass());
+					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), myGen->self->getSelfClass(ra));
 					if(iterC->isPointer) myGen->thisPointer->llvmObject = self;
 					else myGen->thisPointer->llvmObject = self.toLocation(ra);
 
@@ -158,7 +158,9 @@ class ForEachLoop : public Construct{
 			iterable->resolvePointers();
 			toLoop->resolvePointers();
 		}
-		void registerFunctionArgs(RData& r) override final{
+		void buildFunction(RData& r) override final{
+			iterable->buildFunction(r);
+			toLoop->buildFunction(r);
 		}
 		const Token getToken() const override {
 			return T_FOREACH;

@@ -36,55 +36,48 @@ class Declaration: public Construct{
 		}
 		ClassProto* checkTypes(RData& r) final override{
 			classV->checkTypes(r);
-			variable->checkTypes(r);
-			ClassProto* temp = classV->getSelfClass();
+			returnType = classV->getSelfClass(r);
 			//cout << "checking declaration types: "<<(size_t)(value) << " and now the class" <<
 			//	((value==NULL)?c_intClass:(value->returnType))->name << endl << flush;
 			if(value!=NULL){
 				value->checkTypes(r);
 				if(value->returnType==NULL)error("Declaration of inconsistent types");
-				else if(temp==autoClass){
-					temp = value->returnType;
+				else if(returnType==autoClass){
+					returnType = value->returnType;
 					//cout << "Location of set" << (size_t)(variable->getMetadata(r)) << endl << flush;
 					//cout << "Setting: " << variable->returnType->name << endl << flush;
-					classV = new ClassProtoWrapper(variable->returnType);
+					classV = new ClassProtoWrapper(returnType);
 					//cout << "Finalized as: " << variable->checkTypes(r)->name << endl << flush;
 				}
-				else if(!value->returnType->hasCast(temp) )
+				else if(!value->returnType->hasCast(returnType) )
 					error("Declaration of inconsistent types - variable of type "+classV->getFullName()+" and value of "+value->returnType->name);
 			}
-			variable->getMetadata(r)->returnClass = variable->returnType = temp;
+			variable->getMetadata(r)->returnClass = variable->returnType = returnType;
+			//variable->checkTypes(r);
 			return returnType;
 		}
 
 		void registerClasses(RData& r) override final{
-			classV->registerClasses(r);
-			variable->registerClasses(r);
+			if(classV!=NULL) classV->registerClasses(r);
+			if(variable!=NULL) variable->registerClasses(r);
 			if(value!=NULL) value->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			classV->registerFunctionArgs(r);
-			variable->registerFunctionArgs(r);
-			if(value!=NULL) value->registerFunctionArgs(r);
-			classV->checkTypes(r);
-			if(classV->getSelfClass()==NULL) error("Argument " + classV->getFullName() + "is not a class DC");
-			variable->getMetadata(r)->returnClass = variable->returnType = classV->getSelfClass();
-			variable->checkTypes(r);
-			//checkTypes(r);
-			//TODO add name in table of args?
+		void registerFunctionPrototype(RData& r) override final{
+			if(classV!=NULL) classV->registerFunctionPrototype(r);
+			if(variable!=NULL) variable->registerFunctionPrototype(r);
+			if(value!=NULL) value->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			classV->registerFunctionDefaultArgs();
-			variable->registerFunctionDefaultArgs();
-			if(value!=NULL) value->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			if(classV!=NULL) classV->buildFunction(r);
+			if(variable!=NULL) variable->buildFunction(r);
+			if(value!=NULL) value->buildFunction(r);
 		};
 		void resolvePointers() override final{
-			classV->resolvePointers();
-			variable->resolvePointers();
+			if(classV!=NULL) classV->resolvePointers();
+			if(classV!=NULL) variable->resolvePointers();
 			if(value!=NULL) value->resolvePointers();
 		};
 		DATA evaluate(RData& r) final override{
-			//cout << "evaling declaration " << endl << flush;
 			checkTypes(r);
 			assert(variable->returnType!=voidClass);
 			if(global){
@@ -133,7 +126,7 @@ class Declaration: public Construct{
 		}
 };
 
-std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(FunctionProto* func) const{
+std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(RData& r, FunctionProto* func) const{
 	unsigned int optional;
 	if(func->declarations.size()!=declarations.size()){
 		if(declarations.size()>func->declarations.size()) return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
@@ -144,8 +137,8 @@ std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(Funct
 	} else optional = 0;
 	unsigned int count=0;
 	for(unsigned int a=0; a<declarations.size(); ++a){
-		ClassProto* class1 = declarations[a]->classV->getSelfClass();
-		ClassProto* class2 = func->declarations[a]->classV->getSelfClass();
+		ClassProto* class1 = declarations[a]->classV->getSelfClass(r);
+		ClassProto* class2 = func->declarations[a]->classV->getSelfClass(r);
 		if(class1==voidClass){
 			if(!func->declarations[a]->hasValue())
 				return std::pair<bool,std::pair<unsigned int, unsigned int> >(false,std::pair<unsigned int, unsigned int>(0,0));
@@ -161,11 +154,11 @@ std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(Funct
 	return std::pair<bool,std::pair<unsigned int, unsigned int> >(true,std::pair<unsigned int, unsigned int>(optional,count));
 }
 
-bool FunctionProto::equals(const FunctionProto* f, PositionID id) const{
+bool FunctionProto::equals(RData& r, const FunctionProto* f, PositionID id) const{
 	if(declarations.size()!=f->declarations.size()) return false;
 	for(unsigned int i = 0; i<declarations.size(); ++i){
-		ClassProto* class1 = declarations[i]->classV->getSelfClass();
-		ClassProto* class2 = f->declarations[i]->classV->getSelfClass();
+		ClassProto* class1 = declarations[i]->classV->getSelfClass(r);
+		ClassProto* class2 = f->declarations[i]->classV->getSelfClass(r);
 		if(class1==NULL || class2==NULL) id.error("ERROR: NULL PROTO");
 		if(!class1->equals(class2))
 			return false;
@@ -184,12 +177,13 @@ String FunctionProto::toString() const{
 	return t+")";
 }
 
-ClassProto* FunctionProto::getGeneratorType(PositionID id){
+ClassProto* FunctionProto::getGeneratorType(RData& r, PositionID id){
 	if(generatorType!=NULL) return generatorType;
 	generatorType = new ClassProto(objectClass,name);
+	assert(generatorType!=NULL);
 	generatorType->isGen = true;
 	for(const auto& a: declarations){
-		generatorType->addElement(a->variable->getFullName(),a->classV->getSelfClass(),id);
+		generatorType->addElement(a->variable->getFullName(),a->classV->getSelfClass(r),id);
 	}
 	return generatorType;
 }
@@ -214,7 +208,7 @@ void initFuncsMeta(RData& rd){
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(rd.builder.CreateFPToSI(F->arg_begin(), INTTYPE));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		intClass->constructors.add(DATA::getFunction(F,intIntP),PositionID());
+		intClass->constructors.add(DATA::getFunction(F,intIntP),rd, PositionID());
 	}
 	{
 		std::vector<Type*> t = {C_STRINGTYPE};
@@ -222,7 +216,7 @@ void initFuncsMeta(RData& rd){
 		strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
 		rd.exec->addGlobalMapping(strLen, (void*)(&strlen));
 	}
-	c_stringClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),PositionID());
+	c_stringClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),rd, PositionID());
 	{
 
 		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
@@ -233,7 +227,7 @@ void initFuncsMeta(RData& rd){
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(ConstantInt::get(INTTYPE,1));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		charClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(F,new FunctionProto("length",intClass)),PositionID());
+		charClass->addFunction("length",PositionID())->funcs.add(DATA::getFunction(F,new FunctionProto("length",intClass)),rd, PositionID());
 	}
 	charClass->addCast(c_stringClass) = new ouopNative(
 		[](DATA av, RData& m, PositionID id) -> DATA{

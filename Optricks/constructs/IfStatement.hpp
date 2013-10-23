@@ -32,15 +32,15 @@ class IfStatement : public Construct{
 			then->registerClasses(r);
 			finalElse->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			condition->registerFunctionArgs(r);
-			then->registerFunctionArgs(r);
-			finalElse->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			condition->registerFunctionPrototype(r);
+			then->registerFunctionPrototype(r);
+			finalElse->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			condition->registerFunctionDefaultArgs();
-			then->registerFunctionDefaultArgs();
-			finalElse->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			condition->buildFunction(r);
+			then->buildFunction(r);
+			finalElse->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			condition->resolvePointers();

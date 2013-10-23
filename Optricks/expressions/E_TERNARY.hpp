@@ -38,15 +38,15 @@ class TernaryOperator : public Statement{
 			then->registerClasses(r);
 			finalElse->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			condition->registerFunctionArgs(r);
-			then->registerFunctionArgs(r);
-			finalElse->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			condition->registerFunctionPrototype(r);
+			then->registerFunctionPrototype(r);
+			finalElse->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			condition->registerFunctionDefaultArgs();
-			then->registerFunctionDefaultArgs();
-			finalElse->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			condition->buildFunction(r);
+			then->buildFunction(r);
+			finalElse->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			condition->resolvePointers();
@@ -99,13 +99,10 @@ class TernaryOperator : public Statement{
 			return DATA::getConstant(PN, returnType);
 		}
 
-		Constant* getConstant(RData& a) override final {
-			return NULL;
-		}
 		Statement* simplify() override{
 			return new TernaryOperator(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
 		}
-		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
+		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		void write(ostream& a,String t) const override{
 			a << condition << "?" << then << ":" << finalElse;
 		}

@@ -27,11 +27,6 @@ class ostring : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
-
-		Constant* getConstant(RData& a) override final {
-			return NULL;
-			//TODO check return a.builder.CreateGlobalStringPtr(value,"tmpstr");
-		}
 		DATA evaluate(RData& a) override final{
 			return DATA::getConstant(a.builder.CreateGlobalStringPtr(value,"tmpstr"),c_stringClass);//TODO maybe make location?
 		}

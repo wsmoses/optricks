@@ -23,6 +23,7 @@ auto C_INTTYPE = IntegerType::get(getGlobalContext(), 8*C_INT_LENGTH);
 auto C_LONGTYPE = IntegerType::get(getGlobalContext(), 8*C_LONG_LENGTH);
 auto C_LONG_LONGTYPE = IntegerType::get(getGlobalContext(), 8*C_LONGLONG_LENGTH);
 auto C_STRINGTYPE = PointerType::get(C_CHARTYPE, 0);
+auto C_POINTERTYPE = IntegerType::get(getGlobalContext(), 8*C_POINTER_LENGTH);
 
 auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);

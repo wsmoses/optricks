@@ -20,7 +20,7 @@ DATA DATA::toLocation(RData& m){
 	AllocaInst* loc = m.builder.CreateAlloca(data.constant->getType(),0);
 	assert(loc!=NULL);
 	m.builder.CreateStore(data.constant, loc);
-	return getLocation(loc, getReturnType());
+	return getLocation(loc, getReturnType(m));
 }
 Value* DATA::getValue(RData& r) const{
 	assert(data.pointer!=NULL);
@@ -48,7 +48,7 @@ BasicBlock* RData::getBlock(String name, JumpType jump, BasicBlock* bb, DATA val
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == FUNC || jumps[i]->toJump==GENERATOR){
 					if(jumps[i]->returnType==voidClass){
-						if(val.getType()!=R_UNDEF && val.getReturnType()!=voidClass) id.error("Cannot return something in function requiring void");
+						if(val.getType()!=R_UNDEF && val.getReturnType(*this)!=voidClass) id.error("Cannot return something in function requiring void");
 						jumps[i]->endings.push_back(std::pair<BasicBlock*,DATA>(bb, DATA::getNull()));
 					}
 					else jumps[i]->endings.push_back(std::pair<BasicBlock*,DATA>(bb, val.castTo(*this, jumps[i]->returnType, id).toValue(*this)));

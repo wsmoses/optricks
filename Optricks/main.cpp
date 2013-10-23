@@ -3,7 +3,6 @@
 //TODO constant expr
 //TODO fix parsing orders (esp w/ auto)
 #include "containers/all.hpp"
-#include "containers/basic_functions.hpp"
 #include <fstream>
 #include <iostream>
 #include "Lexer.hpp"
@@ -23,21 +22,21 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	if(n->getToken()==T_IMPORT){
 		ImportStatement* import = dynamic_cast<ImportStatement*>(n);
 		char cwd[1024];
-		if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", import->filePos);
+		if(getcwd(cwd,sizeof(cwd))==NULL) import->error("Could not getCWD");
 		String dir, file;
 		getDir(import->toImport, dir, file);
-		if(chdir(dir.c_str())!=0) todo("Could not change directory to "+dir+"/"+file,import->filePos);
+		if(chdir(dir.c_str())!=0) import->error("Could not change directory to "+dir+"/"+file);
 		std::vector<String> pl = {file};
 		lexer.execFiles(true,pl, NULL,debug,0);
-		if(chdir(cwd)!=0) todo("Could not change directory back to "+String(cwd),import->filePos);
+		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
 	}
 	if(debug && n->getToken()!=T_VOID) cout << n << endl << flush;
 	n = n->simplify();
 	n->resolvePointers();
 	n->registerClasses(lexer.rdata);
-	n->registerFunctionArgs(lexer.rdata);
-	n->registerFunctionDefaultArgs();
+	n->registerFunctionPrototype(lexer.rdata);
+	n->buildFunction(lexer.rdata);
 	n->checkTypes(lexer.rdata);
 	Type* type;
 	type = n->returnType->getType(lexer.rdata);
@@ -51,8 +50,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		n = n->simplify();
 		n->resolvePointers();
 		n->registerClasses(lexer.rdata);
-		n->registerFunctionArgs(lexer.rdata);
-		n->registerFunctionDefaultArgs();
+		n->registerFunctionPrototype(lexer.rdata);
+		n->buildFunction(lexer.rdata);
 		n->checkTypes(lexer.rdata);
 		type = VOIDTYPE;
 	}

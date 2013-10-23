@@ -33,11 +33,11 @@ public:
 	void registerClasses(RData& r) override final{
 		left->registerClasses(r);
 	}
-	void registerFunctionArgs(RData& r) override final{
-		left->registerFunctionArgs(r);
+	void registerFunctionPrototype(RData& r) override final{
+		left->registerFunctionPrototype(r);
 	};
-	void registerFunctionDefaultArgs() override final{
-		left->registerFunctionDefaultArgs();
+	void buildFunction(RData& r) override final{
+		left->buildFunction(r);
 	};
 	void resolvePointers() override final{
 		left->resolvePointers();
@@ -49,17 +49,17 @@ public:
 		return returnType = superC->getDataClass(right,filePos);
 	}
 
-	ClassProto* getSelfClass() override final{
-		error("Cannot get selfClass of lookup"); return NULL;
+	ClassProto* getSelfClass(RData& r) override final{
+		ClassProto* l = left->getSelfClass(r);
+		return l->getClass(right, filePos)->llvmObject.getMyClass(r);
 	}
-	Constant* getConstant(RData& r) override final { return NULL; }
 	DATA evaluate(RData& a) override{
 		checkTypes(a);
 		registerClasses(a);
 		ClassProto* lT = left->checkTypes(a);
 		if(lT->hasFunction(right)){
 			//TODO add wrapper around object which called function
-			return lT->getFunction(right)->llvmObject;
+			return lT->getFunction(right, filePos)->llvmObject;
 		}
 		Value* lloc = left->getLocation(a);
 		if(lloc!=NULL){
@@ -109,7 +109,7 @@ public:
 		checkTypes(r);
 		auto lT = left->checkTypes(r);
 
-		if(lT->hasFunction(right)) return lT->getFunction(right);
+		if(lT->hasFunction(right)) return lT->getFunction(right, filePos);
 		else return new ReferenceElement("", NULL,lT->name+operation+right, DATA::getLocation(getLocation(r), returnType), lT->getDataClass(right,filePos), funcMap());
 	}
 };

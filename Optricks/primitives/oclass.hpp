@@ -13,70 +13,81 @@
 
 
 #define OCLASS_P_
-class oclass: public Stackable
+class oclass: public Statement
 {
 	public:
-		/*oclass* simplify() override final{
-			return this;
-		}*/
+		String name;
+		Statement* superClass;
+		Statement* self;
+		bool primitive;
+		oclass* outerClass;
+		std::vector<Statement*> under;
+		std::vector<Declaration*> data;
 		ClassProto* proto;
-		//OModule* module;
-		virtual ~oclass(){};
-		oclass(ClassProto* p){
-			proto = p;
-			if(p->name!=""){
-				LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, DATA::getClass(proto),classClass);
-			} else cerr << "String this has no name " << p->name << endl << flush;
-			//TODO redo oclass as oobject;
+		oclass(PositionID id, String nam, Statement* sC, Statement* loc, bool prim, oclass* outer):Statement(id, classClass),
+				name(nam),superClass(sC),self(loc),primitive(prim), outerClass(outer), under(), data(), proto(NULL){
 		}
-
+		ClassProto* getSelfClass(RData &r) override {
+			if(proto!=NULL) return proto;
+			else{
+				registerClasses(r);
+				return proto;
+			}
+		}
+		String getFullName() override{
+			if(outerClass==NULL) return name;
+			else return outerClass->getFullName()+name;
+		}
+		ReferenceElement* getMetadata(RData& r) override{
+			registerClasses(r);
+			return self->getMetadata(r);
+		}
+		oclass* simplify() override final{
+			return this;
+		}
 		void write(ostream& ss, String b) const override{
-			ss << "class<" + proto->name + ">";
+			ss << "class<" + name + ">";
 		};
 		const Token getToken() const override final {
-			return T_OOBJECT;
+			return T_CLASS;
 		}
 
-		Constant* getConstant(RData& r){
-			return NULL;
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		}
+		ClassProto* checkTypes(RData& r) override final{
+			for(Statement*& a: under) a->checkTypes(r);
+			return returnType;
+		}
+		DATA evaluate(RData& r){
+			registerClasses(r);
+			for(Statement*& a: under) a->checkTypes(r);
+			return DATA::getClass(proto);
+		}
+		void registerClasses(RData& r) override final{
+			for(Statement*& a:under) a->registerClasses(r);
+			error("Registration of classes has yet to be implemented");
+			//TODO
+		}
+		void registerFunctionPrototype(RData& r) override final{
+			for(Statement*& a:under) a->registerFunctionPrototype(r);
+		}
+		void buildFunction(RData& r) override final{
+			for(Statement*& a:under) a->buildFunction(r);
+		}
+		void resolvePointers() override final{
+			for(Statement*& a:under) a->resolvePointers();
 		}
 };
 
-oclass* autoClassV;
 void initClasses(){
-	//classClass->module = new OModule(objectClass->module);
 	initClassesMeta();
-
-	new oclass(classClass);
-	new oclass(objectClass);
-	autoClassV = new oclass(autoClass);
-	//oclass* nullClassO =
-	//		new oclass(nullClass);
-	//oclass* boolClassO =
-			new oclass(boolClass);
-	//oclass* arrayClassO =
-			//TODO
-//			new oclass(arrayClass);
-	//oclass* functionClassO =
-			new oclass(functionClass);
-			new oclass(doubleClass);
-			new oclass(complexClass);
-	//oclass* intClassO =
-			new oclass(intClass);
-	//oclass* stringClassO =
-			new oclass(stringClass);
-			new oclass(charClass);
-	//oclass* sliceClassO =
-			new oclass(sliceClass);
-	//oclass* voidClassO =
-			new oclass(voidClass);
-			new oclass(c_stringClass);
-			new oclass(c_intClass);
-			new oclass(c_longClass);
-			new oclass(c_long_longClass);
-
-	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "class")->returnClass = classClass;
-	LANG_M->getPointer(PositionID(0,0,"oclass#init"), "object")->returnClass = classClass;
+	ClassProto* cl[] = {classClass, objectClass, autoClass, boolClass,
+			functionClass, doubleClass, complexClass, intClass, stringClass, charClass,
+			sliceClass, voidClass,
+			c_stringClass,c_intClass, c_longClass, c_long_longClass, c_pointerClass};
+	for(ClassProto*& p:cl){
+		LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, DATA::getClass(p),classClass);
+	}
 }
 
 #endif /* OCLASS_HPP_ */

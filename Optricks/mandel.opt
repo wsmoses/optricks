@@ -34,8 +34,8 @@ def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.
 }
 */
 def void mandel(auto x=range(-2,1,.02), auto y=range(-1.25,1.25,.04)){
-	for im in x{
-		for re in y:
+	for im in y{
+		for re in x:
 			printdensity(mand(complex(re,im)))
 		print()
 	}

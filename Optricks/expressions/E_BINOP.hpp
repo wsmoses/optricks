@@ -127,24 +127,23 @@ class E_BINOP : public Statement{
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
-		Constant* getConstant(RData& r) override final{ return NULL; }//TODO allow constant folding
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
 		}
-		ClassProto* getSelfClass() override final{
+		ClassProto* getSelfClass(RData& r) override final{
 			error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL;
 		}
 		void registerClasses(RData& r) override final{
 			left->registerClasses(r);
 			right->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			left->registerFunctionArgs(r);
-			right->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			left->registerFunctionPrototype(r);
+			right->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			left->registerFunctionDefaultArgs();
-			right->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			left->buildFunction(r);
+			right->buildFunction(r);
 		};
 		void resolvePointers() override final{
 			left->resolvePointers();

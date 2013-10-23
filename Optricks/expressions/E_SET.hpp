@@ -25,10 +25,7 @@ class E_SET: public Statement{
 		const Token getToken() const final override{
 			return T_SET;
 		}
-		Constant* getConstant(RData& a) override final {
-			return NULL;
-		}
-		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
+		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		String getFullName() override final{
 			error("Cannot get full name of set");
 			return "";
@@ -45,13 +42,13 @@ class E_SET: public Statement{
 			variable->registerClasses(r);
 			if(value!=NULL) value->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			variable->registerFunctionArgs(r);
-			value->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			variable->registerFunctionPrototype(r);
+			value->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			variable->registerFunctionDefaultArgs();
-			if(value!=NULL) value->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			variable->buildFunction(r);
+			if(value!=NULL) value->buildFunction(r);
 		};
 		void resolvePointers() override final{
 			variable->resolvePointers();

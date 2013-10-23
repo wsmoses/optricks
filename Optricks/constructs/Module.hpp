@@ -30,13 +30,16 @@ class OModule : public Stackable{
 			if(super==NULL) return false;
 			return super->exists(index);
 		}
+		ReferenceElement* getClassPointer(PositionID a, String name){
+			return addPointer(a,name,DATA::getNull(),classClass);
+		}
 		ReferenceElement* getFuncPointer(PositionID a, String name){
 			if(!exists(name)) return addPointer(a,name,DATA::getNull(),functionClass);
 			else return findPointer(a,name);
 		}
-		ReferenceElement* addPointer(PositionID a, String index, DATA value, ClassProto* cla){
+		ReferenceElement* addPointer(PositionID id, String index, DATA value, ClassProto* cla){
 			if(mapping.find(index)!=mapping.end()){
-				todo("The variable "+index+" has already been defined in this scope", a);
+				id.error("The variable "+index+" has already been defined in this scope");
 			}
 			ReferenceElement* nex = new ReferenceElement("",this, index,value, cla, funcMap());
 			mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
@@ -64,7 +67,7 @@ class OModule : public Stackable{
 			cerr << "Could not resolve variable: " << index << flush << endl;
 			write(cerr, "");
 			cerr << endl << flush;
-			todo("Could not resolve variable: "+index,id);
+			id.error("Could not resolve variable: "+index);
 			exit(0);
 		}
 		void write(ostream& a,String t) const override{
@@ -90,7 +93,7 @@ class LateResolve : public Resolvable{
 		LateResolve(OModule* m,String n, PositionID id): Resolvable(m,n),filePos(id){};
 		ReferenceElement* resolve(){
 			auto a =  module->getPointer(filePos, name);
-			if(a==NULL) todo("Could not resolve late pointer for "+name,filePos);
+			if(a==NULL) filePos.error("Could not resolve late pointer for "+name);
 			return a;
 		}
 };

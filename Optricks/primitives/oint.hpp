@@ -20,7 +20,6 @@ class oint : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
-		Constant* getConstant(RData& r) override final{ return getInt(value); }
 		DATA evaluate(RData& a) override final{
 			return DATA::getConstant(getInt(value),intClass);
 		}

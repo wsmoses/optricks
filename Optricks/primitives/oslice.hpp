@@ -37,7 +37,6 @@ class oslice : public oobject{
 			error("Not implemented : slice evaluate");
 			return DATA::getConstant(NULL,sliceClass);
 		}
-		Constant* getConstant(RData& r) override final { return NULL; }
 };
 
 #endif /* OSLICE_HPP_ */

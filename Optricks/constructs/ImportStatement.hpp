@@ -21,8 +21,7 @@ class ImportStatement:public Construct{
 			error("Cannot checkTypes of IMPORT");
 			return NULL;
 		}
-		void registerFunctionArgs(RData& r) override final{
-			error("Cannot registerFunctionArgs of IMPORT");
+		void registerFunctionPrototype(RData& r) override final{
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
@@ -38,8 +37,7 @@ class ImportStatement:public Construct{
 		void registerClasses(RData& r) override final{
 			error("Cannot registerClasses of IMPORT");
 		}
-		void registerFunctionDefaultArgs() override final{
-
+		void buildFunction(RData& r) override final{
 		}
 		ImportStatement* simplify() override final{
 			return this;

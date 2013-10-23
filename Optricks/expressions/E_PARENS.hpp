@@ -13,7 +13,6 @@ public:
 	void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		inner->collectReturns(r, vals);
 	}
-	Constant* getConstant(RData& r) override final{ return inner->getConstant(r); }
 	ReferenceElement* getMetadata(RData& r) override final{
 		return inner->getMetadata(r);
 	}
@@ -23,14 +22,14 @@ public:
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);
 	}
-	ClassProto* getSelfClass() override final{
-		return inner->getSelfClass();
+	ClassProto* getSelfClass(RData& r) override final{
+		return inner->getSelfClass(r);
 	}
-	void registerFunctionArgs(RData& r) override final{
-		inner->registerFunctionArgs(r);
+	void registerFunctionPrototype(RData& r) override final{
+		inner->registerFunctionPrototype(r);
 	}
-	void registerFunctionDefaultArgs() override final{
-		inner->registerFunctionDefaultArgs();
+	void buildFunction(RData& r) override final{
+		inner->buildFunction(r);
 	}
 	void resolvePointers() override final{
 		inner->resolvePointers();

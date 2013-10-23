@@ -26,8 +26,7 @@ class E_RETURN : public Statement{
 			error("Cannot get full name of return");
 			return "";
 		}
-		Constant* getConstant(RData& r) override final { return NULL; }
-		ClassProto* getSelfClass() override final{
+		ClassProto* getSelfClass(RData& r) override final{
 			error("Cannot get selfClass of return"); return NULL;
 		}
 		ReferenceElement* getMetadata(RData& r) override final{
@@ -39,13 +38,11 @@ class E_RETURN : public Statement{
 			if(inner!=NULL)
 			inner->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			if(inner!=NULL)
-			inner->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			if(inner!=NULL) inner->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			if(inner!=NULL)
-			inner->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			if(inner!=NULL) inner->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			if(inner!=NULL)

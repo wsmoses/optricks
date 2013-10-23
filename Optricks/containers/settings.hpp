@@ -8,7 +8,7 @@
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
 
-#include "basic_functions.hpp"
+#include "basic_functions.h"
 
 #include <cstdio>
 #include <stdlib.h>
@@ -27,7 +27,6 @@
 #include <unordered_map>
 #include <array>
 #include <unordered_set>
-#include "basic_functions.hpp"
 
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Transforms/IPO.h"
@@ -133,11 +132,11 @@ struct PositionID{
 			fileName = c;
 		}
 		PositionID():PositionID(0,0,"<start>"){}
-		void error(String s, bool end=true){
+		void error(String s, bool end=true) const{
 			cerr << s << " at " << fileName << " on line " << lineN << ", char " << charN << endl << flush;
 			if(end) exit(1);
 		}
-		ostream& operator << (ostream& o){
+		ostream& operator << (ostream& o) const{
 			o << fileName;
 			o << " line:";
 			o << lineN;
@@ -146,18 +145,6 @@ struct PositionID{
 			return o;
 		}
 };
-
-void todo(String a,PositionID filePos){
-	cerr << a << " at ";
-	cerr << filePos.fileName;
-	cerr << " line:";
-	cerr << filePos.lineN;
-	cerr << ", char: ";
-	cerr << filePos.charN;
-	cerr << endl << flush;
-	exit(1);
-}
-
 #ifndef DECLR_P_
 #define DECLR_P_
 class Declaration;
@@ -265,7 +252,7 @@ class DATA{
 		DATA(const DATA& d):type(d.type){assert(d.type<6); data.pointer = d.data.pointer; info.pointer = d.info.pointer;}
 		DATA(DATA& d):type(d.type){assert(d.type<6); data.pointer = d.data.pointer; info.pointer = d.info.pointer;}
 		DATA castTo(RData& r, ClassProto* right, PositionID id) const;
-		ClassProto* getReturnType() const;
+		ClassProto* getReturnType(RData& r) const;
 		DATA& operator= (const DATA& d) {
 			assert(d.type<6);
 			type = d.type;
@@ -311,7 +298,7 @@ class DATA{
 			if(type==R_CONST){
 				return *this;
 			} else {
-				return DATA::getConstant(getValue(m), getReturnType());
+				return DATA::getConstant(getValue(m), getReturnType(m));
 			}
 		}
 		DataType getType() const{
@@ -353,7 +340,7 @@ class DATA{
 			}
 			return data.function;
 		}
-		ClassProto* getMyClass() const;
+		ClassProto* getMyClass(RData& r) const;
 		Value* getValue(RData& r) const;
 		void setValue(RData& r, Value* v);
 };

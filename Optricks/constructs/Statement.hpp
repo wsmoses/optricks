@@ -18,10 +18,9 @@ class Construct : public Statement{
 public:
 	virtual ~Construct(){};
 	Construct(PositionID a, ClassProto* pr) : Statement(a, pr){};
-	ClassProto* getSelfClass() override { error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
+	ClassProto* getSelfClass(RData& r) override { error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 	String getFullName() override{ error("Cannot get full name of construct "+str<Token>(getToken())); return ""; }
 	ReferenceElement* getMetadata(RData& r) override{ error("Cannot get ReferenceElement of construct "+str<Token>(getToken())); return NULL; }
-	Constant* getConstant(RData& r) override final{ return NULL; }
 };
 class ClassProtoWrapper : public Construct{
 	public:
@@ -30,11 +29,11 @@ class ClassProtoWrapper : public Construct{
 			//TODO make resolvable for class with static-functions / constructors
 			return new ReferenceElement("",NULL,cp->name, DATA::getClass(cp), classClass, funcMap());
 		}
-		ClassProto* getSelfClass() override{
+		ClassProto* getSelfClass(RData& r) override{
 			return cp;
 		}
-		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(0,0,"#classWrapper"),classClass){
-			cp = c;
+		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(0,0,"#classWrapper"),classClass),cp(c){
+			assert(cp!=NULL);
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
@@ -59,9 +58,9 @@ class ClassProtoWrapper : public Construct{
 		}
 		void registerClasses(RData& r) override final{
 		}
-		void registerFunctionArgs(RData& r) override final{
+		void registerFunctionPrototype(RData& r) override final{
 		}
-		void registerFunctionDefaultArgs() override final{
+		void buildFunction(RData& r) override final{
 		}
 		void resolvePointers() override final{
 		}

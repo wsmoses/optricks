@@ -27,14 +27,14 @@ class E_GEN : public Statement{
 			returnClass(ren),
 			thisPointer(thi){
 			prototype->name = getFullName();
-			ClassProto* myClass = prototype->getGeneratorType(filePos);
-			myClass->addFunction("iterator", filePos)->funcs.add(DATA::getGenerator(this, new FunctionProto("")), filePos);
+			ClassProto* myClass = prototype->getGeneratorType(rd, id);
+			myClass->addFunction("iterator", filePos)->funcs.add(DATA::getGenerator(this, new FunctionProto("")), rd, filePos);
 			//TODO allow closure for iterator types
 			if(innerName.length()==0){
 				ReferenceElement* re = self->getMetadata(rd);
 				re->returnClass = myClass;
 				re->llvmObject = DATA::getGenerator(this, prototype);
-				re->funcs.add(re->llvmObject, id);
+				re->funcs.add(re->llvmObject, rd, id);
 			}
 		}
 		void registerClasses(RData& r) override final{
@@ -55,18 +55,15 @@ class E_GEN : public Statement{
 			return self->getFullName();
 		}
 		ReferenceElement* getMetadata(RData& r) override final{
-			registerFunctionArgs(r);
-			if(innerName.length()>0) return self->getSelfClass()->getFunction(innerName);
+			registerFunctionPrototype(r);
+			if(innerName.length()>0) return self->getSelfClass(r)->getFunction(innerName, filePos);
 			return self->getMetadata(r);
 		}
-		ClassProto* getSelfClass() override final{
-			return prototype->getGeneratorType(filePos);
+		ClassProto* getSelfClass(RData& r) override final{
+			return prototype->getGeneratorType(r, filePos);
 		}
 		const Token getToken() const{
 			return T_GEN;
-		}
-		Constant* getConstant(RData& r) override final{
-			return NULL;
 		}
 		void write(ostream& f, String b) const override{
 			f << "gen ";
@@ -81,33 +78,28 @@ class E_GEN : public Statement{
 			f << ")";
 			if(ret!=NULL) ret->write(f, b);
 		}
-		void registerFunctionArgs(RData& ra) override{
-			if(returnClass!=NULL) returnClass->registerFunctionArgs(ra);
-			prototype->returnType = returnClass->getSelfClass();
-			self->registerFunctionArgs(ra);
-			for(auto& a:prototype->declarations) a->registerFunctionArgs(ra);
+		void registerFunctionPrototype(RData& ra) override{
+			if(returnClass!=NULL) returnClass->registerFunctionPrototype(ra);
+			prototype->returnType = returnClass->getSelfClass(ra);
+			self->registerFunctionPrototype(ra);
+			for(auto& a:prototype->declarations) a->registerFunctionPrototype(ra);
+			for(auto& a:prototype->declarations) a->checkTypes(ra);
 			if(innerName.length()>0){
 				assert(thisPointer!=NULL);
-				thisPointer->returnClass = self->getSelfClass();
-				thisPointer->returnClass->addFunction(innerName, filePos)->funcs.add(DATA::getGenerator(this, prototype), filePos);
+				thisPointer->returnClass = self->getSelfClass(ra);
+				thisPointer->returnClass->addFunction(innerName, filePos)->funcs.add(DATA::getGenerator(this, prototype), ra, filePos);
 			}
-			ret->registerFunctionArgs(ra);
-			ret->registerFunctionDefaultArgs();
-			checkTypes(ra);
+			ret->registerFunctionPrototype(ra);
+			//checkTypes(ra); TODO...check if this is necessary
 		};
-		void registerFunctionDefaultArgs() override final{
-			if(returnClass!=NULL) returnClass->registerFunctionDefaultArgs();
-			for(auto& a:prototype->declarations) a->registerFunctionDefaultArgs();
-			self->registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
-		};
-		void resolvePointers() override final{
-			if(returnClass!=NULL) returnClass->resolvePointers();
-			for(auto& a:prototype->declarations) a->resolvePointers();
-			self->resolvePointers();
-			ret->resolvePointers();
-		};
-		ClassProto* checkTypes(RData& r) override{
+		void buildFunction(RData& r) override final{
+			if(returnClass!=NULL) returnClass->buildFunction(r);
+			for(auto& a:prototype->declarations) a->buildFunction(r);
+			self->buildFunction(r);
+			ret->buildFunction(r);
+
+
+			//TODO check if should move
 			if(returnClass!=NULL) returnClass->checkTypes(r);
 			self->checkTypes(r);
 			for(auto& a:prototype->declarations) a->checkTypes(r);
@@ -123,6 +115,14 @@ class E_GEN : public Statement{
 				}
 				returnClass = new ClassProtoWrapper(c);
 			}
+		};
+		void resolvePointers() override final{
+			if(returnClass!=NULL) returnClass->resolvePointers();
+			for(auto& a:prototype->declarations) a->resolvePointers();
+			self->resolvePointers();
+			ret->resolvePointers();
+		};
+		ClassProto* checkTypes(RData& r) override{
 			return voidClass;
 		}
 		DATA evaluate(RData& ra) override{

@@ -28,10 +28,10 @@ class oobject: public Statement{
 			return returnType->name;
 		}
 
-		ClassProto* getSelfClass() override{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
+		ClassProto* getSelfClass(RData& r) override{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
 		void registerClasses(RData& r) override{};
-		void registerFunctionArgs(RData& r) override{};
-		void registerFunctionDefaultArgs() override{};
+		void registerFunctionPrototype(RData& r) override{};
+		void buildFunction(RData& r) override{};
 		void resolvePointers() override{};
 		const Token getToken() const override{
 			return T_OOBJECT;

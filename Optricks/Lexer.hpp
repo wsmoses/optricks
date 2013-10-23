@@ -73,10 +73,10 @@ class Lexer{
 				String fileName = fileNames.back();
 				fileNames.pop_back();
 				char cwd[1024];
-				if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", pos());
+				if(getcwd(cwd,sizeof(cwd))==NULL) pos().error("Could not determine Current Working Directory");
 				String dir, file;
 				getDir(fileName, dir, file);
-				if(dir!="." && chdir(dir.c_str())!=0) todo("Could not change directory to "+dir+"/"+file,pos());
+				if(dir!="." && chdir(dir.c_str())!=0) pos().error("Could not change directory to "+dir+"/"+file);
 				//cout << "Opened: " << dir << "/" << file << endl << flush;
 				Stream* tmp = f;
 				Stream next(file,false);
@@ -99,7 +99,7 @@ class Lexer{
 				}
 				f->close();
 				f = tmp;
-				if(chdir(cwd)!=0) todo("Could not change directory back to "+String(cwd),pos());
+				if(chdir(cwd)!=0) pos().error("Could not change directory back to "+String(cwd));
 			}
 		}
 		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0, unsigned int optLevel = 3){
@@ -108,9 +108,9 @@ class Lexer{
 			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->registerClasses(rdata);
 			for(auto& n: stats){
-				n->registerFunctionArgs(rdata);
+				n->registerFunctionPrototype(rdata);
 			}
-			for(auto& n: stats) n->registerFunctionDefaultArgs();
+			for(auto& n: stats) n->buildFunction(rdata);
 			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
@@ -179,6 +179,7 @@ class Lexer{
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
 				varName = dynamic_cast<E_VAR*>(declarationType)->pointer->name;
+				//REVISITED....wha?....forces auto?
 				declarationType = new ClassProtoWrapper(autoClass);
 			} else varName = getNextName(data.endWith);
 			trim(data);
@@ -426,7 +427,7 @@ class Lexer{
 			Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL));
 			return new lambdaFunction(pos(), arguments, methodBody, rdata);
 		}
-		Statement* getFunction(ParseData data, String temp=""){
+		Statement* getFunction(ParseData data, String temp="", oclass* outer=NULL){
 			if(temp=="") temp = f->getNextName(EOF);
 			trim(EOF);
 			if (temp == "def" || temp=="function" || temp=="method" || temp=="gen"){
@@ -481,7 +482,7 @@ class Lexer{
 				bool paren;
 				Statement* funcName;
 				Statement* func;
-				if(methodName.size()<=1){
+				if(methodName.size()<=1 && outer==NULL){
 					if(methodName.size()==0) funcName = NULL;
 					else if(methodName.size()==1){
 						if(isOperator){
@@ -500,9 +501,15 @@ class Lexer{
 				else {
 					//TODO change scope
 					//myMod = NULL;//make combined scope
+					if(outer==NULL){
 					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
 					for(unsigned int i = 0; i<methodName.size()-2; i++)
 						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+					} else{
+						funcName = new E_LOOKUP(pos(), outer, methodName[0].first,".");
+						for(unsigned int i = 0; i<methodName.size()-2; i++)
+							funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+					}
 					ReferenceElement* thisPointer = module->addPointer(pos(),"this",DATA::getNull(),NULL);
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					PositionID tmp = pos();
@@ -555,9 +562,14 @@ class Lexer{
 			}
 
 		}
-		Statement* getClass(ParseData data, bool read=false){
+		Statement* getClass(ParseData data, bool read=false,oclass* outer=NULL){
 			if(!read && f->getNextName(data.endWith)!="class") f->error("Could not find 'class' for class declaration");
-			Statement* name = getNextType(data.getEndWith(EOF));
+			String name = getNextName(EOF);//TODO -- allow generic class definition
+			bool primitive = false;
+			if(name=="primitive"){
+				primitive = true;
+				name = getNextName(EOF);//TODO -- allow generic class definition (here as well)
+			}
 			if(f->trim(EOF)) f->error("No class defined!");
 			Statement* superClass=NULL;
 			if(f->peek()==':'){
@@ -567,20 +579,37 @@ class Lexer{
 			}
 			if(f->peek()!='{') f->error("Need opening brace for class definition");
 			f->trim(EOF);
+			Statement* self = (outer==NULL)?((Statement*)(new E_VAR(pos(), data.mod->getClassPointer(pos(), name))))
+					:((Statement*)(new E_LOOKUP(pos(), outer, name,".")));
+			OModule* classMod = new OModule(data.mod);
+			oclass* selfClass = new oclass(pos(), name, superClass, self, primitive, outer);
 			while(f->peek()!='}'){
 				auto mark = f->getMarker();
 				String temp = f->getNextName(EOF);
 				f->error("TODO");
+				bool stat = false;
 				if(temp=="static"){
-					//TODO
-				} else if(temp=="class"){
-
-				} else if(temp=="def" || temp=="method" || temp=="function"){
-
+					stat = true;
+					f->trim(EOF);
+				}
+				ParseData nd = ParseData(EOF, classMod, true, (stat)?data.loc:PARSE_LOCAL);
+				if(temp=="class"){
+					if(stat!=true) pos().error("Optricks does not currently support non-static classes");
+					Statement* uClass = getClass(nd, true, selfClass);
+					selfClass->under.push_back(uClass);
+				} else if(temp=="def" || temp=="method" || temp=="function" || temp=="gen"){
+					Statement* func = getFunction(nd, temp,selfClass);//TODO allow methods to be static
+					selfClass->under.push_back(func);
+				} else if(temp=="extern"){
+					pos().error("Optricks does not allow the use of external functions in the definition classes!");
+				} else{
+					f->undoMarker(mark);
+					Declaration* dec = getNextDeclaration(nd);
+					selfClass->data.push_back(dec);
 				}
 			}
 			if(f->read()!='}') f->error("Need closing brace for class definition");
-
+			return selfClass;
 		}
 		Statement* operatorCheck(ParseData data, Statement* exp){
 			if(f->done || f->trim(data.endWith))	return exp;

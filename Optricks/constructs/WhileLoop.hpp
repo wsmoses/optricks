@@ -65,13 +65,13 @@ class DoWhileLoop : public Construct{
 			condition->registerClasses(r);
 			statement->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			condition->registerFunctionArgs(r);
-			statement->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			condition->registerFunctionPrototype(r);
+			statement->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			condition->registerFunctionDefaultArgs();
-			statement->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			condition->buildFunction(r);
+			statement->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			condition->resolvePointers();

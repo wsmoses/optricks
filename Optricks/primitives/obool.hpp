@@ -22,9 +22,6 @@ class obool: public oobject{
 		void write(ostream& ss, String b) const override{
 			ss << ((value)?("true"):("false"));
 		}
-		ConstantInt* getConstant(RData& r) override final{
-			return ConstantInt::get(BOOLTYPE, value, false);
-		}
 		DATA evaluate(RData& a) override final{
 			return DATA::getConstant(getBool(value),boolClass);
 		}

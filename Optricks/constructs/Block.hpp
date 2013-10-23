@@ -19,11 +19,11 @@ class Block : public Construct{
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 			for(auto& a:values) a->collectReturns(r, vals);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			for(auto& a: values) a->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			for(auto& a: values) a->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			for(auto& a: values) a->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			for(auto& a: values) a->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			for(auto& a: values) a->resolvePointers();

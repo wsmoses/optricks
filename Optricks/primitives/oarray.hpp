@@ -31,7 +31,7 @@ class oarray : public oobject{
 		oobject* simplify() override final{
 			return this;
 		}
-		/*oobject* operator [] (oobject* a) override{
+		/ *oobject* operator [] (oobject* a) override{
 			if(a->returnType==intClass){
 				oint* s = (oint*)a;
 				return data[s->value];
@@ -125,14 +125,14 @@ class E_ARR : public Construct{
 				a->registerClasses(r);
 			}
 		}
-		void registerFunctionArgs(RData& r) override final{
+		void registerFunctionPrototype(RData& r) override final{
 			for(auto& a:values){
-				a->registerFunctionArgs(r);
+				a->registerFunctionPrototype(r);
 			}
 		};
-		void registerFunctionDefaultArgs() override final{
+		void buildFunction(RData& r) override final{
 			for(auto& a:values){
-				a->registerFunctionDefaultArgs();
+				a->buildFunction(r);
 			}
 		};
 		void resolvePointers() override final{

@@ -75,17 +75,17 @@ class ForLoop : public Construct{
 			increment->registerClasses(r);
 			toLoop->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			condition->registerFunctionArgs(r);
-			initialize->registerFunctionArgs(r);
-			increment->registerFunctionArgs(r);
-			toLoop->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			condition->registerFunctionPrototype(r);
+			initialize->registerFunctionPrototype(r);
+			increment->registerFunctionPrototype(r);
+			toLoop->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			condition->registerFunctionDefaultArgs();
-			initialize->registerFunctionDefaultArgs();
-			increment->registerFunctionDefaultArgs();
-			toLoop->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			condition->buildFunction(r);
+			initialize->buildFunction(r);
+			increment->buildFunction(r);
+			toLoop->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			condition->resolvePointers();

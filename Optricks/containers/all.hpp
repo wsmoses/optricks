@@ -16,7 +16,6 @@
 #include "RData.hpp"
 #include "types.hpp"
 #include "operators.hpp"
-#include "basic_functions.hpp"
 
 #ifndef REFERENCEELEM_C_
 #define REFERENCEELEM_C_
@@ -65,9 +64,9 @@ class ReferenceElement:public Resolvable{
 };
 
 ReferenceElement* ClassProto::addFunction(String nam, PositionID id){
-	if(nam==name) todo("Cannot make function with same name as class "+name,id);
-	if(innerDataIndex.find(nam)!=innerDataIndex.end()) todo("Cannot create another function type for class "+name+" named "+nam,id);
-	if(functions.find(nam)==functions.end()) return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,DATA::getNull(),functionClass,funcMap());
-	return functions[nam];
+	if(nam==name) id.error("Cannot make function with same name as class "+name);
+	if(functions.find(nam)!=functions.end()) return functions[nam];
+	if(hasInner(nam)) id.error("Cannot create another function type for class "+name+" named "+nam);
+	return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,DATA::getNull(),functionClass,funcMap());
 }
 #endif /* ALL_HPP_ */

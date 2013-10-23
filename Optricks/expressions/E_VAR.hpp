@@ -25,11 +25,10 @@ class E_VAR : public Statement{
 		const Token getToken() const override{
 			return T_VAR;
 		}
-		ClassProto* getSelfClass() override final{
-			return pointer->resolve()->llvmObject.getMyClass();
-		}
-		Constant* getConstant(RData& a) override final {
-			return NULL;
+		ClassProto* getSelfClass(RData& r) override final{
+			ClassProto* cp = pointer->resolve()->llvmObject.getMyClass(r);
+			assert(cp!=NULL);
+			return cp;
 		}
 		ReferenceElement* getMetadata(RData& r) final override{
 			return pointer->resolve();
@@ -46,13 +45,13 @@ class E_VAR : public Statement{
 		}
 
 		void registerClasses(RData& r) override final{
-			//TODO
+			//TODO var register classes
 		}
-		void registerFunctionArgs(RData& r) override final{
-			//TODO
+		void registerFunctionPrototype(RData& r) override final{
+			//TODO var register function prototype
 		};
-		void registerFunctionDefaultArgs() override final{
-			//TODO
+		void buildFunction(RData& r) override final{
+			//TODO var build function
 		};
 		ClassProto* checkTypes(RData& r) override{
 			ClassProto* temp = pointer->resolve()->returnClass;

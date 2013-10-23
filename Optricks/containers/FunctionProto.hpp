@@ -18,13 +18,13 @@ class FunctionProto{
 		ClassProto* returnType;
 		FunctionProto(String n, std::vector<Declaration*>& a, ClassProto* r):generatorType(NULL),name(n),declarations(a), returnType(r){}
 		FunctionProto(String n, ClassProto* r=NULL):generatorType(NULL),name(n),declarations(), returnType(r){}
-		ClassProto* getGeneratorType(PositionID id);
+		ClassProto* getGeneratorType(RData& r, PositionID id);
 		/*
 		 * Checks if this can be casted to F, and how well
 		 * In Declaration.hpp
 		 */
-		std::pair<bool,std::pair<unsigned int, unsigned int>> match(FunctionProto* func) const;
-		bool equals(const FunctionProto* f, PositionID id) const;
+		std::pair<bool,std::pair<unsigned int, unsigned int>> match(RData& r, FunctionProto* func) const;
+		bool equals(RData& r, const FunctionProto* f, PositionID id) const;
 		String toString() const;
 
 };
@@ -39,10 +39,13 @@ class funcMap{
 		}
 		funcMap():data(){
 		}
-		bool set(DATA t, PositionID id){
+		bool set(DATA t, RData& r, PositionID id){
 			FunctionProto* p = t.getFunctionType();
+			assert(p!=NULL);
 			for(unsigned int i = 0; i<data.size(); i++){
-				if(data[i].getFunctionType()->equals(p, id)){
+				FunctionProto* tp = data[i].getFunctionType();
+				assert(tp!=NULL);
+				if(tp->equals(r, p, id)){
 					data[i] = t;
 					return true;
 				}
@@ -50,20 +53,20 @@ class funcMap{
 			data.push_back(t);
 			return false;
 		}
-		void add(DATA t, PositionID id){
-			if(set(t, id)){
-				todo("Error overwriting function "+t.getFunctionType()->toString(),id);
+		void add(DATA t, RData& r, PositionID id){
+			if(set(t, r, id)){
+				id.error("Error overwriting function "+t.getFunctionType()->toString());
 			}
 		}
-		DATA get(FunctionProto* func,PositionID id) const{
-			if(func==NULL) todo("NULL FunctionProto",id);
+		DATA get(FunctionProto* func,RData& r, PositionID id) const{
+			if(func==NULL) id.error("NULL FunctionProto");
 			std::vector<std::pair<DATA,std::pair<bool,std::pair<unsigned int, unsigned int> > > > possible;
 			int bestind = -1;
 			unsigned int count = UINT_MAX;
 			unsigned int toCast = UINT_MAX;
 			for(unsigned int i = 0; i<data.size(); ++i){
 				FunctionProto* prot = data[i].getFunctionType();
-				std::pair<bool,std::pair<unsigned int, unsigned int> > temp = func->match(prot);
+				std::pair<bool,std::pair<unsigned int, unsigned int> > temp = func->match(r, prot);
 				//cout << i << "*" << func->toString()+"|"+data[i].second->toString() << ":" << temp.first << "," << temp.second.first << "," << temp.second.second << endl << flush;
 				if(temp.first){
 					possible.push_back(std::pair<DATA,std::pair<bool,std::pair<unsigned int, unsigned int> > >
@@ -89,7 +92,7 @@ class funcMap{
 				for(const DATA & a:data){
 					t+=a.getFunctionType()->toString()+"\n";
 				}
-				todo(t,id);
+				id.error(t);
 			}
 			if(bestind==-1){
 				String t = "Ambiguous function for "+func->toString()+" options are:\n";
@@ -97,14 +100,14 @@ class funcMap{
 					if(a.second.second.first == count && a.second.second.second == toCast)
 						t+=a.first.getFunctionType()->toString()+"\n";
 				}
-				todo(t,id);
+				id.error(t);
 			}
 			return data[bestind];
 		}
 };
 
 
-ClassProto* DATA::getMyClass() const{
+ClassProto* DATA::getMyClass(RData& r) const{
 	if(type!=R_CLASS && type!=R_GEN){
 		cerr << "Cannot getClass of non-class " << type << endl << flush;
 		exit(1);
@@ -113,14 +116,18 @@ ClassProto* DATA::getMyClass() const{
 		cerr << "Cannot get NULL class" << endl << flush;
 		exit(1);
 	}
-	if(type==R_GEN) return info.funcType->getGeneratorType(PositionID());
+	if(type==R_GEN){
+		ClassProto* tmp = info.funcType->getGeneratorType(r, PositionID());
+		assert(tmp!=NULL);
+		return tmp;
+	}
 	return data.classP;
 }
 
-ClassProto* DATA::getReturnType() const{
+ClassProto* DATA::getReturnType(RData& r) const{
 	if(type==R_GEN){
 		assert(info.funcType!=NULL);
-		return info.funcType->getGeneratorType(PositionID());
+		return info.funcType->getGeneratorType(r, PositionID());
 	}
 	assert((type==R_CONST || type==R_LOC || type==R_CLASS));
 	assert(info.classType !=NULL);

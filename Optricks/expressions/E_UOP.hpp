@@ -41,11 +41,11 @@ class E_PREOP : public Construct{
 		void registerClasses(RData& r) override final{
 			value->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			value->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			value->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			value->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			value->buildFunction(r);
 		};
 		void resolvePointers() override final{
 			value->resolvePointers();
@@ -84,11 +84,11 @@ class E_POSTOP : public Construct{
 		void registerClasses(RData& r) override final{
 			value->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			value->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			value->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			value->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			value->buildFunction(r);
 		};
 		void resolvePointers() override final{
 			value->resolvePointers();

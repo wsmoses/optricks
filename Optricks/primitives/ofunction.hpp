@@ -18,20 +18,20 @@ class ofunction:public oobject{
 		Statement* returnV;
 		FunctionProto* prototype;
 		Function* myFunction;
+		bool built;
 		ofunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec,RData& rd,bool add=true):oobject(id, functionClass),
-				self(s),returnV(r){
+				self(s),returnV(r),built(false){
 			myFunction = NULL;
 			prototype = new FunctionProto((self==NULL)?"unknown":(self->getMetadata(rd)->name), dec, NULL);
 			if(self!=NULL){
 				auto T = self->getMetadata(rd);
 				if(add && T!=NULL && T->name.length()>0 && T->name[0]!='~'){
-					T->funcs.add(DATA::getFunction(NULL,prototype),filePos);
-									self->returnType = functionClass;
+					T->funcs.add(DATA::getFunction(NULL,prototype),rd,filePos);
+					self->returnType = functionClass;
 				}
 			}
 
 		}
-		Constant* getConstant(RData& r) override final { return NULL; }
 		String getFullName() override final{
 			return prototype->name;
 		}
@@ -39,21 +39,31 @@ class ofunction:public oobject{
 			DATA tmp = evaluate(r);
 			return new ReferenceElement("",NULL,"lambda",tmp,functionClass,funcMap(tmp));
 		}
-		void registerFunctionArgs(RData& r) override{
-			if(prototype==NULL) error("Function prototype should not be null");
-			if(returnV!=NULL) prototype->returnType = returnV->getSelfClass();
-			for(Declaration* d: prototype->declarations){
-				d->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override{
+			if(self!=NULL){
+				self->registerFunctionPrototype(r);
 			}
-			//if(prototype->returnType==NULL) error("Function prototype-return should not be null");
-		};
-		void registerFunctionDefaultArgs() override{
-			if(self!=NULL) self->registerFunctionDefaultArgs();
-			for(Declaration* d: prototype->declarations){
-				d->registerFunctionDefaultArgs();
+			if(returnV!=NULL){
+				returnV->registerFunctionPrototype(r);
+				prototype->returnType = returnV->getSelfClass(r);
 			}
-			if(returnV!=NULL) returnV->registerFunctionDefaultArgs();
+			for(Declaration* d: prototype->declarations){
+				d->registerFunctionPrototype(r);
+			}
 		};
+		void buildFunction(RData& r) override{
+			if(myFunction==NULL) registerFunctionPrototype(r);
+			if(self!=NULL) self->buildFunction(r);
+			if(returnV!=NULL) returnV->buildFunction(r);
+			for(Declaration* d: prototype->declarations){
+				d->buildFunction(r);
+			}
+			built = true;
+		};
+		DATA evaluate(RData& a) override{
+			if(!built) buildFunction(a);
+			return DATA::getFunction(myFunction,prototype);
+		}
 		void resolvePointers() override{
 			if(self!=NULL) self->resolvePointers();
 			for(Declaration* d: prototype->declarations){
@@ -69,10 +79,13 @@ class ofunction:public oobject{
 			if(self!=NULL) self->checkTypes(r);
 			if(returnV!=NULL){
 				returnV->checkTypes(r);
-				prototype->returnType = returnV->getSelfClass();
+				prototype->returnType = returnV->getSelfClass(r);
 				if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->returnType->name);
 			} //else if(prototype->returnType==NULL) error("Could not p-resolve return type");
 			return returnType;
+		}
+		ofunction* simplify() override final{
+			return this;
 		}
 };
 
@@ -94,25 +107,25 @@ class externFunction : public ofunction{
 			}
 			f << ")";
 		}
-		void registerFunctionArgs(RData& a){
+		void registerFunctionPrototype(RData& a){
 			if(myFunction!=NULL) return;
-			ofunction::registerFunctionArgs(a);
+			ofunction::registerFunctionPrototype(a);
 
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getSelfClass()->getType(a);
+				Type* cl = b->classV->getSelfClass(a)->getType(a);
 				if(cl==NULL) error("Type argument "+b->classV->getFullName()+" is null");
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getSelfClass();
-			if(cp==NULL) error("Cannot use void class proto in extern");
+			ClassProto* cp = returnV->getSelfClass(a);
+			assert(cp!=NULL);
 			prototype->returnType = cp;
 			Type* r = cp->getType(a);
-			if(r==NULL) error("Type argument "+cp->name+" is null");
+			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);
-//			Function *F = Function::Create(FT, Function::DLLImportLinkage, prototype->name, a.lmod);
+			//			Function *F = Function::Create(FT, Function::DLLImportLinkage, prototype->name, a.lmod);
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			else if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			else if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
@@ -122,16 +135,8 @@ class externFunction : public ofunction{
 				error("Cannot extern function due to name in use "+prototype->name +" was replaced with "+F->getName().str());
 			}
 			myFunction = F;
-			self->getMetadata(a)->funcs.set(DATA::getFunction(F,prototype), filePos);
+			self->getMetadata(a)->funcs.set(DATA::getFunction(F,prototype), a, filePos);
 			if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
-		}
-
-		oobject* simplify() override final{
-			return this;
-		}
-		DATA evaluate(RData& a) override{
-			if(myFunction==NULL) registerFunctionArgs(a);
-			return DATA::getFunction(myFunction,prototype);
 		}
 };
 class lambdaFunction : public ofunction{
@@ -140,14 +145,6 @@ class lambdaFunction : public ofunction{
 		lambdaFunction(PositionID id, std::vector<Declaration*> dec, Statement* r,RData& rd):
 			ofunction(id, NULL,NULL,dec,rd){
 			ret = r;
-		}
-
-		lambdaFunction* simplify() override final{
-			return this;
-/*
-			std::vector<Declaration*> g;
-			for(auto a:prototype->declarations) g.push_back(a->simplify());
-			return new lambdaFunction(filePos,g,ret->simplify());*/
 		}
 		void write(ostream& f, String b) const override{
 			f << "lambda ";
@@ -160,13 +157,13 @@ class lambdaFunction : public ofunction{
 			f << ": ";
 			f << ret;
 		}
-		void registerFunctionArgs(RData& r) override{
-			ofunction::registerFunctionArgs(r);
-			ret->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override{
+			ofunction::registerFunctionPrototype(r);
+			ret->registerFunctionPrototype(r);
 		};
-		void registerFunctionDefaultArgs() override final{
-			ofunction::registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			ofunction::buildFunction(r);
+			ret->buildFunction(r);
 		};
 		void resolvePointers() override final{
 			ofunction::resolvePointers();
@@ -175,52 +172,39 @@ class lambdaFunction : public ofunction{
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
 			if((prototype->returnType = ret->checkTypes(r))==NULL) error("Null prototype return");
-			return prototype->returnType;
+			return returnType;
 		}
 		DATA evaluate(RData& ar) override{
 			if(myFunction!=NULL) return DATA::getFunction(myFunction,prototype);
 			if(prototype->returnType==NULL) checkTypes(ar);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				Type* cl = b->classV->getSelfClass()->getType(ar);
-				if(cl==NULL) error("Type argument "+b->classV->getFullName()+" is null", true);
+				Type* cl = b->classV->getSelfClass(ar)->getType(ar);
+				assert(cl!=NULL);
 				args.push_back(cl);
 			}
 			Type* r = prototype->returnType->getType(ar);
-			if(r==NULL){
-				error("Error null return type for class " + prototype->returnType->name);
-				r = VOIDTYPE;
-			}
+			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage, "!lambda", ar.lmod);
+			myFunction = Function::Create(FT, Function::PrivateLinkage, "!lambda", ar.lmod);
 			// Set names for all arguments.
 			unsigned Idx = 0;
-			for (Function::arg_iterator AI = F->arg_begin(); Idx != args.size();
+			for (Function::arg_iterator AI = myFunction->arg_begin(); Idx != args.size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				prototype->declarations[Idx]->variable->getMetadata(ar)->setValue(AI,ar);
 			}
 
-			//BasicBlock *Parent = ar.builder.GetInsertBlock();
-			//	ar.builder.SetInsertPoint(Parent);
-
 			BasicBlock *Parent = ar.builder.GetInsertBlock();
-			BasicBlock *BB =
-					//	ar.builder.GetInsertBlock();
-					BasicBlock::Create(getGlobalContext(), "entry", F);
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
 			ar.builder.SetInsertPoint(BB);
-			Value* v = ret->evaluate(ar).getValue(ar);
-			if(r!=VOIDTYPE)
-				ar.builder.CreateRet(v);
-			else
-				ar.builder.CreateRetVoid();
-			//cout << "testing cos" << cos(3) << endl << flush;
-			verifyFunction(*F);
-			//cout << "verified" << endl << flush;
-			ar.fpm->run(*F);
-
+			DATA dat = ret->evaluate(ar);
+			if(dat.getReturnType(ar)!=voidClass) ar.builder.CreateRet(dat.getValue(ar));
+			else ar.builder.CreateRetVoid();
+			verifyFunction(*myFunction);
+			ar.fpm->run(*myFunction);
 			ar.builder.SetInsertPoint( Parent );
-			return DATA::getFunction(myFunction=F,prototype);
+			return DATA::getFunction(myFunction,prototype);
 		}
 };
 class userFunction : public ofunction{
@@ -229,9 +213,6 @@ class userFunction : public ofunction{
 		userFunction(PositionID id, Statement* a, Statement* b, std::vector<Declaration*> dec, Statement* r,RData& rd):
 			ofunction(id, a, b, dec,rd){
 			ret = r;
-		}
-		oobject* simplify() override final{
-			return this;
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
@@ -249,64 +230,64 @@ class userFunction : public ofunction{
 			f << ")";
 			if(ret!=NULL) ret->write(f, b);
 		}
-		void registerFunctionArgs(RData& ra) override{
-			ofunction::registerFunctionArgs(ra);
-			ret->registerFunctionArgs(ra);
-			ret->registerFunctionDefaultArgs();
-			ret->checkTypes(ra);
+		void registerFunctionPrototype(RData& ra) override{
+			ofunction::registerFunctionPrototype(ra);
 			std::vector<Type*> args;
-			for(auto & b: prototype->declarations){
-				b->registerFunctionArgs(ra);
-				b->registerFunctionDefaultArgs();
-				b->checkTypes(ra);
-				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getSelfClass()->getType(ra);
-				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
+			for(Declaration*& b: prototype->declarations){
+				b->registerFunctionPrototype(ra);
+				ClassProto* cla = b->checkTypes(ra);
+				Type* cl = cla->getType(ra);
+				assert(cl!=NULL);
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getSelfClass();
-			if(cp==NULL) error("Unknown return type");
+			ClassProto* cp = returnV->getSelfClass(ra);
+			assert(cp!=NULL);
 			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
 				ret->collectReturns(ra, yields);
 				cp = getMin(yields,filePos);
-				if(cp==autoClass) error("!Cannot support auto return for function");
+				if(cp==autoClass) error("Cannot deduce return type of function "+getFullName());
 				returnV = new ClassProtoWrapper(cp);
-			}
+			} else if(returnV->getToken()!=T_CLASSPROTO) returnV = new ClassProtoWrapper(cp);
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
+			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
 			if(self!= NULL){
 				if(self->getMetadata(ra)->name.size()>0 && self->getMetadata(ra)->name[0]=='~'){
 					if(prototype->declarations.size()==1){
 						error("User-defined unary operators not supported");
 					} else if (prototype->declarations.size()==2){
-						prototype->declarations[0]->classV->getSelfClass()->addBinop(
+						prototype->declarations[0]->classV->getSelfClass(ra)->addBinop(
 								self->getFullName().substr(1),
-								prototype->declarations[1]->classV->getSelfClass(),
+								prototype->declarations[1]->classV->getSelfClass(ra),
 								filePos
-						) = new obinopUser(F, cp);
+						) = new obinopUser(myFunction, cp);
 					} else error("Cannot make operator with argument count of "+str<unsigned int>(prototype->declarations.size()));
-				} else self->getMetadata(ra)->funcs.set(DATA::getFunction(F,prototype), filePos);
+				} else self->getMetadata(ra)->funcs.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			}
+			ret->registerFunctionPrototype(ra);
+		};
+		void buildFunction(RData& ra) override final{
+			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
 			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
 			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
 
-			for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
+			for (Function::arg_iterator AI = myFunction->arg_begin(); Idx != myFunction->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
 				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
 			}
 			ra.guarenteedReturn = false;
+			ret->checkTypes(ra);
 			ret->evaluate(ra);
 			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
 			if(! ra.guarenteedReturn){
@@ -316,11 +297,11 @@ class userFunction : public ofunction{
 			}
 			ra.guarenteedReturn = false;
 
-			F->getBasicBlockList().remove(MERGE);
-			F->getBasicBlockList().push_back(MERGE);
+			myFunction->getBasicBlockList().remove(MERGE);
+			myFunction->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
-			if(r!=VOIDTYPE){
-				auto functionReturnType = prototype->returnType->getType(ra);
+			if(prototype->returnType!=voidClass){
+				Type* functionReturnType = prototype->returnType->getType(ra);
 				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetU" );
 				for(auto &a : j.endings){
 					phi->addIncoming(a.second.getValue(ra), a.first);
@@ -329,14 +310,10 @@ class userFunction : public ofunction{
 			}
 			else
 				ra.builder.CreateRetVoid();
-			verifyFunction(*F);
-			ra.fpm->run(*F);
-			myFunction = F;
+			verifyFunction(*myFunction);
+			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		};
-		void registerFunctionDefaultArgs() override final{
-			ofunction::registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
+			ret->buildFunction(ra);
 		};
 		void resolvePointers() override final{
 			ofunction::resolvePointers();
@@ -345,10 +322,7 @@ class userFunction : public ofunction{
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
 			ret->checkTypes(r);
-			return prototype->returnType;
-		}
-		DATA evaluate(RData& ra) override{
-			return DATA::getFunction(myFunction,prototype);
+			return returnType;
 		}
 };
 
@@ -364,9 +338,6 @@ class classFunction : public ofunction{
 			name =nam; operation = op;
 			prototype->name =self->getFullName()+"."+name;
 		}
-		classFunction* simplify() override final{
-			return this;
-		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
 			f << returnV << " ";
@@ -381,31 +352,24 @@ class classFunction : public ofunction{
 			f << ")";
 			if(ret!=NULL) ret->write(f, b);
 		}
-		void registerFunctionArgs(RData& ra) override{
-			ofunction::registerFunctionArgs(ra);
-			if(self->checkTypes(ra)!=classClass) error("Cannot define function for object whose type is not class");
-			ClassProto* myCl = self->getSelfClass();
-			thisPointer->returnClass = myCl;
-			if(myCl==NULL) error("Defining class is null?");
-			ret->registerFunctionArgs(ra);
-			ret->registerFunctionDefaultArgs();
-			ret->checkTypes(ra);
-			ReferenceElement* myMetadata = myCl->addFunction(name, filePos);
-			myMetadata->funcs.add(DATA::getFunction(NULL,prototype),filePos);
-			if(myMetadata==NULL) error("Metadata is null?");
+		void registerFunctionPrototype(RData& ra) override{
+			ofunction::registerFunctionPrototype(ra);
+			thisPointer->returnClass = self->getSelfClass(ra);
+			assert(thisPointer->returnClass!=NULL);
+			ReferenceElement* myMetadata = thisPointer->returnClass->addFunction(name, filePos);
+			myMetadata->funcs.add(DATA::getFunction(NULL,prototype),ra,filePos);
+			assert(myMetadata!=NULL);
 			std::vector<Type*> args;
-			if(myCl->isPointer) args.push_back(myCl->getType(ra));
-			else args.push_back(myCl->getType(ra)->getPointerTo());
+			if(thisPointer->returnClass->isPointer) args.push_back(thisPointer->returnClass->getType(ra));
+			else args.push_back(thisPointer->returnClass->getType(ra)->getPointerTo());
 			for(auto & b: prototype->declarations){
-				b->registerFunctionArgs(ra);
-				b->registerFunctionDefaultArgs();
-				b->checkTypes(ra);
-				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getSelfClass()->getType(ra);
-				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
+				b->registerFunctionPrototype(ra);
+				ClassProto* cla = b->checkTypes(ra);
+				Type* cl = cla->getType(ra);
+				assert(cl!=NULL);
 				args.push_back(cl);
 			}
-			ClassProto* cp = returnV->getSelfClass();
+			ClassProto* cp = returnV->getSelfClass(ra);
 			if(cp==NULL) error("Unknown return type");
 			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
@@ -413,33 +377,38 @@ class classFunction : public ofunction{
 				cp = getMin(yields,filePos);
 				if(cp==autoClass)  error("!Cannot support auto return for function");
 				returnV = new ClassProtoWrapper(cp);
-			}
+			} else if(returnV->getToken()!=T_CLASSPROTO) returnV = new ClassProtoWrapper(cp);
 			prototype->returnType = cp;
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
-			myMetadata->funcs.set(DATA::getFunction(F,prototype), filePos);
+			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
+			myMetadata->funcs.set(DATA::getFunction(myFunction,prototype), ra, filePos);
+			ret->registerFunctionPrototype(ra);
+		};
+		void buildFunction(RData& ra) override final{
+			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
 			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
 			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
-			Function::arg_iterator AI = F->arg_begin();
+			Function::arg_iterator AI = myFunction->arg_begin();
 			AI->setName("this");
-			if(myCl->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, myCl);
-			else thisPointer->llvmObject = DATA::getLocation(AI, myCl);
+			if(thisPointer->returnClass->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, thisPointer->returnClass);
+			else thisPointer->llvmObject = DATA::getLocation(AI, thisPointer->returnClass);
 			AI++;
-			for (; Idx+1 != F->arg_size();
+			for (; Idx+1 != myFunction->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
 				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
 			}
 			ra.guarenteedReturn = false;
+			ret->checkTypes(ra);
 			ret->evaluate(ra);
 			if(ra.popJump()!= &j) error("Did not receive same func jumpable created");
 			if( !ra.guarenteedReturn){
@@ -449,10 +418,10 @@ class classFunction : public ofunction{
 			}
 			ra.guarenteedReturn = false;
 
-			F->getBasicBlockList().remove(MERGE);
-			F->getBasicBlockList().push_back(MERGE);
+			myFunction->getBasicBlockList().remove(MERGE);
+			myFunction->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
-			if(r!=VOIDTYPE){
+			if(prototype->returnType!=voidClass){
 				auto functionReturnType = prototype->returnType->getType(ra);
 				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetCl" );
 				for(auto &a : j.endings){
@@ -462,14 +431,10 @@ class classFunction : public ofunction{
 			}
 			else
 				ra.builder.CreateRetVoid();
-			verifyFunction(*F);
-			ra.fpm->run(*F);
-			myFunction = F;
+			verifyFunction(*myFunction);
+			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		};
-		void registerFunctionDefaultArgs() override final{
-			ofunction::registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
+			ret->buildFunction(ra);
 		};
 		void resolvePointers() override final{
 			ofunction::resolvePointers();
@@ -478,10 +443,7 @@ class classFunction : public ofunction{
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
 			ret->checkTypes(r);
-			return prototype->returnType;
-		}
-		DATA evaluate(RData& ra) override{
-			return DATA::getFunction(myFunction,prototype);
+			return returnType;
 		}
 };
 
@@ -493,9 +455,6 @@ class constructorFunction : public ofunction{
 			ofunction(id, NULL, myClass, dec,rd,false),thisPointer(tPointer){
 			ret = r;
 			prototype->name =myClass->getFullName();
-		}
-		constructorFunction* simplify() override final{
-			return this;
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
@@ -511,68 +470,60 @@ class constructorFunction : public ofunction{
 			f << ")";
 			if(ret!=NULL) ret->write(f, b);
 		}
-		void registerFunctionArgs(RData& ra) override{
-			ofunction::registerFunctionArgs(ra);
-			if(returnV->checkTypes(ra)!=classClass) error("Cannot define function for object whose type is not class");
-			ClassProto* myCl = returnV->getSelfClass();
-			if(myCl==NULL) error("Defining class is null?");
-			thisPointer->returnClass = myCl;
-			myCl->constructors.add(DATA::getFunction(NULL,prototype),filePos);
-			ret->registerFunctionArgs(ra);
-			ret->registerFunctionDefaultArgs();
-			ret->checkTypes(ra);
+		void registerFunctionPrototype(RData& ra) override{
+			ofunction::registerFunctionPrototype(ra);
+			thisPointer->returnClass = returnV->getSelfClass(ra);
+			assert(thisPointer->returnClass!=NULL);
+			thisPointer->returnClass->constructors.add(DATA::getFunction(NULL,prototype),ra,filePos);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
-				b->registerFunctionArgs(ra);
-				b->registerFunctionDefaultArgs();
-				b->checkTypes(ra);
-				b->classV->checkTypes(ra);
-				Type* cl = b->classV->getSelfClass()->getType(ra);
-				if(cl==NULL) error("Type argument "+b->classV->getMetadata(ra)->name+" is null", true);
+				b->registerFunctionPrototype(ra);
+				ClassProto* cla = b->checkTypes(ra);
+				Type* cl = cla->getType(ra);
+				assert(cl!=NULL);
 				args.push_back(cl);
 			}
-			prototype->returnType = myCl;
-			Type* r = myCl->getType(ra);
-
+			Type* r = thisPointer->returnClass->getType(ra);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
-			myCl->constructors.set(DATA::getFunction(F,prototype), filePos);
+			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
+			thisPointer->returnClass->constructors.set(DATA::getFunction(myFunction,prototype), ra, filePos);
+			ret->registerFunctionPrototype(ra);
+		};
+		void buildFunction(RData& ra) override final{
+			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", F);
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
 			Jumpable j = Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
 			ra.addJump(&j);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
-			Function::arg_iterator AI = F->arg_begin();
-			for (; Idx != F->arg_size();
+			Function::arg_iterator AI = myFunction->arg_begin();
+			for (; Idx != myFunction->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
 				met->llvmObject = DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType);
 			}
-			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(r, 0,"this*"), myCl);
-			thisPointer->setValue(myCl->generateData(ra),ra);
+			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(thisPointer->returnClass->getType(ra), 0,"this*"), thisPointer->returnClass);
+			thisPointer->setValue(thisPointer->returnClass->generateData(ra),ra);
 			ra.guarenteedReturn = false;
+			ret->checkTypes(ra);
 			ret->evaluate(ra);
 			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
 			if(ra.guarenteedReturn)  error("Can not have return statement in constructor");
 			ra.builder.CreateBr(MERGE);
 			ra.guarenteedReturn = false;
 
-			F->getBasicBlockList().remove(MERGE);
-			F->getBasicBlockList().push_back(MERGE);
+			myFunction->getBasicBlockList().remove(MERGE);
+			myFunction->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
 			ra.builder.CreateRet(thisPointer->getValue(ra));
-			verifyFunction(*F);
-			ra.fpm->run(*F);
-			myFunction = F;
+			verifyFunction(*myFunction);
+			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		};
-		void registerFunctionDefaultArgs() override final{
-			ofunction::registerFunctionDefaultArgs();
-			ret->registerFunctionDefaultArgs();
+			ret->buildFunction(ra);
 		};
 		void resolvePointers() override final{
 			ofunction::resolvePointers();

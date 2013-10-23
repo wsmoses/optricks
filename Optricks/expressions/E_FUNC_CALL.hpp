@@ -14,10 +14,7 @@ class E_FUNC_CALL : public Statement{
 		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
-		Constant* getConstant(RData& a) override final {
-			return NULL;
-		}
-		ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
+		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		FunctionProto* generateFunctionProto(RData& r) const{
 			std::vector<Declaration*> dec;
 			for(auto& a:vals){
@@ -71,13 +68,13 @@ class E_FUNC_CALL : public Statement{
 			toCall->registerClasses(r);
 			for(auto &a : vals) a->registerClasses(r);
 		}
-		void registerFunctionArgs(RData& r) override final{
-			toCall->registerFunctionArgs(r);
-			for(auto &a : vals) a->registerFunctionArgs(r);
+		void registerFunctionPrototype(RData& r) override final{
+			toCall->registerFunctionPrototype(r);
+			for(auto &a : vals) a->registerFunctionPrototype(r);
 		}
-		void registerFunctionDefaultArgs() override final{
-			toCall->registerFunctionDefaultArgs();
-			for(auto &a : vals) a->registerFunctionDefaultArgs();
+		void buildFunction(RData& r) override final{
+			toCall->buildFunction(r);
+			for(auto &a : vals) a->buildFunction(r);
 		}
 		void resolvePointers() override final{
 			toCall->resolvePointers();
@@ -92,12 +89,12 @@ class E_FUNC_CALL : public Statement{
 				for(unsigned int i = 0; i<vals.size(); i++){
 					vals[i]->checkTypes(r);
 				}
-				return returnType = toCall->getSelfClass();
+				return returnType = toCall->getSelfClass(r);
 			}
-			DATA d = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),filePos);
+			DATA d = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),r,filePos);
 			FunctionProto* proto = d.getFunctionType();
 			if(proto==NULL) error("Non-existent function prototype");
-			if(d.getType()==R_GEN) return returnType = proto->getGeneratorType(filePos);
+			if(d.getType()==R_GEN) return returnType = proto->getGeneratorType(r, filePos);
 			return returnType = proto->returnType;
 		}
 		Statement* simplify() override{
@@ -110,8 +107,8 @@ class E_FUNC_CALL : public Statement{
 		std::pair<std::vector<Value*>,DATA> getArgs(RData& a){
 
 			DATA d_callee = (toCall->returnType==classClass)?(
-					toCall->getSelfClass()->constructors.get(generateFunctionProto(a),filePos))
-					:(toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),filePos));
+					toCall->getSelfClass(a)->constructors.get(generateFunctionProto(a),a, filePos))
+					:(toCall->getMetadata(a)->funcs.get(generateFunctionProto(a),a, filePos));
 			FunctionProto* proto = d_callee.getFunctionType();
 			if(d_callee.getType()!=R_FUNC && d_callee.getType()!=R_GEN){
 				error("Cannot call function of non function/generator");
@@ -139,7 +136,7 @@ class E_FUNC_CALL : public Statement{
 			}
 			//cout << proto->toString() << endl << flush;
 			for(unsigned int i = 0; i<vals.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
+				ClassProto* t = proto->declarations[i]->classV->getSelfClass(a);
 				if(vals[i]->checkTypes(a)==voidClass)
 					Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
 				else{
@@ -148,7 +145,7 @@ class E_FUNC_CALL : public Statement{
 				assert(Args.back() != NULL);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
-				ClassProto* t = proto->declarations[i]->classV->getSelfClass();
+				ClassProto* t = proto->declarations[i]->classV->getSelfClass(a);
 				Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
 			}
 			return std::pair<std::vector<Value*>,DATA>(Args,d_callee);
@@ -179,7 +176,7 @@ class E_FUNC_CALL : public Statement{
 			DATA &d_callee = tempVal.second;
 			if(d_callee.getType()==R_GEN){
 				//TODO allow for auto tmp = "hello".iterator(), storing "hello" in temp struct
-				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(filePos);
+				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(a, filePos);
 				Value* mine = cla->generateData(a).getValue(a);
 				for(unsigned int i = 0; i<Args.size(); i++){
 					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(std::vector<unsigned>({i})));

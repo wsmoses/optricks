@@ -91,7 +91,7 @@ public:
 			if(fileV==NULL){
 				cerr << "Error opening file " << file << endl << flush;
 				char cwd[1024];
-				if(getcwd(cwd,sizeof(cwd))==NULL) todo("Could not getCWD", pos());
+				if(getcwd(cwd,sizeof(cwd))==NULL) pos().error("Could not get Current Working Directory (2)");
 				cerr << cwd << endl << flush;
 				exit(1);
 			}
