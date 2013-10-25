@@ -1,0 +1,22 @@
+class primitive File{
+	c_pointer self;
+	def File(c_string s, c_string t='r'){
+  	this.self = (extern c_pointer fopen(c_string a, c_string b))(s,t);
+	};
+	def void flush(){
+		(extern void fflush(c_pointer a))(this.self);
+	};
+	def void close(){
+		this.flush();
+		(extern c_int fclose(c_pointer a))(this.self);
+	};
+};
+	def File operator<<(File f, char c){
+		(extern c_int fputc(char c,c_pointer a))(c, f.self);
+		return f;
+	};
+	def File operator<<(File f, c_string c){
+		(extern c_int fputs(c_string c, c_pointer p))(c,f.self);
+//		for a in c: f << c;
+		return f;
+	};
