@@ -31,9 +31,6 @@ public:
 	void buildFunction(RData& r) override final{
 		inner->buildFunction(r);
 	}
-	void resolvePointers() override final{
-		inner->resolvePointers();
-	}
 	DATA evaluate(RData& a) override {
 		return inner->evaluate(a);
 	}

@@ -50,17 +50,10 @@ class E_SET: public Statement{
 			variable->buildFunction(r);
 			if(value!=NULL) value->buildFunction(r);
 		};
-		void resolvePointers() override final{
-			variable->resolvePointers();
-			if(value!=NULL) value->resolvePointers();
-		};
 		DATA evaluate(RData& r) final override{
 			DATA nex = value->evaluate(r).castTo(r, variable->returnType, filePos);
 			Value* aloc = variable->getLocation(r);
-	//		if(auto t = dynamic_cast<E_LOOKUP*>(variable)){
-		//		cout << "IS LOOKUP " << t << endl << flush;
-			//} else cout << "Not lookup " << variable->getToken() << endl << flush ;
-			if(aloc==NULL) error("Cannot set variable of non-alloc");
+			assert(aloc!=NULL);
 			r.builder.CreateStore(nex.getValue(r), aloc);
 			return nex.toValue(r);
 		}

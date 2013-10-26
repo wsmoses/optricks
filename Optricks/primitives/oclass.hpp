@@ -19,13 +19,15 @@ class oclass: public Statement
 		String name;
 		Statement* superClass;
 		Statement* self;
-		bool primitive;
+		int storageType;
 		oclass* outerClass;
 		std::vector<Statement*> under;
 		std::vector<Declaration*> data;
 		ClassProto* proto;
-		oclass(PositionID id, String nam, Statement* sC, Statement* loc, bool prim, oclass* outer):Statement(id, classClass),
-				name(nam),superClass(sC),self(loc),primitive(prim), outerClass(outer), under(), data(), proto(NULL){
+		bool buildF,checkT,eval,registerF;
+		oclass(PositionID id, String nam, Statement* sC, Statement* loc, int type, oclass* outer):Statement(id, classClass),
+				name(nam),superClass(sC),self(loc),storageType(type), outerClass(outer), under(), data(), proto(NULL){
+			buildF = checkT = eval = registerF = false;
 		}
 		ClassProto* getSelfClass(RData &r) override {
 			if(proto!=NULL) return proto;
@@ -55,27 +57,50 @@ class oclass: public Statement
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
 		ClassProto* checkTypes(RData& r) override final{
-			for(Statement*& a: under) a->checkTypes(r);
+			if(!checkT){
+				checkT = true;
+				for(Statement*& a: under) a->checkTypes(r);
+			}
 			return returnType;
 		}
 		DATA evaluate(RData& r){
-			registerClasses(r);
-			for(Statement*& a: under) a->checkTypes(r);
+			if(proto==NULL) registerClasses(r);
+			if(!eval){
+				eval = true;
+				for(Statement*& a: under) a->evaluate(r);
+			}
 			return DATA::getClass(proto);
 		}
 		void registerClasses(RData& r) override final{
-			for(Statement*& a:under) a->registerClasses(r);
-			error("Registration of classes has yet to be implemented");
-			//TODO
+			if(proto==NULL){
+				proto = new ClassProto((superClass==NULL)?NULL:(superClass->getSelfClass(r)), name, (storageType==2)?C_POINTERTYPE:NULL, storageType>0);
+				if(self!=NULL) self->getMetadata(r)->llvmObject = DATA::getClass(proto);
+				for(Statement*& a:under) a->registerClasses(r);
+				if(storageType==2){
+					if(data.size()>0) error("Cannot have data inside class with data layout of primitive_pointer");
+				}
+				else if(storageType==1){
+					error("Registration of classes has yet to be implemented");
+				} else if(storageType==0){
+					for(Declaration*& d:data){
+						proto->addElement(d->variable->pointer->name, d->checkTypes(r),filePos);
+					}
+					//TODO allow default in constructor
+				}
+				//TODO
+			}
 		}
 		void registerFunctionPrototype(RData& r) override final{
-			for(Statement*& a:under) a->registerFunctionPrototype(r);
+			if(!registerF){
+				registerF = true;
+				for(Statement*& a:under) a->registerFunctionPrototype(r);
+			}
 		}
 		void buildFunction(RData& r) override final{
-			for(Statement*& a:under) a->buildFunction(r);
-		}
-		void resolvePointers() override final{
-			for(Statement*& a:under) a->resolvePointers();
+			if(!buildF){
+				buildF = true;
+				for(Statement*& a:under) a->buildFunction(r);
+			}
 		}
 };
 
@@ -86,7 +111,7 @@ void initClasses(){
 			sliceClass, voidClass,
 			c_stringClass,c_intClass, c_longClass, c_long_longClass, c_pointerClass};
 	for(ClassProto*& p:cl){
-		LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, DATA::getClass(p),classClass);
+		LANG_M->addPointer(PositionID(0,0,"oclass#init"), p->name, DATA::getClass(p));
 	}
 }
 

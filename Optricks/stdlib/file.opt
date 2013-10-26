@@ -1,22 +1,31 @@
-class primitive File{
-	c_pointer self;
+class primitive_pointer File{
 	def File(c_string s, c_string t='r'){
-  	this.self = (extern c_pointer fopen(c_string a, c_string b))(s,t);
+  	this = (extern File fopen(c_string a, c_string b))(s,t);
 	};
 	def void flush(){
-		(extern void fflush(c_pointer a))(this.self);
+		(extern void fflush(File a))(this);
 	};
 	def void close(){
 		this.flush();
-		(extern c_int fclose(c_pointer a))(this.self);
+		(extern c_int fclose(File a))(this);
 	};
 };
-	def File operator<<(File f, char c){
-		(extern c_int fputc(char c,c_pointer a))(c, f.self);
-		return f;
+
+def File operator<<(File f, char c){
+	(extern c_int fputc(char c,File a))(c, f);
+	return f;
+};
+
+def File operator<<(File f, c_string c){
+	(extern c_int fputs(c_string c, File p))(c,f);
+	return f;
+};
+
+class primitive_pointer RawMemory{
+	def RawMemory(int len){
+		this = (extern RawMemory malloc(int c))(len);
 	};
-	def File operator<<(File f, c_string c){
-		(extern c_int fputs(c_string c, c_pointer p))(c,f.self);
-//		for a in c: f << c;
-		return f;
+	def close(){
+		(extern void free(RawMemory i))(this);
 	};
+}

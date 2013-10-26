@@ -21,9 +21,6 @@ class oslice : public oobject{
 			//	exit(0);
 			//}
 		}
-		oobject* simplify() override final{
-			return this;
-		}
 		void write(ostream& ss, String b) const override{
 			ss << "[";
 			if(start!=NULL && start!=VOID) ss << start;

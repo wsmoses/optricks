@@ -40,10 +40,12 @@ class ForEachLoop : public Construct{
 			DATA tmp = ref->funcs.get(f, r, filePos);
 			if(tmp.getType()!=R_GEN) error("Cannot for-each on non-generator");
 			std::vector<ClassProto*> yields;
-			tmp.getMyGenerator()->ret->collectReturns(r, yields);
+			E_GEN* myGen = tmp.getMyGenerator();
+			myGen->registerFunctionPrototype(r);
+			myGen->buildFunction(r);
+			myGen->ret->collectReturns(r, yields);
 			theClass = getMin(yields,filePos);
-			localVariable->getMetadata(r)->returnClass = theClass;
-			toLoop->checkTypes(r);
+			localVariable->getMetadata(r)->llvmObject = DATA::getConstant(NULL,theClass);
 			return voidClass;
 		}
 		DATA evaluate(RData& ra) override final{
@@ -59,7 +61,7 @@ class ForEachLoop : public Construct{
 			//TODO do not create struct if calling generator function
 			//iterC = toEv.getReturnType();
 			myGen = iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getMyGenerator();
-			/*if(E_FUNC_CALL* func = dynamic_cast<E_FUNC_CALL*>(iterable)){
+			/*if(E_FUNC_CALL* func = d ynamic_cast<E_FUNC_CALL*>(iterable)){
 				auto tmpVal = func->getArgs(ra);
 				toEv = tmpVal.second;
 				for(const Value*& a: tmpVal.first){
@@ -70,7 +72,9 @@ class ForEachLoop : public Construct{
 			if(iterC->isGen){
 				Value* tv = toEv.getValue(ra);
 				if(myGen->thisPointer!=NULL){
-					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), myGen->self->getSelfClass(ra));
+					ClassProto* genClass = myGen->self->getSelfClass(ra);
+					assert(genClass!=NULL);
+					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), genClass);
 					if(iterC->isPointer) myGen->thisPointer->llvmObject = self;
 					else myGen->thisPointer->llvmObject = self.toLocation(ra);
 
@@ -101,9 +105,7 @@ class ForEachLoop : public Construct{
 			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
 			ra.builder.CreateBr(END);
 
-			//TheFunction->getBasicBlockList().remove(MERGE);
-			//TheFunction->getBasicBlockList().push_back(MERGE);
-			//ra.builder.SetInsertPoint(MERGE);
+			toLoop->checkTypes(ra);
 			if(j->endings.size()==1){
 				std::pair<BasicBlock*,BasicBlock*> NEXT = j->resumes[0];
 				ra.builder.SetInsertPoint(NEXT.first);
@@ -126,7 +128,6 @@ class ForEachLoop : public Construct{
 				PHINode* ind = ra.builder.CreatePHI(INT32TYPE, (unsigned)(j->endings.size()),"ind");
 				auto met = localVariable->getMetadata(ra);
 				met->llvmObject = DATA::getConstant(val, theClass);
-				met->returnClass = theClass;
 				localVariable->returnType = theClass;
 				Jumpable* k = new Jumpable(name, LOOP, TODECIDE, END, NULL);
 				ra.addJump(k);
@@ -153,10 +154,6 @@ class ForEachLoop : public Construct{
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 			toLoop->collectReturns(r, vals);
-		}
-		void resolvePointers() override final{
-			iterable->resolvePointers();
-			toLoop->resolvePointers();
 		}
 		void buildFunction(RData& r) override final{
 			iterable->buildFunction(r);

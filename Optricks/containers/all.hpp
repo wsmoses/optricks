@@ -35,15 +35,14 @@ class ReferenceElement:public Resolvable{
 	private:
 	public:
 		DATA llvmObject;
-		ClassProto* returnClass;
 		funcMap funcs;
 		virtual ~ReferenceElement(){};
-		ReferenceElement(String c, OModule* mod, String index, DATA value, ClassProto* cl, funcMap fun):
-			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun)
+		ReferenceElement(String c, OModule* mod, String index, DATA value, funcMap fun):
+			Resolvable(mod,index), llvmObject(value), funcs(fun)
 		{
 		}
 		ReferenceElement(OModule* mod, String index, DATA value, ClassProto* cl, funcMap& fun):
-			Resolvable(mod,index), llvmObject(value), returnClass(cl), funcs(fun)
+			Resolvable(mod,index), llvmObject(value), funcs(fun)
 		{
 		}
 		ReferenceElement* resolve() override final{
@@ -67,6 +66,18 @@ ReferenceElement* ClassProto::addFunction(String nam, PositionID id){
 	if(nam==name) id.error("Cannot make function with same name as class "+name);
 	if(functions.find(nam)!=functions.end()) return functions[nam];
 	if(hasInner(nam)) id.error("Cannot create another function type for class "+name+" named "+nam);
-	return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,DATA::getNull(),functionClass,funcMap());
+	return functions[nam] = new ReferenceElement("",NULL,name+"."+nam,DATA::getFunction(NULL,NULL),funcMap());
+}
+
+ClassProto* DATA::getReturnType(RData& r) const{
+	if(type==R_GEN){
+		assert(info.funcType!=NULL);
+		return info.funcType->getGeneratorType(r);
+	}
+	if(type==R_FUNC) return functionClass;
+	assert(type==R_CONST || type==R_LOC || type==R_CLASS);
+//	if(type!=R_CONST && type!=R_LOC && type!=R_CLASS) id.error("Could not get returnType of "+str<DataType>(type));
+	assert(info.classType !=NULL);
+	return info.classType;
 }
 #endif /* ALL_HPP_ */

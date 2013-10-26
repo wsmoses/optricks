@@ -17,9 +17,6 @@ class odouble : public oobject{
 		void write(ostream& ss, String b) const override{
 			ss << value;
 		}
-		oobject* simplify() override final{
-			return this;
-		}
 		DATA evaluate(RData &a) override final{
 			return DATA::getConstant(getDouble(value),doubleClass);
 		}

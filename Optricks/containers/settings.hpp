@@ -47,7 +47,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 using namespace llvm;
 #include <assert.h>
-#define cout std::cout
+//#define cout std::cout
 #define cin std::cin
 #define cerr std::cerr
 #define flush std::flush
@@ -121,7 +121,7 @@ template <class T> ostream& operator<<(ostream&os, std::vector<T>& v){
 		return os<<"]";
 }
 
-struct PositionID{
+class PositionID{
 	public:
 		String fileName;
 		unsigned int lineN;
@@ -131,7 +131,7 @@ struct PositionID{
 			charN = b;
 			fileName = c;
 		}
-		PositionID():PositionID(0,0,"<start>"){}
+	//	PositionID():PositionID(0,0,"<start>"){}
 		void error(String s, bool end=true) const{
 			cerr << s << " at " << fileName << " on line " << lineN << ", char " << charN << endl << flush;
 			if(end) exit(1);
@@ -155,12 +155,12 @@ class OModule;
 #define OOBJECT_P_
 class oobject;
 #endif
-
+/*
 ArrayRef<int> getArrayRefFromString(String s){
 	std::vector<int> v;
 	for(auto a:s) v.push_back(a);
 	return ArrayRef<int>(v);
-}
+}*/
 
 
 #ifndef OPERATIONS_C_
@@ -266,7 +266,7 @@ class DATA{
 		    return *this;
 		}
 		FunctionProto* getFunctionType() const{
-			assert((type==R_GEN || type==R_FUNC));
+			if(type!=R_FUNC && type!=R_GEN) PositionID(0,0,"<start.gft>").error("Could not gtf "+str<DataType>(type));
 			assert(info.funcType !=NULL);
 			return info.funcType;
 		}
@@ -309,10 +309,7 @@ class DATA{
 				cerr << "Cannot getLocation of non-location "<< type << endl << flush;
 				exit(1);
 			}
-			if(data.pointer==NULL){
-				cerr << "Cannot get NULL location" << endl << flush;
-				exit(1);
-			}
+			assert(data.pointer!=NULL);
 			return data.location;
 		}
 		void* getPointer() const{
@@ -323,10 +320,7 @@ class DATA{
 				cerr << "Cannot getGenerator of non-gen " << type << endl << flush;
 				exit(1);
 			}
-			if(data.pointer==NULL){
-				cerr << "Cannot get NULL gen" << endl << flush;
-				exit(1);
-			}
+			assert(data.pointer==NULL);
 			return data.generator;
 		}
 		Function* getMyFunction() const{
@@ -334,10 +328,7 @@ class DATA{
 				cerr << "Cannot getFunction of non-function " << type << endl << flush;
 				exit(1);
 			}
-			if(data.pointer==NULL){
-				cerr << "Cannot get NULL function" << endl << flush;
-				exit(1);
-			}
+			assert(data.pointer!=NULL);
 			return data.function;
 		}
 		ClassProto* getMyClass(RData& r) const;

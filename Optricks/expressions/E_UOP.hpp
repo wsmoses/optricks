@@ -47,9 +47,6 @@ class E_PREOP : public Construct{
 		void buildFunction(RData& r) override final{
 			value->buildFunction(r);
 		};
-		void resolvePointers() override final{
-			value->resolvePointers();
-		};
 };
 
 
@@ -89,9 +86,6 @@ class E_POSTOP : public Construct{
 		};
 		void buildFunction(RData& r) override final{
 			value->buildFunction(r);
-		};
-		void resolvePointers() override final{
-			value->resolvePointers();
 		};
 };
 

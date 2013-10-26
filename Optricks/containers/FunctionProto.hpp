@@ -18,7 +18,7 @@ class FunctionProto{
 		ClassProto* returnType;
 		FunctionProto(String n, std::vector<Declaration*>& a, ClassProto* r):generatorType(NULL),name(n),declarations(a), returnType(r){}
 		FunctionProto(String n, ClassProto* r=NULL):generatorType(NULL),name(n),declarations(), returnType(r){}
-		ClassProto* getGeneratorType(RData& r, PositionID id);
+		ClassProto* getGeneratorType(RData& r);
 		/*
 		 * Checks if this can be casted to F, and how well
 		 * In Declaration.hpp
@@ -109,28 +109,14 @@ class funcMap{
 
 ClassProto* DATA::getMyClass(RData& r) const{
 	if(type!=R_CLASS && type!=R_GEN){
-		cerr << "Cannot getClass of non-class " << type << endl << flush;
-		exit(1);
+		PositionID(0,0,"<start.getMyClass>").error("Cannot getMyClass of non-class "+str<DataType>(type));
 	}
-	if(data.pointer==NULL){
-		cerr << "Cannot get NULL class" << endl << flush;
-		exit(1);
-	}
+	assert(data.pointer!=NULL);
 	if(type==R_GEN){
-		ClassProto* tmp = info.funcType->getGeneratorType(r, PositionID());
+		ClassProto* tmp = info.funcType->getGeneratorType(r);
 		assert(tmp!=NULL);
 		return tmp;
 	}
 	return data.classP;
-}
-
-ClassProto* DATA::getReturnType(RData& r) const{
-	if(type==R_GEN){
-		assert(info.funcType!=NULL);
-		return info.funcType->getGeneratorType(r, PositionID());
-	}
-	assert((type==R_CONST || type==R_LOC || type==R_CLASS));
-	assert(info.classType !=NULL);
-	return info.classType;
 }
 #endif /* FUNCTIONPROTO_HPP_ */

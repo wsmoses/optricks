@@ -14,11 +14,8 @@
 class E_VAR : public Statement{
 	public:
 		Resolvable* pointer;
-		//	Resolvable* type;
 		virtual ~E_VAR(){};
-		E_VAR(PositionID id, Resolvable* a) : Statement(id),pointer(a){
-			//	type = ty;
-		};
+		E_VAR(PositionID id, Resolvable* a) : Statement(id),pointer(a){};
 		String getFullName() override final{
 			return pointer->name;
 		}
@@ -54,19 +51,11 @@ class E_VAR : public Statement{
 			//TODO var build function
 		};
 		ClassProto* checkTypes(RData& r) override{
-			ClassProto* temp = pointer->resolve()->returnClass;
-			//cout << "LOCATION OF VARIABLE: " << (size_t)(pointer->resolve()) << endl << flush;
+			ClassProto* temp = pointer->resolve()->llvmObject.getReturnType(r);
 			if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
 			return returnType = temp;
 		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-		}
-		void resolvePointers() override{
-			LateResolve* r = dynamic_cast<LateResolve*>(pointer);
-			if(r!=NULL){
-				pointer = r->resolve();
-			}
-			if(pointer == NULL) error("What?? Pointer is null? for " + pointer->name);
 		}
 };
 #endif /* E_VAR_HPP_ */

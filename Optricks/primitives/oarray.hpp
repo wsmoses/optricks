@@ -135,11 +135,6 @@ class E_ARR : public Construct{
 				a->buildFunction(r);
 			}
 		};
-		void resolvePointers() override final{
-			for(auto& a: values){
-				a->resolvePointers();
-			}
-		};
 		ClassProto* checkTypes(RData& r) override{
 			for(auto& a:values){
 				a->checkTypes(r);

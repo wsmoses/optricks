@@ -25,14 +25,11 @@ class Block : public Construct{
 		void buildFunction(RData& r) override final{
 			for(auto& a: values) a->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			for(auto& a: values) a->resolvePointers();
-		}
 		Block(PositionID a) : Construct(a,voidClass),values(){}
 		DATA evaluate(RData& r) override{
 			bool ret = false;
 			for(auto& a:values){
-				if(ret) error("Already had guarenteed return");
+				if(ret) error("Already had guaranteed return");
 				r.guarenteedReturn = false;
 				a->evaluate(r);
 				if(r.guarenteedReturn) ret = true;
@@ -41,17 +38,13 @@ class Block : public Construct{
 			return DATA::getNull();
 		}
 		Statement* simplify() override{
-			Block* b = new Block(filePos);
-			std::vector<Statement*> v;
-			for(auto& a:values){
-				Statement* s = a->simplify();
-				if(s->getToken()!=T_VOID) b->values.push_back(s);
+			unsigned int toPut = 0;
+			for(unsigned int i = 0; i<values.size(); ++i){
+				Statement* s = values[i]->simplify();
+				if(s->getToken()!=T_VOID) values[toPut++] = s;
 			}
-			if(b->values.size()==0){
-				free(b);
-				return VOID;
-			}
-			return b;
+			while(values.size()>toPut) values.pop_back();
+			return this;
 		}
 		void write(ostream& s,String start="") const override{
 			s << "{" << endl;

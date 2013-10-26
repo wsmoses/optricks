@@ -15,20 +15,17 @@ public:
 	const Token getToken() const override{ return T_LOOKUP; }
 	Statement* left;
 	String right;
-	String operation;
 	virtual ~E_LOOKUP(){};
-	E_LOOKUP(PositionID id, Statement* a,  String b, String o): Statement(id),
-			left(a), right(b), operation(o){};
+	E_LOOKUP(PositionID id, Statement* a,  String b): Statement(id),
+			left(a), right(b){};
 	void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 	}
 	void write(ostream& f,String a="") const override{
-		f << left;
-		f << operation;
-		f << right;
+		f << left << "." << right;
 	}
 
 	String getFullName() override final{
-		return left->getFullName()+operation+right;
+		return left->getFullName()+"."+right;
 	}
 	void registerClasses(RData& r) override final{
 		left->registerClasses(r);
@@ -39,9 +36,6 @@ public:
 	void buildFunction(RData& r) override final{
 		left->buildFunction(r);
 	};
-	void resolvePointers() override final{
-		left->resolvePointers();
-	}
 	ClassProto* checkTypes(RData& r){
 		if(returnType!=NULL) return returnType;
 		ClassProto* superC = left->checkTypes(r);
@@ -110,7 +104,7 @@ public:
 		auto lT = left->checkTypes(r);
 
 		if(lT->hasFunction(right)) return lT->getFunction(right, filePos);
-		else return new ReferenceElement("", NULL,lT->name+operation+right, DATA::getLocation(getLocation(r), returnType), lT->getDataClass(right,filePos), funcMap());
+		else return new ReferenceElement("", NULL,lT->name+"."+right, DATA::getLocation(getLocation(r), returnType), funcMap());
 	}
 };
 

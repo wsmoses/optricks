@@ -45,7 +45,8 @@ enum Token {
 	T_CLASSPROTO = 38,
 	T_IMPORT = 39,
 	T_GEN = 40,
-	T_CLASS
+	T_CLASS = 41,
+	T_LAMBDAFUNC = 42
 };
 
 #endif /* O_TOKEN_HPP_ */

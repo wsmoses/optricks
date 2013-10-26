@@ -1,26 +1,19 @@
 #define MAIN_CPP
 //TODO automatic constant detection
+//TODO final argument detection (e.g. will not be set)
 //TODO constant expr
-//TODO fix parsing orders (esp w/ auto)
 #include "containers/all.hpp"
 #include <fstream>
 #include <iostream>
 #include "Lexer.hpp"
 /**
- * TODO resolution
- * a) register class names
- * b) register operator / function names (prototypes) with arguments
- * 		this includes class methods / constructors
- * c) register operator / function prototypes with default
- * 		this includes class methods / constructors
- * d) switch to opointers instead of late-resolves
- * e) type check everything
+ * TODO create allocation of global memory after function prototype but before built
  */
 
 void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	if(n==NULL) return;// NULL;
 	if(n->getToken()==T_IMPORT){
-		ImportStatement* import = dynamic_cast<ImportStatement*>(n);
+		ImportStatement* import = (ImportStatement*)n;
 		char cwd[1024];
 		if(getcwd(cwd,sizeof(cwd))==NULL) import->error("Could not getCWD");
 		String dir, file;
@@ -31,24 +24,19 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
 	}
-	if(debug && n->getToken()!=T_VOID) cout << n << endl << flush;
+	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n = n->simplify();
-	n->resolvePointers();
 	n->registerClasses(lexer.rdata);
 	n->registerFunctionPrototype(lexer.rdata);
 	n->buildFunction(lexer.rdata);
 	n->checkTypes(lexer.rdata);
 	Type* type;
-	type = n->returnType->getType(lexer.rdata);
-	if(type==NULL && n->returnType!=functionClass){
-		cout << "Error null return type for class " + n->returnType->name ;
-		type = VOIDTYPE;
-	}
-
-	if(n->returnType == complexClass){
+	if(n->returnType==functionClass || n->returnType==classClass || n->getToken()==T_DECLARATION) type=VOIDTYPE;
+	else type = n->returnType->getType(lexer.rdata);
+	assert(type!=NULL);
+	if(n->getToken()!=T_DECLARATION && n->returnType == complexClass){
 		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(PositionID(0,0,"#main"), mod->getPointer(PositionID(0,0,"#main"), "printc")), {n});
 		n = n->simplify();
-		n->resolvePointers();
 		n->registerClasses(lexer.rdata);
 		n->registerFunctionPrototype(lexer.rdata);
 		n->buildFunction(lexer.rdata);
@@ -82,59 +70,55 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	//cout << "dumped" << endl << flush;
 	void *FPtr = lexer.rdata.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
-	if(dat.getPointer()==NULL || type==VOIDTYPE || n->returnType==voidClass){
+	if(n->returnType==functionClass){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
-		cout << flush;
-	} else if(n->returnType==functionClass){
-		auto (*FP)() = (void* (*)())(intptr_t)FPtr;
+		std::cout << "function<" << dat.getMyFunction() << ">" << endl << flush;
+	}else if(n->returnType==classClass){
+		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
-		cout << flush;
+		ClassProto* cp = dat.getMyClass(lexer.rdata);
+		std::cout <<  "class<" << cp << ", '"<< cp->name << "'>" << endl << flush;
+	}else if(dat.getPointer()==NULL || type==VOIDTYPE || n->returnType==voidClass){
+		void (*FP)() = (void (*)())(intptr_t)FPtr;
+		FP();
+		std::cout << flush;
 	}
 	else if(n->returnType==doubleClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(debug) cout <<  "Evaluated to ";
-		cout << t << endl << flush;
+		std::cout << t << endl << flush;
 	} else if(n->returnType==intClass){
 		int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
 		int64_t t = FP();
-		if(debug) cout <<  "Evaluated to ";
-		cout << t << endl << flush;
+		std::cout << t << endl << flush;
 	} else if(n->returnType==boolClass){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(debug) cout <<  "Evaluated to ";
-		if(t) cout << "true\n" << flush;
-		else cout << "false\n" << flush;
+		std::cout << (t?"true\n":"false\n") << flush;
 	} else if(n->returnType==complexClass){
 		auto (*FP)() = (complex (*)())(intptr_t)FPtr;
 		complex t = FP();
-		if(debug) cout <<  "Evaluated to ";
 		printc(t,true);
 	} else if(n->returnType==charClass){
 		auto (*FP)() = (char (*)())(intptr_t)FPtr;
 		auto t = FP();
-		if(debug) cout <<  "Evaluated to ";
 		printf("\'%c\'",t);
-		cout << endl << flush;
+		std::cout << endl << flush;
 	} else if(n->returnType==c_stringClass){
 		auto (*FP)() = (char* (*)())(intptr_t)FPtr;
-		//StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
 		auto t = FP();
-		//cout << "String length of " << (int)(* (int*)(t.length)) << endl << flush;
-		//String temp(t.data, t.length);
-		if(debug) cout <<  "Evaluated to ";
 		printf("\"%s\"",t);
-		cout << endl << flush;
+		std::cout << endl << flush;
 	} else if(n->returnType==stringClass){
 		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
 		auto t = FP();
-		cout << "String length of " << (int)(* (int*)(t.length)) << endl << flush;
 		String temp(t.data, t.length);
-		if(debug) cout <<  "Evaluated to " ;
-		cout << temp;
-		cout << endl << flush;
+		std::cout << temp << endl << flush;
+	} else if(n->returnType->isPointer){
+		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
+		auto t = FP();
+		std::cout << n->returnType->name << "<" << t << ">" << endl << flush;
 	} else{
 		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
 	}
@@ -275,8 +259,8 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		cout << "Optricks version 0.2.0" << endl << flush;
-		cout << "Created by Billy Moses" << endl << endl << flush;
+		std::cout << "Optricks version 0.2.1" << endl << flush;
+		std::cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
 	//should ++ / -- be eliminated and replaced with +=1 and -=1
@@ -312,7 +296,7 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream* st = new Stream(file, true);
 		lexer.f = st;
-		cout << START << flush;
+		std::cout << START << flush;
 		/*
 		st->force("extern double cos(double a); cos(3.14159)\n");
 		st->force("lambda int a,int b: a+b\n");
@@ -359,7 +343,7 @@ int main(int argc, char** argv){
 				first = false;
 				execF(lexer,lexer.myMod, n,debug);
 				st->done = false;
-				if(st->last()=='\n') break;
+				if(st->last()=='\n' || st->peek()=='\n') break;
 				while(st->peek()==';') st->read();
 				st->done = false;
 				st->enableOut = true;
@@ -368,7 +352,7 @@ int main(int argc, char** argv){
 			}
 			st->done = false;
 			if(st->last()==EOF) break;
-			cout << START << flush;
+			std::cout << START << flush;
 			while(st->peek()=='\n' || st->peek()==';') st->read();
 			st->done = false;
 

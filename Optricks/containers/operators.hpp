@@ -54,10 +54,10 @@ Value* complexSquare(Value* a, RData& m){
 }
 //Function* strLen = NULL;
 void initClassesMeta(){
-	complexClass->addElement("real",doubleClass,PositionID());
-	complexClass->addElement("imag",doubleClass,PositionID());
-	stringClass->addElement("_cstr",c_stringClass,PositionID());
-	stringClass->addElement("_size",intClass,PositionID());
+	complexClass->addElement("real",doubleClass,PositionID(0,0,"<start.initClassesMeta>"));
+	complexClass->addElement("imag",doubleClass,PositionID(0,0,"<start.initClassesMeta>"));
+	stringClass->addElement("_cstr",c_stringClass,PositionID(0,0,"<start.initClassesMeta>"));
+	stringClass->addElement("_size",intClass,PositionID(0,0,"<start.initClassesMeta>"));
 
 	complexClass->preops["-"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
@@ -386,7 +386,7 @@ void initClassesMeta(){
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
 
 		Value *a = av.getValue(m), *b = bv.getValue(m);
-		std::vector<unsigned int> z = {stringClass->getDataClassIndex("_cstr",PositionID())};
+		std::vector<unsigned int> z = {stringClass->getDataClassIndex("_cstr",id)};
 		auto val = m.builder.CreateExtractValue	(a,z);
 		std::vector<Value*> v = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
 		auto t = m.builder.CreateInBoundsGEP(val,v,"tmpind");

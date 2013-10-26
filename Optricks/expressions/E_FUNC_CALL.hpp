@@ -76,10 +76,6 @@ class E_FUNC_CALL : public Statement{
 			toCall->buildFunction(r);
 			for(auto &a : vals) a->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			toCall->resolvePointers();
-			for(auto &a : vals) a->resolvePointers();
-		}
 		String getFullName() override final{
 			return toCall->getFullName()+"(...)";
 		}
@@ -94,7 +90,7 @@ class E_FUNC_CALL : public Statement{
 			DATA d = toCall->getMetadata(r)->funcs.get(generateFunctionProto(r),r,filePos);
 			FunctionProto* proto = d.getFunctionType();
 			if(proto==NULL) error("Non-existent function prototype");
-			if(d.getType()==R_GEN) return returnType = proto->getGeneratorType(r, filePos);
+			if(d.getType()==R_GEN) return returnType = proto->getGeneratorType(r);
 			return returnType = proto->returnType;
 		}
 		Statement* simplify() override{
@@ -114,8 +110,9 @@ class E_FUNC_CALL : public Statement{
 				error("Cannot call function of non function/generator");
 			}
 			std::vector<Value*> Args;
-			if(auto T=dynamic_cast<E_LOOKUP*>(toCall)){
-				auto tp = T->left->checkTypes(a);
+			if(toCall->getToken()==T_LOOKUP){
+				E_LOOKUP* T = (E_LOOKUP*)toCall;
+				ClassProto* tp = T->left->checkTypes(a);
 				if(tp->hasFunction(T->right)){
 					//TODO make better check (e.g. static functions)
 					Value* loc;
@@ -151,8 +148,8 @@ class E_FUNC_CALL : public Statement{
 			return std::pair<std::vector<Value*>,DATA>(Args,d_callee);
 		}
 		DATA evaluate(RData& a) override{
-			lambdaFunction* temp = dynamic_cast<lambdaFunction*>(toCall);
-			if(temp!=NULL){
+			if(toCall->getToken()==T_LAMBDAFUNC){
+				lambdaFunction* temp = (lambdaFunction*)toCall;
 				//TODO be aware that this makes something like
 				/*
 				 * for(int i=0; i<7; i+=1) printi((lambda int z: z*i)(i)) // VALID
@@ -176,7 +173,7 @@ class E_FUNC_CALL : public Statement{
 			DATA &d_callee = tempVal.second;
 			if(d_callee.getType()==R_GEN){
 				//TODO allow for auto tmp = "hello".iterator(), storing "hello" in temp struct
-				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(a, filePos);
+				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(a);
 				Value* mine = cla->generateData(a).getValue(a);
 				for(unsigned int i = 0; i<Args.size(); i++){
 					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(std::vector<unsigned>({i})));

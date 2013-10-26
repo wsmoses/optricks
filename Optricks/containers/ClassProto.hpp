@@ -112,12 +112,12 @@ class ClassProto{
 			auto found = casts.find(right);
 			return found!=casts.end();
 		}
-		ouop*& addCast(ClassProto* right, PositionID id=PositionID()){
+		ouop*& addCast(ClassProto* right, PositionID id=PositionID(0,0,"<start.addCast>")){
 			if(hasCast(right))
 				id.error("Error: Redefining cast "+name+" to "+right->name);
 			return casts[right];
 		}
-		obinop*& addBinop(String operation, ClassProto* right, PositionID id=PositionID()){
+		obinop*& addBinop(String operation, ClassProto* right, PositionID id=PositionID(0,0,"<start.addBinop>")){
 			auto found = binops.find(operation);
 			if(found!=binops.end()){
 				auto found2 = found->second.find(right);
@@ -262,7 +262,7 @@ class GenericClass: public ClassProto{
 
 		bool operator == (ClassProto*& b) override final{
 					GenericClass *bb;
-					if((bb = dynamic_cast<GenericClass*>(b))==NULL) return (size_t)this==(size_t)b;
+					if((bb = d ynamic_cast<GenericClass*>(b))==NULL) return (size_t)this==(size_t)b;
 					return (size_t)this==(size_t)b;//TODO
 				}
 };
@@ -271,13 +271,17 @@ class GenericClass: public ClassProto{
 #include "operations.hpp"
 DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
 	//TODO look into making more efficient
+	/*
 	if(!(type==R_CONST || type==R_LOC)){
 		id.error("Compile error - could not cast non constant/location");
 	} else if(data.pointer==NULL){
 		id.error("Compiler error - can not cast nonexistant pointer");
 	} else if(info.pointer==NULL){
 		id.error("Compiler error - can not cast to nonexistant class");
-	}
+	}*/
+	assert(type==R_CONST || type==R_LOC);
+	assert(data.pointer);
+	assert(info.pointer);
 	assert(right!=NULL);
 	ClassProto* left = getReturnType(r);
 	if(left->equals(right)) return *this;

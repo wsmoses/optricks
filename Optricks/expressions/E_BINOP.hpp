@@ -145,10 +145,6 @@ class E_BINOP : public Statement{
 			left->buildFunction(r);
 			right->buildFunction(r);
 		};
-		void resolvePointers() override final{
-			left->resolvePointers();
-			right->resolvePointers();
-		};
 		void write(ostream& f,String s="") const override{
 			left->write(f,s);
 			if(operation=="[]"){

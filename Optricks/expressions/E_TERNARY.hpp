@@ -48,11 +48,6 @@ class TernaryOperator : public Statement{
 			then->buildFunction(r);
 			finalElse->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			condition->resolvePointers();
-			then->resolvePointers();
-			finalElse->resolvePointers();
-		}
 		ClassProto* checkTypes(RData& r) override{
 			if(condition->checkTypes(r)!=boolClass) error("Cannot have non-bool as condition for ternary "+condition->returnType->name);
 			ClassProto* g = then->checkTypes(r);

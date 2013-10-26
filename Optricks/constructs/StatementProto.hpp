@@ -51,10 +51,6 @@ class Statement : public Stackable{
 		 */
 		virtual void buildFunction(RData& r) = 0;
 		/**
-		 * Loads all pointer references into memory for faster compiling
-		 */
-		virtual void resolvePointers() = 0;
-		/**
 		 * Determines return-type of expression (and sub-expressions)
 		 */
 		virtual ClassProto* checkTypes(RData& r) = 0;
@@ -98,7 +94,6 @@ class VoidStatement : public Statement{
 		void registerClasses(RData& r) override final{}
 		void registerFunctionPrototype(RData& r) override final{};
 		void buildFunction(RData& r) override final{};
-		void resolvePointers() override final{};
 		ClassProto* checkTypes(RData& r) override final;
 		String getFullName() override final{ return "void"; }
 		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }

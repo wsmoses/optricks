@@ -44,10 +44,6 @@ class E_RETURN : public Statement{
 		void buildFunction(RData& r) override final{
 			if(inner!=NULL) inner->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			if(inner!=NULL)
-			inner->resolvePointers();
-		}
 		Statement* simplify() override{
 			return this;
 		}

@@ -86,14 +86,14 @@ class Lexer{
 					Statement* s = getNextStatement(EOF,global);
 					if(s==NULL || s->getToken()==T_VOID) break;
 					if(s->getToken()==T_IMPORT){
-						ImportStatement* import = dynamic_cast<ImportStatement*>(s);
+						ImportStatement* import = (ImportStatement*)s;
 						std::vector<String> pl = {import->toImport};
 						getStatements(global, debug, pl, stats);
 						continue;
 					}
-					if(debug && s->getToken()!=T_VOID){
-						cout << s << ";" << endl << endl << flush;
-					}
+					//if(debug && s->getToken()!=T_VOID){
+					//	cout << s << ";" << endl << endl << flush;
+					//}TODO why is this here
 					s = s->simplify();
 					stats.push_back(s);
 				}
@@ -105,7 +105,6 @@ class Lexer{
 		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0, unsigned int optLevel = 3){
 			std::vector<Statement*> stats;
 			getStatements(global, debug, fileNames, stats);
-			for(auto& n: stats) n->resolvePointers();
 			for(auto& n: stats) n->registerClasses(rdata);
 			for(auto& n: stats){
 				n->registerFunctionPrototype(rdata);
@@ -169,7 +168,7 @@ class Lexer{
 		E_VAR* getNextVariable(ParseData data, bool late=true){
 			Resolvable* pointer;
 			if(late) pointer = new LateResolve(data.mod, getNextName(data.endWith), pos());
-			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull(),NULL);
+			else pointer = data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull());
 			return new E_VAR(pos(), pointer);
 		}
 		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
@@ -178,8 +177,7 @@ class Lexer{
 			trim(EOF);
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
-				varName = dynamic_cast<E_VAR*>(declarationType)->pointer->name;
-				//REVISITED....wha?....forces auto?
+				varName = ((E_VAR*)(declarationType))->pointer->name;
 				declarationType = new ClassProtoWrapper(autoClass);
 			} else varName = getNextName(data.endWith);
 			trim(data);
@@ -188,7 +186,7 @@ class Lexer{
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,DATA::getNull(),NULL));
+			E_VAR* variable = new E_VAR(pos(), data.mod->addPointer(pos(), varName,DATA::getNull()));
 			return new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
 		}
 		Statement* getNextStatement(char endWith,bool global){
@@ -220,11 +218,13 @@ class Lexer{
 			}
 			return args;
 		}
-		PositionID pos(){
+		inline PositionID pos() const{
+			assert(f!=NULL);
 			return f->pos();
 		}
 		inline void trim(char c){
 			//		if(
+			assert(f!=NULL);
 			f->trim(c)
 							//) f->error("Found EOF while parsing")
 									;
@@ -269,8 +269,8 @@ class Lexer{
 			do{
 				trim(data);
 				auto marker = f->getMarker();
-				String typeOperation = f->getNextOperator(data.endWith);
-				if(typeOperation=="" || !in<String>(TYPE_OPERATORS, typeOperation)){
+				bool typeOperation = f->getNextOperator(data.endWith)==".";
+				if(!typeOperation){
 					f->undoMarker(marker);
 					break;
 				}
@@ -278,14 +278,16 @@ class Lexer{
 				if(f->done)  f->error("Could not find alphanumeric start for type parsing -ended");
 				if(!isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
 				auto nextVariable = getNextName(data.endWith);
-				currentType = new E_LOOKUP(pos(), currentType, nextVariable, typeOperation);
+				currentType = new E_LOOKUP(pos(), currentType, nextVariable);
 			}while(true);
 			return currentType;
 		}
 		Statement* getNextStatement(ParseData parse);
 		Statement* getIfStatement(ParseData data,bool read=false){
 			if(!read && f->getNextName(data.endWith)!="if") f->error("Could not find 'if' for if statement");
-			if(f->trim(EOF)) f->error("Uncompleted if");
+			//if(
+			f->trim(EOF);
+			//) f->error("Uncompleted if");
 			std::vector<std::pair<Statement*,Statement* >> statements;
 			Statement* c = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 			if(c->getToken()==T_VOID) f->error("Need condition for if");
@@ -335,7 +337,8 @@ class Lexer{
 		}
 		Statement* getForLoop(ParseData data, bool read=false){
 			if(!read && f->getNextName(data.endWith)!="for") f->error("Could not find 'for' for for-loop");
-			if(f->trim(EOF)) f->error("Uncompleted for",true);
+			//if(
+			f->trim(EOF);//) f->error("Uncompleted for",true);
 			bool paren = f->peek()=='(';
 			//Standard for(i = 0; i<7; i++)
 			OModule* module = new OModule(data.mod);
@@ -378,7 +381,7 @@ class Lexer{
 					f->trim(EOF);
 				}
 				OModule* nmod = new OModule(data.mod);
-				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,DATA::getNull(),NULL));
+				E_VAR* variable = new E_VAR(pos(), nmod->addPointer(pos(), iterName,DATA::getNull()));
 				Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,NULL,NULL,NULL,NULL,NULL)),iterable,blocks,"");
 				//TODO implement for loop naming
@@ -387,7 +390,8 @@ class Lexer{
 		}
 		Statement* getWhileLoop(ParseData data, bool read=false){
 			if(!read && f->getNextName(data.endWith)!="while") f->error("Could not find 'while' for while-loop");
-			if(f->trim(EOF)) f->error("Uncompleted while",true);
+			//if(
+			f->trim(EOF);//) f->error("Uncompleted while",true);
 			bool paren = f->peek()=='(';
 			if(paren) f->read();
 			Statement* cond = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
@@ -399,7 +403,8 @@ class Lexer{
 		}
 		Statement* getDoLoop(ParseData data, bool read=false){
 			if(!read && f->getNextName(data.endWith)!="do") f->error("Could not find 'do' for do-while-loop");
-			if(f->trim(EOF)) f->error("Uncompleted do-while",true);
+			//if(
+			f->trim(EOF);//) f->error("Uncompleted do-while",true);
 			if(f->peek()==':') f->read();
 			if(f->trim(EOF)) f->error("Uncompleted do-while",true);
 			Statement* blocks = getNextBlock(data);
@@ -443,18 +448,15 @@ class Lexer{
 				}
 
 				OModule* module = new OModule(data.mod);
-				std::vector<std::pair<String,String> > methodName;
+				std::vector<std::pair<String,PositionID> > methodName;
 				bool isOperator = false;
 				while(isStartName(f->peek())){
 					String method = getNextName(EOF);
 					if(method.length()==0) break;
 					f->trim(EOF);
 					auto mark = f->getMarker();
-					String op = f->getNextOperator(EOF);
-					if(! in<String>(TYPE_OPERATORS, op)){
-						op="";
-						f->undoMarker(mark);
-					}
+					bool op = f->getNextOperator(EOF)==".";
+					if(!op) f->undoMarker(mark);
 					f->trim(EOF);
 					if(method=="operator"){
 						String t = f->getNextOperator(data.endWith);
@@ -463,8 +465,8 @@ class Lexer{
 						f->trim(EOF);
 						isOperator = true;
 					}
-					methodName.push_back(std::pair<String,String>(method,op));
-					if(isOperator || op.length()==0) break;
+					methodName.push_back(std::pair<String,PositionID>(method,pos()));
+					if(isOperator || !op) break;
 				}
 				std::vector<Declaration*> arguments;
 				if(!f->done){
@@ -486,7 +488,7 @@ class Lexer{
 					if(methodName.size()==0) funcName = NULL;
 					else if(methodName.size()==1){
 						if(isOperator){
-							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,DATA::getNull(),functionClass,funcMap()));
+							funcName = new E_VAR(pos(), new ReferenceElement("",NULL, methodName[0].first,DATA::getFunction(NULL,NULL),funcMap()));
 						} else {
 							funcName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName[0].first));
 						}
@@ -503,25 +505,26 @@ class Lexer{
 					//myMod = NULL;//make combined scope
 					if(outer==NULL){
 					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
-					for(unsigned int i = 0; i<methodName.size()-2; i++)
-						funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+					for(unsigned int i = 1; i+1<methodName.size(); i++)
+						funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
 					} else{
-						funcName = new E_LOOKUP(pos(), outer, methodName[0].first,".");
-						for(unsigned int i = 0; i<methodName.size()-2; i++)
-							funcName = new E_LOOKUP(pos(), funcName, methodName[i+1].first,methodName[i].second);
+						funcName = outer;//new E_LOOKUP(methodName[0].second, outer, methodName[0].first);
+						for(unsigned int i = 0; i+1<methodName.size(); ++i){
+							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
+						}
 					}
-					ReferenceElement* thisPointer = module->addPointer(pos(),"this",DATA::getNull(),NULL);
+					ReferenceElement* thisPointer = module->addPointer(pos(),"this",DATA::getNull());
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					PositionID tmp = pos();
-					if(methodName[methodName.size()-1].first==methodName[methodName.size()-2].first){
+					if((outer!=NULL)?(methodName.back().first == outer->name):(methodName.back().first==methodName[methodName.size()-2].first)){
 						func = new constructorFunction(tmp, thisPointer, funcName, arguments, methodBody,rdata);
 					}
 					else{
 						if(temp=="gen"){
-							func = new E_GEN(tmp, funcName, returnName, arguments, methodBody,rdata, methodName[methodName.size()-1].first,thisPointer);
+							func = new E_GEN(tmp, funcName, returnName, arguments, methodBody,rdata, methodName.back().first,thisPointer);
 						}
 						else
-							func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, methodName[methodName.size()-2].second, funcName, returnName, arguments, methodBody,rdata);
+							func = new classFunction(tmp, thisPointer, methodName[methodName.size()-1].first, funcName, returnName, arguments, methodBody,rdata);
 
 					}
 				}
@@ -537,7 +540,7 @@ class Lexer{
 				trim(data);
 				String methodName = getNextName(EOF);
 				E_VAR* externName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName));
-				externName->getMetadata(rdata)->returnClass = functionClass;
+				externName->getMetadata(rdata)->llvmObject = DATA::getFunction(NULL,NULL);
 				trim(data);
 				if(f->peek()!='('){
 					f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -565,9 +568,9 @@ class Lexer{
 		Statement* getClass(ParseData data, bool read=false,oclass* outer=NULL){
 			if(!read && f->getNextName(data.endWith)!="class") f->error("Could not find 'class' for class declaration");
 			String name = getNextName(EOF);//TODO -- allow generic class definition
-			bool primitive = false;
-			if(name=="primitive"){
-				primitive = true;
+			int primitive = 1;
+			if(name=="primitive" || name=="primitive_pointer"){
+				primitive = (name=="primitive")?0:2;
 				name = getNextName(EOF);//TODO -- allow generic class definition (here as well)
 			}
 			if(f->trim(EOF)) f->error("No class defined!");
@@ -577,16 +580,19 @@ class Lexer{
 				superClass = getNextType(data.getEndWith(EOF));
 				f->trim(EOF);
 			}
-			if(f->peek()!='{') f->error("Need opening brace for class definition");
+			if(f->read()!='{') f->error("Need opening brace for class definition");
 			f->trim(EOF);
 			Statement* self = (outer==NULL)?((Statement*)(new E_VAR(pos(), data.mod->getClassPointer(pos(), name))))
-					:((Statement*)(new E_LOOKUP(pos(), outer, name,".")));
+					:((Statement*)(new E_LOOKUP(pos(), outer, name)));
 			OModule* classMod = new OModule(data.mod);
 			oclass* selfClass = new oclass(pos(), name, superClass, self, primitive, outer);
+			while(f->peek()==';'){
+				f->read();
+				f->trim(EOF);
+			}
 			while(f->peek()!='}'){
 				auto mark = f->getMarker();
 				String temp = f->getNextName(EOF);
-				f->error("TODO");
 				bool stat = false;
 				if(temp=="static"){
 					stat = true;
@@ -607,6 +613,11 @@ class Lexer{
 					Declaration* dec = getNextDeclaration(nd);
 					selfClass->data.push_back(dec);
 				}
+				f->trim(EOF);
+				while(f->peek()==';'){
+								f->read();
+								f->trim(EOF);
+							}
 			}
 			if(f->read()!='}') f->error("Need closing brace for class definition");
 			return selfClass;
@@ -614,7 +625,7 @@ class Lexer{
 		Statement* operatorCheck(ParseData data, Statement* exp){
 			if(f->done || f->trim(data.endWith))	return exp;
 			if(f->last()==data.endWith){
-				f->write(data.endWith);
+				//f->write(data.endWith);
 				return exp;
 			}
 			char tchar = f->peek();
@@ -727,13 +738,13 @@ class Lexer{
 				//equality and check
 			}
 			 */ //TODO implement custom operators (a and b,  r if g else b )
-			else if (in<String>(TYPE_OPERATORS, tmp)){
+			else if (tmp=="."){
 				String name = getNextName(data.endWith);
 				if(name.length()==0) f->error("Name for lookup cannot be "+name);
-				fixed = (new E_LOOKUP(pos(), exp, name, tmp));
+				fixed = new E_LOOKUP(pos(), exp, name);
 			}
 			else if(tmp=="="){
-				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
+				Statement* post = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
 				fixed = new E_SET(pos(), exp, post);
 			}
 			else if(tmp=="++" || tmp=="--"){
@@ -741,11 +752,11 @@ class Lexer{
 			}
 			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && !(tmp[tmp.size()-2]=='=' || tmp[tmp.size()-2]=='!' || (tmp.size()==2 && (tmp[0]=='<' || tmp[0]=='>')))){
 				tmp = tmp.substr(0,tmp.size()-1);
-				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
+				Statement* post = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
 				fixed = new E_SET(pos(), exp, new E_BINOP(pos(), exp, post, tmp));
 			}
 			else{
-				Statement* post = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
+				Statement* post = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
 				if(post->getToken()==T_VOID)
 					fixed = new E_POSTOP(pos(), tmp, exp);
 				else fixed = (new E_BINOP(pos(), exp, post,tmp))->fixOrderOfOperations();
@@ -807,7 +818,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else{
 			auto start = f->getMarker();
 			trim(data);
-			if(data.allowsDec() && start!=f->getMarker() && isStartName(f->peek()) ){
+			if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() && isStartName(f->peek()) ){
 				f->undoMarker(undoRead);
 				return getNextDeclaration(data);
 			} else {

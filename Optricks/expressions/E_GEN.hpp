@@ -18,6 +18,7 @@ class E_GEN : public Statement{
 		String innerName;
 		Statement* returnClass;
 		ReferenceElement* thisPointer;
+		bool registereD, builtF;
 		E_GEN(PositionID id, Statement* s, Statement* ren, std::vector<Declaration*> dec, Statement* r,RData& rd, String inner="",ReferenceElement* thi=NULL):
 			Statement(id, voidClass),
 			self(s),
@@ -26,13 +27,13 @@ class E_GEN : public Statement{
 			innerName(inner),
 			returnClass(ren),
 			thisPointer(thi){
+			registereD = builtF = false;
 			prototype->name = getFullName();
-			ClassProto* myClass = prototype->getGeneratorType(rd, id);
+			ClassProto* myClass = prototype->getGeneratorType(rd);
 			myClass->addFunction("iterator", filePos)->funcs.add(DATA::getGenerator(this, new FunctionProto("")), rd, filePos);
 			//TODO allow closure for iterator types
 			if(innerName.length()==0){
 				ReferenceElement* re = self->getMetadata(rd);
-				re->returnClass = myClass;
 				re->llvmObject = DATA::getGenerator(this, prototype);
 				re->funcs.add(re->llvmObject, rd, id);
 			}
@@ -60,7 +61,7 @@ class E_GEN : public Statement{
 			return self->getMetadata(r);
 		}
 		ClassProto* getSelfClass(RData& r) override final{
-			return prototype->getGeneratorType(r, filePos);
+			return prototype->getGeneratorType(r);
 		}
 		const Token getToken() const{
 			return T_GEN;
@@ -79,6 +80,8 @@ class E_GEN : public Statement{
 			if(ret!=NULL) ret->write(f, b);
 		}
 		void registerFunctionPrototype(RData& ra) override{
+			if(registereD) return;
+			registereD = true;
 			if(returnClass!=NULL) returnClass->registerFunctionPrototype(ra);
 			prototype->returnType = returnClass->getSelfClass(ra);
 			self->registerFunctionPrototype(ra);
@@ -86,23 +89,27 @@ class E_GEN : public Statement{
 			for(auto& a:prototype->declarations) a->checkTypes(ra);
 			if(innerName.length()>0){
 				assert(thisPointer!=NULL);
-				thisPointer->returnClass = self->getSelfClass(ra);
-				thisPointer->returnClass->addFunction(innerName, filePos)->funcs.add(DATA::getGenerator(this, prototype), ra, filePos);
+				ClassProto* sC = self->getSelfClass(ra);
+				thisPointer->llvmObject = DATA::getConstant(NULL,sC);
+				sC->addFunction(innerName, filePos)->funcs.add(DATA::getGenerator(this, prototype), ra, filePos);
 			}
 			ret->registerFunctionPrototype(ra);
 			//checkTypes(ra); TODO...check if this is necessary
 		};
 		void buildFunction(RData& r) override final{
+			registerFunctionPrototype(r);
+			if(builtF) return;
+			builtF = true;
 			if(returnClass!=NULL) returnClass->buildFunction(r);
 			for(auto& a:prototype->declarations) a->buildFunction(r);
 			self->buildFunction(r);
 			ret->buildFunction(r);
 
-
 			//TODO check if should move
 			if(returnClass!=NULL) returnClass->checkTypes(r);
 			self->checkTypes(r);
-			for(auto& a:prototype->declarations) a->checkTypes(r);
+			for(auto& a:prototype->declarations)a->checkTypes(r);
+
 			ret->checkTypes(r);
 			std::vector<ClassProto*> cp;
 			ret->collectReturns(r, cp);
@@ -116,13 +123,8 @@ class E_GEN : public Statement{
 				returnClass = new ClassProtoWrapper(c);
 			}
 		};
-		void resolvePointers() override final{
-			if(returnClass!=NULL) returnClass->resolvePointers();
-			for(auto& a:prototype->declarations) a->resolvePointers();
-			self->resolvePointers();
-			ret->resolvePointers();
-		};
 		ClassProto* checkTypes(RData& r) override{
+			buildFunction(r);
 			return voidClass;
 		}
 		DATA evaluate(RData& ra) override{

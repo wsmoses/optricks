@@ -28,9 +28,6 @@ class ImportStatement:public Construct{
 		void write(ostream& a, String s) const override final{
 			a << "import" << "'" << toImport << "';" << endl << s;
 		}
-		void resolvePointers() override final{
-			error("Cannot resolve pointers of IMPORT");
-		}
 		const Token getToken() const override final{
 			return T_IMPORT;
 		}

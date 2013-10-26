@@ -1,20 +1,8 @@
-#test
-//test
-// testing
-// defitfasfdasf fdas fda fa
-#def ala
-
-def void printdensity(int d):
-	if    d > 999	print('*',false)
-	elif  d > 200	print('+',false)
-	elif  d > 020	print('.',false)
-	else         	print(' ',false)
-
-
-def int mandleconverge(complex z, complex z0, int iters=0){
-	if (iters > 255 | ( z.mag2() > 4)) return iters 
-	return mandleconverge(z*z  + z0, z0, iters+1)
-}                           
+def den(int d):
+	if    d > 999	return '*';
+	elif  d > 200	return '+';
+	elif  d > 020	return '.';
+	else         	return ' ';
 
 def int mand(complex z0){
 	auto z = z0
@@ -24,62 +12,10 @@ def int mand(complex z0){
 	return 1000
 }
 
-/*
-def void mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1.25, double ymax=1.25, double ystep=.04){
-	for im in range(ymin,ymax,ystep){
-		for re in range(xmin,xmax,xstep):
-			printdensity(mand(complex(re,im)))
-		print()
-	}
+File out = File('happy.txt','w');
+for im in range(-1.25,1.25,.04){
+	for re in range(-2,1,.02):
+		out << den(mand(complex(re,im)))
+	out << '\n';
 }
-*/
-def void mandel(auto x=range(-2,1,.02), auto y=range(-1.25,1.25,.04)){
-	for im in y{
-		for re in x:
-			printdensity(mand(complex(re,im)))
-		print()
-	}
-}
-mandel()
-
-
-/*
-def void printdensity(int d):
-	if    d > 999	putchar(42)
-	elif  d > 200	putchar(43)
-	elif  d > 020	putchar(46)
-	else         	putchar(32)
-
-
-def int mandleconverger(double real, double imag, int iters=0, double creal, double cimag){
-	if (iters > 255 | (real*real + imag*imag > 4)) return iters 
-	return mandleconverger(real*real - imag*imag + creal, 2*real*imag + cimag, iters+1, creal, cimag)
-}                           
-
-def int mandleconverge(double real, double imag) return mandleconverger(real, imag, 0, real, imag)
-
-def int mand(double x0, double y0){
-	auto iter = 0
-	auto x    = x0
-	auto y    = y0
-	do{
-		if( x*x + y*y > 4 ) return iter
-		auto xt = x*x - y*y + x0
-		auto yt = 2*x*y + y0
-		x = xt
-		y = yt
-		iter +=1
-	}while(iter<1000)
-	return iter
-}
-
-def void mandel(double xmin=-1, double xmax=2, double xstep=.02, double ymin=-1, double ymax=1, double ystep=.04){
-	printd(xmin) printd(xmax) printd(xstep)
-	printd(ymin) printd(ymax) printd(ystep)
-	for(auto y = ymin y<ymax y+=ystep){
-		for(auto x = xmin x<xmax x+=xstep) printdensity(mand(x, y))
-		putchar(10)
-	}
-}
-mandel()
-*/
+out.close();

@@ -31,17 +31,17 @@ class OModule : public Stackable{
 			return super->exists(index);
 		}
 		ReferenceElement* getClassPointer(PositionID a, String name){
-			return addPointer(a,name,DATA::getNull(),classClass);
+			return addPointer(a,name,DATA::getClass(NULL));
 		}
 		ReferenceElement* getFuncPointer(PositionID a, String name){
-			if(!exists(name)) return addPointer(a,name,DATA::getNull(),functionClass);
+			if(!exists(name)) return addPointer(a,name,DATA::getFunction(NULL,NULL));
 			else return findPointer(a,name);
 		}
-		ReferenceElement* addPointer(PositionID id, String index, DATA value, ClassProto* cla){
+		ReferenceElement* addPointer(PositionID id, String index, DATA value){
 			if(mapping.find(index)!=mapping.end()){
 				id.error("The variable "+index+" has already been defined in this scope");
 			}
-			ReferenceElement* nex = new ReferenceElement("",this, index,value, cla, funcMap());
+			ReferenceElement* nex = new ReferenceElement("",this, index,value,funcMap());
 			mapping.insert(std::pair<String,ReferenceElement*>(index, nex));
 			return nex;
 		}
@@ -53,7 +53,7 @@ class OModule : public Stackable{
 				auto tmp = super->findPointer(a, index,false);
 				if(tmp!=NULL) return tmp;
 			}
-			if(createIfNeeded) return addPointer(a, index, DATA::getNull(),NULL);
+			if(createIfNeeded) return addPointer(a, index, DATA::getNull());
 			else return NULL;
 		}
 		ReferenceElement* getPointer(PositionID id, String index,bool top=true) {
@@ -77,9 +77,9 @@ class OModule : public Stackable{
 				if(first) first = false;
 				else a << ", " << flush;
 				a << b.first << ":";
-				if(b.second->returnClass==NULL)
-				a << "null";
-				else a << b.second->returnClass->name;
+			//	if(b.second->llvmObject.==NULL)
+				//a << "null";
+				//else a << b.second->returnClass->name;
 			}
 			a << "]|" << flush;
 			if(super!=NULL) super->write(a,t);

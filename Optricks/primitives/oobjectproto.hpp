@@ -19,6 +19,9 @@ class oobject: public Statement{
 			error("Cannot getMetadata() for oobject");
 			return NULL;
 		}
+		oobject* simplify() override final{
+			return this;
+		}
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
 		}
 		Value* getLocation(RData& r) override{
@@ -32,7 +35,6 @@ class oobject: public Statement{
 		void registerClasses(RData& r) override{};
 		void registerFunctionPrototype(RData& r) override{};
 		void buildFunction(RData& r) override{};
-		void resolvePointers() override{};
 		const Token getToken() const override{
 			return T_OOBJECT;
 		}

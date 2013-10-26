@@ -16,9 +16,6 @@ class obool: public oobject{
 		obool(PositionID id, bool a) : oobject(id, boolClass) {
 			value = a;
 		}
-		oobject* simplify() override final{
-			return this;
-		}
 		void write(ostream& ss, String b) const override{
 			ss << ((value)?("true"):("false"));
 		}

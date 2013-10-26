@@ -27,9 +27,6 @@ const std::vector<String> RESERVED_KEYWORDS = {
 };
 
 const std::vector<String> PRE_OPERATORS = {"++", "--", "+", "-", "&", "*", "!", "~"};
-const std::vector<String> TYPE_OPERATORS = {
-		".",":","::","->",".*",":*","::*","->*","=>*"
-};
 const std::vector<String> BINARY_OPERATORS = {"and", "or", "xor","xnor",
 		".",":","::","->",".*",":*","::*","->*","=>*",
 		"*^" ,"<>",
@@ -54,7 +51,9 @@ class Stream{
 private:
 	FILE* f;
 	String fileName;
+public:
 	const bool interactive;
+private:
 	std::vector<char> cache;
 	std::vector<std::vector<char> > readChars;
 	unsigned int curCount;
@@ -111,7 +110,7 @@ public:
 			cache.push_back(c[i]);
 			if(i==0) break;
 		}
-		cout << c << flush;
+		std::cout << c << flush;
 	}
 	void write(char c){
 			done = false;
@@ -153,10 +152,9 @@ public:
 			if(readChar(f,&c)){
 				error("Error reading from file",true);
 			}
-			if(c=='\n' && interactive){
-				 cout << (enableOut?CONT:START) << flush;
+			if(c=='\n' && interactive && enableOut){
+				 std::cout << CONT << flush;
 			}
-
 		}
 		else{
 			c = cache.back();
@@ -171,14 +169,19 @@ public:
 	}
 	char peek(){
 		if(cache.size()>0) return cache.back();
-		char c = read();
-		write();
+		char c;
+		if(readChar(f,&c)){
+			error("Error peeking from file",true);
+		}
+		if(c!=EOF){
+			if(returnChar(f,c)) error("Error returning to file (peek)",true);
+		} else cache.push_back(c);
 		return c;
 	}
 	bool start;
 	bool allowUndo;
 	bool done;
-	PositionID pos(){
+	PositionID pos() const {
 		return PositionID(readChars.size(), readChars.back().size(),fileName);
 	}
 	virtual ~Stream(){
@@ -364,7 +367,6 @@ public:
 		}while(!doneV);
 		trim(endWith);
 		if(done) return filling;
-////////		printf("^^ %c %d\n",peek(),peek());
 		if(peek()=='"' || peek()=='\'') return filling+readString(endWith);
 		return filling;
 	}
@@ -373,16 +375,15 @@ public:
 		String st;
 		char load;
 		do{
-			load = read();
+			load = peek();
 			if(!fun(load)){
 				break;
-			}
+			} else read();
 			st+=load;
 		}while(true);
-		write(load);
 		return st;
 	}
-	String peekWhile(const bool (*fun)(char)){
+	/*String peekWhile(const bool (*fun)(char)){
 		String st = readWhile(fun);
 		for(unsigned int i = 0; i<st.size(); ++i) write();
 		return st;
@@ -406,16 +407,16 @@ public:
 		String c = read(len);
 		for(unsigned int i = 0; i<len;i++) write();
 		return c;
-	}
+	}*/
 
 	void error(String a = "Compile error", /*String b="", String c="", String d="",*/ bool end=false){
 		cerr << a /*<< b << c << d*/ << " at " << fileName << " on line " << readChars.size() << " character " << readChars.back().size() << endl << flush;
 		if(end) exit(1);
 	}
 
-	bool startsWith(String s){
-		return s==peek(s.length());
-	}
+	//bool startsWith(String s){
+	//	return s==peek(s.length());
+	//}
 
 	bool trimNonLine(char endWith=EOF){
 		if(done){
@@ -423,16 +424,14 @@ public:
 		}
 		char c;
 		do{
-			c = read();
+			c = peek();
 			if(c==EOF){
-				write();
 				done = true;
 				return true;
 			}
 			else if(c==endWith){
-				write();
 				return false;
-			}
+			} else read();
 		/*	else if(endAtLines && c=='\n'){
 				done = true;
 				return true;

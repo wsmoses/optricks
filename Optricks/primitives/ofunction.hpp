@@ -37,7 +37,7 @@ class ofunction:public oobject{
 		}
 		ReferenceElement* getMetadata(RData& r) override{
 			DATA tmp = evaluate(r);
-			return new ReferenceElement("",NULL,"lambda",tmp,functionClass,funcMap(tmp));
+			return new ReferenceElement("",NULL,"lambda",tmp,funcMap(tmp));
 		}
 		void registerFunctionPrototype(RData& r) override{
 			if(self!=NULL){
@@ -50,6 +50,9 @@ class ofunction:public oobject{
 			for(Declaration* d: prototype->declarations){
 				d->registerFunctionPrototype(r);
 			}
+			//for(Declaration* d: prototype->declarations){
+			//	d->classV
+			//}
 		};
 		void buildFunction(RData& r) override{
 			if(myFunction==NULL) registerFunctionPrototype(r);
@@ -64,28 +67,18 @@ class ofunction:public oobject{
 			if(!built) buildFunction(a);
 			return DATA::getFunction(myFunction,prototype);
 		}
-		void resolvePointers() override{
-			if(self!=NULL) self->resolvePointers();
-			for(Declaration* d: prototype->declarations){
-				d->resolvePointers();
-			}
-			if(returnV!=NULL) returnV->resolvePointers();
-		};
 		ClassProto* checkTypes(RData& r) override{
 			for(auto& a:prototype->declarations){
 				a->checkTypes(r);
 				if(a->classV->returnType==voidClass) error("Cannot have void as parameter for function");
 			}
-			if(self!=NULL) self->checkTypes(r);
+			//if(self!=NULL) self->checkTypes(r);
 			if(returnV!=NULL){
-				returnV->checkTypes(r);
+				//returnV->checkTypes(r);
 				prototype->returnType = returnV->getSelfClass(r);
-				if(prototype->returnType==NULL) error("Could not post-resolve return type "+returnV->returnType->name);
+				assert(prototype->returnType!=NULL);// error("Could not post-resolve return type "+returnV->returnType->name);
 			} //else if(prototype->returnType==NULL) error("Could not p-resolve return type");
 			return returnType;
-		}
-		ofunction* simplify() override final{
-			return this;
 		}
 };
 
@@ -146,6 +139,9 @@ class lambdaFunction : public ofunction{
 			ofunction(id, NULL,NULL,dec,rd){
 			ret = r;
 		}
+		const Token getToken() const override final{
+			return T_LAMBDAFUNC;
+		}
 		void write(ostream& f, String b) const override{
 			f << "lambda ";
 			bool first = true;
@@ -164,10 +160,6 @@ class lambdaFunction : public ofunction{
 		void buildFunction(RData& r) override final{
 			ofunction::buildFunction(r);
 			ret->buildFunction(r);
-		};
-		void resolvePointers() override final{
-			ofunction::resolvePointers();
-			ret->resolvePointers();
 		};
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
@@ -199,7 +191,10 @@ class lambdaFunction : public ofunction{
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
 			ar.builder.SetInsertPoint(BB);
 			DATA dat = ret->evaluate(ar);
-			if(dat.getReturnType(ar)!=voidClass) ar.builder.CreateRet(dat.getValue(ar));
+			if(
+					//dat.getReturnType(ar, filePos)!=voidClass
+					//TODO check this
+					dat.getType()!=R_UNDEF) ar.builder.CreateRet(dat.getValue(ar));
 			else ar.builder.CreateRetVoid();
 			verifyFunction(*myFunction);
 			ar.fpm->run(*myFunction);
@@ -315,10 +310,6 @@ class userFunction : public ofunction{
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
 		};
-		void resolvePointers() override final{
-			ofunction::resolvePointers();
-			ret->resolvePointers();
-		};
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
 			ret->checkTypes(r);
@@ -331,12 +322,14 @@ class classFunction : public ofunction{
 	public:
 		Statement* ret;
 		ReferenceElement* thisPointer;
-		String name, operation;
-		classFunction(PositionID id, ReferenceElement* tPointer,String nam, String op, Statement* a, Statement* b, std::vector<Declaration*> dec, Statement* r,RData& rd):
+		String name;
+		ClassProto* upperClass;
+		classFunction(PositionID id, ReferenceElement* tPointer,String nam, Statement* a, Statement* b, std::vector<Declaration*> dec, Statement* r,RData& rd):
 			ofunction(id, a, b, dec,rd,false),thisPointer(tPointer){
 			ret = r;
-			name =nam; operation = op;
+			name =nam;
 			prototype->name =self->getFullName()+"."+name;
+			upperClass = NULL;
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
@@ -354,14 +347,14 @@ class classFunction : public ofunction{
 		}
 		void registerFunctionPrototype(RData& ra) override{
 			ofunction::registerFunctionPrototype(ra);
-			thisPointer->returnClass = self->getSelfClass(ra);
-			assert(thisPointer->returnClass!=NULL);
-			ReferenceElement* myMetadata = thisPointer->returnClass->addFunction(name, filePos);
+			upperClass = self->getSelfClass(ra);
+			assert(upperClass!=NULL);
+			ReferenceElement* myMetadata = upperClass->addFunction(name, filePos);
 			myMetadata->funcs.add(DATA::getFunction(NULL,prototype),ra,filePos);
 			assert(myMetadata!=NULL);
 			std::vector<Type*> args;
-			if(thisPointer->returnClass->isPointer) args.push_back(thisPointer->returnClass->getType(ra));
-			else args.push_back(thisPointer->returnClass->getType(ra)->getPointerTo());
+			if(upperClass->isPointer) args.push_back(upperClass->getType(ra));
+			else args.push_back(upperClass->getType(ra)->getPointerTo());
 			for(auto & b: prototype->declarations){
 				b->registerFunctionPrototype(ra);
 				ClassProto* cla = b->checkTypes(ra);
@@ -398,8 +391,8 @@ class classFunction : public ofunction{
 			unsigned Idx = 0;
 			Function::arg_iterator AI = myFunction->arg_begin();
 			AI->setName("this");
-			if(thisPointer->returnClass->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, thisPointer->returnClass);
-			else thisPointer->llvmObject = DATA::getLocation(AI, thisPointer->returnClass);
+			if(upperClass->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, upperClass);
+			else thisPointer->llvmObject = DATA::getLocation(AI, upperClass);
 			AI++;
 			for (; Idx+1 != myFunction->arg_size();
 					++AI, ++Idx) {
@@ -436,10 +429,6 @@ class classFunction : public ofunction{
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
 		};
-		void resolvePointers() override final{
-			ofunction::resolvePointers();
-			ret->resolvePointers();
-		};
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
 			ret->checkTypes(r);
@@ -451,10 +440,12 @@ class constructorFunction : public ofunction{
 	public:
 		Statement* ret;
 		ReferenceElement* thisPointer;
+		ClassProto* upperClass;
 		constructorFunction(PositionID id, ReferenceElement* tPointer,Statement* myClass, std::vector<Declaration*> dec, Statement* r,RData& rd):
 			ofunction(id, NULL, myClass, dec,rd,false),thisPointer(tPointer){
 			ret = r;
 			prototype->name =myClass->getFullName();
+			upperClass = NULL;
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
@@ -472,9 +463,9 @@ class constructorFunction : public ofunction{
 		}
 		void registerFunctionPrototype(RData& ra) override{
 			ofunction::registerFunctionPrototype(ra);
-			thisPointer->returnClass = returnV->getSelfClass(ra);
-			assert(thisPointer->returnClass!=NULL);
-			thisPointer->returnClass->constructors.add(DATA::getFunction(NULL,prototype),ra,filePos);
+			upperClass = returnV->getSelfClass(ra);
+			assert(upperClass!=NULL);
+			upperClass->constructors.add(DATA::getFunction(NULL,prototype),ra,filePos);
 			std::vector<Type*> args;
 			for(auto & b: prototype->declarations){
 				b->registerFunctionPrototype(ra);
@@ -483,10 +474,10 @@ class constructorFunction : public ofunction{
 				assert(cl!=NULL);
 				args.push_back(cl);
 			}
-			Type* r = thisPointer->returnClass->getType(ra);
+			Type* r = upperClass->getType(ra);
 			FunctionType *FT = FunctionType::get(r, args, false);
 			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
-			thisPointer->returnClass->constructors.set(DATA::getFunction(myFunction,prototype), ra, filePos);
+			upperClass->constructors.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			ret->registerFunctionPrototype(ra);
 		};
 		void buildFunction(RData& ra) override final{
@@ -506,8 +497,8 @@ class constructorFunction : public ofunction{
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
 				met->llvmObject = DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType);
 			}
-			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(thisPointer->returnClass->getType(ra), 0,"this*"), thisPointer->returnClass);
-			thisPointer->setValue(thisPointer->returnClass->generateData(ra),ra);
+			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(upperClass->getType(ra), 0,"this*"), upperClass);
+			thisPointer->setValue(upperClass->generateData(ra),ra);
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
 			ret->evaluate(ra);
@@ -524,10 +515,6 @@ class constructorFunction : public ofunction{
 			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
-		};
-		void resolvePointers() override final{
-			ofunction::resolvePointers();
-			ret->resolvePointers();
 		};
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);

@@ -27,7 +27,7 @@ class ClassProtoWrapper : public Construct{
 		ClassProto* cp;
 		ReferenceElement* getMetadata(RData& r) override final{
 			//TODO make resolvable for class with static-functions / constructors
-			return new ReferenceElement("",NULL,cp->name, DATA::getClass(cp), classClass, funcMap());
+			return new ReferenceElement("",NULL,cp->name, DATA::getClass(cp), funcMap());
 		}
 		ClassProto* getSelfClass(RData& r) override{
 			return cp;
@@ -48,7 +48,6 @@ class ClassProtoWrapper : public Construct{
 		}
 		void write(ostream& a, String s="") const{
 			a << cp->name;
-			//error("Cannot write classProto Wrapper");
 		}
 		DATA evaluate(RData& r){
 			return DATA::getClass(cp);
@@ -61,8 +60,6 @@ class ClassProtoWrapper : public Construct{
 		void registerFunctionPrototype(RData& r) override final{
 		}
 		void buildFunction(RData& r) override final{
-		}
-		void resolvePointers() override final{
 		}
 };
 #endif /* STATEMENT_HPP_ */

@@ -73,10 +73,6 @@ class DoWhileLoop : public Construct{
 			condition->buildFunction(r);
 			statement->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			condition->resolvePointers();
-			statement->resolvePointers();
-		}
 		void write(ostream& a, String b) const override{
 			a << "do ";
 			statement->write(a,b+" ");

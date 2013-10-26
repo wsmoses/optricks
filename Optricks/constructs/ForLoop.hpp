@@ -87,12 +87,6 @@ class ForLoop : public Construct{
 			increment->buildFunction(r);
 			toLoop->buildFunction(r);
 		}
-		void resolvePointers() override final{
-			condition->resolvePointers();
-			initialize->resolvePointers();
-			increment->resolvePointers();
-			toLoop->resolvePointers();
-		}
 		ForLoop* simplify() override{
 			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
 		}
