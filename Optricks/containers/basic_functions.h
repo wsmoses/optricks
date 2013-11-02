@@ -35,6 +35,13 @@ void printi(int64_t i, bool b){
 
 #endif
 }
+void printby(uint8_t i, bool b){
+	if(!b) printf("%d",i);
+	else{
+		printf("%d\n",i);
+		fflush(stdout);
+	}
+}
 	void printd(double i, bool b){
 		if(!b) printf("%f",i);
 		else{

@@ -17,26 +17,31 @@ class ClassProto{
 		friend class RData;
 		friend class DATA;
 	private:
+		const bool allowsInner;
 	std::map<String,std::map<ClassProto*, obinop*> > binops;
 	std::map<ClassProto*, ouop*> casts;
-		Type* type;
+		mutable Type* type;
 		std::map<String, unsigned int> innerDataIndex;
 		std::vector<ClassProto*> innerData;
 		std::map<String, ReferenceElement* > functions;
 		std::map<String, ReferenceElement* > staticClasses;
-		//		std::map<String,std::map<ClassProto*, obinop*> > binops;
 		ClassProto* superClass;
+		//TODO allow overloading / polymorphism
 		bool hasInner(String s) const{
-			if(innerDataIndex.find(s)!=innerDataIndex.end()) return true;
-			if(functions.find(s)!=functions.end()) return true;
-			if(staticClasses.find(s)!=staticClasses.end()) return true;
+			const ClassProto* tmp = this;
+			while(tmp!=NULL){
+				if(tmp->innerDataIndex.find(s)!=tmp->innerDataIndex.end()) return true;
+				if(tmp->functions.find(s)!=tmp->functions.end()) return true;
+				if(tmp->staticClasses.find(s)!=tmp->staticClasses.end()) return true;
+				tmp = tmp->superClass;
+			}
 			return false;
 		}
 	public:
 		funcMap constructors;
-		bool isPointer;
-		bool isGen;
-		String name;
+		const LayoutType layoutType;
+		const bool isGen;
+		const String name;
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
 		virtual ~ClassProto(){};
@@ -44,6 +49,9 @@ class ClassProto{
 		virtual bool equals(ClassProto* c) const{
 			return this==c;
 		}
+		//bool isPointerType() const{
+		//	return layoutType==POINTER_LAYOUT || layoutType==PRIMITIVEPOINTER_LAYOUT;
+		//}
 		virtual ClassProto* getSuper() const{
 			return superClass;
 		}
@@ -52,26 +60,64 @@ class ClassProto{
 		 */
 		virtual std::pair<bool, unsigned int> compatable(ClassProto* c) const;
 
-		ClassProto* getDataClass(unsigned int nam, PositionID id){
-			if(nam>=innerData.size()) id.error("Too large element searched for");
-			return innerData[nam];
+		ClassProto* getDataClass(const unsigned int nam, PositionID id) const{
+			if(allowsInner){
+			std::vector<const ClassProto*> todo;
+			const ClassProto* tmp = this;
+			while(tmp!=NULL){
+				todo.push_back(tmp);
+				tmp = tmp->superClass;
+			}
+			unsigned int ind=nam;
+			while(todo.size()>0){
+				tmp = todo.back();
+				todo.pop_back();
+				if(ind< tmp->innerData.size()) return tmp->innerData[nam];
+				ind-=tmp->innerData.size();
+			}
+			}
+			id.error("Data index "+str<unsigned int>(nam)+" was too large for class "+name);
+			return NULL;
 		}
-		unsigned int getDataClassIndex(String nam, PositionID id){
-			if(innerDataIndex.find(nam)==innerDataIndex.end())
-				id.error("Cannot find inner data type for class "+name+" named "+nam);
-			return innerDataIndex[nam];
+		unsigned int getDataClassIndex(String nam, PositionID id) const{
+			if(allowsInner){
+			std::vector<const ClassProto*> todo;
+			const ClassProto* tmp = this;
+			while(tmp!=NULL){
+				todo.push_back(tmp);
+				tmp = tmp->superClass;
+			}
+			unsigned int ind=0;
+			while(todo.size()>0){
+				tmp = todo.back();
+				todo.pop_back();
+				auto a = tmp->innerDataIndex.find(nam);
+				if(a!=tmp->innerDataIndex.end()) return ind+a->second;
+				ind+=tmp->innerData.size();
+			}
+			}
+			id.error("Inner data type "+nam+" could not be found in class "+name);
+			return 0;
 		}
 		ClassProto* getDataClass(String nam, PositionID id){
-			if(innerDataIndex.find(nam)==innerDataIndex.end())
-				id.error("Cannot find inner data type for class "+name+" named "+nam);
-			return innerData[innerDataIndex[nam]];
+			if(allowsInner){
+			ClassProto* tmp = this;
+			while(tmp!=NULL){
+				auto a = innerDataIndex.find(nam);
+				if(a!=innerDataIndex.end()) return innerData[a->second];
+				tmp = tmp->superClass;
+			}
+			}
+			id.error("Inner data type "+nam+" could not be found in class "+name);
+			return NULL;
 		}
 		const bool hasClass(String name) const{
 			return staticClasses.find(name)!=staticClasses.end();
 		}
-		ReferenceElement* getClass(String nam, PositionID id){
-			if(!hasClass(nam)) id.error("Inner class "+nam+" does not exist in class "+name);
-			return staticClasses[nam];
+		ReferenceElement* getClass(String nam, PositionID id) const{
+			auto a = staticClasses.find(name);
+			if(a==staticClasses.end()) id.error("Inner class "+nam+" does not exist in class "+name);
+			return a->second;
 		}
 		const bool hasFunction(String name) const{
 			return functions.find(name)!=functions.end();
@@ -89,31 +135,48 @@ class ClassProto{
 			innerDataIndex[nam]=a;
 		}
 		DATA generateData(RData& r){
-			return DATA::getConstant(UndefValue::get(getType(r)), this);
+			Type* t = getType(r);
+			assert(t!=NULL);
+			return DATA::getConstant(UndefValue::get(t), this);
 		}
 		DATA construct(RData& r, E_FUNC_CALL* call) const;
-		Type* getType(RData& r){
-			if(type!=NULL || innerData.size()==0) return type;
+		void addTypes(std::vector<Type*>& v,RData& r) const{
+			if(superClass!=NULL) superClass->addTypes(v,r);
+			for(ClassProto* const a: innerData) v.push_back(a->getType(r));
+		}
+		Type* getType(RData& r) const{
+			if(type!=NULL) return type;
 			else{
+				// if(innerData.size()==0 && !isGen) cerr << "what.. " << name << endl << flush;
+				StructType* structType = StructType::create(r.lmod->getContext(), name);
+				if(layoutType==POINTER_LAYOUT){
+					type = PointerType::getUnqual(structType);
+//					innerData.addFirst()
+//					types.push_back()
+				} else{
+					type = structType;
+				}
 				std::vector<Type*> types;
-				//TODO allow recursive type
-				//cerr << "hmm" << endl << flush;
-				for(auto& a: innerData) types.push_back(a->getType(r));
-				//cerr << "end hmm" << endl << flush;
-				type = StructType::create(r.lmod->getContext(), ArrayRef<Type*>(types),name);
-				if(isPointer) type = type->getPointerTo(0);
+				addTypes(types,r);
+				structType->setBody(ArrayRef<Type*>(types),false);
+				assert(type!=NULL);
 				return type;
 			}
 		}
 		virtual bool operator == (ClassProto*& b){
 			return this == b;
 		}
-		bool hasCast(ClassProto* right){
-			auto found = casts.find(right);
-			return found!=casts.end();
+		bool hasSuper(ClassProto* t) const{
+			assert(t!=NULL);
+			const ClassProto* c = this->superClass;
+			while(c!=NULL){
+				if(c->equals(t)) return true;
+				else c = c->superClass;
+			}
+			return false;
 		}
 		ouop*& addCast(ClassProto* right, PositionID id=PositionID(0,0,"<start.addCast>")){
-			if(hasCast(right))
+			if(casts.find(right)!=casts.end())
 				id.error("Error: Redefining cast "+name+" to "+right->name);
 			return casts[right];
 		}
@@ -127,6 +190,7 @@ class ClassProto{
 			}
 			return binops[operation][right];
 		}
+
 		std::pair<obinop*, std::pair<ouop*,ouop*> > getBinop(PositionID id, String operation, ClassProto* right){
 			ClassProto* self = this;
 			while(self!=NULL){
@@ -164,7 +228,15 @@ class ClassProto{
 			return std::pair<obinop*,std::pair<ouop*,ouop*> >(NULL,
 					std::pair<ouop*,ouop*>(NULL,NULL));
 		}
-		ClassProto* leastCommonAncestor(ClassProto* c){
+		bool hasCast(ClassProto* right) const{
+			if(equals(right)) return true;
+			if(((layoutType==POINTER_LAYOUT && right->layoutType==POINTER_LAYOUT) || (layoutType==PRIMITIVEPOINTER_LAYOUT && right->layoutType==PRIMITIVEPOINTER_LAYOUT)) &&
+					hasSuper(right)){
+				return true;
+			}
+			return casts.find(right)!=casts.end();
+		}
+		ClassProto* leastCommonAncestor(ClassProto* c, PositionID id){
 			std::set<ClassProto*> mySet;
 			std::vector<ClassProto*> todo = {this, c};
 			while(todo.size()>0){
@@ -177,17 +249,18 @@ class ClassProto{
 					mySet.insert(tmp);
 				}
 			}
+			id.error("No common ancestor for "+name+" and "+c->name);
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, Type* t=NULL,bool pointer=false) :
-			type(t),
+		ClassProto(ClassProto* sC, String n, Type* t,LayoutType pointer,bool isGe,bool allowsInne=true):
+			allowsInner(allowsInne),type(t),
 				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
 
 				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
 				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
 				superClass(sC),
 				constructors(),
-				isPointer(pointer),isGen(false),
+				layoutType(pointer),isGen(isGe),
 				name(n)
 				 {
 			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](DATA a, RData& m, PositionID id) -> DATA{	return a; }
@@ -195,24 +268,25 @@ class ClassProto{
 		}
 };
 
-ClassProto* objectClass = new ClassProto(NULL, "object");
-ClassProto* autoClass = new ClassProto(NULL, "auto");
-ClassProto* classClass = new ClassProto(objectClass, "class");
+ClassProto* objectClass = new ClassProto(NULL, "object",NULL,POINTER_LAYOUT,false);
+ClassProto* autoClass = new ClassProto(NULL, "auto",NULL,PRIMITIVE_LAYOUT,false);
+ClassProto* classClass = new ClassProto(objectClass, "class",NULL,POINTER_LAYOUT,false);
 //ClassProto* nullClass = new ClassProto("None");
-ClassProto* boolClass = new ClassProto(objectClass, "bool",BOOLTYPE);
-ClassProto* functionClass = new ClassProto(objectClass, "function");
-ClassProto* complexClass = new ClassProto(objectClass,"complex",COMPLEXTYPE);
-ClassProto* doubleClass = new ClassProto(complexClass, "double",DOUBLETYPE);
-ClassProto* intClass = new ClassProto(doubleClass, "int", INTTYPE);
-ClassProto* c_intClass = new ClassProto(intClass,"c_int",C_LONGTYPE);
-ClassProto* c_longClass = new ClassProto(intClass,"c_long",C_INTTYPE);
-ClassProto* c_long_longClass = new ClassProto(intClass,"c_long_long",C_LONG_LONGTYPE);
-ClassProto* c_pointerClass = new ClassProto(objectClass,"c_pointer",C_POINTERTYPE);
-ClassProto* stringClass = new ClassProto(objectClass,"string");
-ClassProto* c_stringClass = new ClassProto(stringClass, "c_string",C_STRINGTYPE,true);
-ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE);
-ClassProto* sliceClass = new ClassProto(objectClass, "slice");
-ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE);
+ClassProto* boolClass = new ClassProto(NULL, "bool",BOOLTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* c_pointerClass = new ClassProto(NULL,"c_pointer",C_POINTERTYPE,PRIMITIVEPOINTER_LAYOUT,false,false);
+ClassProto* functionClass = new ClassProto(NULL,"function",FUNCTIONTYPE,PRIMITIVEPOINTER_LAYOUT,false);
+ClassProto* complexClass = new ClassProto(NULL,"complex",COMPLEXTYPE,PRIMITIVE_LAYOUT,false);
+ClassProto* doubleClass = new ClassProto(NULL, "double",DOUBLETYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* intClass = new ClassProto(doubleClass, "int", INTTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* c_intClass = new ClassProto(NULL,"c_int",C_LONGTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* c_longClass = new ClassProto(NULL,"c_long",C_INTTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* c_long_longClass = new ClassProto(NULL,"c_long_long",C_LONG_LONGTYPE,PRIMITIVE_LAYOUT,false,false);
+//ClassProto* stringClass = new ClassProto(objectClass,"string",NULL,POINTER_LAYOUT);
+ClassProto* c_stringClass = new ClassProto(NULL, "c_string",C_STRINGTYPE,PRIMITIVEPOINTER_LAYOUT,false,false);
+ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* byteClass = new ClassProto(NULL, "byte", BYTETYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* sliceClass = new ClassProto(objectClass, "slice",SLICETYPE,PRIMITIVE_LAYOUT,false);
+ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE,PRIMITIVE_LAYOUT,false,false);
 
 
 DATA DATA::getClass(ClassProto* c){
@@ -238,21 +312,16 @@ std::pair<bool, unsigned int> ClassProto::compatable(ClassProto* c) const{
 				count++;
 				temp = temp->getSuper();
 			}
+			auto f = casts.find(c);
+			if(f!=casts.end()) return std::pair<bool,unsigned int>(true,UINT_MAX-1);
 			return std::pair<bool, unsigned int>(false, 0);
 		}
 /*
-class GeneralClass: public ClassProto{
-	public:
-		GeneralClass(ClassProto* t) : ClassProto(t,"",(Type*)NULL){
-
-		}
-};
-/// *
 class GenericClass: public ClassProto{
 	public:
-		GeneralClass* containerClass;
+		ClassProto* containerClass;
 		//todo create type
-		GenericClass(GeneralClass* T, std::vector<ClassProto*>& inner) : ClassProto(
+		GenericClass(ClassProto* T, std::vector<ClassProto*>& inner) : ClassProto(
 				(T==NULL)?(T->superClass):NULL,
 				getGenericName(T, inner),
 				(Type*)NULL //TODO create generic struct type for arbitrary
@@ -270,32 +339,36 @@ class GenericClass: public ClassProto{
 
 #include "operations.hpp"
 DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
-	//TODO look into making more efficient
-	/*
-	if(!(type==R_CONST || type==R_LOC)){
-		id.error("Compile error - could not cast non constant/location");
-	} else if(data.pointer==NULL){
-		id.error("Compiler error - can not cast nonexistant pointer");
-	} else if(info.pointer==NULL){
-		id.error("Compiler error - can not cast to nonexistant class");
-	}*/
-	assert(type==R_CONST || type==R_LOC);
+#ifdef NDEBUG
+	if(!(type==R_CONST || type==R_LOC || type==R_FUNC)){
+		cerr << "Compiler Error: Illegal data type cast " << type << endl << flush;
+		exit(1);
+	}
+#else
+	assert(type==R_CONST || type==R_LOC || type==R_FUNC);
+#endif
 	assert(data.pointer);
 	assert(info.pointer);
 	assert(right!=NULL);
 	ClassProto* left = getReturnType(r);
 	if(left->equals(right)) return *this;
-	if(!left->hasCast(right))
+	if(((left->layoutType==POINTER_LAYOUT && right->layoutType==POINTER_LAYOUT) || (left->layoutType==PRIMITIVEPOINTER_LAYOUT && right->layoutType==PRIMITIVEPOINTER_LAYOUT)) &&
+			left->hasSuper(right)){
+		if(type==R_LOC) return DATA::getLocation(data.location, right);
+		else if(type==R_CONST) return DATA::getConstant(data.constant, right);
+		else assert(0 && "this type is invalid");
+	}
+	auto found = left->casts.find(right);
+	if(found==left->casts.end())
 		id.error("Compile error - could not find cast from "+left->name+" to "+right->name);
-	if(left->isPointer) return *this;
-	return left->casts[right]->apply(*this, r, id);
+	return found->second->apply(*this, r, id);
 }
 ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 	if(vals.size()==0) return voidClass;
 	ClassProto* tmp = vals[0];
 	for(unsigned int i =1 ; i<vals.size(); i++){
 		if(tmp==NULL || tmp==autoClass) id.error("Could not determine minimum type.");
-		tmp = tmp->leastCommonAncestor(vals[i]);
+		tmp = tmp->leastCommonAncestor(vals[i], id);
 	}
 	return tmp;
 }

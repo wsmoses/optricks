@@ -12,6 +12,7 @@
 
 #define STATEMENT_P_
 class Statement : public Stackable{
+	private:
 	public:
 		ClassProto* returnType;
 		PositionID filePos;
@@ -29,7 +30,7 @@ class Statement : public Stackable{
 		/**
 		 * Stores any return-types into a vector to be analyzed later
 		 */
-		virtual void collectReturns(RData& r, std::vector<ClassProto*>& vals) = 0;
+		virtual void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) = 0;
 		/**
 		 * Creates LLVM IR for all pieces (either by lazy evaluation or immediately).
 		 */
@@ -62,13 +63,6 @@ class Statement : public Stackable{
 		 * Gets a variety of pieces of metadata about the expression
 		 */
 		virtual ReferenceElement* getMetadata(RData& r) = 0;
-		/**
-		 * Gets the location where the data for this expression is stored (if variable)
-		 */
-		virtual Value* getLocation(RData& a){
-//			cout << "getting location..." << endl << flush;
-			return getMetadata(a)->llvmObject.getMyLocation();
-		};
 };
 
 
@@ -98,7 +92,7 @@ class VoidStatement : public Statement{
 		String getFullName() override final{ return "void"; }
 		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }
 		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of void"); return NULL; }
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe){
 		}
 };
 

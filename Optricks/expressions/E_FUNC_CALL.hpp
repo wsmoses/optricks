@@ -33,10 +33,6 @@ class E_FUNC_CALL : public Statement{
 			error("getting metadata of func-call");
 			return NULL;
 		}
-		Value* getLocation(RData& a) override final{
-			//TODO func_call getLocation
-			return NULL;
-		}
 		const Token getToken() const override{
 			return T_FUNC_CALL;
 		};
@@ -99,7 +95,7 @@ class E_FUNC_CALL : public Statement{
 			for(auto a:vals) g.push_back(a->simplify());
 			return new E_FUNC_CALL(filePos, tem, g);
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){}
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{}
 		std::pair<std::vector<Value*>,DATA> getArgs(RData& a){
 
 			DATA d_callee = (toCall->returnType==classClass)?(
@@ -116,17 +112,9 @@ class E_FUNC_CALL : public Statement{
 				if(tp->hasFunction(T->right)){
 					//TODO make better check (e.g. static functions)
 					Value* loc;
-					if(tp->isPointer) loc = T->left->evaluate(a).getValue(a);//TODO check
+					if(tp->layoutType==POINTER_LAYOUT || tp->layoutType==PRIMITIVEPOINTER_LAYOUT) loc = T->left->evaluate(a).getValue(a);//TODO check
 					else{
-						loc = T->left->getLocation(a);
-						if(loc==NULL){
-							//TODO allow for second function of type instead of type*
-							//thereby reducing number of allocas/loads/stores
-							Function *TheFunction = a.builder.GetInsertBlock()->getParent();
-							IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
-							loc = TmpB.CreateAlloca(T->left->returnType->getType(a), 0,"tmp");
-							a.builder.CreateStore(T->left->evaluate(a).getValue(a),loc);
-						}
+						loc = T->left->evaluate(a).toLocation(a).getMyLocation();
 					}
 					Args.push_back(loc);
 				}

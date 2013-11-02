@@ -1,11 +1,14 @@
+/*
 def int string.length(){
 	return this._size;
 };
+
 
 gen char string.iterator(){
 	for(int i = 0; i<this._size; i++)
 		yield this[i];
 }
+*/
 
 gen char c_string.iterator(){
   int i = 0;
@@ -14,7 +17,7 @@ gen char c_string.iterator(){
 		i++;
 	}
 }
-
+/*
 def bool operator==(string a,string b){
 	if(a._size!=b._size) return false;
 	for(int i = 0; i<a._size; i++)
@@ -55,7 +58,7 @@ def bool operator >= (string a, string b){
 		if(a[i]!=b[i]) return a[i]<b[i];
   return a._size>=b._size;
 };
-
+*/
 def bool operator < (c_string a, c_string b){
 	for(int i=0; ; i++){
 		if(a[i]!=b[i]) return a[i]<b[i];

@@ -20,7 +20,7 @@ class E_SET: public Statement{
 			variable = loc;
 			value = e;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe) override final{
 		}
 		const Token getToken() const final override{
 			return T_SET;
@@ -33,14 +33,12 @@ class E_SET: public Statement{
 		ClassProto* checkTypes(RData& r) final override{
 			returnType = variable->checkTypes(r);
 			value->checkTypes(r);
-			if(!( variable->returnType == autoClass || value->returnType->hasCast(returnType)))
-				error("E_SET of inconsistent types");
 			return returnType;
 		}
 
 		void registerClasses(RData& r) override final{
 			variable->registerClasses(r);
-			if(value!=NULL) value->registerClasses(r);
+			value->registerClasses(r);
 		}
 		void registerFunctionPrototype(RData& r) override final{
 			variable->registerFunctionPrototype(r);
@@ -48,12 +46,12 @@ class E_SET: public Statement{
 		};
 		void buildFunction(RData& r) override final{
 			variable->buildFunction(r);
-			if(value!=NULL) value->buildFunction(r);
+			value->buildFunction(r);
 		};
 		DATA evaluate(RData& r) final override{
 			DATA nex = value->evaluate(r).castTo(r, variable->returnType, filePos);
-			Value* aloc = variable->getLocation(r);
-			assert(aloc!=NULL);
+			DATA to = variable->evaluate(r);
+			Value* aloc = to.getMyLocation();
 			r.builder.CreateStore(nex.getValue(r), aloc);
 			return nex.toValue(r);
 		}
@@ -65,13 +63,11 @@ class E_SET: public Statement{
 			return NULL;
 		}
 		void write(ostream& f, String s="") const final override{
-			//f << "SET(";
 			variable->write(f);
 			if(value!=NULL) {
 				f << "=";
 				value->write(f);
 			}
-			//f << ")";
 		}
 };
 

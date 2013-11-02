@@ -91,9 +91,9 @@ class Lexer{
 						getStatements(global, debug, pl, stats);
 						continue;
 					}
-					//if(debug && s->getToken()!=T_VOID){
-					//	cout << s << ";" << endl << endl << flush;
-					//}TODO why is this here
+					if(debug && s->getToken()!=T_VOID){
+						std::cout << s << ";" << endl << endl << flush;
+					}
 					s = s->simplify();
 					stats.push_back(s);
 				}
@@ -109,7 +109,9 @@ class Lexer{
 			for(auto& n: stats){
 				n->registerFunctionPrototype(rdata);
 			}
-			for(auto& n: stats) n->buildFunction(rdata);
+			for(auto& n: stats){
+				n->buildFunction(rdata);
+			}
 			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
@@ -256,7 +258,7 @@ class Lexer{
 				return blocks;
 			}
 			else{
-				Statement* s = getNextStatement(data.getModule(module).getLoc(PARSE_EXPR));//todo check
+				Statement* s = getNextStatement(data.getModule(module)/*.getLoc(PARSE_EXPR)*/);//todo check
 				if(!f->done && f->peek()==';'){f->read();trim(data);}
 				trim(data);
 				return s;
@@ -292,7 +294,7 @@ class Lexer{
 			Statement* c = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 			if(c->getToken()==T_VOID) f->error("Need condition for if");
 			if(!f->done && f->peek()==':') f->read();
-			Statement* s = getNextBlock(data);
+			Statement* s = getNextBlock(data.getLoc(PARSE_LOCAL));
 			if(c->getToken()==T_VOID) f->error("Need expression for if");
 			statements.push_back(std::pair<Statement*,Statement* >(c,s));
 			trim(data);
@@ -312,7 +314,7 @@ class Lexer{
 				if(elif){
 					c = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 					if(!f->done && f->peek()==':') f->read();
-					s = getNextBlock(data);
+					s = getNextBlock(data.getLoc(PARSE_LOCAL));
 					statements.push_back(std::pair<Statement*,Statement* >(c,s));
 					trim(data.endWith);
 					while(!f->done && f->peek()==';') f->read();
@@ -435,7 +437,7 @@ class Lexer{
 		Statement* getFunction(ParseData data, String temp="", oclass* outer=NULL){
 			if(temp=="") temp = f->getNextName(EOF);
 			trim(EOF);
-			if (temp == "def" || temp=="function" || temp=="method" || temp=="gen"){
+			if (temp == "def" || temp=="gen"){
 				auto mark = f->getMarker();
 				Statement* returnName = getNextType(data);
 				f->trim(EOF);
@@ -540,7 +542,7 @@ class Lexer{
 				trim(data);
 				String methodName = getNextName(EOF);
 				E_VAR* externName = new E_VAR(pos(), data.mod->getFuncPointer(pos(), methodName));
-				externName->getMetadata(rdata)->llvmObject = DATA::getFunction(NULL,NULL);
+				externName->getMetadata(rdata)->setObject(DATA::getFunction(NULL,NULL));
 				trim(data);
 				if(f->peek()!='('){
 					f->error("'(' required after extern not "+String(1,f->peek()),true);
@@ -568,11 +570,11 @@ class Lexer{
 		Statement* getClass(ParseData data, bool read=false,oclass* outer=NULL){
 			if(!read && f->getNextName(data.endWith)!="class") f->error("Could not find 'class' for class declaration");
 			String name = getNextName(EOF);//TODO -- allow generic class definition
-			int primitive = 1;
+			LayoutType primitive;
 			if(name=="primitive" || name=="primitive_pointer"){
-				primitive = (name=="primitive")?0:2;
+				primitive = (name=="primitive")?PRIMITIVE_LAYOUT:PRIMITIVEPOINTER_LAYOUT;
 				name = getNextName(EOF);//TODO -- allow generic class definition (here as well)
-			}
+			} else primitive = POINTER_LAYOUT;
 			if(f->trim(EOF)) f->error("No class defined!");
 			Statement* superClass=NULL;
 			if(f->peek()==':'){
@@ -603,7 +605,7 @@ class Lexer{
 					if(stat!=true) pos().error("Optricks does not currently support non-static classes");
 					Statement* uClass = getClass(nd, true, selfClass);
 					selfClass->under.push_back(uClass);
-				} else if(temp=="def" || temp=="method" || temp=="function" || temp=="gen"){
+				} else if(temp=="def" || temp=="gen"){
 					Statement* func = getFunction(nd, temp,selfClass);//TODO allow methods to be static
 					selfClass->under.push_back(func);
 				} else if(temp=="extern"){
@@ -785,7 +787,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="while") return getWhileLoop(data,true);
 		else if(temp=="do") return getDoLoop(data,true);
 		else if(temp=="lambda") return getLambdaFunction(data,true);
-		else if(temp=="gen" || temp=="def" || temp=="function" || temp=="method" || temp=="extern") return getFunction(data,temp);
+		else if(temp=="gen" || temp=="def" || temp=="extern") return getFunction(data,temp);
 		else if(temp=="import"){
 			trim(data);
 			String tI = f->readString(data.endWith);

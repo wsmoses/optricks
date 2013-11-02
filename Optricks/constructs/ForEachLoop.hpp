@@ -39,13 +39,12 @@ class ForEachLoop : public Construct{
 			FunctionProto* f = new FunctionProto("for-each-temp");
 			DATA tmp = ref->funcs.get(f, r, filePos);
 			if(tmp.getType()!=R_GEN) error("Cannot for-each on non-generator");
-			std::vector<ClassProto*> yields;
-			E_GEN* myGen = tmp.getMyGenerator();
+			E_GEN* myGen = (E_GEN*)tmp.getPointer();
+			if(myGen==NULL) error("Generator is null...");
 			myGen->registerFunctionPrototype(r);
 			myGen->buildFunction(r);
-			myGen->ret->collectReturns(r, yields);
-			theClass = getMin(yields,filePos);
-			localVariable->getMetadata(r)->llvmObject = DATA::getConstant(NULL,theClass);
+			theClass = myGen->prototype->returnType;
+			localVariable->getMetadata(r)->setObject(DATA::getConstant(NULL,theClass));
 			return voidClass;
 		}
 		DATA evaluate(RData& ra) override final{
@@ -60,7 +59,7 @@ class ForEachLoop : public Construct{
 			DATA toEv = iterable->evaluate(ra);
 			//TODO do not create struct if calling generator function
 			//iterC = toEv.getReturnType();
-			myGen = iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getMyGenerator();
+			myGen = (E_GEN*)iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getPointer();
 			/*if(E_FUNC_CALL* func = d ynamic_cast<E_FUNC_CALL*>(iterable)){
 				auto tmpVal = func->getArgs(ra);
 				toEv = tmpVal.second;
@@ -75,28 +74,28 @@ class ForEachLoop : public Construct{
 					ClassProto* genClass = myGen->self->getSelfClass(ra);
 					assert(genClass!=NULL);
 					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), genClass);
-					if(iterC->isPointer) myGen->thisPointer->llvmObject = self;
-					else myGen->thisPointer->llvmObject = self.toLocation(ra);
+					if(iterC->layoutType==PRIMITIVEPOINTER_LAYOUT || iterC->layoutType==POINTER_LAYOUT) myGen->thisPointer->setObject(self);
+					else myGen->thisPointer->setObject(self.toLocation(ra));
 
 					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
-						myGen->prototype->declarations[i]->variable->getMetadata(ra)->llvmObject =
-								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i+1}))), iterC->getDataClass(i+1, filePos));
+						myGen->prototype->declarations[i]->variable->getMetadata(ra)->setObject(
+								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i+1}))), iterC->getDataClass(i+1, filePos)));
 					}
 				}
 				else{
 					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
-						myGen->prototype->declarations[i]->variable->getMetadata(ra)->llvmObject =
-								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i}))),iterC->getDataClass(i, filePos));
+						myGen->prototype->declarations[i]->variable->getMetadata(ra)->setObject(
+								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i}))),iterC->getDataClass(i, filePos)));
 					}
 				}
 			} else{
 				if(myGen->thisPointer!=NULL){
-					if(iterC->isPointer) myGen->thisPointer->llvmObject = toEv.toValue(ra);
-					else myGen->thisPointer->llvmObject = toEv.toLocation(ra);
+					if(iterC->layoutType==PRIMITIVEPOINTER_LAYOUT || iterC->layoutType==POINTER_LAYOUT) myGen->thisPointer->setObject(toEv.toValue(ra));
+					else myGen->thisPointer->setObject(toEv.toLocation(ra));
 				}
 				for(auto& a: myGen->prototype->declarations){
 					if(a->value==NULL || a->value->getToken()==T_VOID) error("iterator generator has non-optional arguments");
-					a->variable->getMetadata(ra)->llvmObject = a->value->evaluate(ra);
+					a->variable->getMetadata(ra)->setObject(a->value->evaluate(ra));
 				}
 			}
 			Jumpable* j = new Jumpable("", GENERATOR, NULL, NULL, theClass);
@@ -111,7 +110,7 @@ class ForEachLoop : public Construct{
 				ra.builder.SetInsertPoint(NEXT.first);
 				DATA v = j->endings[0].second;
 				if(!(v.getType()==R_LOC || v.getType()==R_CONST)) filePos.error("Cannot use object designated as "+str<DataType>(v.getType())+" for iterable");
-				localVariable->getMetadata(ra)->llvmObject = v.toLocation(ra);
+				localVariable->getMetadata(ra)->setObject(v.toLocation(ra));
 				Jumpable* k = new Jumpable(name, LOOP, NEXT.second, END, NULL);
 				ra.addJump(k);
 				ra.guarenteedReturn = false;
@@ -127,7 +126,7 @@ class ForEachLoop : public Construct{
 				PHINode* val = ra.builder.CreatePHI(functionReturnType, (unsigned)(j->endings.size()),"val");
 				PHINode* ind = ra.builder.CreatePHI(INT32TYPE, (unsigned)(j->endings.size()),"ind");
 				auto met = localVariable->getMetadata(ra);
-				met->llvmObject = DATA::getConstant(val, theClass);
+				met->setObject(DATA::getConstant(val, theClass));
 				localVariable->returnType = theClass;
 				Jumpable* k = new Jumpable(name, LOOP, TODECIDE, END, NULL);
 				ra.addJump(k);
@@ -152,8 +151,8 @@ class ForEachLoop : public Construct{
 			ra.builder.SetInsertPoint(END);
 			return DATA::getNull();
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-			toLoop->collectReturns(r, vals);
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
+			toLoop->collectReturns(r, vals, toBe);
 		}
 		void buildFunction(RData& r) override final{
 			iterable->buildFunction(r);

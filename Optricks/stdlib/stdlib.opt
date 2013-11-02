@@ -1,3 +1,5 @@
+import "string.opt"
+
 import "file.opt";
 extern int rand();
 def void print(int i, bool b=true){
@@ -29,7 +31,6 @@ gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
 }
   
-import "string.opt"
 def bool isNaN(double d){
 	return !(d==d);
 }
@@ -52,15 +53,18 @@ def complex.complex(double a=0, double b=0){
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
 }
+def void print(byte i, bool b=true){
+	(extern void printby(byte i, bool b))(i,b);
+}
 	extern void putchar(char i);
 
 def void print(c_string i, bool b=true){
 	for a in i: putchar(a);
 	if(b) putchar('\n');
 }
-def void print(string i, bool b=true){
+/*def void print(string i, bool b=true){
 	print(i._cstr,b);
-}
+}*/
 extern void printc(complex i, bool b=true);
 
 def printr(complex c){
@@ -162,7 +166,7 @@ def complex cos(complex z){
 
 def int operator ** (int a, int b){
 	return pow(a, b);
-}
+};
 
 def int pow(int a, int b){
 	if(b<0) return 0;
@@ -175,6 +179,7 @@ def int pow(int a, int b){
 		return tmpow*tmpow;
 	} else return tmpow*tmpow*a;
 }
+
 
 def complex pow(complex a, int b){
 	return a**b;

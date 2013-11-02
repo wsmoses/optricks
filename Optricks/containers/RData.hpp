@@ -79,4 +79,36 @@ BasicBlock* RData::getBlock(String name, JumpType jump, BasicBlock* bb, DATA val
 	}
 }
 
+
+Function* o_malloc;
+Function* o_calloc;
+Function* o_free;
+Function* o_realloc;
+Function* o_memset;
+Function* o_memcpy;
+
+#define types(...) ArrayRef<Type*>(std::vector<Type*>({__VA_ARGS__}))
+#define PT(A) PointerType::getUnqual(A)
+#define FT(A,B,C) FunctionType::get(A,B,C)
+#define FC(A,B) Function::Create(A,Function::ExternalLinkage,B,r.lmod)
+void initializeBaseFunctions(RData& r){
+
+	o_malloc = FC(FT(C_POINTERTYPE, types(C_INTTYPE), false),"malloc");
+
+	/** %1 number of elements, each %2 long */
+	o_calloc = FC(FT(C_POINTERTYPE, types(SIZETYPE, SIZETYPE), false),"calloc");
+
+	o_free = FC(FT(VOIDTYPE, types(C_POINTERTYPE), false),"free");
+
+	o_realloc =  FC(FT(C_POINTERTYPE, types(C_POINTERTYPE,SIZETYPE), false),"realloc");
+
+	o_memset =  FC(FT(C_POINTERTYPE, types(C_POINTERTYPE,C_INTTYPE,SIZETYPE), false),"memset");
+
+	o_memcpy =  FC(FT(C_POINTERTYPE, types(C_POINTERTYPE,C_POINTERTYPE,SIZETYPE), false),"memcpy");
+}
+#undef FC
+#undef FT
+#undef PT
+#undef types
+
 #endif /* RDATA_HPP_ */

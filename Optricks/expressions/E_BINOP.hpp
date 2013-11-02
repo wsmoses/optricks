@@ -111,11 +111,10 @@ class E_BINOP : public Statement{
 				}
 			}
 			auto temp = left->returnType->getBinop(filePos, operation, right->returnType);
-			return temp.first->apply(
-					temp.second.first->apply(left->evaluate(a), a,filePos),
-					temp.second.second->apply(right->evaluate(a), a,filePos),
-					a,filePos
-			);
+			const DATA p1 = temp.second.first->apply(left->evaluate(a), a,filePos);
+			const DATA p2 = temp.second.second->apply(right->evaluate(a), a,filePos);
+			DATA nex = temp.first->apply(p1,p2,a,filePos);
+			return nex;
 		}
 		ClassProto* checkTypes(RData& r) override final{
 			auto leftT = left->checkTypes(r);
@@ -125,7 +124,7 @@ class E_BINOP : public Statement{
 			auto temp = leftT->getBinop(filePos, operation, rightT);
 			return returnType = temp.first->returnType;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
 		}
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
@@ -146,6 +145,7 @@ class E_BINOP : public Statement{
 			right->buildFunction(r);
 		};
 		void write(ostream& f,String s="") const override{
+			if(operation!="[]") f << "(";
 			left->write(f,s);
 			if(operation=="[]"){
 			f << "[";
@@ -155,6 +155,7 @@ class E_BINOP : public Statement{
 			else{
 			f << " " << operation << " ";
 			right->write(f,s);
+			f << ")";
 			}
 		}
 
@@ -169,8 +170,9 @@ class E_BINOP : public Statement{
 					if(l->operation[0]=='[') break;
 					if(precedence(l->operation) > precedence(self->operation)){
 						self->left = l->right;
-						tr = l->right = self;
+						tr = l->right = self->fixOrderOfOperations();
 						self = l;
+						tl = self->left;
 					}
 					else break;
 				} else break;
@@ -180,10 +182,11 @@ class E_BINOP : public Statement{
 				if(tr->getToken()==T_BINOP){
 					E_BINOP* r = (E_BINOP*)(tr);
 					if(r->operation[0]=='[') break;
-					if(precedence(r->operation) > precedence(self->operation)){
+					if(precedence(r->operation) >= precedence(self->operation)){
 						self->right = r->left;
-						tl = r->left = self;
+						tl = r->left = self->fixOrderOfOperations();
 						self = r;
+						tr = self->right;
 					}
 					else break;
 				} else break;

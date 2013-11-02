@@ -21,7 +21,7 @@ const bool isOperator(const char a){
 
 const std::vector<String> RESERVED_KEYWORDS = {
 		"if","else","elif","for","while","do",
-		"lambda","def","function","method","extern",
+		"lambda","def","gen","extern",
 		"true","false",
 		"return","break","continue"
 };
@@ -525,7 +525,6 @@ public:
 		return vals;
 	}
 	String getNextName(int endWith){
-		//trim();
 		if(done) return "";
 		char nex = peek();
 		if(nex==endWith){ done=true; return ""; }
@@ -533,18 +532,14 @@ public:
 			String temp = "";
 			char tchar;
 			do{
-				tchar = read();
+				tchar = peek();
 				if(endWith==tchar){
-					write();
 					done = true;
 					return temp;
 				}
-				if(isalnum(tchar) || tchar=='$' || tchar=='_')	temp+=tchar;
+				if(isalnum(tchar) || tchar=='$' || tchar=='_')	temp+=read();
 				else break;
 			}while(true);
-			//if(!(tchar==' ' || tchar=='\n' || tchar == '\t'))
-				write();
-	//		if(endAtLines && tchar=='\n') done = true;
 			return temp;
 		}
 		return "";

@@ -10,14 +10,11 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
-	void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-		inner->collectReturns(r, vals);
+	void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe){
+		inner->collectReturns(r, vals, toBe);
 	}
 	ReferenceElement* getMetadata(RData& r) override final{
 		return inner->getMetadata(r);
-	}
-	Value* getLocation(RData& a) override final {
-		return inner->getLocation(a);
 	}
 	void registerClasses(RData& r) override final{
 		inner->registerClasses(r);

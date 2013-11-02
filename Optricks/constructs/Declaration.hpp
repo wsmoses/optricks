@@ -26,7 +26,7 @@ class Declaration: public Construct{
 			global = glob;
 			Alloca = NULL;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
 		}
 		bool hasValue() const {
 			return value!=NULL && value->getToken()!=T_VOID;
@@ -49,10 +49,8 @@ class Declaration: public Construct{
 					classV = new ClassProtoWrapper(returnType);
 					//cout << "Finalized as: " << variable->checkTypes(r)->name << endl << flush;
 				}
-				else if(!value->returnType->hasCast(returnType) )
-					error("Declaration of inconsistent types - variable of type "+classV->getFullName()+" and value of "+value->returnType->name);
 			}
-			variable->getMetadata(r)->llvmObject = DATA::getLocation(NULL, variable->returnType = returnType);
+			variable->getMetadata(r)->setObject(DATA::getLocation(NULL, variable->returnType = returnType));
 			//variable->checkTypes(r);
 			return returnType;
 		}
@@ -79,16 +77,16 @@ class Declaration: public Construct{
 
 				Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 				Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r));
-
+				assert(variable->returnType);
+				Type* type = variable->returnType->getType(r);
+				assert(type);
 				if(Constant* cons = dyn_cast<Constant>(tmp)){
-					GlobalVariable *GV = new GlobalVariable(M, variable->returnType->getType(r),
-							false, GlobalValue::PrivateLinkage,cons);
+					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,cons);
 					GV->setName(variable->getFullName());
 					Alloca = GV;
 
 				} else {
-					GlobalVariable *GV = new GlobalVariable(M, variable->returnType->getType(r),
-							false, GlobalValue::PrivateLinkage,UndefValue::get(variable->returnType->getType(r)));
+					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,UndefValue::get(type));
 					GV->setName(variable->getFullName());
 					r.builder.CreateStore(tmp,GV);
 					Alloca = GV;
@@ -103,7 +101,7 @@ class Declaration: public Construct{
 					r.builder.CreateStore(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r) , Alloca);
 				}
 			}
-			variable->getMetadata(r)->llvmObject = DATA::getLocation(Alloca,variable->returnType);
+			variable->getMetadata(r)->setObject(DATA::getLocation(Alloca,variable->returnType));
 			r.guarenteedReturn = false;
 			return DATA::getNull();
 		}
@@ -176,9 +174,8 @@ String FunctionProto::toString() const{
 
 ClassProto* FunctionProto::getGeneratorType(RData& r){
 	if(generatorType!=NULL) return generatorType;
-	generatorType = new ClassProto(objectClass,name);
+	generatorType = new ClassProto(objectClass,name,NULL,PRIMITIVE_LAYOUT,true);
 	assert(generatorType!=NULL);
-	generatorType->isGen = true;
 	for(const auto& a: declarations){
 		generatorType->addElement(a->variable->getFullName(),a->classV->getSelfClass(r),PositionID(0,0,"<start.getTypedef>"));
 	}
@@ -208,12 +205,50 @@ void initFuncsMeta(RData& rd){
 		intClass->constructors.add(DATA::getFunction(F,intIntP),rd, PositionID(0,0,"<start.initFuncsMeta>"));
 	}
 	{
+			FunctionProto* intIntP = new FunctionProto("byte",byteClass);
+			intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),new ClassProtoWrapper(doubleClass),NULL,false,NULL));
+
+			std::vector<Type*> args = {DOUBLETYPE};
+			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
+			Function *F = Function::Create(FT, Function::PrivateLinkage,"!byte", rd.lmod);
+			BasicBlock *Parent = rd.builder.GetInsertBlock();
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			rd.builder.SetInsertPoint(BB);
+			rd.builder.CreateRet(rd.builder.CreateFPToUI(F->arg_begin(), BYTETYPE));
+			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
+			byteClass->constructors.add(DATA::getFunction(F,intIntP),rd, PositionID(0,0,"<start.initFuncsMeta>"));
+		}
+	{
+			FunctionProto* intIntP = new FunctionProto("byte",byteClass);
+			intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),new ClassProtoWrapper(intClass),NULL,false,NULL));
+
+			std::vector<Type*> args = {INTTYPE};
+			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
+			Function *F = Function::Create(FT, Function::PrivateLinkage,"!byte", rd.lmod);
+			BasicBlock *Parent = rd.builder.GetInsertBlock();
+			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			rd.builder.SetInsertPoint(BB);
+			rd.builder.CreateRet(rd.builder.CreateTrunc(F->arg_begin(), BYTETYPE));
+			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
+			byteClass->constructors.add(DATA::getFunction(F,intIntP),rd, PositionID(0,0,"<start.initFuncsMeta>"));
+		}
+	{
 		std::vector<Type*> t = {C_STRINGTYPE};
 		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
 		strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
 		rd.exec->addGlobalMapping(strLen, (void*)(&strlen));
 	}
-	c_stringClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),rd,PositionID(0,0,"<start.initFuncsMeta>"));
+	{
+		/*std::vector<Type*> t = {C_INTTYPE, PointerType::getUnqual(C_STRINGTYPE)};
+		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
+		Function* gl = Function::Create(FT, Function::ExternalLinkage, "glutInit",rd.lmod);
+		rd.exec->addGlobalMapping(gl, (void*)(&glutInit));
+		ReferenceElement* re = LANG_M->addPointer(PositionID(0,0,"<start.initFuncsMeta>"), "glutInit", DATA::getConstant(NULL,functionClass));
+		FunctionProto* FP = new FunctionProto("glutInit",VOIDTYPE);
+		FP->declarations.push_back(new Declaration(new ClassProtoWrapper(C_INTTYPE),NULL,oint(0)));
+		FP->declarations.push_back(new Declaration(new ClassProtoWrapper(C_INTTYPE)));
+		re->funcs.add(DATA::getFunction(gl,, rd, PositionID("<start.initFuncsMeta>",0,0));*/
+	}
 	{
 
 		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
@@ -226,6 +261,7 @@ void initFuncsMeta(RData& rd){
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
 		charClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(F,new FunctionProto("length",intClass)),rd, PositionID(0,0,"<start.initFuncsMeta>"));
 	}
+	c_stringClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),rd,PositionID(0,0,"<start.initFuncsMeta>"));
 	charClass->addCast(c_stringClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		Value* a = av.getValue(m);
@@ -237,7 +273,7 @@ void initFuncsMeta(RData& rd){
 		id.error("Cannot convert from non-const char to string");
 		return DATA::getNull();
 	},c_stringClass);
-	charClass->addCast(stringClass) = new ouopNative(
+	/*charClass->addCast(stringClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		Value* a = av.getValue(m);
 		if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
@@ -266,7 +302,7 @@ void initFuncsMeta(RData& rd){
 		str= m.builder.CreateInsertValue(str,st,{0});
 		str= m.builder.CreateInsertValue(str,getInt(1),{1});
 		return DATA::getConstant(str,stringClass);
-	},stringClass);
+	},stringClass);*/
 	//c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
 	//		[](Value* ay, Value* by, RData& m) -> DATA{
 	//TODO string addition (need malloc)
@@ -344,7 +380,7 @@ void initFuncsMeta(RData& rd){
 					str= m.builder.CreateInsertValue(str,len,{1});
 					return str;
 		},stringClass);*/
-	c_stringClass->addCast(stringClass) = new ouopNative(
+	/*c_stringClass->addCast(stringClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		Value* a = av.getValue(m);
 		Value* len = m.builder.CreateCall(strLen, a);
@@ -352,6 +388,6 @@ void initFuncsMeta(RData& rd){
 		str= m.builder.CreateInsertValue(str,a,{0});
 		str= m.builder.CreateInsertValue(str,len,{1});
 		return DATA::getConstant(str,stringClass);
-	},stringClass);
+	},stringClass);*/
 }
 #endif /* Declaration_HPP_ */

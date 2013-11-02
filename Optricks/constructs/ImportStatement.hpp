@@ -23,7 +23,7 @@ class ImportStatement:public Construct{
 		}
 		void registerFunctionPrototype(RData& r) override final{
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
 		}
 		void write(ostream& a, String s) const override final{
 			a << "import" << "'" << toImport << "';" << endl << s;

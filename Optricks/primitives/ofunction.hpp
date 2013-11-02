@@ -23,14 +23,6 @@ class ofunction:public oobject{
 				self(s),returnV(r),built(false){
 			myFunction = NULL;
 			prototype = new FunctionProto((self==NULL)?"unknown":(self->getMetadata(rd)->name), dec, NULL);
-			if(self!=NULL){
-				auto T = self->getMetadata(rd);
-				if(add && T!=NULL && T->name.length()>0 && T->name[0]!='~'){
-					T->funcs.add(DATA::getFunction(NULL,prototype),rd,filePos);
-					self->returnType = functionClass;
-				}
-			}
-
 		}
 		String getFullName() override final{
 			return prototype->name;
@@ -89,7 +81,7 @@ class externFunction : public ofunction{
 		}
 		void write(ostream& f, String b) const override{
 			f << "extern ";
-			f << returnV << " ";
+			f << returnV->getFullName() << " ";
 			f << (prototype->name) ;
 			f << "(" ;
 			bool first = true;
@@ -118,10 +110,10 @@ class externFunction : public ofunction{
 			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
 			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);
-			//			Function *F = Function::Create(FT, Function::DLLImportLinkage, prototype->name, a.lmod);
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			else if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			else if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
+			else if(prototype->name=="printby") a.exec->addGlobalMapping(F, (void*)(&printby));
 			else if(prototype->name=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 			else if(prototype->name=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
 			else if(F->getName().str()!=prototype->name){
@@ -210,8 +202,8 @@ class userFunction : public ofunction{
 			ret = r;
 		}
 		void write(ostream& f, String b) const override{
-			f << "def ";
-			f << returnV << " ";
+			f << "def " << flush;
+			if(returnV!=NULL) f << returnV->getFullName() << " ";
 			if(prototype->name.length()>0 && prototype->name[0]=='~')
 				f << "operator " << prototype->name.substr(1);
 			else f << (prototype->name) ;
@@ -239,7 +231,7 @@ class userFunction : public ofunction{
 			assert(cp!=NULL);
 			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
-				ret->collectReturns(ra, yields);
+				ret->collectReturns(ra, yields,autoClass);
 				cp = getMin(yields,filePos);
 				if(cp==autoClass) error("Cannot deduce return type of function "+getFullName());
 				returnV = new ClassProtoWrapper(cp);
@@ -279,7 +271,7 @@ class userFunction : public ofunction{
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
+				met->setObject(DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra));
 			}
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
@@ -333,7 +325,7 @@ class classFunction : public ofunction{
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
-			f << returnV << " ";
+			f << returnV->getFullName() << " ";
 			f << (prototype->name);
 			f << "(" ;
 			bool first = true;
@@ -353,7 +345,8 @@ class classFunction : public ofunction{
 			myMetadata->funcs.add(DATA::getFunction(NULL,prototype),ra,filePos);
 			assert(myMetadata!=NULL);
 			std::vector<Type*> args;
-			if(upperClass->isPointer) args.push_back(upperClass->getType(ra));
+			if(upperClass->layoutType==POINTER_LAYOUT || upperClass->layoutType==PRIMITIVEPOINTER_LAYOUT)
+				args.push_back(upperClass->getType(ra));
 			else args.push_back(upperClass->getType(ra)->getPointerTo());
 			for(auto & b: prototype->declarations){
 				b->registerFunctionPrototype(ra);
@@ -366,7 +359,7 @@ class classFunction : public ofunction{
 			if(cp==NULL) error("Unknown return type");
 			if(cp==autoClass){
 				std::vector<ClassProto*> yields;
-				ret->collectReturns(ra, yields);
+				ret->collectReturns(ra, yields,autoClass);
 				cp = getMin(yields,filePos);
 				if(cp==autoClass)  error("!Cannot support auto return for function");
 				returnV = new ClassProtoWrapper(cp);
@@ -391,14 +384,14 @@ class classFunction : public ofunction{
 			unsigned Idx = 0;
 			Function::arg_iterator AI = myFunction->arg_begin();
 			AI->setName("this");
-			if(upperClass->isPointer) thisPointer->llvmObject = DATA::getConstant(AI, upperClass);
-			else thisPointer->llvmObject = DATA::getLocation(AI, upperClass);
+			if(upperClass->layoutType==POINTER_LAYOUT || upperClass->layoutType==PRIMITIVEPOINTER_LAYOUT) thisPointer->setObject(DATA::getConstant(AI, upperClass));
+			else thisPointer->setObject(DATA::getLocation(AI, upperClass));
 			AI++;
 			for (; Idx+1 != myFunction->arg_size();
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				ReferenceElement* met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra);
+				met->setObject(DATA::getConstant(AI,prototype->declarations[Idx]->variable->returnType).toLocation(ra));
 			}
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
@@ -449,7 +442,7 @@ class constructorFunction : public ofunction{
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
-			f << returnV << " ";
+			f << returnV->getFullName() << " ";
 			f << (prototype->name) << "." << prototype->name ;
 			f << "(" ;
 			bool first = true;
@@ -495,9 +488,9 @@ class constructorFunction : public ofunction{
 					++AI, ++Idx) {
 				AI->setName(prototype->declarations[Idx]->variable->pointer->name);
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
-				met->llvmObject = DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType);
+				met->setObject(DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType));
 			}
-			thisPointer->llvmObject = DATA::getLocation(ra.builder.CreateAlloca(upperClass->getType(ra), 0,"this*"), upperClass);
+			thisPointer->setObject(DATA::getLocation(ra.builder.CreateAlloca(upperClass->getType(ra), 0,"this*"), upperClass));
 			thisPointer->setValue(upperClass->generateData(ra),ra);
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);

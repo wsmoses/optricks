@@ -30,8 +30,8 @@ class ForLoop : public Construct{
 			toLoop->checkTypes(r);
 			return returnType;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-			toLoop->collectReturns(r, vals);
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
+			toLoop->collectReturns(r, vals,toBe);
 		}
 		const Token getToken() const override {
 			return T_FOR;

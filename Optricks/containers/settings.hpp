@@ -10,6 +10,8 @@
 
 #include "basic_functions.h"
 
+#include <GL/glut.h>
+#undef VOID
 #include <cstdio>
 #include <stdlib.h>
 #include <cstdlib>
@@ -104,6 +106,12 @@ String str(C a){
 	ss << a;
 	return ss.str();
 }
+
+enum LayoutType {
+	PRIMITIVE_LAYOUT = 2,
+	PRIMITIVEPOINTER_LAYOUT = 1,
+	POINTER_LAYOUT = 0
+};
 template<typename C> bool in(const std::vector<C> a, C b){
 	for(const auto& e: a)
 		if(e==b) return true;
@@ -259,6 +267,9 @@ class DATA{
 			data.pointer = d.data.pointer; info.pointer = d.info.pointer;
 		    return *this;
 		}
+		void* getInfo() const{
+			return info.pointer;
+		}
 		DATA& operator= (DATA& d) {
 			assert(d.type<6);
 			type = d.type;
@@ -305,10 +316,14 @@ class DATA{
 			return type;
 		};
 		Value* getMyLocation() const{
+#ifdef NDEBUG
 			if(type!=R_LOC){
 				cerr << "Cannot getLocation of non-location "<< type << endl << flush;
 				exit(1);
 			}
+#else
+			assert(type==R_LOC);
+#endif
 			assert(data.pointer!=NULL);
 			return data.location;
 		}

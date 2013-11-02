@@ -92,6 +92,11 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
 		int64_t t = FP();
 		std::cout << t << endl << flush;
+	} else if(n->returnType==byteClass){
+		uint8_t (*FP)() = (uint8_t (*)())(intptr_t)FPtr;
+		uint8_t t = FP();
+		printf("%d\n",t);
+		fflush(stdout);
 	} else if(n->returnType==boolClass){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
@@ -110,12 +115,14 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		auto t = FP();
 		printf("\"%s\"",t);
 		std::cout << endl << flush;
-	} else if(n->returnType==stringClass){
+	}
+	/*else if(n->returnType==stringClass){
 		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
 		auto t = FP();
 		String temp(t.data, t.length);
 		std::cout << temp << endl << flush;
-	} else if(n->returnType->isPointer){
+	} */
+	else if(n->returnType->layoutType==PRIMITIVEPOINTER_LAYOUT || n->returnType->layoutType==POINTER_LAYOUT){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << n->returnType->name << "<" << t << ">" << endl << flush;
@@ -259,7 +266,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		std::cout << "Optricks version 0.2.1" << endl << flush;
+		std::cout << "Optricks version 0.2.2" << endl << flush;
 		std::cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision
@@ -277,6 +284,7 @@ int main(int argc, char** argv){
 	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
+	initializeBaseFunctions(lexer.rdata);
 	initFuncsMeta(lexer.rdata);
 	std::vector<String> files =
 		{"./stdlib/stdlib.opt"};
@@ -298,6 +306,7 @@ int main(int argc, char** argv){
 		lexer.f = st;
 		std::cout << START << flush;
 		/*
+		st->force("4/2*3/4\n");
 		st->force("extern double cos(double a); cos(3.14159)\n");
 		st->force("lambda int a,int b: a+b\n");
 		st->force("(lambda int a,int b: a+b)(4,5)\n");
@@ -344,7 +353,18 @@ int main(int argc, char** argv){
 				execF(lexer,lexer.myMod, n,debug);
 				st->done = false;
 				if(st->last()=='\n' || st->peek()=='\n') break;
-				while(st->peek()==';') st->read();
+				bool reset = false;
+				while(true){
+					char c = st->peek();
+					if(c==';') st->read();
+					else if(isWhitespace(c)){
+						if(c=='\n'){
+							reset = true;
+							break;
+						}
+						else st->read();
+					} else break;
+				} if(reset) break;
 				st->done = false;
 				st->enableOut = true;
 				n = lexer.getNextStatement('\n',true);

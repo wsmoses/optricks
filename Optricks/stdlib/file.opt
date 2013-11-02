@@ -1,3 +1,4 @@
+
 class primitive_pointer File{
 	def File(c_string s, c_string t='r'){
   	this = (extern File fopen(c_string a, c_string b))(s,t);
@@ -20,12 +21,3 @@ def File operator<<(File f, c_string c){
 	(extern c_int fputs(c_string c, File p))(c,f);
 	return f;
 };
-
-class primitive_pointer RawMemory{
-	def RawMemory(int len){
-		this = (extern RawMemory malloc(int c))(len);
-	};
-	def close(){
-		(extern void free(RawMemory i))(this);
-	};
-}

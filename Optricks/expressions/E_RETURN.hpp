@@ -19,8 +19,10 @@ class E_RETURN : public Statement{
 		const Token getToken() const override{
 			return T_RETURN;
 		};
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-			if(inner!=NULL) vals.push_back(inner->checkTypes(r));
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe){
+			ClassProto* n = (inner==NULL)?voidClass:(inner->checkTypes(r));
+			if(toBe==autoClass) vals.push_back(n);
+			else if(!n->hasCast(toBe)) error("Could not cast type "+n->name +" to "+toBe->name);
 		}
 		String getFullName() override final{
 			error("Cannot get full name of return");
@@ -31,9 +33,8 @@ class E_RETURN : public Statement{
 		}
 		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata() for E_RETURN");
-			return inner->getMetadata(r);
+			return NULL;
 		}
-
 		void registerClasses(RData& r) override final{
 			if(inner!=NULL)
 			inner->registerClasses(r);

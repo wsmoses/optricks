@@ -19,6 +19,7 @@ class E_GEN : public Statement{
 		Statement* returnClass;
 		ReferenceElement* thisPointer;
 		bool registereD, builtF;
+		ClassProto* myClass;
 		E_GEN(PositionID id, Statement* s, Statement* ren, std::vector<Declaration*> dec, Statement* r,RData& rd, String inner="",ReferenceElement* thi=NULL):
 			Statement(id, voidClass),
 			self(s),
@@ -29,23 +30,24 @@ class E_GEN : public Statement{
 			thisPointer(thi){
 			registereD = builtF = false;
 			prototype->name = getFullName();
-			ClassProto* myClass = prototype->getGeneratorType(rd);
+			myClass = prototype->getGeneratorType(rd);
 			myClass->addFunction("iterator", filePos)->funcs.add(DATA::getGenerator(this, new FunctionProto("")), rd, filePos);
 			//TODO allow closure for iterator types
 			if(innerName.length()==0){
 				ReferenceElement* re = self->getMetadata(rd);
-				re->llvmObject = DATA::getGenerator(this, prototype);
-				re->funcs.add(re->llvmObject, rd, id);
+				DATA tmp = DATA::getGenerator(this, prototype);
+				re->setObject(tmp);
+				re->funcs.add(tmp, rd, id);
 			}
 		}
 		void registerClasses(RData& r) override final{
 			if(returnClass!=NULL) returnClass->registerClasses(r);
-			self->registerClasses(r);
+			//self->registerClasses(r);
 			for(auto& a:prototype->declarations) a->registerClasses(r);
 			ret->registerClasses(r);
 		}
 
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
 			//toLoop->collectReturns(r, vals);
 		}
 		E_GEN* simplify() override final{
@@ -68,6 +70,7 @@ class E_GEN : public Statement{
 		}
 		void write(ostream& f, String b) const override{
 			f << "gen ";
+			//f << prototype->returnType->name << " ";
 			f << (prototype->name);
 			f << "(" ;
 			bool first = true;
@@ -90,7 +93,7 @@ class E_GEN : public Statement{
 			if(innerName.length()>0){
 				assert(thisPointer!=NULL);
 				ClassProto* sC = self->getSelfClass(ra);
-				thisPointer->llvmObject = DATA::getConstant(NULL,sC);
+				thisPointer->setObject(DATA::getConstant(NULL,sC));
 				sC->addFunction(innerName, filePos)->funcs.add(DATA::getGenerator(this, prototype), ra, filePos);
 			}
 			ret->registerFunctionPrototype(ra);
@@ -107,20 +110,23 @@ class E_GEN : public Statement{
 
 			//TODO check if should move
 			if(returnClass!=NULL) returnClass->checkTypes(r);
-			self->checkTypes(r);
+			if(innerName.length()>0) self->checkTypes(r);
 			for(auto& a:prototype->declarations)a->checkTypes(r);
 
 			ret->checkTypes(r);
 			std::vector<ClassProto*> cp;
-			ret->collectReturns(r, cp);
+			ret->collectReturns(r, cp,prototype->returnType);
 			if(cp.size()>0){
 				ClassProto* c = getMin(cp, filePos);
 				if(c==voidClass) error("Cannot have void yields");
-				else if(prototype->returnType==autoClass) prototype->returnType = c;
-				else if(!c->equals(prototype->returnType) && !c->hasCast(prototype->returnType)){
-					error("Cannot cast yield min yield-type of "+c->name+" to set type of "+prototype->returnType->name);
+				else if(prototype->returnType==autoClass){
+					assert(c==NULL);
+					prototype->returnType = c;
 				}
-				returnClass = new ClassProtoWrapper(c);
+				//else if(!c->equals(prototype->returnType) && !c->hasCast(prototype->returnType)){
+				//	error("Cannot cast yield min yield-type of "+c->name+" to set type of "+prototype->returnType->name);
+				//} TODO see what happens now.
+				returnClass = new ClassProtoWrapper(prototype->returnType);
 			}
 		};
 		ClassProto* checkTypes(RData& r) override{

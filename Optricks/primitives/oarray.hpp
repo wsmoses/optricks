@@ -117,7 +117,7 @@ class E_ARR : public Construct{
 			//return new oarray(filePos, vals);
 		}
 
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe) override final{
 		}
 		//ClassProto* getSelfClass() override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		void registerClasses(RData& r) override final{

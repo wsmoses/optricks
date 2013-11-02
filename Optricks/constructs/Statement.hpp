@@ -35,7 +35,7 @@ class ClassProtoWrapper : public Construct{
 		ClassProtoWrapper(ClassProto* c) : Construct(PositionID(0,0,"#classWrapper"),classClass),cp(c){
 			assert(cp!=NULL);
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
 		}
 		ClassProto* checkTypes(RData& r) override final{
 			return returnType;

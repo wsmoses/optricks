@@ -19,7 +19,7 @@ class TernaryOperator : public Statement{
 		TernaryOperator(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			Statement(a), condition(cond), then(th), finalElse(stat){
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe) override final{
 		}
 		String getFullName() override final{
 			error("Cannot get full name of ternary");
@@ -52,19 +52,26 @@ class TernaryOperator : public Statement{
 			if(condition->checkTypes(r)!=boolClass) error("Cannot have non-bool as condition for ternary "+condition->returnType->name);
 			ClassProto* g = then->checkTypes(r);
 			ClassProto* b = finalElse->checkTypes(r);
-			ClassProto* tog = g->leastCommonAncestor(b);
+			ClassProto* tog = g->leastCommonAncestor(b,filePos);
 			if(tog==NULL || tog==autoClass) error("Need matching types for ternary operator "+g->name+" and "+ b->name);
 			return returnType = tog;
 		}
 		DATA evaluate(RData& r) override{
-
+			Value* cond = condition->evaluate(r).getValue(r);
+			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
+				if(c->isOne()){
+					return then->evaluate(r);
+				} else{
+					return finalElse->evaluate(r);
+				}
+			}
 			//TODO support ((true)?a:b)++
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
 
-			r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, ElseBB);
+			r.builder.CreateCondBr(cond, ThenBB, ElseBB);
 
 			// Emit then value.
 			r.builder.SetInsertPoint(ThenBB);

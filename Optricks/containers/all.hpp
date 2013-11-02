@@ -33,9 +33,23 @@ class Resolvable{
 #define REFERENCEELEM_C_
 class ReferenceElement:public Resolvable{
 	private:
-	public:
 		DATA llvmObject;
+	public:
 		funcMap funcs;
+		ClassProto* getReturnType(RData& r) const{
+			if(funcs.size()>0) return functionClass;
+			else return llvmObject.getReturnType(r);
+		}
+		DATA getObject(PositionID id) const{
+			if(funcs.size()>0){
+				DATA d = funcs.get(id);
+				return d;
+			}
+			return llvmObject;
+		}
+		void setObject(DATA d){
+			llvmObject = d;
+		}
 		virtual ~ReferenceElement(){};
 		ReferenceElement(String c, OModule* mod, String index, DATA value, funcMap fun):
 			Resolvable(mod,index), llvmObject(value), funcs(fun)
@@ -75,6 +89,12 @@ ClassProto* DATA::getReturnType(RData& r) const{
 		return info.funcType->getGeneratorType(r);
 	}
 	if(type==R_FUNC) return functionClass;
+	if(!(type==R_CONST || type==R_LOC || type==R_CLASS)){
+		printf("You've run into a compiler error!\n");
+		printf("Most likely this is because you tried to use a global variable in a function\n");
+		printf("This is not yet supported but will be soon.\n");//TODO global variable in function
+		//printf("Although you probably shouldn't be using globals");
+	}
 	assert(type==R_CONST || type==R_LOC || type==R_CLASS);
 //	if(type!=R_CONST && type!=R_LOC && type!=R_CLASS) id.error("Could not get returnType of "+str<DataType>(type));
 	assert(info.classType !=NULL);

@@ -104,6 +104,17 @@ class funcMap{
 			}
 			return data[bestind];
 		}
+		DATA get(PositionID id) const{
+			if(data.size()>1){
+				String t = "Ambiguous reference -- options are:\n";
+				for(const DATA & a:data){
+					t+=a.getFunctionType()->toString()+"\n";
+				}
+				id.error(t);
+			}
+			assert(data.size()>0);
+			return data[0];
+		}
 };
 
 

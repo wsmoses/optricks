@@ -21,8 +21,8 @@ class DoWhileLoop : public Construct{
 			condition(cond), statement(stat){
 			name = n;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-			statement->collectReturns(r, vals);
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe) override final{
+			statement->collectReturns(r, vals, toBe);
 		}
 		ClassProto* checkTypes(RData& r) override final{
 			condition->checkTypes(r);

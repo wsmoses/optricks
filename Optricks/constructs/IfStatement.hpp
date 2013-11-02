@@ -23,9 +23,9 @@ class IfStatement : public Construct{
 		const Token getToken() const override {
 			return T_IF;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-			then->collectReturns(r, vals);
-			if(finalElse!=NULL) finalElse->collectReturns(r, vals);
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe){
+			then->collectReturns(r, vals,toBe);
+			if(finalElse!=NULL) finalElse->collectReturns(r, vals,toBe);
 		}
 		void registerClasses(RData& r) override final{
 			condition->registerClasses(r);
@@ -49,15 +49,24 @@ class IfStatement : public Construct{
 			return returnType;
 		}
 		DATA evaluate(RData& r) override{
+			Value* cond = condition->evaluate(r).getValue(r);
+			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
+				if(c->isOne()){
+					then->evaluate(r);
+				} else if(finalElse!=NULL && finalElse->getToken()!=T_VOID){
+					finalElse->evaluate(r);
+				}
+				return DATA::getNull();
+			}
 			bool ret = true;
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
 			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
 			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
 			if(finalElse->getToken()!=T_VOID)
-				r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, ElseBB);
+				r.builder.CreateCondBr(cond, ThenBB, ElseBB);
 			else
-				r.builder.CreateCondBr(condition->evaluate(r).getValue(r), ThenBB, MergeBB);
+				r.builder.CreateCondBr(cond, ThenBB, MergeBB);
 			r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
 			then->evaluate(r);

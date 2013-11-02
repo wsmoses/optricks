@@ -23,7 +23,7 @@ class E_VAR : public Statement{
 			return T_VAR;
 		}
 		ClassProto* getSelfClass(RData& r) override final{
-			ClassProto* cp = pointer->resolve()->llvmObject.getMyClass(r);
+			ClassProto* cp = pointer->resolve()->getObject(filePos).getMyClass(r);
 			assert(cp!=NULL);
 			return cp;
 		}
@@ -34,7 +34,7 @@ class E_VAR : public Statement{
 			return this;
 		}
 		DATA evaluate(RData& r) override final{
-			return pointer->resolve()->llvmObject;
+			return pointer->resolve()->getObject(filePos);
 		}
 		void write(ostream& f,String t="") const override{
 			f  << pointer->name;
@@ -42,20 +42,20 @@ class E_VAR : public Statement{
 		}
 
 		void registerClasses(RData& r) override final{
-			//TODO var register classes
+			//TODO force var register classes
 		}
 		void registerFunctionPrototype(RData& r) override final{
-			//TODO var register function prototype
+			//TODO force var register function prototype
 		};
 		void buildFunction(RData& r) override final{
-			//TODO var build function
+			//TODO force var build function
 		};
 		ClassProto* checkTypes(RData& r) override{
-			ClassProto* temp = pointer->resolve()->llvmObject.getReturnType(r);
+			ClassProto* temp = pointer->resolve()->getReturnType(r);
 			if(temp==NULL) error("Cannot determine return-type of variable "+pointer->name);
 			return returnType = temp;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe) override final{
 		}
 };
 #endif /* E_VAR_HPP_ */

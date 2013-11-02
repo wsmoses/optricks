@@ -20,6 +20,7 @@ class ostring : public oobject{
 			for(auto& c: value){
 				if(c=='\\')  f << "\\\\";
 				else if(c=='"') f << "\"";
+				else if(c==0) f << "\\0";
 				else f << c;
 			}
 			f<<"\"";

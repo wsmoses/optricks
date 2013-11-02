@@ -22,10 +22,7 @@ class oobject: public Statement{
 		oobject* simplify() override final{
 			return this;
 		}
-		void collectReturns(RData& r, std::vector<ClassProto*>& vals){
-		}
-		Value* getLocation(RData& r) override{
-			return NULL;
+		void collectReturns(RData& r, std::vector<ClassProto*>& vals,ClassProto* toBe) override final{
 		}
 		String getFullName() override{
 			return returnType->name;
