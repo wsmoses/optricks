@@ -129,9 +129,6 @@ class E_BINOP : public Statement{
 		Statement* simplify() override{
 			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
 		}
-		ClassProto* getSelfClass(RData& r) override final{
-			error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL;
-		}
 		void registerClasses(RData& r) override final{
 			left->registerClasses(r);
 			right->registerClasses(r);

@@ -16,7 +16,12 @@
 class ClassProto{
 		friend class RData;
 		friend class DATA;
-	private:
+		friend class ouop;
+		friend class obinop;
+		friend class ouopElementCast;
+		friend class UnnamedTupleClass;
+		friend class NamedTupleClass;
+	protected:
 		const bool allowsInner;
 	std::map<String,std::map<ClassProto*, obinop*> > binops;
 	std::map<ClassProto*, ouop*> casts;
@@ -45,7 +50,7 @@ class ClassProto{
 		std::map<String,ouop* > preops;
 		std::map<String,ouop* > postops;
 		virtual ~ClassProto(){};
-
+		virtual char id() const{ return 0; }
 		virtual bool equals(ClassProto* c) const{
 			return this==c;
 		}
@@ -151,8 +156,6 @@ class ClassProto{
 				StructType* structType = StructType::create(r.lmod->getContext(), name);
 				if(layoutType==POINTER_LAYOUT){
 					type = PointerType::getUnqual(structType);
-//					innerData.addFirst()
-//					types.push_back()
 				} else{
 					type = structType;
 				}
@@ -199,8 +202,8 @@ class ClassProto{
 					self = self->superClass;
 					continue;
 				}
-				auto thisToSelf = this->casts.find(self);
-				if(thisToSelf==this->casts.end()){
+				//auto thisToSelf = this->casts.find(self);
+				if(!hasCast(self)){
 					self = self->superClass;
 					continue;
 				}
@@ -212,13 +215,13 @@ class ClassProto{
 						toCheck = toCheck->superClass;
 						continue;
 					}
-					auto found3 = right->casts.find(toCheck);
-					if(found3==right->casts.end()){
+					//auto found3 = right->casts.find(toCheck);
+					if(!right->hasCast(toCheck)){
 						toCheck = toCheck->superClass;
 						continue;
 					}
 					return std::pair<obinop*,std::pair<ouop*,ouop*> >(found2->second,
-							std::pair<ouop*,ouop*>(thisToSelf->second, found3->second)
+							std::pair<ouop*,ouop*>(getCast(self,id), right->getCast(toCheck,id))
 					);
 				}
 				self = self->superClass;
@@ -228,13 +231,19 @@ class ClassProto{
 			return std::pair<obinop*,std::pair<ouop*,ouop*> >(NULL,
 					std::pair<ouop*,ouop*>(NULL,NULL));
 		}
-		bool hasCast(ClassProto* right) const{
+		virtual bool hasCast(ClassProto* right) const{
 			if(equals(right)) return true;
 			if(((layoutType==POINTER_LAYOUT && right->layoutType==POINTER_LAYOUT) || (layoutType==PRIMITIVEPOINTER_LAYOUT && right->layoutType==PRIMITIVEPOINTER_LAYOUT)) &&
 					hasSuper(right)){
 				return true;
 			}
 			return casts.find(right)!=casts.end();
+		}
+		virtual ouop* getCast(ClassProto* right, PositionID id){
+			auto found = casts.find(right);
+			if(found==casts.end())
+				id.error("Compile error - could not find cast from "+name+" to "+right->name);
+			return found->second;
 		}
 		ClassProto* leastCommonAncestor(ClassProto* c, PositionID id){
 			std::set<ClassProto*> mySet;
@@ -358,10 +367,8 @@ DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
 		else if(type==R_CONST) return DATA::getConstant(data.constant, right);
 		else assert(0 && "this type is invalid");
 	}
-	auto found = left->casts.find(right);
-	if(found==left->casts.end())
-		id.error("Compile error - could not find cast from "+left->name+" to "+right->name);
-	return found->second->apply(*this, r, id);
+	ouop* c = left->getCast(right,id);
+	return c->apply(*this, r, id);
 }
 ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 	if(vals.size()==0) return voidClass;
@@ -371,5 +378,28 @@ ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 		tmp = tmp->leastCommonAncestor(vals[i], id);
 	}
 	return tmp;
+}
+
+DATA ouopElementCast::apply(DATA a, RData& m, PositionID id){
+	Value* v = a.getValue(m);
+	if(ConstantStruct* s = dyn_cast<ConstantStruct>(v)){
+		std::vector<Constant*> newInside(from->innerData.size());
+		for(unsigned int i = 0; i<from->innerData.size(); i++){
+			Value* tv = DATA::getConstant(s->getAggregateElement(i), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
+			if(Constant* c = dyn_cast<Constant>(tv))
+				newInside[i] = c;
+			else{
+				id.error("Constant cast ran into a problem -- a necessary inner cast did not produce a constant.");
+			}
+		}
+		return DATA::getConstant(ConstantStruct::get(dyn_cast<StructType>(to->getType(m)),ArrayRef<Constant*>(newInside)),to);
+	}
+	Value* nextV = UndefValue::get(to->getType(m));
+	for(unsigned int i = 0; i<from->innerData.size(); i++){
+		ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(std::vector<unsigned int>({i}));
+		Value* iv = DATA::getConstant(m.builder.CreateExtractValue(v,ar), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
+		nextV = m.builder.CreateInsertValue(nextV,iv,ar);
+	}
+	return DATA::getConstant(nextV,to);
 }
 #endif /* CLASSPROTO_HPP_ */

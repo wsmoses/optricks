@@ -28,7 +28,6 @@ class oobject: public Statement{
 			return returnType->name;
 		}
 
-		ClassProto* getSelfClass(RData& r) override{ error("Cannot get selfClass of object "+str<Token>(getToken())); return NULL; }
 		void registerClasses(RData& r) override{};
 		void registerFunctionPrototype(RData& r) override{};
 		void buildFunction(RData& r) override{};

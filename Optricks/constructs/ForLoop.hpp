@@ -58,7 +58,14 @@ class ForLoop : public Construct{
 			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
 			Value *EndCond = condition->evaluate(r).getValue(r);
-			if(!r.guarenteedReturn) r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
+			if(!r.guarenteedReturn){
+				if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
+					if(c->isOne()) r.builder.CreateBr(loopBlock);
+					else r.builder.CreateBr(afterBlock);
+				} else {
+					r.builder.CreateCondBr(EndCond, loopBlock, afterBlock);
+				}
+			}
 			r.guarenteedReturn = false;
 
 			r.builder.SetInsertPoint(afterBlock);

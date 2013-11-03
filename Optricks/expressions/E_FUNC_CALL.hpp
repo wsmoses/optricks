@@ -14,7 +14,6 @@ class E_FUNC_CALL : public Statement{
 		E_FUNC_CALL(PositionID a, Statement* t, std::vector<Statement*> val) : Statement(a,NULL),
 				toCall(t), vals(val){
 		};
-		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of construct "+str<Token>(getToken())); return NULL; }
 		FunctionProto* generateFunctionProto(RData& r) const{
 			std::vector<Declaration*> dec;
 			for(auto& a:vals){

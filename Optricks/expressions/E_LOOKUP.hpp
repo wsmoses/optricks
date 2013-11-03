@@ -42,20 +42,16 @@ class E_LOOKUP : public Statement{
 			if(superC->hasFunction(right)) return returnType = functionClass;
 			return returnType = superC->getDataClass(right,filePos);
 		}
-
-		ClassProto* getSelfClass(RData& r) override final{
-			ClassProto* l = left->getSelfClass(r);
-			return l->getClass(right, filePos)->getObject(filePos).getMyClass(r);
-		}
 		DATA evaluate(RData& a) override{
 			checkTypes(a);
 			DATA eval = left->evaluate(a);
 			ClassProto* lT = eval.getReturnType(a);
-			if(lT->hasFunction(right)){
+			if(lT->hasClass(right)){
+				return lT->getClass(right, filePos)->getObject(filePos);
+			} else if(lT->hasFunction(right)){
 				//TODO add wrapper around object which called function
 				return lT->getFunction(right, filePos)->getObject(filePos);
-			}
-			if(lT->layoutType!=POINTER_LAYOUT && eval.getType()==R_LOC){
+			} else if(lT->layoutType!=POINTER_LAYOUT && eval.getType()==R_LOC){
 				unsigned int l =lT->getDataClassIndex(right,filePos);
 				Value* v = a.builder.CreateConstGEP2_32(eval.getMyLocation(),0,l);
 				return DATA::getLocation(v, returnType);

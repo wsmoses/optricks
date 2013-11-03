@@ -30,6 +30,13 @@ class ouopNative: public ouop{
 		}
 };
 
+class ouopElementCast: public ouop{
+	public:
+		ClassProto* from;
+		ClassProto* to;
+		ouopElementCast(ClassProto* n, ClassProto* o):from(n),to(o){}
+		DATA apply(DATA a, RData& m, PositionID id) override final;
+};
 class ouopUser: public ouop{
 	public:
 		Function* func;

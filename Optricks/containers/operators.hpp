@@ -15,6 +15,9 @@ bool isStartName(int i){
 	return isalpha(i) || i=='_' || i=='$';
 }
 
+bool isStartType(int i){
+	return isalpha(i) || i=='_' || i=='$' || i=='{' || i=='(' || i=='[';
+}
 Value* complexInverse(Value* a, RData& m){
 	Value* sq = m.builder.CreateFMul(a, a);
 	Value* a1 = m.builder.CreateExtractElement(a, getInt32(0));

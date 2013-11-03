@@ -47,6 +47,7 @@ class ofunction:public oobject{
 			//}
 		};
 		void buildFunction(RData& r) override{
+			if(built) return;
 			if(myFunction==NULL) registerFunctionPrototype(r);
 			if(self!=NULL) self->buildFunction(r);
 			if(returnV!=NULL) returnV->buildFunction(r);
@@ -218,6 +219,7 @@ class userFunction : public ofunction{
 			if(ret!=NULL) ret->write(f, b);
 		}
 		void registerFunctionPrototype(RData& ra) override{
+			if(myFunction!=NULL) return;
 			ofunction::registerFunctionPrototype(ra);
 			std::vector<Type*> args;
 			for(Declaration*& b: prototype->declarations){
@@ -257,6 +259,7 @@ class userFunction : public ofunction{
 			ret->registerFunctionPrototype(ra);
 		};
 		void buildFunction(RData& ra) override final{
+			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
@@ -338,6 +341,7 @@ class classFunction : public ofunction{
 			if(ret!=NULL) ret->write(f, b);
 		}
 		void registerFunctionPrototype(RData& ra) override{
+			if(myFunction!=NULL) return;
 			ofunction::registerFunctionPrototype(ra);
 			upperClass = self->getSelfClass(ra);
 			assert(upperClass!=NULL);
@@ -373,6 +377,7 @@ class classFunction : public ofunction{
 			ret->registerFunctionPrototype(ra);
 		};
 		void buildFunction(RData& ra) override final{
+			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
@@ -455,6 +460,7 @@ class constructorFunction : public ofunction{
 			if(ret!=NULL) ret->write(f, b);
 		}
 		void registerFunctionPrototype(RData& ra) override{
+			if(myFunction!=NULL) return;
 			ofunction::registerFunctionPrototype(ra);
 			upperClass = returnV->getSelfClass(ra);
 			assert(upperClass!=NULL);
@@ -474,6 +480,7 @@ class constructorFunction : public ofunction{
 			ret->registerFunctionPrototype(ra);
 		};
 		void buildFunction(RData& ra) override final{
+			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);

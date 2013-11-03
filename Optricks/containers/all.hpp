@@ -10,6 +10,7 @@
 
 #include "settings.hpp"
 #include "ClassProto.hpp"
+#include "Tuple.hpp"
 #include "FunctionProto.hpp"
 #include "GenericClass.hpp"
 #include "operations.hpp"

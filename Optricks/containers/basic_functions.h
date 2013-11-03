@@ -12,14 +12,14 @@ typedef struct StringStruct_s{
 typedef struct complex_c{
 		double real, imag;
 } complex;
-void prints(StringStruct i, bool b){
+void prints(StringStruct i, char b){
 		if(!b) puts(i.data);
 		else{
 			printf("%s\n",i.data);
 			fflush(stdout);
 		}
 	}
-void printi(int64_t i, bool b){
+void printi(int64_t i, char b){
 #ifndef PRId64
 		if(!b) printf("%lld", i);
 		else{
@@ -35,28 +35,28 @@ void printi(int64_t i, bool b){
 
 #endif
 }
-void printby(uint8_t i, bool b){
+void printby(uint8_t i, char b){
 	if(!b) printf("%d",i);
 	else{
 		printf("%d\n",i);
 		fflush(stdout);
 	}
 }
-	void printd(double i, bool b){
+	void printd(double i, char b){
 		if(!b) printf("%f",i);
 		else{
 			printf("%f\n",i);
 			fflush(stdout);
 		}
 	}
-	void printc(complex i, bool b){
+	void printc(complex i, char b){
 		if(!b) printf("%f + %f i",i.real,i.imag);
 		else{
 			printf("%f + %f i\n",i.real,i.imag);
 			fflush(stdout);
 		}
 	}
-	void printb(bool i, bool b){
+	void printb(char i, char b){
 		if(!b){
 			if(i) printf("true");
 			else printf("false");

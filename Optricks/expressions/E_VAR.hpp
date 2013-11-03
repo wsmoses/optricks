@@ -22,11 +22,6 @@ class E_VAR : public Statement{
 		const Token getToken() const override{
 			return T_VAR;
 		}
-		ClassProto* getSelfClass(RData& r) override final{
-			ClassProto* cp = pointer->resolve()->getObject(filePos).getMyClass(r);
-			assert(cp!=NULL);
-			return cp;
-		}
 		ReferenceElement* getMetadata(RData& r) final override{
 			return pointer->resolve();
 		}

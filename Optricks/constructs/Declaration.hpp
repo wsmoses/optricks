@@ -80,7 +80,7 @@ class Declaration: public Construct{
 				assert(variable->returnType);
 				Type* type = variable->returnType->getType(r);
 				assert(type);
-				if(Constant* cons = dyn_cast<Constant>(tmp)){
+				if(Constant* cons = dyn_cast_or_null<Constant>(tmp)){
 					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,cons);
 					GV->setName(variable->getFullName());
 					Alloca = GV;
@@ -88,7 +88,7 @@ class Declaration: public Construct{
 				} else {
 					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,UndefValue::get(type));
 					GV->setName(variable->getFullName());
-					r.builder.CreateStore(tmp,GV);
+					if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 					Alloca = GV;
 				}
 			}

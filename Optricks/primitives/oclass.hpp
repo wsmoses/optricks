@@ -29,13 +29,6 @@ class oclass: public Statement
 				name(nam),superClass(( (type==POINTER_LAYOUT) && (sC==NULL) )?(new ClassProtoWrapper(objectClass)):sC),self(loc),layoutType(type), outerClass(outer), under(), data(), proto(NULL){
 			buildF = checkT = eval = registerF = false;
 		}
-		ClassProto* getSelfClass(RData &r) override {
-			if(proto!=NULL) return proto;
-			else{
-				registerClasses(r);
-				return proto;
-			}
-		}
 		ReferenceElement* getMetadata(RData& r) override final{
 			registerClasses(r);
 			//TODO make resolvable for class with static-functions / constructors
@@ -57,9 +50,10 @@ class oclass: public Statement
 				ss << " : ";
 				superClass->write(ss, b);
 			}
-			ss << "{";
+			ss << "{\n";
 			String c = b;
 			b+="  ";
+			ss << b;
 			for(auto& a:data){
 				ss << b;
 				a->write(ss, b);
@@ -92,6 +86,10 @@ class oclass: public Statement
 				for(Statement*& a: under) a->evaluate(r);
 			}
 			return DATA::getClass(proto);
+		}
+		ClassProto* getSelfClass(RData& r) override final{
+			if(proto==NULL) registerClasses(r);
+			return proto;
 		}
 		void registerClasses(RData& r) override final{
 			if(proto==NULL){

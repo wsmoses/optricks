@@ -58,7 +58,10 @@ class Statement : public Stackable{
 		/**
 		 * Gets the class which this expression represents (assuming this is a class-type object or reference)
 		 */
-		virtual ClassProto* getSelfClass(RData& r) = 0;
+		virtual ClassProto* getSelfClass(RData& r){
+			DATA d = evaluate(r);
+			return d.getMyClass(r);
+		}
 		/**
 		 * Gets a variety of pieces of metadata about the expression
 		 */
@@ -91,7 +94,6 @@ class VoidStatement : public Statement{
 		ClassProto* checkTypes(RData& r) override final;
 		String getFullName() override final{ return "void"; }
 		ReferenceElement* getMetadata(RData& r) override final { error("Cannot get ReferenceElement of void"); return NULL; }
-		ClassProto* getSelfClass(RData& r) override final{ error("Cannot get selfClass of void"); return NULL; }
 		void collectReturns(RData& r, std::vector<ClassProto*>& vals, ClassProto* toBe){
 		}
 };

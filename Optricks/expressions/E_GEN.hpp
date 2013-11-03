@@ -62,9 +62,6 @@ class E_GEN : public Statement{
 			if(innerName.length()>0) return self->getSelfClass(r)->getFunction(innerName, filePos);
 			return self->getMetadata(r);
 		}
-		ClassProto* getSelfClass(RData& r) override final{
-			return prototype->getGeneratorType(r);
-		}
 		const Token getToken() const{
 			return T_GEN;
 		}

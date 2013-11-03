@@ -1,10 +1,11 @@
+def void print(int i, bool b=true){
+	(extern void printi(int i, bool b))(i,b);
+}
+
 import "string.opt"
 
 import "file.opt";
 extern int rand();
-def void print(int i, bool b=true){
-	(extern void printi(int i, bool b))(i,b);
-}
 
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
@@ -64,18 +65,9 @@ def void print(c_string i, bool b=true){
 }
 /*def void print(string i, bool b=true){
 	print(i._cstr,b);
-}*/
+}
+*/
 extern void printc(complex i, bool b=true);
-
-def printr(complex c){
-//	printc(c,true);
-	return c;
-}
-def printr(int c){
-//	print(c,true);
-	return c;
-}
-
 
 def void print(complex i, bool b=true){
 	printc(i,b);

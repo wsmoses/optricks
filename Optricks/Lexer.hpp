@@ -22,6 +22,7 @@
 #include "expressions/E_VAR.hpp"
 #include "expressions/E_SET.hpp"
 #include "expressions/E_GEN.hpp"
+#include "expressions/E_TUPLE.hpp"
 #include "expressions/E_TERNARY.hpp"
 #include "primitives/oobject.hpp"
 #include "primitives/obool.hpp"
@@ -102,7 +103,7 @@ class Lexer{
 				if(chdir(cwd)!=0) pos().error("Could not change directory back to "+String(cwd));
 			}
 		}
-		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0, unsigned int optLevel = 3){
+		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0,unsigned int optLevel = 3){
 			std::vector<Statement*> stats;
 			getStatements(global, debug, fileNames, stats);
 			for(auto& n: stats) n->registerClasses(rdata);
@@ -228,14 +229,14 @@ class Lexer{
 			//		if(
 			assert(f!=NULL);
 			f->trim(c)
-							//) f->error("Found EOF while parsing")
-									;
+									//) f->error("Found EOF while parsing")
+											;
 		}
 		inline void trim(ParseData data){
 			//	if(
 			f->trim(data.endWith)
-							//) f->error("Found EOF while parsing")
-									;
+									//) f->error("Found EOF while parsing")
+											;
 		}
 		Statement* getNextBlock(ParseData data, bool*par=NULL){
 			OModule* module = new OModule(data.mod);
@@ -266,7 +267,48 @@ class Lexer{
 		}
 		Statement* getNextType(ParseData data){
 			trim(EOF);
-			if(f->done || !isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
+			if(f->done || !isStartType(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
+			char tc = f->peek();
+			if(!isStartName(tc)){
+				if(tc=='('){
+					f->read();
+					char has  = 0;
+					std::vector<std::pair<Statement*,String> > cp;
+					std::vector<Statement*> cp1;
+					f->trim(EOF);
+					while(f->peek()!=')'){
+						Statement* s = getNextType(data.getEndWith(EOF));
+						f->trim(EOF);
+						String st = "";
+						if(f->peek()==':'){
+							f->read();
+							st = getNextName(EOF);
+							f->trim(EOF);
+							if(has==0 || has==1) has = 1;
+							else f->error("Cannot have partially named tuple");
+						} else has = 2;
+						if(has==1) cp.push_back(std::pair<Statement*,String>(s,st));
+						else cp1.push_back(s);
+						if(f->peek()==','){
+							f->read();
+							f->trim(EOF);
+						}
+					}
+					f->read();
+					if(has==1){
+						return new E_NAMED_TUPLE(pos(), cp);
+					} else {
+						return new E_TUPLE(pos(), cp1);
+					}
+				} else if(tc=='{'){
+					f->read();
+					f->error("Cannot parse map/set types yet");
+				} else {
+					f->read();
+					assert(tc=='[');
+					f->error("Cannot parse variable-length array types yet");
+				}
+			}
 			Statement* currentType = getNextVariable(data);
 			do{
 				trim(data);
@@ -278,9 +320,18 @@ class Lexer{
 				}
 				trim(data);
 				if(f->done)  f->error("Could not find alphanumeric start for type parsing -ended");
-				if(!isStartName(f->peek())) f->error("Could not find alphanumeric start for type parsing");
+				char c = f->peek();
+				if(!isStartName(c)) f->error("Could not find alphanumeric start for type parsing");
 				auto nextVariable = getNextName(data.endWith);
 				currentType = new E_LOOKUP(pos(), currentType, nextVariable);
+				f->trim(data.endWith);
+				c = f->peek();
+				while(c=='<'||c=='['){
+					if(c=='<') f->error("Generic type parsing not implemented yet");
+					else{
+						f->error("Fixed-length Array type parsing not implemented yet");
+					}
+				}
 			}while(true);
 			return currentType;
 		}
@@ -506,9 +557,9 @@ class Lexer{
 					//TODO change scope
 					//myMod = NULL;//make combined scope
 					if(outer==NULL){
-					funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
-					for(unsigned int i = 1; i+1<methodName.size(); i++)
-						funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
+						funcName = new E_VAR(pos(), new LateResolve(data.mod, methodName[0].first, pos()));
+						for(unsigned int i = 1; i+1<methodName.size(); i++)
+							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
 					} else{
 						funcName = outer;//new E_LOOKUP(methodName[0].second, outer, methodName[0].first);
 						for(unsigned int i = 0; i+1<methodName.size(); ++i){
@@ -617,9 +668,9 @@ class Lexer{
 				}
 				f->trim(EOF);
 				while(f->peek()==';'){
-								f->read();
-								f->trim(EOF);
-							}
+					f->read();
+					f->trim(EOF);
+				}
 			}
 			if(f->read()!='}') f->error("Need closing brace for class definition");
 			return selfClass;
@@ -680,7 +731,7 @@ class Lexer{
 				if(e->getToken()==T_PARENS)
 					ret = new E_FUNC_CALL(pos(), exp, std::vector<Statement*>(1,
 							((E_PARENS*)e)->inner));
-				else ret = new E_FUNC_CALL(pos(), exp, ((E_ARR*)e)->values);
+				else ret = new E_FUNC_CALL(pos(), exp, ((E_TUPLE*)e)->values);
 
 				f->trim(data.endWith);
 
@@ -873,10 +924,13 @@ Statement* Lexer::getNextStatement(ParseData data){
 			case '{':
 			case '[':
 			case '(':{
+				auto undoRead = f->getMarker();
 				char open = f->read();
 				char close = (open=='{')?'}':((open=='[')?']':')');
 				trim(data);
-				E_ARR* arr = new E_ARR(pos());
+				//E_ARR* arr = new E_ARR(pos());
+				std::vector<Statement*> values;
+				std::vector<Statement*> seconds;
 				Statement* temp;
 				char te;
 				if(f->peek()==close) f->read();
@@ -884,7 +938,13 @@ Statement* Lexer::getNextStatement(ParseData data){
 					temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 					forceAr = false;
 					while(temp->getToken()!=T_EOF){
-						arr->values.push_back(temp);
+						values.push_back(temp);
+						f->trim(EOF);
+						if(f->peek()==':'){
+							f->read();
+							seconds.push_back(getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR)));
+							f->trim(EOF);
+						}
 						bool comma = true;
 						if(!f->done && f->peek()==','){
 							f->read();
@@ -900,8 +960,8 @@ Statement* Lexer::getNextStatement(ParseData data){
 						if(f->trim(data.endWith)) f->error("Uncompleted '(' array",true);
 						temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 					}
-					if(open=='(' && !forceAr && arr->values.size()==1){
-						Statement* temp = arr->values[0];
+					if(open=='(' && !forceAr && values.size()==1){
+						Statement* temp = values[0];
 						//delete arr;
 						if((te = f->read())!=close) f->error("Cannot end inline paren with "+
 								String(1,te)+" instead of "+String(1,close)
@@ -918,12 +978,27 @@ Statement* Lexer::getNextStatement(ParseData data){
 					if((te = f->read())!=close) f->error("Cannot end inline array with "+
 							String(1,te)+" instead of "+String(1,close));
 				}
+				//todo allow e_map
+				Statement* arr = (open=='(')?((Statement*)(new E_TUPLE(pos(), values))):(
+						(open=='[')?((Statement*)(new E_ARR(pos(), values))):
+								((Statement*)(new E_ARR(pos(), values))) //todo change to E_SET
+				);
+
+
+
+				auto start = f->getMarker();
 				trim(data);
-				semi  = false;
-				if(!f->done && f->peek()==';'){ semi = true; }
-				trim(data);
-				if(data.operatorCheck && !semi) return operatorCheck(data, arr);
-				else return arr;
+				if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() && isStartName(f->peek()) ){
+					f->undoMarker(undoRead);
+					return getNextDeclaration(data);
+				} else {
+					trim(data);
+					semi  = false;
+					if(!f->done && f->peek()==';'){ semi = true; }
+					trim(data);
+					if(data.operatorCheck && !semi) return operatorCheck(data, arr);
+					else return arr;
+				}
 			}
 			case '+':
 			case '-':

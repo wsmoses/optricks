@@ -15,7 +15,7 @@ class ostring : public oobject{
 		String value;
 		virtual ~ostring(){};
 		ostring(PositionID id, String i): oobject(id, c_stringClass), value(i){}
-		void write(ostream& f, String b) const override{
+		void write(ostream& f, String b) const override final{
 			f<<"\"";
 			for(auto& c: value){
 				if(c=='\\')  f << "\\\\";

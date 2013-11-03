@@ -127,7 +127,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		auto t = FP();
 		std::cout << n->returnType->name << "<" << t << ">" << endl << flush;
 	} else{
-		cerr << "Unknown temp type to JIT-evaluate " << n->returnType->name << endl << flush;
+		((void* (*)())(intptr_t)FPtr)();
+		cerr << "Unknown print function for type " << n->returnType->name << endl << flush;
 	}
 }
 /**
@@ -177,6 +178,7 @@ int main(int argc, char** argv){
 	bool interactive = false;
 	bool forceInt = false;
 	bool debug = false;
+	bool forceGlobal = false;
 	for(int i = 1; i<argc; ++i){
 		String s = String(argv[i]);
 		if(startsWithEq(s, "--debug")){
@@ -188,6 +190,9 @@ int main(int argc, char** argv){
 		else if(startsWithEq(s, "--inter")){
 			forceInt = true;
 			interactive = testFor(s,"--inter");
+		}
+		else if(startsWithEq(s, "--global")){
+			forceGlobal = testFor(s,"--global");
 		}
 		else if(startsWithEq(s, "--interactive")){
 			forceInt = true;
@@ -287,7 +292,9 @@ int main(int argc, char** argv){
 	initializeBaseFunctions(lexer.rdata);
 	initFuncsMeta(lexer.rdata);
 	std::vector<String> files =
-		{"./stdlib/stdlib.opt"};
+		{
+				"./stdlib/stdlib.opt"
+				};
 	if(!interactive){
 		if(command==""){
 			files.push_back(files[0]);
@@ -297,10 +304,10 @@ int main(int argc, char** argv){
 			cerr << "Commands not supported yet!" << endl << flush;
 			exit(1);
 		}
-		lexer.execFiles(false,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
+		lexer.execFiles(forceGlobal,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
 	}
 	else{
-		lexer.execFiles(true,files, outStream,debug,0);
+		lexer.execFiles(true,files, outStream,debug,0,forceGlobal);
 		Statement* n;
 		Stream* st = new Stream(file, true);
 		lexer.f = st;
@@ -342,6 +349,10 @@ int main(int argc, char** argv){
 		//st->force("(def void dgah(){print(hi); })()\n");
 		//st->force("'hello'[0];\n");
 		//st->force("for i in range(,10): print(i);\n");
+
+		//TODO for(auto a = (0,1); a._1< 7; a = (a._0,a._1+1)) print(a._1)
+		//TODO (global)
+		//st->force("(int,int) a; a = (3,4); print(a._0);\n");
 		while(true){
 			st->enableOut = true;
 			st->trim(EOF);
