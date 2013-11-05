@@ -9,7 +9,6 @@
 #define E_LOOKUP_HPP_
 
 #include "../constructs/Statement.hpp"
-//TODO only applies to data, allow for functions
 class E_LOOKUP : public Statement{
 	public:
 		const Token getToken() const override{ return T_LOOKUP; }
