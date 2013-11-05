@@ -274,19 +274,6 @@ int main(int argc, char** argv){
 		std::cout << "Optricks version 0.2.3" << endl << flush;
 		std::cout << "Created by Billy Moses" << endl << endl << flush;
 	}
-	//TODO 2 x major decision
-	//should ++ / -- be eliminated and replaced with +=1 and -=1
-	// or should semicolons be strictly enforced
-	// bad case print(3+3) ++ a
-	// could be: print(3+3)++; a
-	// or print(3+3); ++a
-	// or print(3+3) + (+a);
-	//could make function calls / indexing immune from post operators
-	// but then object.attribute ++ a
-	// OR could eliminated either post or pre
-
-	//if semicolons were strictly enforced then
-	//list comprehension could become an operator
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
 	initializeBaseFunctions(lexer.rdata);
