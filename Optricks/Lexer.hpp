@@ -980,6 +980,8 @@ Statement* Lexer::getNextStatement(ParseData data){
 							String(1,te)+" instead of "+String(1,close));
 				}
 				//todo allow e_map
+				if(open=='(' && seconds.size()>0 && values.size()!=seconds.size())
+					f->error("Cannot have partially-named tuple",true);
 				Statement* arr = (open=='(')?((Statement*)(new E_TUPLE(pos(), values))):(
 						(open=='[')?((Statement*)(new E_ARR(pos(), values))):
 								((Statement*)(new E_ARR(pos(), values))) //todo change to E_SET

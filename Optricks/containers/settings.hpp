@@ -78,6 +78,7 @@ class ClassProto;
 #endif
 
 enum DataType{
+	R_LAZY = 6,
 	R_CONST = 5,
 	R_CLASS = 4,
 	R_FUNC = 3,
@@ -92,8 +93,12 @@ String str(C a){
 	return ss.str();
 }
 
+class LazyLocation{
+	Value* data = NULL;
+};
 template<> String str<DataType>(DataType d){
 	switch(d){
+		case R_LAZY: return "R_LAZY";
 		case R_CONST: return "R_CONST";
 		case R_CLASS: return "R_CLASS";
 		case R_FUNC: return "R_FUNC";
