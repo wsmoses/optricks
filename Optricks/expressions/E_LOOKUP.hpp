@@ -39,16 +39,33 @@ class E_LOOKUP : public Statement{
 		ClassProto* checkTypes(RData& r){
 			if(returnType!=NULL) return returnType;
 			ClassProto* superC = left->checkTypes(r);
+			if(superC==classClass){
+				ClassProto* c = left->getSelfClass(r);
+				if(c->hasClass(right)) return returnType = classClass;
+				else error("Could not look up/check other static initializers "+right+" in "+c->name);
+			}
 			if(superC->hasFunction(right)) return returnType = functionClass;
 			return returnType = superC->getDataClass(right,filePos);
 		}
 		DATA evaluate(RData& a) override{
 			checkTypes(a);
 			DATA eval = left->evaluate(a);
+			///STATIC STUFF
+			if(eval.getType()==R_CLASS){
+				ClassProto* c = eval.getMyClass(a);
+				if(c->hasClass(right)){
+					return c->getClass(right, filePos)->getObject(filePos);
+				} 	else error("Could not look up other static initializers "+right);
+			}
+			/*write(cerr);
+			cerr << endl << flush;
+			cerr << eval.getReturnType(a) << endl << flush;
+			if(eval.getType()==R_LOC || eval.getType()==R_CONST){
+				((Value*)(eval.getPointer()))->dump();
+			}
+			cerr << eval.getType() << endl << flush;*/
 			ClassProto* lT = eval.getReturnType(a);
-			if(lT->hasClass(right)){
-				return lT->getClass(right, filePos)->getObject(filePos);
-			} else if(lT->hasFunction(right)){
+			if(lT->hasFunction(right)){
 				//TODO add wrapper around object which called function
 				return lT->getFunction(right, filePos)->getObject(filePos);
 			} else if(lT->layoutType!=POINTER_LAYOUT && eval.getType()==R_LOC){

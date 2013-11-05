@@ -115,9 +115,9 @@ class E_GEN : public Statement{
 			ret->collectReturns(r, cp,prototype->returnType);
 			if(cp.size()>0){
 				ClassProto* c = getMin(cp, filePos);
+				assert(c);
 				if(c==voidClass) error("Cannot have void yields");
 				else if(prototype->returnType==autoClass){
-					assert(c==NULL);
 					prototype->returnType = c;
 				}
 				//else if(!c->equals(prototype->returnType) && !c->hasCast(prototype->returnType)){

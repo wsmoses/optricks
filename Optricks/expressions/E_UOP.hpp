@@ -38,8 +38,12 @@ class E_PREOP : public E_UOP{
 			return new E_PREOP(filePos, operation,value->simplify());
 		}
 		DATA evaluate(RData& r) override final {
-			auto a = value->evaluate(r);
-			return value->returnType->preops[operation]->apply(a,r,filePos);
+			DATA a = value->evaluate(r);
+			ClassProto* ret = a.getReturnType(r);
+			auto found = ret->preops.find(operation);
+			if(found==ret->preops.end())
+				error("Pre operator "+operation+" not implemented for class "+value->returnType->name);
+			return found->second->apply(a,r,filePos);
 		}
 		void write(ostream& f,String s="") const override{
 			f << "(" << operation << value << ")";
@@ -61,8 +65,12 @@ class E_POSTOP : public E_UOP{
 			return new E_POSTOP(filePos, operation,value->simplify());
 		}
 		DATA evaluate(RData& r) override final {
-			auto a = value->evaluate(r);
-			return value->returnType->postops[operation]->apply(a,r,filePos);
+			DATA a = value->evaluate(r);
+			ClassProto* ret = a.getReturnType(r);
+			auto found = ret->postops.find(operation);
+			if(found==ret->postops.end())
+				error("Post operator "+operation+" not implemented for class "+value->returnType->name);
+			return found->second->apply(a,r,filePos);
 		}
 		void write(ostream& f,String s="") const override{
 			f << "(" << value << " " << operation << ")";

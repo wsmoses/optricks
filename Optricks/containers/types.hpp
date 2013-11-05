@@ -7,7 +7,8 @@
 
 #ifndef CROSSINFO_HPP_
 #define CROSSINFO_HPP_
-
+#include <inttypes.h>
+#include <stdint.h>
 #define INT_LENGTH 8
 #define CHAR_LENGTH 1
 #define C_INT_LENGTH sizeof(int)
@@ -16,7 +17,11 @@
 #define C_CHAR_LENGTH sizeof(char)
 #define C_POINTER_LENGTH sizeof(void*)
 
-#define opt_int signed long long
+#if INT_LENGTH == 8
+#define opt_int int64_t
+#elif INT_LENGTH==4
+#define opt_int int32_t
+#endif
 /*
 #if INT_LENGTH == sizeof(signed int)
 #define opt_int (signed int)
@@ -41,6 +46,7 @@ auto C_POINTERTYPE = PointerType::get(C_CHARTYPE,0);//IntegerType::get(getGlobal
 auto VOIDTYPE = Type::getVoidTy (getGlobalContext());
 auto BOOLTYPE = IntegerType::get(getGlobalContext(), 1);
 auto INT32TYPE = IntegerType::get(getGlobalContext(), 32);
+auto UINT32TYPE = IntegerType::get(getGlobalContext(), 32);
 auto INTTYPE = IntegerType::get(getGlobalContext(), 8*INT_LENGTH);
 auto FUNCTIONTYPE = PointerType::getUnqual(FunctionType::get(Type::getVoidTy(getGlobalContext()), ArrayRef<Type*>(),false));
 //auto LONGTYPE = IntegerType::get(getGlobalContext(), 8*INT_LENGTH);
@@ -48,9 +54,13 @@ auto DOUBLETYPE = Type::getDoubleTy(getGlobalContext());
 auto CHARTYPE = IntegerType::get(getGlobalContext(), 8*CHAR_LENGTH);
 auto BYTETYPE = IntegerType::get(getGlobalContext(), 8);
 auto COMPLEXTYPE = VectorType::get(DOUBLETYPE,2);
+auto RATIONALTYPE = VectorType::get(INTTYPE,2);
 
 
-ConstantInt* getInt32(uint32_t t){
+ConstantInt* getUInt32(uint32_t t){
+	return ConstantInt::get(INT32TYPE,t,false);
+}
+ConstantInt* getInt32(int32_t t){
 	return ConstantInt::get(INT32TYPE,t,true);
 }
 ConstantInt* getBool(bool b){
@@ -65,6 +75,13 @@ ConstantFP* getDouble(double t){
 }
 ConstantInt* getByte(uint8_t t){
 	return ConstantInt::get(BYTETYPE,t,false);
+}
+
+ConstantInt* getSize(uint64_t t){
+	return ConstantInt::get(SIZETYPE,t,false);
+}
+ConstantInt* getCInt(int64_t t){
+	return ConstantInt::get(C_INTTYPE,t,true);
 }
 ConstantInt* getInt(int64_t t){
 	return ConstantInt::get(INTTYPE,t,true);

@@ -635,10 +635,9 @@ class Lexer{
 			}
 			if(f->read()!='{') f->error("Need opening brace for class definition");
 			f->trim(EOF);
-			Statement* self = (outer==NULL)?((Statement*)(new E_VAR(pos(), data.mod->getClassPointer(pos(), name))))
-					:((Statement*)(new E_LOOKUP(pos(), outer, name)));
+			ReferenceElement* re = data.mod->getClassPointer(pos(), name);
 			OModule* classMod = new OModule(data.mod);
-			oclass* selfClass = new oclass(pos(), name, superClass, self, primitive, outer);
+			oclass* selfClass = new oclass(pos(), name, superClass, re, primitive, outer);
 			while(f->peek()==';'){
 				f->read();
 				f->trim(EOF);
@@ -650,6 +649,8 @@ class Lexer{
 				if(temp=="static"){
 					stat = true;
 					f->trim(EOF);
+					mark = f->getMarker();
+					temp = f->getNextName(EOF);
 				}
 				ParseData nd = ParseData(EOF, classMod, true, (stat)?data.loc:PARSE_LOCAL);
 				if(temp=="class"){

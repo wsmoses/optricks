@@ -18,18 +18,19 @@ class oclass: public Statement
 	public:
 		String name;
 		Statement* superClass;
-		Statement* self;
+		ReferenceElement* self;
 		LayoutType layoutType;
 		oclass* outerClass;
 		std::vector<Statement*> under;
 		std::vector<Declaration*> data;
 		ClassProto* proto;
 		bool buildF,checkT,eval,registerF;
-		oclass(PositionID id, String nam, Statement* sC, Statement* loc, LayoutType type, oclass* outer):Statement(id, classClass),
+		oclass(PositionID id, String nam, Statement* sC, ReferenceElement* loc, LayoutType type, oclass* outer):Statement(id, classClass),
 				name(nam),superClass(( (type==POINTER_LAYOUT) && (sC==NULL) )?(new ClassProtoWrapper(objectClass)):sC),self(loc),layoutType(type), outerClass(outer), under(), data(), proto(NULL){
 			buildF = checkT = eval = registerF = false;
 		}
 		ReferenceElement* getMetadata(RData& r) override final{
+			error("Cannot getMetadata of oclass");
 			registerClasses(r);
 			//TODO make resolvable for class with static-functions / constructors
 			return new ReferenceElement("",NULL,proto->name, DATA::getClass(proto), funcMap());
@@ -53,7 +54,6 @@ class oclass: public Statement
 			ss << "{\n";
 			String c = b;
 			b+="  ";
-			ss << b;
 			for(auto& a:data){
 				ss << b;
 				a->write(ss, b);
@@ -64,7 +64,7 @@ class oclass: public Statement
 				a->write(ss, b);
 				ss << ";\n";
 			}
-			ss << c << "};";
+			ss << c << "}";
 		};
 		const Token getToken() const override final {
 			return T_CLASS;
@@ -95,8 +95,16 @@ class oclass: public Statement
 			if(proto==NULL){
 				ClassProto* super = (superClass==NULL)?NULL:(superClass->getSelfClass(r));
 				proto = new ClassProto(super, name, (layoutType==PRIMITIVEPOINTER_LAYOUT)?C_POINTERTYPE:NULL, layoutType,false);
-				if(self!=NULL) self->getMetadata(r)->setObject(DATA::getClass(proto));
-				for(Statement*& a:under) a->registerClasses(r);
+				if(self!=NULL){
+					self->setObject(DATA::getClass(proto));
+					if(outerClass!=NULL){
+						assert(outerClass->proto);
+						outerClass->proto->addClass(name,self,filePos);
+					}
+				}
+				for(Statement*& a:under){
+					a->registerClasses(r);
+				}
 				if(super!=NULL && super->layoutType!=layoutType) error("Cannot have a class with a superclass of a different layout type "+super->name+" "+name+" "+str<LayoutType>(layoutType));
 
 				if(layoutType==PRIMITIVEPOINTER_LAYOUT){

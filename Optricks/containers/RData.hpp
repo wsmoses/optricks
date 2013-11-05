@@ -86,11 +86,18 @@ Function* o_free;
 Function* o_realloc;
 Function* o_memset;
 Function* o_memcpy;
+Function* o_glutInit;
 
-#define types(...) ArrayRef<Type*>(std::vector<Type*>({__VA_ARGS__}))
+
+template<typename T> inline ArrayRef<T> aref(std::initializer_list<T> li){
+	return ArrayRef<T>(li.begin(), li.end());
+}
+
+#define types(...) ArrayRef<Type*>(aref<Type*>({__VA_ARGS__}))
 #define PT(A) PointerType::getUnqual(A)
 #define FT(A,B,C) FunctionType::get(A,B,C)
 #define FC(A,B) Function::Create(A,Function::ExternalLinkage,B,r.lmod)
+#define FCR(A,B) Function::Create(A,Function::PrivateLinkage,B,r.lmod)
 void initializeBaseFunctions(RData& r){
 
 	o_malloc = FC(FT(C_POINTERTYPE, types(C_INTTYPE), false),"malloc");
@@ -105,6 +112,18 @@ void initializeBaseFunctions(RData& r){
 	o_memset =  FC(FT(C_POINTERTYPE, types(C_POINTERTYPE,C_INTTYPE,SIZETYPE), false),"memset");
 
 	o_memcpy =  FC(FT(C_POINTERTYPE, types(C_POINTERTYPE,C_POINTERTYPE,SIZETYPE), false),"memcpy");
+	{
+		Function* o_glutInitI = FC(FT(VOIDTYPE, types(PointerType::getUnqual(C_INTTYPE),PointerType::getUnqual(C_STRINGTYPE)), false),"glutInit");
+		o_glutInit = FCR(FT(VOIDTYPE, types(), false),"#glutInit");
+		BasicBlock *Parent = r.builder.GetInsertBlock();
+		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", o_glutInit);
+		r.builder.SetInsertPoint(BB);
+		Value* v = r.builder.CreateAlloca(C_INTTYPE,getCInt(0));
+		r.builder.CreateStore(getCInt(0),v);
+		r.builder.CreateCall2(o_glutInitI, v, UndefValue::get(PointerType::getUnqual(C_STRINGTYPE)));
+		r.builder.CreateRetVoid();
+		if(Parent!=NULL) r.builder.SetInsertPoint(Parent);
+	}
 }
 #undef FC
 #undef FT

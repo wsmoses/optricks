@@ -11,7 +11,8 @@
 #include "operations.hpp"
 #ifndef CLASSPROTO_HPP_
 #define CLASSPROTO_HPP_
-
+//WARNING from now on all classes which are eqv must have eqv pointers
+//TODO update static/nonstatic member data
 #define CLASSPROTO_C_
 class ClassProto{
 		friend class RData;
@@ -23,8 +24,8 @@ class ClassProto{
 		friend class NamedTupleClass;
 	protected:
 		const bool allowsInner;
-	std::map<String,std::map<ClassProto*, obinop*> > binops;
-	std::map<ClassProto*, ouop*> casts;
+		std::map<String,std::map<ClassProto*, obinop*> > binops;
+		std::map<ClassProto*, ouop*> casts;
 		mutable Type* type;
 		std::map<String, unsigned int> innerDataIndex;
 		std::vector<ClassProto*> innerData;
@@ -51,9 +52,6 @@ class ClassProto{
 		std::map<String,ouop* > postops;
 		virtual ~ClassProto(){};
 		virtual char id() const{ return 0; }
-		virtual bool equals(ClassProto* c) const{
-			return this==c;
-		}
 		//bool isPointerType() const{
 		//	return layoutType==POINTER_LAYOUT || layoutType==PRIMITIVEPOINTER_LAYOUT;
 		//}
@@ -67,58 +65,65 @@ class ClassProto{
 
 		ClassProto* getDataClass(const unsigned int nam, PositionID id) const{
 			if(allowsInner){
-			std::vector<const ClassProto*> todo;
-			const ClassProto* tmp = this;
-			while(tmp!=NULL){
-				todo.push_back(tmp);
-				tmp = tmp->superClass;
-			}
-			unsigned int ind=nam;
-			while(todo.size()>0){
-				tmp = todo.back();
-				todo.pop_back();
-				if(ind< tmp->innerData.size()) return tmp->innerData[nam];
-				ind-=tmp->innerData.size();
-			}
+				std::vector<const ClassProto*> todo;
+				const ClassProto* tmp = this;
+				while(tmp!=NULL){
+					todo.push_back(tmp);
+					tmp = tmp->superClass;
+				}
+				unsigned int ind=nam;
+				while(todo.size()>0){
+					tmp = todo.back();
+					todo.pop_back();
+					if(ind< tmp->innerData.size()) return tmp->innerData[nam];
+					ind-=tmp->innerData.size();
+				}
 			}
 			id.error("Data index "+str<unsigned int>(nam)+" was too large for class "+name);
 			return NULL;
 		}
 		unsigned int getDataClassIndex(String nam, PositionID id) const{
 			if(allowsInner){
-			std::vector<const ClassProto*> todo;
-			const ClassProto* tmp = this;
-			while(tmp!=NULL){
-				todo.push_back(tmp);
-				tmp = tmp->superClass;
-			}
-			unsigned int ind=0;
-			while(todo.size()>0){
-				tmp = todo.back();
-				todo.pop_back();
-				auto a = tmp->innerDataIndex.find(nam);
-				if(a!=tmp->innerDataIndex.end()) return ind+a->second;
-				ind+=tmp->innerData.size();
-			}
+				std::vector<const ClassProto*> todo;
+				const ClassProto* tmp = this;
+				while(tmp!=NULL){
+					todo.push_back(tmp);
+					tmp = tmp->superClass;
+				}
+				unsigned int ind=0;
+				while(todo.size()>0){
+					tmp = todo.back();
+					todo.pop_back();
+					auto a = tmp->innerDataIndex.find(nam);
+					if(a!=tmp->innerDataIndex.end()) return ind+a->second;
+					ind+=tmp->innerData.size();
+				}
 			}
 			id.error("Inner data type "+nam+" could not be found in class "+name);
 			return 0;
 		}
 		ClassProto* getDataClass(String nam, PositionID id){
 			if(allowsInner){
-			ClassProto* tmp = this;
-			while(tmp!=NULL){
-				auto a = innerDataIndex.find(nam);
-				if(a!=innerDataIndex.end()) return innerData[a->second];
-				tmp = tmp->superClass;
-			}
+				ClassProto* tmp = this;
+				while(tmp!=NULL){
+					auto a = innerDataIndex.find(nam);
+					if(a!=innerDataIndex.end()) return innerData[a->second];
+					tmp = tmp->superClass;
+				}
 			}
 			id.error("Inner data type "+nam+" could not be found in class "+name);
 			return NULL;
 		}
+
+		void addClass(String nam,ReferenceElement* typ,PositionID id){
+			if(nam==name) id.error("Cannot make data type with same name as class "+name);
+			if(hasInner(nam)) id.error("Cannot create another inner data type for class "+name+" named "+nam);
+			staticClasses[nam] = typ;
+		}
 		const bool hasClass(String name) const{
 			return staticClasses.find(name)!=staticClasses.end();
 		}
+
 		ReferenceElement* getClass(String nam, PositionID id) const{
 			auto a = staticClasses.find(name);
 			if(a==staticClasses.end()) id.error("Inner class "+nam+" does not exist in class "+name);
@@ -139,33 +144,13 @@ class ClassProto{
 			innerData.push_back(typ);
 			innerDataIndex[nam]=a;
 		}
-		DATA generateData(RData& r){
-			Type* t = getType(r);
-			assert(t!=NULL);
-			return DATA::getConstant(UndefValue::get(t), this);
-		}
+		DATA generateData(RData& r);
 		DATA construct(RData& r, E_FUNC_CALL* call) const;
 		void addTypes(std::vector<Type*>& v,RData& r) const{
 			if(superClass!=NULL) superClass->addTypes(v,r);
 			for(ClassProto* const a: innerData) v.push_back(a->getType(r));
 		}
-		Type* getType(RData& r) const{
-			if(type!=NULL) return type;
-			else{
-				// if(innerData.size()==0 && !isGen) cerr << "what.. " << name << endl << flush;
-				StructType* structType = StructType::create(r.lmod->getContext(), name);
-				if(layoutType==POINTER_LAYOUT){
-					type = PointerType::getUnqual(structType);
-				} else{
-					type = structType;
-				}
-				std::vector<Type*> types;
-				addTypes(types,r);
-				structType->setBody(ArrayRef<Type*>(types),false);
-				assert(type!=NULL);
-				return type;
-			}
-		}
+		Type* getType(RData& r);
 		virtual bool operator == (ClassProto*& b){
 			return this == b;
 		}
@@ -173,7 +158,7 @@ class ClassProto{
 			assert(t!=NULL);
 			const ClassProto* c = this->superClass;
 			while(c!=NULL){
-				if(c->equals(t)) return true;
+				if(c==t) return true;
 				else c = c->superClass;
 			}
 			return false;
@@ -232,7 +217,7 @@ class ClassProto{
 					std::pair<ouop*,ouop*>(NULL,NULL));
 		}
 		virtual bool hasCast(ClassProto* right) const{
-			if(equals(right)) return true;
+			if(this==right) return true;
 			if(((layoutType==POINTER_LAYOUT && right->layoutType==POINTER_LAYOUT) || (layoutType==PRIMITIVEPOINTER_LAYOUT && right->layoutType==PRIMITIVEPOINTER_LAYOUT)) &&
 					hasSuper(right)){
 				return true;
@@ -261,31 +246,43 @@ class ClassProto{
 			id.error("No common ancestor for "+name+" and "+c->name);
 			return NULL;
 		}
-		ClassProto(ClassProto* sC, String n, Type* t,LayoutType pointer,bool isGe,bool allowsInne=true):
-			allowsInner(allowsInne),type(t),
-				innerDataIndex((sC==NULL)?(std::map<String, unsigned int>()):(sC->innerDataIndex)),
+		ClassProto(ClassProto* sC, String n, Type* t,LayoutType pointer,bool isGe,bool allowsInne=true);
+};
 
-				innerData((sC==NULL)?(std::vector<ClassProto*>()):(sC->innerData)),
-				functions((sC==NULL)?(std::map<String, ReferenceElement* >()):(sC->functions)),
-				superClass(sC),
-				constructors(),
-				layoutType(pointer),isGen(isGe),
-				name(n)
-				 {
-			casts.insert(std::pair<ClassProto*, ouop*>(this,new ouopNative([](DATA a, RData& m, PositionID id) -> DATA{	return a; }
-								, this)));
+
+class NullClass:public ClassProto{
+	private:
+		NullClass() : ClassProto(NULL,"`NullClass",C_POINTERTYPE,POINTER_LAYOUT,false,true){
+		}
+	public:
+		char id() const override{ return 3; }
+		static NullClass* get(){
+			static NullClass* t=new NullClass();
+			return t;
+		}
+		virtual bool hasCast(ClassProto* right) const override{
+			return right->layoutType==POINTER_LAYOUT || right->layoutType==PRIMITIVEPOINTER_LAYOUT;
+		}
+		virtual ouop* getCast(ClassProto* right, PositionID pid) override{
+			if(!(right->layoutType==POINTER_LAYOUT || right->layoutType==PRIMITIVEPOINTER_LAYOUT)) pid.error("Could not find cast from NullClass to "+right->name);
+			auto r = casts.find(right);
+			if(r!=casts.end()) return r->second;
+			return casts[right]=new ouopNullCast(right);
 		}
 };
+
+NullClass* nullClass = NullClass::get();
+ClassProto* uint32Class = new ClassProto(NULL, "uint32",UINT32TYPE,PRIMITIVE_LAYOUT,false,false);
 
 ClassProto* objectClass = new ClassProto(NULL, "object",NULL,POINTER_LAYOUT,false);
 ClassProto* autoClass = new ClassProto(NULL, "auto",NULL,PRIMITIVE_LAYOUT,false);
 ClassProto* classClass = new ClassProto(objectClass, "class",NULL,POINTER_LAYOUT,false);
-//ClassProto* nullClass = new ClassProto("None");
 ClassProto* boolClass = new ClassProto(NULL, "bool",BOOLTYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* c_pointerClass = new ClassProto(NULL,"c_pointer",C_POINTERTYPE,PRIMITIVEPOINTER_LAYOUT,false,false);
 ClassProto* functionClass = new ClassProto(NULL,"function",FUNCTIONTYPE,PRIMITIVEPOINTER_LAYOUT,false);
 ClassProto* complexClass = new ClassProto(NULL,"complex",COMPLEXTYPE,PRIMITIVE_LAYOUT,false);
 ClassProto* doubleClass = new ClassProto(NULL, "double",DOUBLETYPE,PRIMITIVE_LAYOUT,false,false);
+//ClassProto* rationalClass = new ClassProto(doubleClass, "rational", RATIONALTYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* intClass = new ClassProto(doubleClass, "int", INTTYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* c_intClass = new ClassProto(NULL,"c_int",C_LONGTYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* c_longClass = new ClassProto(NULL,"c_long",C_INTTYPE,PRIMITIVE_LAYOUT,false,false);
@@ -295,7 +292,7 @@ ClassProto* c_stringClass = new ClassProto(NULL, "c_string",C_STRINGTYPE,PRIMITI
 ClassProto* charClass = new ClassProto(c_stringClass, "char", CHARTYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* byteClass = new ClassProto(NULL, "byte", BYTETYPE,PRIMITIVE_LAYOUT,false,false);
 ClassProto* sliceClass = new ClassProto(objectClass, "slice",SLICETYPE,PRIMITIVE_LAYOUT,false);
-ClassProto* voidClass = new ClassProto(objectClass, "void",VOIDTYPE,PRIMITIVE_LAYOUT,false,false);
+ClassProto* voidClass = new ClassProto(NULL, "void",VOIDTYPE,PRIMITIVE_LAYOUT,false,false);
 
 
 DATA DATA::getClass(ClassProto* c){
@@ -313,18 +310,18 @@ String getGenericName(ClassProto* a, std::vector<ClassProto*>& b){
 	return t+">";
 }
 std::pair<bool, unsigned int> ClassProto::compatable(ClassProto* c) const{
-			if(c==autoClass) return std::pair<bool, unsigned int>(true, UINT_MAX);
-			const ClassProto* temp = this;
-			int count = 0;
-			while(temp!=NULL){
-				if(temp->equals(c)) return std::pair<bool, unsigned int>(true,count);
-				count++;
-				temp = temp->getSuper();
-			}
-			auto f = casts.find(c);
-			if(f!=casts.end()) return std::pair<bool,unsigned int>(true,UINT_MAX-1);
-			return std::pair<bool, unsigned int>(false, 0);
-		}
+	if(c==autoClass) return std::pair<bool, unsigned int>(true, UINT_MAX);
+	const ClassProto* temp = this;
+	int count = 0;
+	while(temp!=NULL){
+		if(temp==c) return std::pair<bool, unsigned int>(true,count);
+		count++;
+		temp = temp->getSuper();
+	}
+	auto f = casts.find(c);
+	if(f!=casts.end()) return std::pair<bool,unsigned int>(true,UINT_MAX-1);
+	return std::pair<bool, unsigned int>(false, 0);
+}
 /*
 class GenericClass: public ClassProto{
 	public:
@@ -344,7 +341,7 @@ class GenericClass: public ClassProto{
 					return (size_t)this==(size_t)b;//TODO
 				}
 };
-*/
+ */
 
 #include "operations.hpp"
 DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
@@ -356,11 +353,9 @@ DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
 #else
 	assert(type==R_CONST || type==R_LOC || type==R_FUNC);
 #endif
-	assert(data.pointer);
-	assert(info.pointer);
 	assert(right!=NULL);
 	ClassProto* left = getReturnType(r);
-	if(left->equals(right)) return *this;
+	if(left == right) return *this;
 	if(((left->layoutType==POINTER_LAYOUT && right->layoutType==POINTER_LAYOUT) || (left->layoutType==PRIMITIVEPOINTER_LAYOUT && right->layoutType==PRIMITIVEPOINTER_LAYOUT)) &&
 			left->hasSuper(right)){
 		if(type==R_LOC) return DATA::getLocation(data.location, right);
@@ -383,7 +378,7 @@ ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 DATA ouopElementCast::apply(DATA a, RData& m, PositionID id){
 	Value* v = a.getValue(m);
 	if(ConstantStruct* s = dyn_cast<ConstantStruct>(v)){
-		std::vector<Constant*> newInside(from->innerData.size());
+		Constant* newInside[from->innerData.size()];
 		for(unsigned int i = 0; i<from->innerData.size(); i++){
 			Value* tv = DATA::getConstant(s->getAggregateElement(i), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
 			if(Constant* c = dyn_cast<Constant>(tv))
@@ -392,14 +387,35 @@ DATA ouopElementCast::apply(DATA a, RData& m, PositionID id){
 				id.error("Constant cast ran into a problem -- a necessary inner cast did not produce a constant.");
 			}
 		}
-		return DATA::getConstant(ConstantStruct::get(dyn_cast<StructType>(to->getType(m)),ArrayRef<Constant*>(newInside)),to);
+		return DATA::getConstant(ConstantStruct::get(dyn_cast<StructType>(to->getType(m)),ArrayRef<Constant*>( newInside,from->innerData.size() )),to);
 	}
 	Value* nextV = UndefValue::get(to->getType(m));
 	for(unsigned int i = 0; i<from->innerData.size(); i++){
-		ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(std::vector<unsigned int>({i}));
+		ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(i);
 		Value* iv = DATA::getConstant(m.builder.CreateExtractValue(v,ar), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
 		nextV = m.builder.CreateInsertValue(nextV,iv,ar);
 	}
 	return DATA::getConstant(nextV,to);
 }
+
+obinopNative* NULLCHECK1 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+	Value* val =av.getValue(m);
+	Value* temp = m.builder.CreateICmpEQ(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
+	return DATA::getConstant(temp,boolClass);
+},boolClass);
+obinopNative* NULLCHECK2 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+	Value* val =av.getValue(m);
+	Value* temp = m.builder.CreateICmpNE(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
+	return DATA::getConstant(temp,boolClass);
+},boolClass);
+obinopNative* NULLCHECK3 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+	Value* val =bv.getValue(m);
+	Value* temp = m.builder.CreateICmpEQ(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
+	return DATA::getConstant(temp,boolClass);
+},boolClass);
+obinopNative* NULLCHECK4 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+	Value* val =bv.getValue(m);
+	Value* temp = m.builder.CreateICmpNE(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
+	return DATA::getConstant(temp,boolClass);
+},boolClass);
 #endif /* CLASSPROTO_HPP_ */

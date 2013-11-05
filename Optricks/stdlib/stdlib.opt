@@ -63,10 +63,11 @@ def void print(c_string i, bool b=true){
 	for a in i: putchar(a);
 	if(b) putchar('\n');
 }
-/*def void print(string i, bool b=true){
-	print(i._cstr,b);
-}
-*/
+
+//def void print(string i, bool b=true){
+//	print(i._cstr,b);
+//}
+
 extern void printc(complex i, bool b=true);
 
 def void print(complex i, bool b=true){

@@ -19,7 +19,11 @@ class ostring : public oobject{
 			f<<"\"";
 			for(auto& c: value){
 				if(c=='\\')  f << "\\\\";
-				else if(c=='"') f << "\"";
+				else if(c=='"') f << "\\\"";
+				else if(c=='\t') f << "\\t";
+				else if(c=='\r') f << "\\r";
+				else if(c=='\n') f << "\\n";
+				else if(c=='\v') f << "\\v";
 				else if(c==0) f << "\\0";
 				else f << c;
 			}

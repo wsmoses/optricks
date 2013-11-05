@@ -271,7 +271,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		std::cout << "Optricks version 0.2.2" << endl << flush;
+		std::cout << "Optricks version 0.2.3" << endl << flush;
 		std::cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 	//TODO 2 x major decision

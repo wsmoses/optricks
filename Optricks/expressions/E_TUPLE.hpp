@@ -21,6 +21,7 @@ class E_TUPLE : public Statement{
 
 		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata of tuple");
+			return NULL;
 		}
 		String getFullName() override{
 			if(myClass!=NULL) return myClass->name;
@@ -54,12 +55,15 @@ class E_TUPLE : public Statement{
 				}
 				return DATA::getClass(UnnamedTupleClass::get(cp));
 			} else {
-			Value* nextV = UndefValue::get(returnType->getType(m));
-			for(unsigned int i = 0; i<values.size(); i++){
-				ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(std::vector<unsigned int>({i}));
-				nextV = m.builder.CreateInsertValue(nextV,values[i]->evaluate(m).getValue(m),ar);
-			}
-			return DATA::getConstant(nextV,returnType);
+				Value* nextV = UndefValue::get(returnType->getType(m));
+				for(unsigned int i = 0; i<values.size(); i++){
+					ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(i);
+					Value* val = values[i]->evaluate(m).getValue(m);
+					assert(val);
+					assert(ar[0]==i);
+					nextV = m.builder.CreateInsertValue(nextV,val,ar);
+				}
+				return DATA::getConstant(nextV,returnType);
 			}
 		}
 
@@ -115,6 +119,7 @@ class E_NAMED_TUPLE : public Statement{
 
 		ReferenceElement* getMetadata(RData& r) override final{
 			error("Cannot getMetadata of named_tuple");
+			return NULL;
 		}
 		String getFullName() override{
 			if(myClass!=NULL) return myClass->name;
@@ -137,14 +142,14 @@ class E_NAMED_TUPLE : public Statement{
 			f << ")";
 		}
 		DATA evaluate(RData& m) override {
-				if(myClass!=NULL) return DATA::getClass(myClass);
-				std::vector<std::pair<ClassProto*,String> > cp(values.size());
-				for(unsigned int i = 0; i<values.size(); i++){
-					ClassProto* const tmp = values[i].first->getSelfClass(m);
-					if(tmp==NULL || tmp==voidClass || tmp==autoClass) values[i].first->filePos.error("Cannot determine class of inner data for tuple");
-					cp[i] = std::pair<ClassProto*,String>(tmp,values[i].second);
-				}
-				return DATA::getClass(NamedTupleClass::get(cp));
+			if(myClass!=NULL) return DATA::getClass(myClass);
+			std::vector<std::pair<ClassProto*,String> > cp(values.size());
+			for(unsigned int i = 0; i<values.size(); i++){
+				ClassProto* const tmp = values[i].first->getSelfClass(m);
+				if(tmp==NULL || tmp==voidClass || tmp==autoClass) values[i].first->filePos.error("Cannot determine class of inner data for tuple");
+				cp[i] = std::pair<ClassProto*,String>(tmp,values[i].second);
+			}
+			return DATA::getClass(NamedTupleClass::get(cp));
 		}
 
 		Statement* simplify() override{

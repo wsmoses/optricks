@@ -31,9 +31,6 @@ class NamedTupleClass:public ClassProto{
 		}
 	public:
 		char id() const override{ return 1; }
-		bool equals(ClassProto* c) const override{
-			return this==c;
-		}
 		static NamedTupleClass* get(std::vector<std::pair<ClassProto*,String>>& t){
 			static std::vector<NamedTupleClass*> all_tuples;
 			for(NamedTupleClass*& a: all_tuples){
@@ -41,7 +38,7 @@ class NamedTupleClass:public ClassProto{
 				bool error = false;
 				for(unsigned int i = 0; i<t.size(); i++){
 					auto found = a->innerDataIndex.find(t[i].second);
-					if(found==a->innerDataIndex.end() || found->second!=i || !a->innerData[i]->equals(t[i].first)){
+					if(found==a->innerDataIndex.end() || found->second!=i || a->innerData[i]!=t[i].first){
 						error = true;
 						break;
 					}
@@ -55,7 +52,7 @@ class NamedTupleClass:public ClassProto{
 		}
 		virtual bool hasCast(ClassProto* right) const override{
 			if(right->id()!=id()) return false;
-			if(equals(right)) return true;
+			if(this==right) return true;
 			if(innerData.size()!=right->innerData.size()) return false;
 			for(unsigned int i = 0; i<innerData.size(); i++){
 				if(!innerData[i]->hasCast(right->innerData[i])) return false;
@@ -103,11 +100,9 @@ class UnnamedTupleClass:public ClassProto{
 				s<<len;
 				innerDataIndex[s.str()]=len;
 			}
+//			constructors.add(DATA::getFunction(), )
 		}
 	public:
-		bool equals(ClassProto* c) const override{
-			return this==c;
-		}
 		char id() const override{ return 2; }
 		static UnnamedTupleClass* get(std::vector<ClassProto*>& t){
 			static std::vector<UnnamedTupleClass*> uall_tuples;
@@ -115,7 +110,7 @@ class UnnamedTupleClass:public ClassProto{
 				if(a->innerData.size()!=t.size()) continue;
 				bool error = false;
 				for(unsigned int i = 0; i<t.size(); i++){
-					if(!a->innerData[i]->equals(t[i])){
+					if(a->innerData[i]!=t[i]){
 						error = true;
 						break;
 					}
@@ -129,7 +124,7 @@ class UnnamedTupleClass:public ClassProto{
 		}
 		virtual bool hasCast(ClassProto* right) const override{
 			if(!(right->id()==id() || right->id()==1)) return false;
-			if(equals(right)) return true;
+			if(this==right) return true;
 			if(innerData.size()!=right->innerData.size()) return false;
 			for(unsigned int i = 0; i<innerData.size(); i++){
 				if(!innerData[i]->hasCast(right->innerData[i])) return false;
@@ -147,8 +142,6 @@ class UnnamedTupleClass:public ClassProto{
 			return casts[right]=new ouopElementCast(this,right);
 		}
 };
-
-
 
 class MapClass:public ClassProto{
 

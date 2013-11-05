@@ -11,6 +11,7 @@
 #include "operators.hpp"
 #include "types.hpp"
 #include "ClassProto.hpp"
+//TODO allow ir-built inline constructors (speed boost)
 bool isStartName(int i){
 	return isalpha(i) || i=='_' || i=='$';
 }
@@ -57,11 +58,21 @@ Value* complexSquare(Value* a, RData& m){
 }
 //Function* strLen = NULL;
 void initClassesMeta(){
+	objectClass->addElement("gc$count",uint32Class,PositionID(0,0,"<start.initClassesMeta>"));
 	complexClass->addElement("real",doubleClass,PositionID(0,0,"<start.initClassesMeta>"));
 	complexClass->addElement("imag",doubleClass,PositionID(0,0,"<start.initClassesMeta>"));
+
+
+	NullClass::get()->addBinop("==",NullClass::get()) = new obinopNative(
+			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+		return DATA::getConstant(getBool(true),boolClass);
+	},boolClass);
+	NullClass::get()->addBinop("!=",NullClass::get()) = new obinopNative(
+			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
+		return DATA::getConstant(getBool(false),boolClass);
+	},boolClass);
 	//stringClass->addElement("_cstr",c_stringClass,PositionID(0,0,"<start.initClassesMeta>"));
 	//stringClass->addElement("_size",intClass,PositionID(0,0,"<start.initClassesMeta>"));
-
 	complexClass->preops["-"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		Value* a = av.getValue(m);
@@ -81,23 +92,6 @@ void initClassesMeta(){
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		return av.toValue(m);
 	},complexClass);
-/*	functionClass->addCast(c_pointerClass) = new ouopNative(
-			[](DATA av, RData& m, PositionID id) -> DATA{
-		Function* v = (Function*) av.getValue(m);
-		auto op =  CastInst::getCastOpcode(v,false,C_POINTERTYPE,false);
-		DATA d= DATA::getConstant(CastInst::Create(op, v, C_POINTERTYPE),c_pointerClass);
-		//m.lmod->dump();
-		//cerr <<
-				m.builder.GetInsertBlock()->dump();
-		cerr << m.builder.GetInsertBlock()->getName().str() << endl;
-		//cerr <<
-				m.builder.GetInsertBlock()->getParent()->dump();
-				FUNCTIONTYPE->dump();
-				cerr << endl << flush;
-						//<< endl << flush;
-		return d;
-	},c_pointerClass
-	);*/
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		Value *a = av.getValue(m);
@@ -408,9 +402,6 @@ void initClassesMeta(){
 
 		Value *a = av.getValue(m), *b = bv.getValue(m);
 		Value* val = m.builder.CreateConstGEP2_32(m.builder.CreateLoad(a),0,stringClass->getDataClassIndex("_cstr",id));
-		val->dump();
-		val->getType()->dump();
-		cerr << endl << flush;
 		std::vector<Value*> v = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
 		auto t = m.builder.CreateInBoundsGEP(val,v,"tmpind");
 		return DATA::getConstant(m.builder.CreateLoad(t),charClass);

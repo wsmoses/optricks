@@ -12,6 +12,7 @@
 
 #include <GL/glut.h>
 #undef VOID
+#include <initializer_list>
 #include <cstdio>
 #include <stdlib.h>
 #include <cstdlib>
@@ -84,7 +85,24 @@ enum DataType{
 	R_LOC = 1,
 	R_UNDEF = 0
 };
+template<typename C>
+String str(C a){
+	std::stringstream ss;
+	ss << a;
+	return ss.str();
+}
 
+template<> String str<DataType>(DataType d){
+	switch(d){
+		case R_CONST: return "R_CONST";
+		case R_CLASS: return "R_CLASS";
+		case R_FUNC: return "R_FUNC";
+		case R_GEN: return "R_GEN";
+		case R_LOC: return "R_LOC";
+		case R_UNDEF: return "R_UNDEF";
+	}
+	return "unknown DATATYPE";
+}
 union PrivateData{
 	Value* constant;
 	ClassProto* classP;
@@ -100,18 +118,22 @@ union PrivateData{
 struct ComplexStruct{
 		double real, complex;
 };
-template<typename C>
-String str(C a){
-	std::stringstream ss;
-	ss << a;
-	return ss.str();
-}
 
 enum LayoutType {
 	PRIMITIVE_LAYOUT = 2,
 	PRIMITIVEPOINTER_LAYOUT = 1,
 	POINTER_LAYOUT = 0
 };
+
+
+template<> String str<LayoutType>(LayoutType d){
+	switch(d){
+		case PRIMITIVE_LAYOUT: return "PRIMITIVE_LAYOUT";
+		case PRIMITIVEPOINTER_LAYOUT: return "PRIMITIVEPOINTER_LAYOUT";
+		case POINTER_LAYOUT: return "POINTER_LAYOUT";
+	}
+	return "unknown LayoutType";
+}
 template<typename C> bool in(const std::vector<C> a, C b){
 	for(const auto& e: a)
 		if(e==b) return true;
@@ -142,7 +164,13 @@ class PositionID{
 	//	PositionID():PositionID(0,0,"<start>"){}
 		void error(String s, bool end=true) const{
 			cerr << s << " at " << fileName << " on line " << lineN << ", char " << charN << endl << flush;
-			if(end) exit(1);
+			if(end){
+			#ifdef NDEBUG
+			exit(1);
+#else
+			assert(0);
+#endif
+			}
 		}
 		ostream& operator << (ostream& o) const{
 			o << fileName;
@@ -299,13 +327,13 @@ class DATA{
 		}
 		DATA toLocation(RData& m);
 		DATA toValue(RData& m){
+#ifndef NDEBUG
 			if(!(type==R_CONST || type==R_LOC)){
 				cerr << "Cannot toValue of non const/loc "<< type << endl << flush;
-				exit(1);
-			} else if(data.pointer==NULL){
-				cerr << "Cannot toValue of NULL "<< type << endl << flush;
+				assert(0);
 				exit(1);
 			}
+#endif
 			if(type==R_CONST){
 				return *this;
 			} else {

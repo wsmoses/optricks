@@ -69,6 +69,7 @@ class IfStatement : public Construct{
 				r.builder.CreateCondBr(cond, ThenBB, MergeBB);
 			r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
+
 			then->evaluate(r);
 			if(!r.guarenteedReturn){
 				r.builder.CreateBr(MergeBB);

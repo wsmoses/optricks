@@ -58,6 +58,7 @@ class Block : public Construct{
 		}
 		ClassProto* checkTypes(RData& r){
 			for(auto& a:values){
+//				a->write(cerr); cerr << endl << flush;
 				a->checkTypes(r);
 			}
 			return returnType;

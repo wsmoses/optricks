@@ -22,7 +22,7 @@ class ofunction:public oobject{
 		ofunction(PositionID id, Statement* s, Statement* r, std::vector<Declaration*> dec,RData& rd,bool add=true):oobject(id, functionClass),
 				self(s),returnV(r),built(false){
 			myFunction = NULL;
-			prototype = new FunctionProto((self==NULL)?"unknown":(self->getMetadata(rd)->name), dec, NULL);
+			prototype = new FunctionProto((self==NULL)?"unknown":(self->getFullName()), dec, NULL);
 		}
 		String getFullName() override final{
 			return prototype->name;
@@ -61,6 +61,7 @@ class ofunction:public oobject{
 			return DATA::getFunction(myFunction,prototype);
 		}
 		ClassProto* checkTypes(RData& r) override{
+			if(!built) buildFunction(r);
 			for(auto& a:prototype->declarations){
 				a->checkTypes(r);
 				if(a->classV->returnType==voidClass) error("Cannot have void as parameter for function");
@@ -359,6 +360,8 @@ class classFunction : public ofunction{
 				assert(cl!=NULL);
 				args.push_back(cl);
 			}
+			if(upperClass->layoutType==POINTER_LAYOUT || upperClass->layoutType==PRIMITIVEPOINTER_LAYOUT) thisPointer->setObject(DATA::getConstant(NULL, upperClass));
+			else thisPointer->setObject(DATA::getLocation(NULL, upperClass));
 			ClassProto* cp = returnV->getSelfClass(ra);
 			if(cp==NULL) error("Unknown return type");
 			if(cp==autoClass){
@@ -447,7 +450,6 @@ class constructorFunction : public ofunction{
 		}
 		void write(ostream& f, String b) const override{
 			f << "def ";
-			f << returnV->getFullName() << " ";
 			f << (prototype->name) << "." << prototype->name ;
 			f << "(" ;
 			bool first = true;
@@ -518,7 +520,6 @@ class constructorFunction : public ofunction{
 		};
 		ClassProto* checkTypes(RData& r) override{
 			ofunction::checkTypes(r);
-			ret->checkTypes(r);
 			return prototype->returnType;
 		}
 		DATA evaluate(RData& ra) override{

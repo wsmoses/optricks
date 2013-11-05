@@ -155,7 +155,7 @@ bool FunctionProto::equals(RData& r, const FunctionProto* f, PositionID id) cons
 		ClassProto* class1 = declarations[i]->classV->getSelfClass(r);
 		ClassProto* class2 = f->declarations[i]->classV->getSelfClass(r);
 		if(class1==NULL || class2==NULL) id.error("ERROR: NULL PROTO");
-		if(!class1->equals(class2))
+		if(class1!=class2)
 			return false;
 	}
 	return true;
@@ -174,7 +174,7 @@ String FunctionProto::toString() const{
 
 ClassProto* FunctionProto::getGeneratorType(RData& r){
 	if(generatorType!=NULL) return generatorType;
-	generatorType = new ClassProto(objectClass,name,NULL,PRIMITIVE_LAYOUT,true);
+	generatorType = new ClassProto(NULL,name,NULL,PRIMITIVE_LAYOUT,true);
 	assert(generatorType!=NULL);
 	for(const auto& a: declarations){
 		generatorType->addElement(a->variable->getFullName(),a->classV->getSelfClass(r),PositionID(0,0,"<start.getTypedef>"));
@@ -190,6 +190,11 @@ void initFuncsMeta(RData& rd){
 	//cout << "SIZE OF x64: " << Module::PointerSize::Pointer64 << endl << flush;
 	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
 	//TODO begin conversion of constructors to generators
+	{
+	DATA glutIn = DATA::getFunction(o_glutInit,new FunctionProto("glutInit",voidClass));
+	LANG_M->addPointer(PositionID(0,0,"<start.glutInit>"),"glutInit",glutIn)->funcs.add(glutIn,rd,PositionID(0,0,"<start.glutInit>"));
+	}
+	LANG_M->addPointer(PositionID(0,0,"<start.NULL>"),"null",DATA::getConstant(NULL,NullClass::get()));
 	{
 		FunctionProto* intIntP = new FunctionProto("int",intClass);
 		intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),new ClassProtoWrapper(doubleClass),NULL,false,NULL));

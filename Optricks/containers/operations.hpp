@@ -30,6 +30,14 @@ class ouopNative: public ouop{
 		}
 };
 
+
+class ouopNullCast: public ouop{
+	public:
+		ClassProto* to;
+		ouopNullCast(ClassProto* o):to(o){}
+		DATA apply(DATA a, RData& m, PositionID id) override final;
+};
+
 class ouopElementCast: public ouop{
 	public:
 		ClassProto* from;
@@ -67,6 +75,7 @@ class obinopNative : public obinop{
 			return temp(a,b,m,id);
 		}
 };
+
 
 class obinopUser: public obinop{
 	public:

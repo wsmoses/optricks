@@ -57,9 +57,10 @@ class ForEachLoop : public Construct{
 			//DATA toEv = DATA::getNull();
 			E_GEN* myGen = NULL;
 			DATA toEv = iterable->evaluate(ra);
+			iterC = toEv.getReturnType(ra);
 			//TODO do not create struct if calling generator function
 			//iterC = toEv.getReturnType();
-			myGen = (E_GEN*)iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getPointer();
+			myGen = (E_GEN*)(iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getPointer());
 			/*if(E_FUNC_CALL* func = d ynamic_cast<E_FUNC_CALL*>(iterable)){
 				auto tmpVal = func->getArgs(ra);
 				toEv = tmpVal.second;
@@ -73,19 +74,19 @@ class ForEachLoop : public Construct{
 				if(myGen->thisPointer!=NULL){
 					ClassProto* genClass = myGen->self->getSelfClass(ra);
 					assert(genClass!=NULL);
-					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({0}))), genClass);
+					DATA self = DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(0)), genClass);
 					if(iterC->layoutType==PRIMITIVEPOINTER_LAYOUT || iterC->layoutType==POINTER_LAYOUT) myGen->thisPointer->setObject(self);
 					else myGen->thisPointer->setObject(self.toLocation(ra));
 
 					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
 						myGen->prototype->declarations[i]->variable->getMetadata(ra)->setObject(
-								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i+1}))), iterC->getDataClass(i+1, filePos)));
+								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(i+1)), iterC->getDataClass(i+1, filePos)));
 					}
 				}
 				else{
 					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
 						myGen->prototype->declarations[i]->variable->getMetadata(ra)->setObject(
-								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(std::vector<unsigned>({i}))),iterC->getDataClass(i, filePos)));
+								DATA::getConstant(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(i)),iterC->getDataClass(i, filePos)));
 					}
 				}
 			} else{

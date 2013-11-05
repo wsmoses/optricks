@@ -163,7 +163,7 @@ class E_FUNC_CALL : public Statement{
 				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(a);
 				Value* mine = cla->generateData(a).getValue(a);
 				for(unsigned int i = 0; i<Args.size(); i++){
-					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(std::vector<unsigned>({i})));
+					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(i));
 				}
 				return DATA::getConstant(mine, cla);
 			}
