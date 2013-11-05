@@ -7,7 +7,10 @@
 
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
-
+#define  LOCAL_FUNC Function::PrivateLinkage
+#define EXTERN_FUNC Function::ExternalLinkage
+#define VERIFY(A)
+//#define VERIFY(A) verifyFunction(A);
 #include "basic_functions.h"
 
 #include <GL/glut.h>

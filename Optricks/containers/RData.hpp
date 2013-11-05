@@ -96,8 +96,8 @@ template<typename T> inline ArrayRef<T> aref(std::initializer_list<T> li){
 #define types(...) ArrayRef<Type*>(aref<Type*>({__VA_ARGS__}))
 #define PT(A) PointerType::getUnqual(A)
 #define FT(A,B,C) FunctionType::get(A,B,C)
-#define FC(A,B) Function::Create(A,Function::ExternalLinkage,B,r.lmod)
-#define FCR(A,B) Function::Create(A,Function::PrivateLinkage,B,r.lmod)
+#define FC(A,B) Function::Create(A,Function::EXTERN_FUNC,B,r.lmod)
+#define FCR(A,B) Function::Create(A,Function::EXTERN_FUNC,B,r.lmod)
 void initializeBaseFunctions(RData& r){
 
 	o_malloc = FC(FT(C_POINTERTYPE, types(C_INTTYPE), false),"malloc");

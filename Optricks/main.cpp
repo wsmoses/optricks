@@ -44,7 +44,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
-	Function *F = Function::Create(FT, Function::ExternalLinkage, "", lexer.rdata.lmod);
+	Function *F = Function::Create(FT, EXTERN_FUNC, "", lexer.rdata.lmod);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	lexer.rdata.builder.SetInsertPoint(BB);
 	DATA dat = n->evaluate(lexer.rdata);
@@ -58,7 +58,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	F->dump();
 	cerr << flush;
 	}
-	verifyFunction(*F);
+	VERIFY(*F);
 	//cout << "verified" << endl << flush;
 	lexer.rdata.fpm->run(*F);
 	//cout << "fpm" << endl << flush;

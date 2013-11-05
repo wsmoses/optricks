@@ -201,7 +201,7 @@ void initFuncsMeta(RData& rd){
 
 		std::vector<Type*> args = {DOUBLETYPE};
 		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = Function::Create(FT, Function::PrivateLinkage,"!int", rd.lmod);
+		Function *F = Function::Create(FT, LOCAL_FUNC,"!int", rd.lmod);
 		BasicBlock *Parent = rd.builder.GetInsertBlock();
 		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 		rd.builder.SetInsertPoint(BB);
@@ -215,7 +215,7 @@ void initFuncsMeta(RData& rd){
 
 			std::vector<Type*> args = {DOUBLETYPE};
 			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage,"!byte", rd.lmod);
+			Function *F = Function::Create(FT, LOCAL_FUNC,"!byte", rd.lmod);
 			BasicBlock *Parent = rd.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rd.builder.SetInsertPoint(BB);
@@ -229,7 +229,7 @@ void initFuncsMeta(RData& rd){
 
 			std::vector<Type*> args = {INTTYPE};
 			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = Function::Create(FT, Function::PrivateLinkage,"!byte", rd.lmod);
+			Function *F = Function::Create(FT, LOCAL_FUNC,"!byte", rd.lmod);
 			BasicBlock *Parent = rd.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rd.builder.SetInsertPoint(BB);
@@ -240,13 +240,13 @@ void initFuncsMeta(RData& rd){
 	{
 		std::vector<Type*> t = {C_STRINGTYPE};
 		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
-		strLen = Function::Create(FT, Function::ExternalLinkage, "strlen",rd.lmod);
+		strLen = Function::Create(FT, EXTERN_FUNC, "strlen",rd.lmod);
 		rd.exec->addGlobalMapping(strLen, (void*)(&strlen));
 	}
 	{
 		/*std::vector<Type*> t = {C_INTTYPE, PointerType::getUnqual(C_STRINGTYPE)};
 		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
-		Function* gl = Function::Create(FT, Function::ExternalLinkage, "glutInit",rd.lmod);
+		Function* gl = Function::Create(FT, EXTERN_FUNC, "glutInit",rd.lmod);
 		rd.exec->addGlobalMapping(gl, (void*)(&glutInit));
 		ReferenceElement* re = LANG_M->addPointer(PositionID(0,0,"<start.initFuncsMeta>"), "glutInit", DATA::getConstant(NULL,functionClass));
 		FunctionProto* FP = new FunctionProto("glutInit",VOIDTYPE);
@@ -258,7 +258,7 @@ void initFuncsMeta(RData& rd){
 
 		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
 		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = Function::Create(FT, Function::PrivateLinkage,"!return1", rd.lmod);
+		Function *F = Function::Create(FT, LOCAL_FUNC,"!return1", rd.lmod);
 		BasicBlock *Parent = rd.builder.GetInsertBlock();
 		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 		rd.builder.SetInsertPoint(BB);

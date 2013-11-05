@@ -111,7 +111,7 @@ class externFunction : public ofunction{
 			Type* r = cp->getType(a);
 			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, prototype->name, a.lmod);
+			Function *F = Function::Create(FT, EXTERN_FUNC, prototype->name, a.lmod);
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			else if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			else if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
@@ -172,7 +172,7 @@ class lambdaFunction : public ofunction{
 			Type* r = prototype->returnType->getType(ar);
 			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, Function::PrivateLinkage, "!lambda", ar.lmod);
+			myFunction = Function::Create(FT, LOCAL_FUNC, "!lambda", ar.lmod);
 			// Set names for all arguments.
 			unsigned Idx = 0;
 			for (Function::arg_iterator AI = myFunction->arg_begin(); Idx != args.size();
@@ -190,7 +190,7 @@ class lambdaFunction : public ofunction{
 					//TODO check this
 					dat.getType()!=R_UNDEF) ar.builder.CreateRet(dat.getValue(ar));
 			else ar.builder.CreateRetVoid();
-			verifyFunction(*myFunction);
+			VERIFY(*myFunction);
 			ar.fpm->run(*myFunction);
 			ar.builder.SetInsertPoint( Parent );
 			return DATA::getFunction(myFunction,prototype);
@@ -243,7 +243,7 @@ class userFunction : public ofunction{
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
+			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
 			if(self!= NULL){
 				if(self->getMetadata(ra)->name.size()>0 && self->getMetadata(ra)->name[0]=='~'){
 					if(prototype->declarations.size()==1){
@@ -301,7 +301,7 @@ class userFunction : public ofunction{
 			}
 			else
 				ra.builder.CreateRetVoid();
-			verifyFunction(*myFunction);
+			VERIFY(*myFunction);
 			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
@@ -375,7 +375,7 @@ class classFunction : public ofunction{
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+self->getFullName()+"."+name, ra.lmod);
+			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+self->getFullName()+"."+name, ra.lmod);
 			myMetadata->funcs.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			ret->registerFunctionPrototype(ra);
 		};
@@ -425,7 +425,7 @@ class classFunction : public ofunction{
 			}
 			else
 				ra.builder.CreateRetVoid();
-			verifyFunction(*myFunction);
+			VERIFY(*myFunction);
 			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
@@ -477,7 +477,8 @@ class constructorFunction : public ofunction{
 			}
 			Type* r = upperClass->getType(ra);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, Function::PrivateLinkage,"!"+returnV->getFullName(), ra.lmod);
+			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+returnV->getFullName(), ra.lmod);
+			//cerr << "Registering function now... " << prototype->toString() << endl << flush;
 			upperClass->constructors.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			ret->registerFunctionPrototype(ra);
 		};
@@ -486,6 +487,7 @@ class constructorFunction : public ofunction{
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			//cerr << "Building function now... " << prototype->toString() << endl << flush;
 			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
 			Jumpable j = Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
 			ra.addJump(&j);
@@ -513,7 +515,7 @@ class constructorFunction : public ofunction{
 			myFunction->getBasicBlockList().push_back(MERGE);
 			ra.builder.SetInsertPoint(MERGE);
 			ra.builder.CreateRet(thisPointer->getValue(ra));
-			verifyFunction(*myFunction);
+			VERIFY(*myFunction);
 			ra.fpm->run(*myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);

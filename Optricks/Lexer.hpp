@@ -116,7 +116,7 @@ class Lexer{
 			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
-			Function *F = Function::Create(FT, Function::ExternalLinkage, "main", rdata.lmod);
+			Function *F = Function::Create(FT, EXTERN_FUNC, "main", rdata.lmod);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(rdata);
@@ -126,7 +126,7 @@ class Lexer{
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
-			verifyFunction(*F);
+			VERIFY(*F);
 			if(toFile>0) verifyModule(*(rdata.lmod));
 			//auto modOpt = new PassManager();
 			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
