@@ -83,26 +83,49 @@ class E_BINOP : public Statement{
 		}
 		DATA evaluate(RData& a) override final{
 			if(left->returnType == right->returnType && left->returnType==boolClass && (operation=="&&" || operation=="||")){
+				Value* Start = left->evaluate(a).getValue(a,filePos);
 				BasicBlock* StartBB = a.builder.GetInsertBlock();
-				BasicBlock *ElseBB = BasicBlock::Create(a.lmod->getContext(), "else",StartBB->getParent());
-				BasicBlock *MergeBB = BasicBlock::Create(a.lmod->getContext(), "ifcont",StartBB->getParent());
+				BasicBlock *ElseBB;
+				BasicBlock *MergeBB;
 				if(operation=="&&"){
-					Value* Start = left->evaluate(a).getValue(a);
-					a.builder.CreateCondBr(Start, ElseBB, MergeBB);
+					if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
+						if(c->isOne()) return right->evaluate(a).toValue(a,filePos);
+						else return DATA::getConstant(getBool(false),boolClass);
+					}
+					else{
+						ElseBB = a.CreateBlock("else",StartBB);
+						MergeBB = a.CreateBlock("ifcont",StartBB/*,ElseBB*/);
+						a.builder.CreateCondBr(Start, ElseBB, MergeBB);
+					}
+					StartBB = a.builder.GetInsertBlock();
 					a.builder.SetInsertPoint(ElseBB);
-					Value* fin = right->evaluate(a).getValue(a);
+					Value* fin = right->evaluate(a).getValue(a,filePos);
+					//TODO can allow check if right is constant
 					a.builder.CreateBr(MergeBB);
+					ElseBB = a.builder.GetInsertBlock();
+					//a.addPred(MergeBB,ElseBB);
 					a.builder.SetInsertPoint(MergeBB);
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
 					PN->addIncoming(fin, ElseBB);
 					return DATA::getConstant(PN, boolClass);
 				}else{
-					Value* Start = left->evaluate(a).getValue(a);
-					a.builder.CreateCondBr(Start, MergeBB, ElseBB);
+					if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
+						if(! c->isOne()) right->evaluate(a).getValue(a,filePos);
+						else return DATA::getConstant(getBool(true),boolClass);
+					}
+					else{
+						ElseBB = a.CreateBlock("else",StartBB);
+						MergeBB = a.CreateBlock("ifcont",StartBB/*,ElseBB*/);
+						a.builder.CreateCondBr(Start, MergeBB, ElseBB);
+					}
+					StartBB = a.builder.GetInsertBlock();
 					a.builder.SetInsertPoint(ElseBB);
-					Value* fin = right->evaluate(a).getValue(a);
+					Value* fin = right->evaluate(a).getValue(a,filePos);
+					//TODO can allow check if right is constant
 					a.builder.CreateBr(MergeBB);
+					ElseBB = a.builder.GetInsertBlock();
+					//a.addPred(MergeBB,ElseBB);
 					a.builder.SetInsertPoint(MergeBB);
 					PHINode *PN = a.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 					PN->addIncoming(Start, StartBB);
@@ -145,14 +168,14 @@ class E_BINOP : public Statement{
 			if(operation!="[]") f << "(";
 			left->write(f,s);
 			if(operation=="[]"){
-			f << "[";
-			right->write(f,s);
-			f << "]";
+				f << "[";
+				right->write(f,s);
+				f << "]";
 			}
 			else{
-			f << " " << operation << " ";
-			right->write(f,s);
-			f << ")";
+				f << " " << operation << " ";
+				right->write(f,s);
+				f << ")";
 			}
 		}
 

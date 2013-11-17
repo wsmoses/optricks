@@ -53,7 +53,7 @@ class ouopUser: public ouop{
 			returnType = a;
 		}
 		DATA apply(DATA a,RData& m, PositionID id) override final{
-			return DATA::getConstant(m.builder.CreateCall(func, a.getValue(m), "uop"), returnType);
+			return DATA::getConstant(m.builder.CreateCall(func, a.getValue(m,id), "uop"), returnType);
 		}
 };
 
@@ -85,7 +85,7 @@ class obinopUser: public obinop{
 			returnType = a;
 		}
 		DATA apply(DATA a,DATA b, RData& m, PositionID id) override final{
-			return DATA::getConstant(m.builder.CreateCall2(func, a.getValue(m), b.getValue(m), "binop"), returnType);
+			return DATA::getConstant(m.builder.CreateCall2(func, a.getValue(m,id), b.getValue(m,id), "binop"), returnType);
 		}
 };
 #endif /* OPERATIONS_HPP_ */

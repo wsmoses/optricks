@@ -111,9 +111,11 @@ class E_FUNC_CALL : public Statement{
 				if(tp->hasFunction(T->right)){
 					//TODO make better check (e.g. static functions)
 					Value* loc;
-					if(tp->layoutType==POINTER_LAYOUT || tp->layoutType==PRIMITIVEPOINTER_LAYOUT) loc = T->left->evaluate(a).getValue(a);//TODO check
+					if(tp->layoutType==POINTER_LAYOUT || tp->layoutType==PRIMITIVEPOINTER_LAYOUT) loc = T->left->evaluate(a).getValue(a,filePos);//TODO check
 					else{
-						loc = T->left->evaluate(a).toLocation(a).getMyLocation();
+						Value* v = T->left->evaluate(a).getValue(a,filePos);
+						loc = a.builder.CreateAlloca(v->getType(),0);
+						a.builder.CreateStore(v,loc);
 					}
 					Args.push_back(loc);
 				}
@@ -122,15 +124,15 @@ class E_FUNC_CALL : public Statement{
 			for(unsigned int i = 0; i<vals.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getSelfClass(a);
 				if(vals[i]->checkTypes(a)==voidClass)
-					Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
+					Args.push_back( proto->declarations[i]->value->evaluate(a).castToV(a, t, filePos));
 				else{
-					Args.push_back( vals[i]->evaluate(a).castTo(a, t, filePos).getValue(a) );
+					Args.push_back( vals[i]->evaluate(a).castToV(a, t, filePos));
 				}
 				assert(Args.back() != NULL);
 			}
 			for(unsigned int i = vals.size(); i<proto->declarations.size(); i++){
 				ClassProto* t = proto->declarations[i]->classV->getSelfClass(a);
-				Args.push_back( proto->declarations[i]->value->evaluate(a).castTo(a, t, filePos).getValue(a) );
+				Args.push_back( proto->declarations[i]->value->evaluate(a).castToV(a, t, filePos));
 			}
 			return std::pair<std::vector<Value*>,DATA>(Args,d_callee);
 		}
@@ -161,7 +163,7 @@ class E_FUNC_CALL : public Statement{
 			if(d_callee.getType()==R_GEN){
 				//TODO allow for auto tmp = "hello".iterator(), storing "hello" in temp struct
 				ClassProto* cla = d_callee.getFunctionType()->getGeneratorType(a);
-				Value* mine = cla->generateData(a).getValue(a);
+				Value* mine = cla->generateData(a);
 				for(unsigned int i = 0; i<Args.size(); i++){
 					mine = a.builder.CreateInsertValue(mine, Args[i], ArrayRef<unsigned>(i));
 				}

@@ -49,7 +49,7 @@ class IfStatement : public Construct{
 			return returnType;
 		}
 		DATA evaluate(RData& r) override{
-			Value* cond = condition->evaluate(r).getValue(r);
+			Value* cond = condition->evaluate(r).getValue(r,filePos);
 			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
 				if(c->isOne()){
 					then->evaluate(r);
@@ -59,44 +59,52 @@ class IfStatement : public Construct{
 				return DATA::getNull();
 			}
 			bool ret = true;
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
-			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else", TheFunction);
-			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont", TheFunction);
-			if(finalElse->getToken()!=T_VOID)
+			BasicBlock* StartBB = r.builder.GetInsertBlock();
+			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
+			BasicBlock *ElseBB;
+			BasicBlock *MergeBB;
+			if(finalElse->getToken()!=T_VOID){
+				ElseBB = r.CreateBlock("else",StartBB);
+				MergeBB = r.CreateBlock("ifcont"/*,ThenBB,ElseBB*/);
 				r.builder.CreateCondBr(cond, ThenBB, ElseBB);
-			else
+			}
+			else{
+				ElseBB = NULL;
+				MergeBB = r.CreateBlock("ifcont",StartBB/*,ThenBB*/);
 				r.builder.CreateCondBr(cond, ThenBB, MergeBB);
+			}
 			r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
 
 			then->evaluate(r);
 			if(!r.guarenteedReturn){
+				ThenBB = r.builder.GetInsertBlock();
+				//r.addPred(MergeBB,ThenBB);
 				r.builder.CreateBr(MergeBB);
 			}
 			ret = ret && r.guarenteedReturn;
 
 			// Emit else block.
-			if(finalElse->getToken() != T_VOID){
+			if(ElseBB!=NULL){
 				r.builder.SetInsertPoint(ElseBB);
 				r.guarenteedReturn = false;
 				finalElse->evaluate(r);
 				ret = ret && r.guarenteedReturn;
-				if(!r.guarenteedReturn) r.builder.CreateBr(MergeBB);
+				if(!r.guarenteedReturn){
+					ElseBB = r.builder.GetInsertBlock();
+					//r.addPred(MergeBB,ElseBB);
+					r.builder.CreateBr(MergeBB);
+				}
 			}
 			else{
 				ret = false;
-				TheFunction->getBasicBlockList().remove(ElseBB);
 			}
 
 			if(!ret){
 				r.builder.SetInsertPoint(MergeBB);
 			} else{
-				TheFunction->getBasicBlockList().remove(MergeBB);
+				MergeBB->eraseFromParent();
 			}
-
-			// Emit merge block.
-//
 			r.guarenteedReturn = ret;
 			return DATA::getNull();
 		}

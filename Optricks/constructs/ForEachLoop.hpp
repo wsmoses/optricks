@@ -50,16 +50,11 @@ class ForEachLoop : public Construct{
 		DATA evaluate(RData& ra) override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
 			checkTypes(ra);
-			Function *TheFunction = ra.builder.GetInsertBlock()->getParent();
-			//BasicBlock *Parent = ra.builder.GetInsertBlock();
-			//BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "eachLoop", TheFunction);
-			BasicBlock *END = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
-			//DATA toEv = DATA::getNull();
+
 			E_GEN* myGen = NULL;
 			DATA toEv = iterable->evaluate(ra);
 			iterC = toEv.getReturnType(ra);
 			//TODO do not create struct if calling generator function
-			//iterC = toEv.getReturnType();
 			myGen = (E_GEN*)(iterC->getFunction("iterator", filePos)->funcs.get(new FunctionProto("iterator"), ra, filePos).getPointer());
 			/*if(E_FUNC_CALL* func = d ynamic_cast<E_FUNC_CALL*>(iterable)){
 				auto tmpVal = func->getArgs(ra);
@@ -70,7 +65,7 @@ class ForEachLoop : public Construct{
 			}*/
 
 			if(iterC->isGen){
-				Value* tv = toEv.getValue(ra);
+				Value* tv = toEv.getValue(ra,filePos);
 				if(myGen->thisPointer!=NULL){
 					ClassProto* genClass = myGen->self->getSelfClass(ra);
 					assert(genClass!=NULL);
@@ -91,7 +86,7 @@ class ForEachLoop : public Construct{
 				}
 			} else{
 				if(myGen->thisPointer!=NULL){
-					if(iterC->layoutType==PRIMITIVEPOINTER_LAYOUT || iterC->layoutType==POINTER_LAYOUT) myGen->thisPointer->setObject(toEv.toValue(ra));
+					if(iterC->layoutType==PRIMITIVEPOINTER_LAYOUT || iterC->layoutType==POINTER_LAYOUT) myGen->thisPointer->setObject(toEv.toValue(ra,filePos));
 					else myGen->thisPointer->setObject(toEv.toLocation(ra));
 				}
 				for(auto& a: myGen->prototype->declarations){
@@ -99,56 +94,60 @@ class ForEachLoop : public Construct{
 					a->variable->getMetadata(ra)->setObject(a->value->evaluate(ra));
 				}
 			}
-			Jumpable* j = new Jumpable("", GENERATOR, NULL, NULL, theClass);
-			ra.addJump(j);
+			Jumpable j("", GENERATOR, NULL, NULL, theClass);
+			ra.addJump(&j);
 			myGen->ret->evaluate(ra);
-			if(ra.popJump()!=j) error("Did not receive same func jumpable created");
+			if(ra.popJump()!= &j) error("Did not receive same func jumpable created (j foreach)");
+			//Function* TheFunction;
+			BasicBlock *END = ra.CreateBlock("endLoop");
 			ra.builder.CreateBr(END);
 
 			toLoop->checkTypes(ra);
-			if(j->endings.size()==1){
-				std::pair<BasicBlock*,BasicBlock*> NEXT = j->resumes[0];
+			if(j.endings.size()==1){
+				std::pair<BasicBlock*,BasicBlock*> NEXT = j.resumes[0];
 				ra.builder.SetInsertPoint(NEXT.first);
-				DATA v = j->endings[0].second;
+				DATA v = j.endings[0].second;
 				if(!(v.getType()==R_LOC || v.getType()==R_CONST)) filePos.error("Cannot use object designated as "+str<DataType>(v.getType())+" for iterable");
 				localVariable->getMetadata(ra)->setObject(v.toLocation(ra));
-				Jumpable* k = new Jumpable(name, LOOP, NEXT.second, END, NULL);
-				ra.addJump(k);
+				assert(NEXT.second);
+				assert(END);
+				Jumpable k(name, LOOP, NEXT.second, END, NULL);
+				ra.addJump(&k);
 				ra.guarenteedReturn = false;
 				toLoop->evaluate(ra);
-				if(ra.popJump()!=k) error("Did not receive same func jumpable created");
+				if(ra.popJump()!= &k) error("Did not receive same func jumpable created (k foreach)");
 				if(!ra.guarenteedReturn) ra.builder.CreateBr(NEXT.second);
 			}
 			else{
 				Type* functionReturnType = theClass->getType(ra);
-				BasicBlock* INLOOP = BasicBlock::Create(getGlobalContext(), "toLoop", TheFunction);
-				BasicBlock* TODECIDE = BasicBlock::Create(getGlobalContext(), "decide", TheFunction);
+				BasicBlock* INLOOP = ra.CreateBlock("toLoop");
+				BasicBlock* TODECIDE = ra.CreateBlock("decide");
 				ra.builder.SetInsertPoint(INLOOP);
-				PHINode* val = ra.builder.CreatePHI(functionReturnType, (unsigned)(j->endings.size()),"val");
-				PHINode* ind = ra.builder.CreatePHI(INT32TYPE, (unsigned)(j->endings.size()),"ind");
+				PHINode* val = ra.CreatePHI(functionReturnType, (unsigned)(j.endings.size()),"val");
+				PHINode* ind = ra.CreatePHI(INT32TYPE, (unsigned)(j.endings.size()),"ind");
 				auto met = localVariable->getMetadata(ra);
 				met->setObject(DATA::getConstant(val, theClass));
 				localVariable->returnType = theClass;
-				Jumpable* k = new Jumpable(name, LOOP, TODECIDE, END, NULL);
-				ra.addJump(k);
+				assert(TODECIDE);
+				assert(END);
+				Jumpable k(name, LOOP, TODECIDE, END, NULL);
+				ra.addJump(&k);
 				ra.guarenteedReturn = false;
 				toLoop->evaluate(ra);
-				if(ra.popJump()!=k) error("Did not receive same func jumpable created");
+				if(ra.popJump()!= &k) error("Did not receive same func jumpable created (k2 foreach)");
 				if(!ra.guarenteedReturn) ra.builder.CreateBr(TODECIDE);
 				ra.builder.SetInsertPoint(TODECIDE);
-				SwitchInst* swit = ra.builder.CreateSwitch(ind, END, (unsigned)(j->endings.size()));
-				for(unsigned int i = 0; i<j->endings.size(); i++){
-					std::pair<BasicBlock*,BasicBlock*> NEXT = j->resumes[i];
+				SwitchInst* swit = ra.builder.CreateSwitch(ind, END, (unsigned)(j.endings.size()));
+				for(unsigned int i = 0; i<j.endings.size(); i++){
+					std::pair<BasicBlock*,BasicBlock*> NEXT = j.resumes[i];
 					ra.builder.SetInsertPoint(NEXT.first);
-					Value* v = (j->endings[i].second).getValue(ra);
+					Value* v = (j.endings[i].second).getValue(ra,filePos);
 					val->addIncoming(v, NEXT.first);
 					ind->addIncoming(getInt32(i), NEXT.first);
 					ra.builder.CreateBr(INLOOP);
 					swit->addCase(getInt32(i), NEXT.second);
 				}
 			}
-			TheFunction->getBasicBlockList().remove(END);
-			TheFunction->getBasicBlockList().push_back(END);
 			ra.builder.SetInsertPoint(END);
 			return DATA::getNull();
 		}

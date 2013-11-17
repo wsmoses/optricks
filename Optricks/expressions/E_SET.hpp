@@ -50,9 +50,10 @@ class E_SET: public Statement{
 		DATA evaluate(RData& r) final override{
 			DATA nex = value->evaluate(r).castTo(r, variable->returnType, filePos);
 			DATA to = variable->evaluate(r);
-			Value* aloc = to.getMyLocation();
-			r.builder.CreateStore(nex.getValue(r), aloc);
-			return nex.toValue(r);
+			Location* aloc = to.getMyLocation();
+			DATA tv = nex.toValue(r,filePos);
+			aloc->setValue(tv.getValue(r,filePos),r);
+			return tv;
 		}
 		E_SET* simplify() final override{
 			return new E_SET(filePos, variable,(value->simplify()) );

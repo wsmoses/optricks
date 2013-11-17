@@ -69,10 +69,12 @@ class E_LOOKUP : public Statement{
 				return lT->getFunction(right, filePos)->getObject(filePos);
 			} else if(lT->layoutType!=POINTER_LAYOUT && eval.getType()==R_LOC){
 				unsigned int l =lT->getDataClassIndex(right,filePos);
-				Value* v = a.builder.CreateConstGEP2_32(eval.getMyLocation(),0,l);
-				return DATA::getLocation(v, returnType);
+				//TODO wrap into Lazy location
+				Value* p = eval.getMyLocation()->getPointer(a,filePos);
+				auto v = a.builder.CreateConstGEP2_32(p,0,l);
+				return DATA::getLocation(new StandardLocation(v), returnType);
 			}
-			Value* lVal = eval.getValue(a);
+			Value* lVal = eval.getValue(a,filePos);
 			if(lVal!=NULL){
 				if(lVal->getType()->isVectorTy()){
 					return DATA::getConstant(a.builder.CreateExtractElement(lVal, getInt(lT->getDataClassIndex(right,filePos)),"getV"), returnType);
@@ -84,8 +86,8 @@ class E_LOOKUP : public Statement{
 					Type* innerType = ((PointerType*) (lVal->getType()))->getElementType();
 					if(innerType->isVectorTy() || innerType->isStructTy()){
 						unsigned int ind = lT->getDataClassIndex(right,filePos);
-						Value* t = a.builder.CreateConstGEP2_32(lVal,0,ind);
-						return DATA::getLocation(t, returnType);
+						auto t = a.builder.CreateConstGEP2_32(lVal,0,ind);
+						return DATA::getLocation(new StandardLocation(t), returnType);
 					} else {
 						error("can't fast-lookup non-vector (2) ");
 						return DATA::getNull();

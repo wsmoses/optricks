@@ -58,7 +58,7 @@ class E_TUPLE : public Statement{
 				Value* nextV = UndefValue::get(returnType->getType(m));
 				for(unsigned int i = 0; i<values.size(); i++){
 					ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(i);
-					Value* val = values[i]->evaluate(m).getValue(m);
+					Value* val = values[i]->evaluate(m).getValue(m,filePos);
 					assert(val);
 					assert(ar[0]==i);
 					nextV = m.builder.CreateInsertValue(nextV,val,ar);

@@ -57,43 +57,35 @@ class TernaryOperator : public Statement{
 			return returnType = tog;
 		}
 		DATA evaluate(RData& r) override{
-			Value* cond = condition->evaluate(r).getValue(r);
+			Value* cond = condition->evaluate(r).getValue(r,filePos);
 			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
 				if(c->isOne()){
-					return then->evaluate(r);
+					return then->evaluate(r).toValue(r,filePos);
 				} else{
-					return finalElse->evaluate(r);
+					return finalElse->evaluate(r).toValue(r,filePos);
 				}
 			}
-			//TODO support ((true)?a:b)++
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock *ThenBB = BasicBlock::Create(r.lmod->getContext(), "then", TheFunction);
-			BasicBlock *ElseBB = BasicBlock::Create(r.lmod->getContext(), "else");
-			BasicBlock *MergeBB = BasicBlock::Create(r.lmod->getContext(), "ifcont");
-
+			BasicBlock* StartBB = r.builder.GetInsertBlock();
+			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
+			BasicBlock *ElseBB = r.CreateBlock("else",StartBB);
+			BasicBlock *MergeBB = r.CreateBlock("ifcont"/*,ThenBB,ElseBB*/);
 			r.builder.CreateCondBr(cond, ThenBB, ElseBB);
 
-			// Emit then value.
 			r.builder.SetInsertPoint(ThenBB);
 
-			Value* ThenV = then->evaluate(r).castTo(r, returnType, filePos).getValue(r);
+			Value* ThenV = then->evaluate(r).castToV(r, returnType, filePos);
 
 			r.builder.CreateBr(MergeBB);
-			// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
 			ThenBB = r.builder.GetInsertBlock();
-
-			// Emit else block.
-			TheFunction->getBasicBlockList().push_back(ElseBB);
+			//r.addPred(MergeBB,ThenBB);
 			r.builder.SetInsertPoint(ElseBB);
 
-			Value* ElseV = finalElse->evaluate(r).castTo(r, returnType, filePos).getValue(r);
+			Value* ElseV = finalElse->evaluate(r).castToV(r, returnType, filePos);
 
 			r.builder.CreateBr(MergeBB);
-			// Codegen of 'Else' can change the current block, update ElseBB for the PHI.
 			ElseBB = r.builder.GetInsertBlock();
+			//r.addPred(MergeBB,ElseBB);
 
-			// Emit merge block.
-			TheFunction->getBasicBlockList().push_back(MergeBB);
 			r.builder.SetInsertPoint(MergeBB);
 			PHINode *PN = r.builder.CreatePHI(returnType->getType(r), 2,"iftmp");
 			PN->addIncoming(ThenV, ThenBB);

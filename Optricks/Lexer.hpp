@@ -111,22 +111,23 @@ class Lexer{
 				n->registerFunctionPrototype(rdata);
 			}
 			for(auto& n: stats){
+				//cerr << n << endl << flush;
 				n->buildFunction(rdata);
 			}
 			for(auto& n: stats) n->checkTypes(rdata);
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, std::vector<Type*>(), false);
-			Function *F = Function::Create(FT, EXTERN_FUNC, "main", rdata.lmod);
+			Function *F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(rdata);
 			rdata.builder.CreateRetVoid();
+			rdata.FinalizeFunction(F,debug);
 			if(debug){
 				this->myMod->write(cerr,"");
 				rdata.lmod->dump();
 				cerr << endl << flush;
 			}
-			VERIFY(*F);
 			if(toFile>0) verifyModule(*(rdata.lmod));
 			//auto modOpt = new PassManager();
 			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
@@ -138,7 +139,6 @@ class Lexer{
 			//if(toFile>0) pmb.populateModulePassManager(*modOpt);
 			//fnOpt->run(*F);
 			//if(toFile>0) modOpt->run(*(rdata.lmod));
-			rdata.fpm->run(*F);
 			if(toFile>0) rdata.mpm->run(*(rdata.lmod));
 
 			if(debug){

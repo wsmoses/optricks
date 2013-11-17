@@ -13,11 +13,11 @@
 #include "ClassProto.hpp"
 //TODO allow ir-built inline constructors (speed boost)
 bool isStartName(int i){
-	return isalpha(i) || i=='_' || i=='$';
+	return isalpha((char)i) || i=='_' || i=='$';
 }
 
 bool isStartType(int i){
-	return isalpha(i) || i=='_' || i=='$' || i=='{' || i=='(' || i=='[';
+	return isalpha((char)i) || i=='_' || i=='$' || i=='{' || i=='(' || i=='[';
 }
 Value* complexInverse(Value* a, RData& m){
 	Value* sq = m.builder.CreateFMul(a, a);
@@ -75,7 +75,7 @@ void initClassesMeta(){
 	//stringClass->addElement("_size",intClass,PositionID(0,0,"<start.initClassesMeta>"));
 	complexClass->preops["-"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		Value* a = av.getValue(m);
+		Value* a = av.getValue(m,id);
 		if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
 			ConstantFP* a = dyn_cast<ConstantFP>(c->getAggregateElement(0U));
 			ConstantFP* b = dyn_cast<ConstantFP>(c->getAggregateElement(1U));
@@ -90,11 +90,11 @@ void initClassesMeta(){
 	},complexClass);
 	complexClass->preops["+"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return av.toValue(m);
+		return av.toValue(m,id);
 	},complexClass);
 	intClass->addCast(doubleClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m);
+		Value *a = av.getValue(m,id);
 		if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
 			APInt a = c->getValue();
 			return DATA::getConstant(getDouble(a.signedRoundToDouble()),doubleClass);
@@ -104,7 +104,7 @@ void initClassesMeta(){
 	//TODO allow printf
 	intClass->addCast(complexClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m);
+		Value *a = av.getValue(m,id);
 		if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
 			APInt a = c->getValue();
 			double data[2] = {a.signedRoundToDouble(), 0};
@@ -119,7 +119,7 @@ void initClassesMeta(){
 
 	doubleClass->addCast(complexClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m);
+		Value *a = av.getValue(m,id);
 		if(ConstantFP* c = dyn_cast<ConstantFP>(a)){
 			APFloat a = c->getValueAPF();
 			double data[2] = {a.convertToDouble(), 0};
@@ -133,7 +133,7 @@ void initClassesMeta(){
 
 	complexClass->addBinop("+", complexClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = dyn_cast<ConstantFP>(c->getAggregateElement(0U))->getValueAPF().convertToDouble();
@@ -148,7 +148,7 @@ void initClassesMeta(){
 	},complexClass);
 	complexClass->addBinop("-", complexClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = dyn_cast<ConstantFP>(c->getAggregateElement(0U))->getValueAPF().convertToDouble();
@@ -164,7 +164,7 @@ void initClassesMeta(){
 
 	doubleClass->addBinop("*", complexClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantFP* c = dyn_cast<ConstantFP>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = c->getValueAPF().convertToDouble();
@@ -184,7 +184,7 @@ void initClassesMeta(){
 
 	complexClass->addBinop("*", doubleClass) = new obinopNative(
 			[](DATA bv, DATA av, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantFP* c = dyn_cast<ConstantFP>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = c->getValueAPF().convertToDouble();
@@ -204,7 +204,7 @@ void initClassesMeta(){
 
 	complexClass->addBinop("*", complexClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = dyn_cast<ConstantFP>(c->getAggregateElement(0U))->getValueAPF().convertToDouble();
@@ -223,7 +223,7 @@ void initClassesMeta(){
 	 */
 	complexClass->addBinop("**", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantInt* d = dyn_cast<ConstantInt>(b)){
 			auto b1 = d->getValue().getSExtValue();
 			if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
@@ -282,9 +282,9 @@ void initClassesMeta(){
 		}
 
 		Function *TheFunction = m.builder.GetInsertBlock()->getParent();
-		BasicBlock *ThenBB = BasicBlock::Create(m.lmod->getContext(), "if_zero", TheFunction);
-		BasicBlock *ElseBB = BasicBlock::Create(m.lmod->getContext(), "_nonzero", TheFunction);
-		BasicBlock *MergeBB = BasicBlock::Create(m.lmod->getContext(), "all_pow", TheFunction);
+		BasicBlock *ThenBB = m.CreateBlockD("if_zero", TheFunction);
+		BasicBlock *ElseBB = m.CreateBlockD("_nonzero", TheFunction);
+		BasicBlock *MergeBB = m.CreateBlockD("all_pow", TheFunction);
 		m.builder.CreateCondBr(m.builder.CreateICmpEQ(b,getInt(0)), ThenBB, ElseBB);
 		m.builder.SetInsertPoint(ThenBB);
 		double temp1[2] = {1,0};
@@ -292,9 +292,9 @@ void initClassesMeta(){
 		m.builder.CreateBr(MergeBB);
 			//INCOMING ifZero MergeBB
 		m.builder.SetInsertPoint(ElseBB);
-		BasicBlock *LessBB = BasicBlock::Create(m.lmod->getContext(), "_lesszero", TheFunction);
-		BasicBlock *PreLoopBB = BasicBlock::Create(m.lmod->getContext(), "_preLoop", TheFunction);
-		BasicBlock *GreatBB = BasicBlock::Create(m.lmod->getContext(), "_greatzero", TheFunction);
+		BasicBlock *LessBB = m.CreateBlockD("_lesszero", TheFunction);
+		BasicBlock *PreLoopBB = m.CreateBlockD("_preLoop", TheFunction);
+		BasicBlock *GreatBB = m.CreateBlockD("_greatzero", TheFunction);
 		m.builder.CreateCondBr(m.builder.CreateICmpSLT(b, getInt(0)), LessBB, PreLoopBB);
 		m.builder.SetInsertPoint(PreLoopBB);
 		Value* subOne = m.builder.CreateSub(b, getInt(1));
@@ -304,27 +304,27 @@ void initClassesMeta(){
 		Value* realExp = m.builder.CreateSub(getInt(-1), b);
 		m.builder.CreateCondBr(m.builder.CreateICmpEQ(realExp,getInt(0)), MergeBB,GreatBB);
 		m.builder.SetInsertPoint(GreatBB);
-		PHINode* X = m.builder.CreatePHI(COMPLEXTYPE, 3, "temp");
+		PHINode* X = m.CreatePHI(COMPLEXTYPE, 3, "temp");
 		X->addIncoming(inversed, LessBB);
 		X->addIncoming(a, PreLoopBB);
 		//X->addIncoming();
-		PHINode* PN = m.builder.CreatePHI(COMPLEXTYPE, 3, "result");
+		PHINode* PN = m.CreatePHI(COMPLEXTYPE, 3, "result");
 		PN->addIncoming(inversed, LessBB);
 		PN->addIncoming(a, PreLoopBB);
 		//PN->addIncoming();
-		PHINode* exp = m.builder.CreatePHI(INTTYPE, 3, "pow");
+		PHINode* exp = m.CreatePHI(INTTYPE, 3, "pow");
 		exp->addIncoming(realExp, LessBB);
 		exp->addIncoming(subOne, PreLoopBB);
 		//exp->addIncoming();
-		BasicBlock *OddBB = BasicBlock::Create(m.lmod->getContext(), "if_odd", TheFunction);
-		BasicBlock *EvenBB = BasicBlock::Create(m.lmod->getContext(), "if_even", TheFunction);
+		BasicBlock *OddBB = m.CreateBlockD("if_odd", TheFunction);
+		BasicBlock *EvenBB = m.CreateBlockD("if_even", TheFunction);
 		m.builder.CreateCondBr(m.builder.CreateTrunc(exp, BOOLTYPE), OddBB, EvenBB);
 		m.builder.SetInsertPoint(OddBB);
 		Value* resultOdd = complexMultiply(PN, X, m);
 		m.builder.CreateCondBr(m.builder.CreateICmpEQ(exp, getInt(1)), MergeBB, EvenBB);
 			//INCOMING resuldOdd to MergeBB;
 		m.builder.SetInsertPoint(EvenBB);
-		PHINode* res = m.builder.CreatePHI(COMPLEXTYPE, 2, "res2");
+		PHINode* res = m.CreatePHI(COMPLEXTYPE, 2, "res2");
 		res->addIncoming(resultOdd, OddBB);
 		res->addIncoming(PN, GreatBB);
 		Value* nExp = m.builder.CreateUDiv(exp, getInt(2));
@@ -337,7 +337,7 @@ void initClassesMeta(){
 		TheFunction->getBasicBlockList().remove(MergeBB);
 		TheFunction->getBasicBlockList().push_back(MergeBB);
 		m.builder.SetInsertPoint(MergeBB);
-		PHINode* comp = m.builder.CreatePHI(COMPLEXTYPE, 4, "finalExp");
+		PHINode* comp = m.CreatePHI(COMPLEXTYPE, 4, "finalExp");
 		comp->addIncoming(ifZero, ThenBB);
 		comp->addIncoming(resultOdd, OddBB);
 		comp->addIncoming(inversed, LessBB);
@@ -348,7 +348,7 @@ void initClassesMeta(){
 
 	complexClass->addBinop("/", doubleClass) = new obinopNative(
 			[](DATA bv, DATA av, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantFP* c = dyn_cast<ConstantFP>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = c->getValueAPF().convertToDouble();
@@ -368,7 +368,7 @@ void initClassesMeta(){
 
 	complexClass->addBinop("/", complexClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		if(ConstantVector* c = dyn_cast<ConstantVector>(a)){
 			if(ConstantVector* d = dyn_cast<ConstantVector>(b)){
 				double a1 = dyn_cast<ConstantFP>(c->getAggregateElement(0U))->getValueAPF().convertToDouble();
@@ -400,7 +400,7 @@ void initClassesMeta(){
 	stringClass->addBinop("[]",intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
 
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		Value* val = m.builder.CreateConstGEP2_32(m.builder.CreateLoad(a),0,stringClass->getDataClassIndex("_cstr",id));
 		std::vector<Value*> v = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
 		auto t = m.builder.CreateInBoundsGEP(val,v,"tmpind");
@@ -410,7 +410,7 @@ void initClassesMeta(){
 
 	c_stringClass->addBinop("[]",intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value *a = av.getValue(m), *b = bv.getValue(m);
+		Value *a = av.getValue(m,id), *b = bv.getValue(m,id);
 		std::vector<Value*> z = {m.builder.CreateTruncOrBitCast(b,INT32TYPE)};
 		Value* t = m.builder.CreateInBoundsGEP(a,z,"tmpind");
 		return DATA::getConstant(m.builder.CreateLoad(t),charClass);
@@ -420,395 +420,403 @@ void initClassesMeta(){
 	///////******************************* Boolean ********************************////////
 	boolClass->addBinop("&&",boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m),bv.getValue(m),"andtmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m,id),bv.getValue(m,id),"andtmp"),boolClass);
 		//still short circuits
 	},boolClass);
 
 	boolClass->addBinop("||",boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateOr(av.getValue(m),bv.getValue(m),"ortmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateOr(av.getValue(m,id),bv.getValue(m,id),"ortmp"),boolClass);
 		//still short circuits
 	},boolClass);
 
 	boolClass->addBinop("&", boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m),bv.getValue(m),"andtmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m,id),bv.getValue(m,id),"andtmp"),boolClass);
 	},boolClass);
 
 	boolClass->addBinop("|", boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateOr(av.getValue(m),bv.getValue(m),"ortmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateOr(av.getValue(m,id),bv.getValue(m,id),"ortmp"),boolClass);
 	},boolClass);
 
 	boolClass->addBinop("^", boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateXor(av.getValue(m),bv.getValue(m),"xortmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateXor(av.getValue(m,id),bv.getValue(m,id),"xortmp"),boolClass);
 	},boolClass);
 
 	boolClass->addBinop("!=", boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m),bv.getValue(m),"andtmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m,id),bv.getValue(m,id),"andtmp"),boolClass);
 	},boolClass);
 
 	boolClass->addBinop("==", boolClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m),bv.getValue(m),"andtmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m,id),bv.getValue(m,id),"andtmp"),boolClass);
 	},boolClass);
 
 	boolClass->preops["!"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateNot(av.getValue(m),"nottmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateNot(av.getValue(m,id),"nottmp"),boolClass);
 	},boolClass);
 
 	///////******************************* Double/Double ******************************////////
 	doubleClass->addBinop("+", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFAdd(av.getValue(m),bv.getValue(m),"addtmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFAdd(av.getValue(m,id),bv.getValue(m,id),"addtmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->addBinop("-", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFSub(av.getValue(m),bv.getValue(m),"subtmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFSub(av.getValue(m,id),bv.getValue(m,id),"subtmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->addBinop("*", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFMul(av.getValue(m),bv.getValue(m),"multmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFMul(av.getValue(m,id),bv.getValue(m,id),"multmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->addBinop("%", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFRem(av.getValue(m),bv.getValue(m),"modtmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFRem(av.getValue(m,id),bv.getValue(m,id),"modtmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->addBinop("<", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpOLT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpOLT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop(">", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpOGT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpOGT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop("<=", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpOLE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpOLE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop(">=", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpOGE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpOGE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop("==", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpOEQ(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpOEQ(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop("!=", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFCmpONE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateFCmpONE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	doubleClass->addBinop("/", doubleClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFDiv(av.getValue(m),bv.getValue(m),"divtmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFDiv(av.getValue(m,id),bv.getValue(m,id),"divtmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->preops["-"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateFNeg(av.getValue(m),"negtmp"),doubleClass);
+		return DATA::getConstant(m.builder.CreateFNeg(av.getValue(m,id),"negtmp"),doubleClass);
 	},doubleClass);
 
 	doubleClass->preops["+"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return av.toValue(m);
+		return av.toValue(m,id);
 	},doubleClass);
 
 
 	///////******************************* INT ********************************////////
 	intClass->addBinop("&", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m),bv.getValue(m),"andtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateAnd(av.getValue(m,id),bv.getValue(m,id),"andtmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("|", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateOr(av.getValue(m),bv.getValue(m),"ortmp"),intClass);
+		return DATA::getConstant(m.builder.CreateOr(av.getValue(m,id),bv.getValue(m,id),"ortmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("^", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateXor(av.getValue(m),bv.getValue(m),"xortmp"),intClass);
+		return DATA::getConstant(m.builder.CreateXor(av.getValue(m,id),bv.getValue(m,id),"xortmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("+", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateAdd(av.getValue(m),bv.getValue(m),"addtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateAdd(av.getValue(m,id),bv.getValue(m,id),"addtmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("-", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateSub(av.getValue(m),bv.getValue(m),"subtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateSub(av.getValue(m,id),bv.getValue(m,id),"subtmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("*", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateMul(av.getValue(m),bv.getValue(m),"multmp"),intClass);
+		return DATA::getConstant(m.builder.CreateMul(av.getValue(m,id),bv.getValue(m,id),"multmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("%", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateSRem(av.getValue(m),bv.getValue(m),"modtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateSRem(av.getValue(m,id),bv.getValue(m,id),"modtmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("<", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSLT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSLT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop(">", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSGT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSGT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop("<=", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSLE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSLE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop(">=", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSGE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSGE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop("==", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop("!=", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	intClass->addBinop("/", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateSDiv(av.getValue(m),bv.getValue(m),"divtmp"),intClass);
+		Value* v = bv.getValue(m,id);
+		if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
+			if(c->isZero()) id.error("Divide by zero");
+		}
+		return DATA::getConstant(m.builder.CreateSDiv(av.getValue(m,id),v,"divtmp"),intClass);
 	},intClass);
 
 	intClass->addBinop("<<", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateShl(av.getValue(m),bv.getValue(m)),intClass);
+		return DATA::getConstant(m.builder.CreateShl(av.getValue(m,id),bv.getValue(m,id)),intClass);
 	},intClass);
 
 	intClass->addBinop(">>", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateAShr(av.getValue(m),bv.getValue(m)),intClass);
+		return DATA::getConstant(m.builder.CreateAShr(av.getValue(m,id),bv.getValue(m,id)),intClass);
 	},intClass);
 
 	intClass->addBinop(">>>", intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateLShr(av.getValue(m),bv.getValue(m)),intClass);
+		return DATA::getConstant(m.builder.CreateLShr(av.getValue(m,id),bv.getValue(m,id)),intClass);
 	},intClass);
 
 	intClass->preops["-"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateNeg(av.getValue(m),"negtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateNeg(av.getValue(m,id),"negtmp"),intClass);
 	},intClass);
 
 	intClass->preops["+"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return av.toValue(m);
+		return av.toValue(m,id);
 	},intClass);
 
 	intClass->preops["--"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		if(av.getType()!=R_LOC) id.error("Need variable to use '--' pre-operator on integer");
-		Value* tmp = av.getValue(m);
+		Value* tmp = av.getValue(m,id);
 		av.setValue(m, m.builder.CreateSub(tmp, getInt(1)));
 		return DATA::getConstant(tmp, intClass);
 	},intClass);
 	intClass->preops["++"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		if(av.getType()!=R_LOC) id.error("Need variable to use '++' pre-operator on integer");
-		Value* tmp = av.getValue(m);
+		Value* tmp = av.getValue(m,id);
 		av.setValue(m, m.builder.CreateAdd(tmp, getInt(1)));
 		return DATA::getConstant(tmp, intClass);
 	},intClass);
 	intClass->postops["--"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		if(av.getType()!=R_LOC) id.error("Need variable to use '--' post-operator on integer");
-		av.setValue(m, m.builder.CreateSub(av.getValue(m), getInt(1)));
+		av.setValue(m, m.builder.CreateSub(av.getValue(m,id), getInt(1)));
 		return av;
 	},intClass);
 	intClass->postops["++"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
 		if(av.getType()!=R_LOC) id.error("Need variable to use '++' post-operator on integer");
-		av.setValue(m, m.builder.CreateAdd(av.getValue(m), getInt(1)));
+		av.setValue(m, m.builder.CreateAdd(av.getValue(m,id), getInt(1)));
 		return av;
 	},intClass);
 
 	intClass->preops["~"] = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateNot(av.getValue(m),"negtmp"),intClass);
+		return DATA::getConstant(m.builder.CreateNot(av.getValue(m,id),"negtmp"),intClass);
 	},intClass);
 
 	///////******************************* BYTE ********************************////////
 		byteClass->addBinop("&", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateAnd(av.getValue(m),bv.getValue(m),"andtmp"),intClass);
+			return DATA::getConstant(m.builder.CreateAnd(av.getValue(m,id),bv.getValue(m,id),"andtmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("|", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateOr(av.getValue(m),bv.getValue(m),"ortmp"),intClass);
+			return DATA::getConstant(m.builder.CreateOr(av.getValue(m,id),bv.getValue(m,id),"ortmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("^", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateXor(av.getValue(m),bv.getValue(m),"xortmp"),intClass);
+			return DATA::getConstant(m.builder.CreateXor(av.getValue(m,id),bv.getValue(m,id),"xortmp"),intClass);
 		},intClass);
 
 		byteClass->addBinop("+", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateAdd(av.getValue(m),bv.getValue(m),"addtmp"),intClass);
+			return DATA::getConstant(m.builder.CreateAdd(av.getValue(m,id),bv.getValue(m,id),"addtmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("-", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateSub(av.getValue(m),bv.getValue(m),"subtmp"),intClass);
+			return DATA::getConstant(m.builder.CreateSub(av.getValue(m,id),bv.getValue(m,id),"subtmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("*", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateMul(av.getValue(m),bv.getValue(m),"multmp"),intClass);
+			return DATA::getConstant(m.builder.CreateMul(av.getValue(m,id),bv.getValue(m,id),"multmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("%", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateSRem(av.getValue(m),bv.getValue(m),"modtmp"),intClass);
+			return DATA::getConstant(m.builder.CreateSRem(av.getValue(m,id),bv.getValue(m,id),"modtmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("<", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpULT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpULT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},byteClass);
 
 		byteClass->addBinop(">", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpUGT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpUGT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},boolClass);
 
 		byteClass->addBinop("<=", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpULE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpULE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},boolClass);
 
 		byteClass->addBinop(">=", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpUGE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpUGE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},boolClass);
 
 		byteClass->addBinop("==", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},boolClass);
 
 		byteClass->addBinop("!=", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+			return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 		},boolClass);
 
 		byteClass->addBinop("/", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateUDiv(av.getValue(m),bv.getValue(m),"divtmp"),intClass);
+			Value* v = bv.getValue(m,id);
+			if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
+				if(c->isZero()) id.error("Divide by zero");
+			}
+			return DATA::getConstant(m.builder.CreateUDiv(av.getValue(m,id),v,"divtmp"),intClass);
 		},byteClass);
 
 		byteClass->addBinop("<<", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateShl(av.getValue(m),bv.getValue(m)),intClass);
+			return DATA::getConstant(m.builder.CreateShl(av.getValue(m,id),bv.getValue(m,id)),intClass);
 		},intClass);
 
 		byteClass->addBinop(">>", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateLShr(av.getValue(m),bv.getValue(m)),intClass);
-//			return DATA::getConstant(m.builder.CreateAShr(av.getValue(m),bv.getValue(m)),intClass);
+			return DATA::getConstant(m.builder.CreateLShr(av.getValue(m,id),bv.getValue(m,id)),intClass);
+//			return DATA::getConstant(m.builder.CreateAShr(av.getValue(m,id),bv.getValue(m,id)),intClass);
 		},byteClass);
 
 		byteClass->addBinop(">>>", byteClass) = new obinopNative(
 				[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateLShr(av.getValue(m),bv.getValue(m)),intClass);
+			return DATA::getConstant(m.builder.CreateLShr(av.getValue(m,id),bv.getValue(m,id)),intClass);
 		},byteClass);
 
 		byteClass->preops["+"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
-			return av.toValue(m);
+			return av.toValue(m,id);
 		},byteClass);
 
 		byteClass->preops["--"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
 			if(av.getType()!=R_LOC) id.error("Need variable to use '--' pre-operator on byte");
-			Value* tmp = av.getValue(m);
+			Value* tmp = av.getValue(m,id);
 			av.setValue(m, m.builder.CreateSub(tmp, getByte(1)));
 			return DATA::getConstant(tmp, intClass);
 		},intClass);
 		byteClass->preops["++"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
 			if(av.getType()!=R_LOC) id.error("Need variable to use '++' pre-operator on byte");
-			Value* tmp = av.getValue(m);
+			Value* tmp = av.getValue(m,id);
 			av.setValue(m, m.builder.CreateAdd(tmp, getByte(1)));
 			return DATA::getConstant(tmp, intClass);
 		},byteClass);
 		byteClass->postops["--"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
 			if(av.getType()!=R_LOC) id.error("Need variable to use '--' post-operator on byte");
-			av.setValue(m, m.builder.CreateSub(av.getValue(m), getByte(1)));
+			av.setValue(m, m.builder.CreateSub(av.getValue(m,id), getByte(1)));
 			return av;
 		},byteClass);
 		byteClass->postops["++"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
 			if(av.getType()!=R_LOC) id.error("Need variable to use '++' post-operator on byte");
-			av.setValue(m, m.builder.CreateAdd(av.getValue(m), getByte(1)));
+			av.setValue(m, m.builder.CreateAdd(av.getValue(m,id), getByte(1)));
 			return av;
 		},byteClass);
 
 		byteClass->preops["~"] = new ouopNative(
 				[](DATA av, RData& m, PositionID id) -> DATA{
-			return DATA::getConstant(m.builder.CreateNot(av.getValue(m),"negtmp"),intClass);
+			return DATA::getConstant(m.builder.CreateNot(av.getValue(m,id),"negtmp"),intClass);
 		},byteClass);
 	//############################ CHAR
 
 
 	charClass->addBinop("<", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSLT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSLT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	charClass->addBinop(">", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSGT(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSGT(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	charClass->addBinop("<=", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSLE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSLE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	charClass->addBinop(">=", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpSGE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpSGE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	charClass->addBinop("==", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpEQ(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 
 	charClass->addBinop("!=", charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m),bv.getValue(m),"cmptmp"),boolClass);
+		return DATA::getConstant(m.builder.CreateICmpNE(av.getValue(m,id),bv.getValue(m,id),"cmptmp"),boolClass);
 	},boolClass);
 	/*
 	LANG_M->addPointer("class",classClass,0);

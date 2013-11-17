@@ -34,26 +34,26 @@ class DoWhileLoop : public Construct{
 			return T_WHILE;
 		}
 		DATA evaluate(RData& r) override{
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-
-			BasicBlock *loopBlock = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
-			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
-			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "afterloop", TheFunction);
-
+			BasicBlock *loopBlock = r.CreateBlock("loop");
+			BasicBlock *incBlock = r.CreateBlock("inc");
+			BasicBlock *afterBlock = r.CreateBlock("afterloop");
 			r.builder.CreateBr(loopBlock);
-
-			// Start insertion in LoopBB.
 			r.builder.SetInsertPoint(loopBlock);
-			Jumpable* j = new Jumpable(name, LOOP, incBlock, afterBlock, NULL);
-			r.addJump(j);
+			assert(incBlock); assert(afterBlock);
+			Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+			r.addJump(&j);
 			r.guarenteedReturn = false;
 			statement->evaluate(r);
-			if(r.popJump()!=j) error("Did not receive same while-loop jumpable created");
+#ifndef NDEBUG
+			auto tmp = r.popJump();
+			assert(tmp== &j);
+#else
+			r.popJump();
+#endif
+
 			r.builder.CreateBr(incBlock);
-
-
 			r.builder.SetInsertPoint(incBlock);
-			Value *EndCond = condition->evaluate(r).getValue(r);
+			Value *EndCond = condition->evaluate(r).getValue(r,filePos);
 			if(!r.guarenteedReturn){
 				if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
 					if(c->isOne()) r.builder.CreateBr(loopBlock);
@@ -63,11 +63,9 @@ class DoWhileLoop : public Construct{
 				}
 			}
 			r.guarenteedReturn = false;
-
 			r.builder.SetInsertPoint(afterBlock);
 			return DATA::getNull();
 		}
-
 		void registerClasses(RData& r) override final{
 			condition->registerClasses(r);
 			statement->registerClasses(r);
@@ -89,6 +87,5 @@ class DoWhileLoop : public Construct{
 			return new DoWhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
 };
-
-
 #endif /* WHILELOOP_HPP_ */
+

@@ -144,7 +144,7 @@ class ClassProto{
 			innerData.push_back(typ);
 			innerDataIndex[nam]=a;
 		}
-		DATA generateData(RData& r);
+		Value* generateData(RData& r);
 		DATA construct(RData& r, E_FUNC_CALL* call) const;
 		void addTypes(std::vector<Type*>& v,RData& r) const{
 			if(superClass!=NULL) superClass->addTypes(v,r);
@@ -365,6 +365,7 @@ DATA DATA::castTo(RData& r, ClassProto* right, PositionID id) const{
 	ouop* c = left->getCast(right,id);
 	return c->apply(*this, r, id);
 }
+
 ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 	if(vals.size()==0) return voidClass;
 	ClassProto* tmp = vals[0];
@@ -376,11 +377,11 @@ ClassProto* getMin(std::vector<ClassProto*>& vals, PositionID id){
 }
 
 DATA ouopElementCast::apply(DATA a, RData& m, PositionID id){
-	Value* v = a.getValue(m);
+	Value* v = a.getValue(m,id);
 	if(ConstantStruct* s = dyn_cast<ConstantStruct>(v)){
 		Constant* newInside[from->innerData.size()];
 		for(unsigned int i = 0; i<from->innerData.size(); i++){
-			Value* tv = DATA::getConstant(s->getAggregateElement(i), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
+			Value* tv = DATA::getConstant(s->getAggregateElement(i), from->innerData[i]).castToV(m, to->innerData[i],id);
 			if(Constant* c = dyn_cast<Constant>(tv))
 				newInside[i] = c;
 			else{
@@ -392,29 +393,29 @@ DATA ouopElementCast::apply(DATA a, RData& m, PositionID id){
 	Value* nextV = UndefValue::get(to->getType(m));
 	for(unsigned int i = 0; i<from->innerData.size(); i++){
 		ArrayRef<unsigned int> ar = ArrayRef<unsigned int>(i);
-		Value* iv = DATA::getConstant(m.builder.CreateExtractValue(v,ar), from->innerData[i]).castTo(m, to->innerData[i],id).getValue(m);
+		Value* iv = DATA::getConstant(m.builder.CreateExtractValue(v,ar), from->innerData[i]).castToV(m, to->innerData[i],id);
 		nextV = m.builder.CreateInsertValue(nextV,iv,ar);
 	}
 	return DATA::getConstant(nextV,to);
 }
 
 obinopNative* NULLCHECK1 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-	Value* val =av.getValue(m);
+	Value* val =av.getValue(m,id);
 	Value* temp = m.builder.CreateICmpEQ(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
 	return DATA::getConstant(temp,boolClass);
 },boolClass);
 obinopNative* NULLCHECK2 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-	Value* val =av.getValue(m);
+	Value* val =av.getValue(m,id);
 	Value* temp = m.builder.CreateICmpNE(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
 	return DATA::getConstant(temp,boolClass);
 },boolClass);
 obinopNative* NULLCHECK3 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-	Value* val =bv.getValue(m);
+	Value* val =bv.getValue(m,id);
 	Value* temp = m.builder.CreateICmpEQ(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
 	return DATA::getConstant(temp,boolClass);
 },boolClass);
 obinopNative* NULLCHECK4 = new obinopNative([](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-	Value* val =bv.getValue(m);
+	Value* val =bv.getValue(m,id);
 	Value* temp = m.builder.CreateICmpNE(val,ConstantPointerNull::get((PointerType*) val->getType()),"cmptmp");
 	return DATA::getConstant(temp,boolClass);
 },boolClass);

@@ -73,35 +73,36 @@ class Declaration: public Construct{
 		DATA evaluate(RData& r) final override{
 			checkTypes(r);
 			assert(variable->returnType!=voidClass);
+			Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r).castToV(r, variable->returnType, filePos));
 			if(global){
-
 				Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
-				Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r));
 				assert(variable->returnType);
 				Type* type = variable->returnType->getType(r);
 				assert(type);
-				if(Constant* cons = dyn_cast_or_null<Constant>(tmp)){
-					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,cons);
-					GV->setName(variable->getFullName());
-					Alloca = GV;
-
-				} else {
-					GlobalVariable *GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,UndefValue::get(type));
-					GV->setName(variable->getFullName());
+				GlobalVariable* GV;
+				if(Constant* cons = dyn_cast_or_null<Constant>(tmp)) GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,cons);
+				else{
+					GV = new GlobalVariable(M, type,false, GlobalValue::PrivateLinkage,UndefValue::get(type));
 					if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
-					Alloca = GV;
 				}
+				GV->setName(variable->getFullName());
+				Alloca = GV;
+				variable->getMetadata(r)->setObject(DATA::getLocation(new StandardLocation(GV),variable->returnType));
 			}
 			else{
 				Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 				IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 						TheFunction->getEntryBlock().begin());
-				Alloca = TmpB.CreateAlloca(variable->returnType->getType(r), 0,variable->pointer->name);
-				if(value!=NULL && value->getToken()!=T_VOID){
-					r.builder.CreateStore(value->evaluate(r).castTo(r, variable->returnType, filePos).getValue(r) , Alloca);
-				}
+				Type* t = variable->returnType->getType(r);
+				auto al = TmpB.CreateAlloca(t, NULL,variable->pointer->name);
+				if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
+					if(tmp!=NULL) r.builder.CreateStore(tmp,al);
+					variable->getMetadata(r)->setObject(DATA::getLocation(new StandardLocation(al),variable->returnType));
+				} else
+					variable->getMetadata(r)->setObject(DATA::getLocation(new LazyLocation(r,al,(tmp!=NULL)?r.builder.GetInsertBlock():NULL,tmp),variable->returnType));
+				Alloca = al;
 			}
-			variable->getMetadata(r)->setObject(DATA::getLocation(Alloca,variable->returnType));
+			//todo check lazy for globals
 			r.guarenteedReturn = false;
 			return DATA::getNull();
 		}
@@ -182,7 +183,6 @@ ClassProto* FunctionProto::getGeneratorType(RData& r){
 	return generatorType;
 }
 
-Function* strLen;
 void initFuncsMeta(RData& rd){
 	//cout << "SIZE OF C_STR: " <<rd.lmod->getPointerSize() << endl << flush;
 	//cout << "SIZE OF ANY: " << Module::PointerSize::AnyPointerSize << endl << flush;
@@ -191,8 +191,8 @@ void initFuncsMeta(RData& rd){
 	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
 	//TODO begin conversion of constructors to generators
 	{
-	DATA glutIn = DATA::getFunction(o_glutInit,new FunctionProto("glutInit",voidClass));
-	LANG_M->addPointer(PositionID(0,0,"<start.glutInit>"),"glutInit",glutIn)->funcs.add(glutIn,rd,PositionID(0,0,"<start.glutInit>"));
+	//DATA glutIn = DATA::getFunction(o_glutInit,new FunctionProto("glutInit",voidClass));
+	//LANG_M->addPointer(PositionID(0,0,"<start.glutInit>"),"glutInit",glutIn)->funcs.add(glutIn,rd,PositionID(0,0,"<start.glutInit>"));
 	}
 	LANG_M->addPointer(PositionID(0,0,"<start.NULL>"),"null",DATA::getConstant(NULL,NullClass::get()));
 	{
@@ -201,9 +201,9 @@ void initFuncsMeta(RData& rd){
 
 		std::vector<Type*> args = {DOUBLETYPE};
 		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = Function::Create(FT, LOCAL_FUNC,"!int", rd.lmod);
+		Function *F = rd.CreateFunctionD("!int",FT, LOCAL_FUNC);
 		BasicBlock *Parent = rd.builder.GetInsertBlock();
-		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+		BasicBlock *BB = rd.CreateBlockD("entry", F);
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(rd.builder.CreateFPToSI(F->arg_begin(), INTTYPE));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
@@ -215,9 +215,9 @@ void initFuncsMeta(RData& rd){
 
 			std::vector<Type*> args = {DOUBLETYPE};
 			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = Function::Create(FT, LOCAL_FUNC,"!byte", rd.lmod);
+			Function *F = rd.CreateFunctionD("!byte",FT, LOCAL_FUNC);
 			BasicBlock *Parent = rd.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			BasicBlock *BB = rd.CreateBlockD("entry", F);
 			rd.builder.SetInsertPoint(BB);
 			rd.builder.CreateRet(rd.builder.CreateFPToUI(F->arg_begin(), BYTETYPE));
 			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
@@ -229,47 +229,30 @@ void initFuncsMeta(RData& rd){
 
 			std::vector<Type*> args = {INTTYPE};
 			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = Function::Create(FT, LOCAL_FUNC,"!byte", rd.lmod);
+			Function *F = rd.CreateFunctionD("!byte",FT, LOCAL_FUNC);
 			BasicBlock *Parent = rd.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			BasicBlock *BB = rd.CreateBlockD("entry", F);
 			rd.builder.SetInsertPoint(BB);
 			rd.builder.CreateRet(rd.builder.CreateTrunc(F->arg_begin(), BYTETYPE));
 			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
 			byteClass->constructors.add(DATA::getFunction(F,intIntP),rd, PositionID(0,0,"<start.initFuncsMeta>"));
 		}
 	{
-		std::vector<Type*> t = {C_STRINGTYPE};
-		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
-		strLen = Function::Create(FT, EXTERN_FUNC, "strlen",rd.lmod);
-		rd.exec->addGlobalMapping(strLen, (void*)(&strlen));
-	}
-	{
-		/*std::vector<Type*> t = {C_INTTYPE, PointerType::getUnqual(C_STRINGTYPE)};
-		FunctionType *FT = FunctionType::get(INTTYPE, t, false);
-		Function* gl = Function::Create(FT, EXTERN_FUNC, "glutInit",rd.lmod);
-		rd.exec->addGlobalMapping(gl, (void*)(&glutInit));
-		ReferenceElement* re = LANG_M->addPointer(PositionID(0,0,"<start.initFuncsMeta>"), "glutInit", DATA::getConstant(NULL,functionClass));
-		FunctionProto* FP = new FunctionProto("glutInit",VOIDTYPE);
-		FP->declarations.push_back(new Declaration(new ClassProtoWrapper(C_INTTYPE),NULL,oint(0)));
-		FP->declarations.push_back(new Declaration(new ClassProtoWrapper(C_INTTYPE)));
-		re->funcs.add(DATA::getFunction(gl,, rd, PositionID("<start.initFuncsMeta>",0,0));*/
-	}
-	{
 
 		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
 		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = Function::Create(FT, LOCAL_FUNC,"!return1", rd.lmod);
+		Function *F = rd.CreateFunctionD("!return1", FT, LOCAL_FUNC);
 		BasicBlock *Parent = rd.builder.GetInsertBlock();
-		BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+		BasicBlock *BB = rd.CreateBlockD("entry", F);
 		rd.builder.SetInsertPoint(BB);
 		rd.builder.CreateRet(ConstantInt::get(INTTYPE,1));
 		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
 		charClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(F,new FunctionProto("length",intClass)),rd, PositionID(0,0,"<start.initFuncsMeta>"));
 	}
-	c_stringClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(strLen,new FunctionProto("length", intClass)),rd,PositionID(0,0,"<start.initFuncsMeta>"));
+	c_stringClass->addFunction("length",PositionID(0,0,"<start.initFuncsMeta>"))->funcs.add(DATA::getFunction(o_strlen,new FunctionProto("length", intClass)),rd,PositionID(0,0,"<start.initFuncsMeta>"));
 	charClass->addCast(c_stringClass) = new ouopNative(
 			[](DATA av, RData& m, PositionID id) -> DATA{
-		Value* a = av.getValue(m);
+		Value* a = av.getValue(m,id);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			APInt va = constantInt->getValue();
 			char t = (char)(va.getSExtValue () );
@@ -315,8 +298,8 @@ void initFuncsMeta(RData& rd){
 
 	intClass->addBinop("*",charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value* a = av.getValue(m);
-		Value* b = bv.getValue(m);
+		Value* a = av.getValue(m,id);
+		Value* b = bv.getValue(m,id);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(b)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(a)){
 				APInt va = constantInt->getValue();
@@ -332,8 +315,8 @@ void initFuncsMeta(RData& rd){
 	,c_stringClass);
 	charClass->addBinop("*",intClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value* a = av.getValue(m);
-		Value* b = bv.getValue(m);
+		Value* a = av.getValue(m,id);
+		Value* b = bv.getValue(m,id);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
 				APInt va = constantInt->getValue();
@@ -350,8 +333,8 @@ void initFuncsMeta(RData& rd){
 
 	charClass->addBinop("+",charClass) = new obinopNative(
 			[](DATA av, DATA bv, RData& m, PositionID id) -> DATA{
-		Value* a = av.getValue(m);
-		Value* b = bv.getValue(m);
+		Value* a = av.getValue(m,id);
+		Value* b = bv.getValue(m,id);
 		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
 			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
 				APInt va = constantInt->getValue();

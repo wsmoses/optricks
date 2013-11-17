@@ -46,27 +46,28 @@ class E_RETURN : public Statement{
 			return this;
 		}
 		DATA evaluate(RData& r) override {
-			DATA t = DATA::getNull();
-			if(inner!=NULL && inner->getToken()!=T_VOID){
-				t = inner->evaluate(r);
-			}
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			BasicBlock *RESUME = BasicBlock::Create(getGlobalContext(), "postReturn", TheFunction);
-
-			BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
-
-			if(toBreak!=NULL) r.builder.CreateBr(toBreak);
-			//if(jump==RETURN)
+			DATA t = (inner!=NULL && inner->getToken()!=T_VOID)?(inner->evaluate(r)):(DATA::getNull());
 			if(jump==YIELD){
+				BasicBlock *RESUME = r.CreateBlock("postReturn");
+				//BasicBlock* toBreak =
+				r.getBlock(name, YIELD, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
+				//assert(toBreak!=NULL);
+//				r.addPred(toBreak,r.builder.GetInsertBlock());
 				r.builder.SetInsertPoint(RESUME);
+			} else if(jump==RETURN){
+				if(
+						//t.getReturnType(ar, filePos)==voidClass
+						//TODO check this
+						t.getType()==R_UNDEF)
+					r.builder.CreateRetVoid();
+				else r.builder.CreateRet(t.getValue(r,filePos));
+				r.guarenteedReturn = true;
 			} else {
-				RESUME->removeFromParent();
+				BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),NULL));
+				if(toBreak!=NULL) r.builder.CreateBr(toBreak);
 				r.guarenteedReturn = true;
 			}
 			return DATA::getNull();
-	//		return RETB;
-			//if(returnType==voidClass) return r.builder.CreateRetVoid();
-			//else return r.builder.CreateRet(t);
 		}
 		void write (ostream& f,String b="") const override{
 			switch(jump){
@@ -93,6 +94,5 @@ class E_RETURN : public Statement{
 			return NULL;
 		}
 };
-
 
 #endif /* E_RETURN_HPP_ */

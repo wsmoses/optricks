@@ -63,14 +63,14 @@ class ReferenceElement:public Resolvable{
 		ReferenceElement* resolve() override final{
 			return this;
 		}
-		Value* getValue(RData& r/*,FunctionProto* func=NULL*/) const{
-			return llvmObject.getValue(r);
+		Value* getValue(RData& r/*,FunctionProto* func=NULL*/, PositionID id) const{
+			return llvmObject.getValue(r,id);
 		}
 		//void ensureFunction(FunctionProto* func){
 
 		//	}
-		void setValue(DATA d, RData& r/*,FunctionProto* func=NULL*/){
-			llvmObject.setValue(r,d.getValue(r));
+		void setValue(DATA d, RData& r/*,FunctionProto* func=NULL*/, PositionID id){
+			llvmObject.setValue(r,d.getValue(r,id));
 		}
 		void setValue(Value* d, RData& r/*,FunctionProto* func=NULL*/){
 			llvmObject.setValue(r,d);
@@ -108,7 +108,7 @@ ClassProto* DATA::getReturnType(RData& r) const{
 	return info.classType;
 }
 
-DATA ClassProto::generateData(RData& r){
+Value* ClassProto::generateData(RData& r){
 	Type* t = getType(r);
 	assert(t!=NULL);
 	if(layoutType==POINTER_LAYOUT){
@@ -116,9 +116,9 @@ DATA ClassProto::generateData(RData& r){
 		Value* da = r.builder.CreateCall(o_malloc,getUInt32(s));//TODO decide malloc/calloc
 		Value* dat = r.builder.CreatePointerCast(da,t);
 		r.builder.CreateStore(getUInt32(0), r.builder.CreateConstGEP2_32(dat,0,0));
-		return DATA::getConstant(dat,this);
+		return dat;
 	} else
-	return DATA::getConstant(UndefValue::get(t), this);
+	return UndefValue::get(t);
 }
 
 DATA ouopNullCast::apply(DATA a, RData& m, PositionID id){

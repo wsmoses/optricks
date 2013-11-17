@@ -5,6 +5,7 @@
  *      Author: wmoses
  */
 
+
 #ifndef FORLOOP_HPPO_
 #define FORLOOP_HPPO_
 
@@ -38,26 +39,44 @@ class ForLoop : public Construct{
 		}
 		DATA evaluate(RData& r) override{
 			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->evaluate(r);
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			BasicBlock *loopBlock;
+			BasicBlock *incBlock;
+			BasicBlock *afterBlock;
 
-			BasicBlock *loopBlock = BasicBlock::Create(getGlobalContext(), "loop", TheFunction);
-			BasicBlock *incBlock = BasicBlock::Create(getGlobalContext(), "inc", TheFunction);
-			BasicBlock *afterBlock = BasicBlock::Create(getGlobalContext(), "endLoop", TheFunction);
-
-			Value *Cond1 = condition->evaluate(r).getValue(r);
-			r.builder.CreateCondBr(Cond1, loopBlock, afterBlock);
-
+			Value *Cond1 = condition->evaluate(r).getValue(r,filePos);
+			//BasicBlock* StartBB = r.builder.GetInsertBlock();
+			if(ConstantInt* c = dyn_cast<ConstantInt>(Cond1)){
+				if(c->isOne()){
+					loopBlock = r.CreateBlock("loop");
+					afterBlock = r.CreateBlock("endLoop");
+					r.builder.CreateBr(loopBlock);
+				}
+				else{
+					return DATA::getNull();
+				}
+			} else{
+				loopBlock = r.CreateBlock("loop");
+				afterBlock = r.CreateBlock("endLoop");
+				r.builder.CreateCondBr(Cond1, loopBlock, afterBlock);
+			}
+			incBlock = r.CreateBlock("inc");
 			r.builder.SetInsertPoint(loopBlock);
-			Jumpable* j = new Jumpable(name, LOOP, incBlock, afterBlock, NULL);
-			r.addJump(j);
+			assert(incBlock); assert(afterBlock);
+			Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+			r.addJump(&j);
 			r.guarenteedReturn = false;
 			toLoop->evaluate(r);
-			if(r.popJump()!=j) error("Did not receive same func jumpable created");
+#ifndef NDEBUG
+			auto tmp = r.popJump();
+			assert(tmp== &j);
+#else
+			r.popJump();
+#endif
 			r.builder.CreateBr(incBlock);
 
 			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
-			Value *EndCond = condition->evaluate(r).getValue(r);
+			Value *EndCond = condition->evaluate(r).getValue(r,filePos);
 			if(!r.guarenteedReturn){
 				if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
 					if(c->isOne()) r.builder.CreateBr(loopBlock);
@@ -75,7 +94,6 @@ class ForLoop : public Construct{
 			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
 			toLoop->write(a,b);
 		}
-
 		void registerClasses(RData& r) override final{
 			condition->registerClasses(r);
 			initialize->registerClasses(r);
@@ -98,6 +116,4 @@ class ForLoop : public Construct{
 			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
 		}
 };
-
-
 #endif /* FORLOOP_HPP_ */

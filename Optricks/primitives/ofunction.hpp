@@ -111,7 +111,7 @@ class externFunction : public ofunction{
 			Type* r = cp->getType(a);
 			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			Function *F = Function::Create(FT, EXTERN_FUNC, prototype->name, a.lmod);
+			Function *F = a.CreateFunctionD(prototype->name,FT, EXTERN_FUNC);
 			if(prototype->name=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 			else if(prototype->name=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 			else if(prototype->name=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
@@ -172,7 +172,7 @@ class lambdaFunction : public ofunction{
 			Type* r = prototype->returnType->getType(ar);
 			assert(r!=NULL);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, LOCAL_FUNC, "!lambda", ar.lmod);
+			myFunction = ar.CreateFunction("!lambda",FT, LOCAL_FUNC);
 			// Set names for all arguments.
 			unsigned Idx = 0;
 			for (Function::arg_iterator AI = myFunction->arg_begin(); Idx != args.size();
@@ -182,16 +182,16 @@ class lambdaFunction : public ofunction{
 			}
 
 			BasicBlock *Parent = ar.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			BasicBlock *BB = ar.CreateBlock1("entry", myFunction);
 			ar.builder.SetInsertPoint(BB);
 			DATA dat = ret->evaluate(ar);
+			//todo allow already returned?
 			if(
 					//dat.getReturnType(ar, filePos)!=voidClass
 					//TODO check this
-					dat.getType()!=R_UNDEF) ar.builder.CreateRet(dat.getValue(ar));
+					dat.getType()!=R_UNDEF) ar.builder.CreateRet(dat.getValue(ar,filePos));
 			else ar.builder.CreateRetVoid();
-			VERIFY(*myFunction);
-			ar.fpm->run(*myFunction);
+			ar.FinalizeFunction(myFunction);
 			ar.builder.SetInsertPoint( Parent );
 			return DATA::getFunction(myFunction,prototype);
 		}
@@ -243,7 +243,7 @@ class userFunction : public ofunction{
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)), ra.lmod);
+			myFunction = ra.CreateFunction("!"+ ((self==NULL)?"afunc":(self->getMetadata(ra)->name)),FT,LOCAL_FUNC);
 			if(self!= NULL){
 				if(self->getMetadata(ra)->name.size()>0 && self->getMetadata(ra)->name[0]=='~'){
 					if(prototype->declarations.size()==1){
@@ -263,10 +263,7 @@ class userFunction : public ofunction{
 			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
-			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(&j);
+			BasicBlock *BB = ra.CreateBlock1("entry", myFunction);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
@@ -280,29 +277,13 @@ class userFunction : public ofunction{
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
 			ret->evaluate(ra);
-			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
 			if(! ra.guarenteedReturn){
 				if(prototype->returnType==voidClass)
-					ra.builder.CreateBr(MERGE);
+					ra.builder.CreateRetVoid();
 				else error("Could not find return statement");
 			}
 			ra.guarenteedReturn = false;
-
-			myFunction->getBasicBlockList().remove(MERGE);
-			myFunction->getBasicBlockList().push_back(MERGE);
-			ra.builder.SetInsertPoint(MERGE);
-			if(prototype->returnType!=voidClass){
-				Type* functionReturnType = prototype->returnType->getType(ra);
-				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetU" );
-				for(auto &a : j.endings){
-					phi->addIncoming(a.second.getValue(ra), a.first);
-				}
-				ra.builder.CreateRet(phi);
-			}
-			else
-				ra.builder.CreateRetVoid();
-			VERIFY(*myFunction);
-			ra.fpm->run(*myFunction);
+			ra.FinalizeFunction(myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
 		};
@@ -375,7 +356,7 @@ class classFunction : public ofunction{
 			Type* r = cp->getType(ra);
 
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+self->getFullName()+"."+name, ra.lmod);
+			myFunction = ra.CreateFunction("!"+self->getFullName()+"."+name,FT, LOCAL_FUNC);
 			myMetadata->funcs.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			ret->registerFunctionPrototype(ra);
 		};
@@ -383,17 +364,27 @@ class classFunction : public ofunction{
 			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
-			Jumpable j("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(&j);
+			BasicBlock *BB = ra.CreateBlock1("entry", myFunction);
+			//BasicBlock *MERGE = ra.CreateBlock1("funcMerge", myFunction);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
 			Function::arg_iterator AI = myFunction->arg_begin();
 			AI->setName("this");
-			if(upperClass->layoutType==POINTER_LAYOUT || upperClass->layoutType==PRIMITIVEPOINTER_LAYOUT) thisPointer->setObject(DATA::getConstant(AI, upperClass));
-			else thisPointer->setObject(DATA::getLocation(AI, upperClass));
+			if(upperClass->layoutType==POINTER_LAYOUT || upperClass->layoutType==PRIMITIVEPOINTER_LAYOUT)
+				thisPointer->setObject(DATA::getConstant(AI, upperClass));
+			else{
+				assert(dyn_cast<PointerType>(AI->getType()));
+				Type* t = ((PointerType*)(AI->getType()))->getElementType();
+				Location* myLoc;
+				if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
+					myLoc = new StandardLocation(AI);
+				} else {
+					myLoc = new LazyLocation(ra,AI,ra.builder.GetInsertBlock(),NULL);
+				}
+				thisPointer->setObject(DATA::getLocation(myLoc, upperClass));
+			}
+			//TODO create aggregatelocation
 			AI++;
 			for (; Idx+1 != myFunction->arg_size();
 					++AI, ++Idx) {
@@ -404,29 +395,14 @@ class classFunction : public ofunction{
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
 			ret->evaluate(ra);
-			if(ra.popJump()!= &j) error("Did not receive same func jumpable created");
 			if( !ra.guarenteedReturn){
 				if(prototype->returnType==voidClass)
-					ra.builder.CreateBr(MERGE);
+					ra.builder.CreateRetVoid();
 				else error("Could not find return statement");
 			}
 			ra.guarenteedReturn = false;
 
-			myFunction->getBasicBlockList().remove(MERGE);
-			myFunction->getBasicBlockList().push_back(MERGE);
-			ra.builder.SetInsertPoint(MERGE);
-			if(prototype->returnType!=voidClass){
-				auto functionReturnType = prototype->returnType->getType(ra);
-				PHINode* phi = ra.builder.CreatePHI(functionReturnType, j.endings.size(), "funcRetCl" );
-				for(auto &a : j.endings){
-					phi->addIncoming(a.second.getValue(ra), a.first);
-				}
-				ra.builder.CreateRet(phi);
-			}
-			else
-				ra.builder.CreateRetVoid();
-			VERIFY(*myFunction);
-			ra.fpm->run(*myFunction);
+			ra.FinalizeFunction(myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
 		};
@@ -477,7 +453,7 @@ class constructorFunction : public ofunction{
 			}
 			Type* r = upperClass->getType(ra);
 			FunctionType *FT = FunctionType::get(r, args, false);
-			myFunction = Function::Create(FT, LOCAL_FUNC,"!"+returnV->getFullName(), ra.lmod);
+			myFunction = ra.CreateFunction("!"+returnV->getFullName(),FT, LOCAL_FUNC);
 			//cerr << "Registering function now... " << prototype->toString() << endl << flush;
 			upperClass->constructors.set(DATA::getFunction(myFunction,prototype), ra, filePos);
 			ret->registerFunctionPrototype(ra);
@@ -486,11 +462,9 @@ class constructorFunction : public ofunction{
 			if(built) return;
 			ofunction::buildFunction(ra);
 			BasicBlock *Parent = ra.builder.GetInsertBlock();
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", myFunction);
+			BasicBlock *BB = ra.CreateBlock1("entry", myFunction);
 			//cerr << "Building function now... " << prototype->toString() << endl << flush;
-			BasicBlock *MERGE = BasicBlock::Create(getGlobalContext(), "funcMerge", myFunction);
-			Jumpable j = Jumpable("", FUNC, NULL, MERGE, prototype->returnType);
-			ra.addJump(&j);
+			//BasicBlock *MERGE = ra.CreateBlock1("funcMerge", myFunction);
 			ra.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
@@ -501,22 +475,19 @@ class constructorFunction : public ofunction{
 				auto met = prototype->declarations[Idx]->variable->getMetadata(ra);
 				met->setObject(DATA::getConstant(AI, prototype->declarations[Idx]->variable->returnType));
 			}
-			thisPointer->setObject(DATA::getLocation(ra.builder.CreateAlloca(upperClass->getType(ra), 0,"this*"), upperClass));
-			thisPointer->setValue(upperClass->generateData(ra),ra);
+			thisPointer->setObject(DATA::getConstant(upperClass->generateData(ra),upperClass).toLocation(ra));
 			ra.guarenteedReturn = false;
 			ret->checkTypes(ra);
 			ret->evaluate(ra);
-			if(ra.popJump()!=&j) error("Did not receive same func jumpable created");
-			if(ra.guarenteedReturn)  error("Can not have return statement in constructor");
-			ra.builder.CreateBr(MERGE);
+			//if(ra.guarenteedReturn)  error("Can not have return statement in constructor");
+			//ra.builder.CreateBr(MERGE);
 			ra.guarenteedReturn = false;
 
-			myFunction->getBasicBlockList().remove(MERGE);
-			myFunction->getBasicBlockList().push_back(MERGE);
-			ra.builder.SetInsertPoint(MERGE);
-			ra.builder.CreateRet(thisPointer->getValue(ra));
-			VERIFY(*myFunction);
-			ra.fpm->run(*myFunction);
+			//myFunction->getBasicBlockList().remove(MERGE);
+			//myFunction->getBasicBlockList().push_back(MERGE);
+			//ra.builder.SetInsertPoint(MERGE);
+			ra.builder.CreateRet(thisPointer->getValue(ra,filePos));
+			ra.FinalizeFunction(myFunction);
 			if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 			ret->buildFunction(ra);
 		};

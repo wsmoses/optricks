@@ -528,7 +528,7 @@ public:
 		if(done) return "";
 		char nex = peek();
 		if(nex==endWith){ done=true; return ""; }
-		if (isalpha(nex) || nex=='$' || nex=='_') {
+		if (isalpha((char)nex) || nex=='$' || nex=='_') {
 			String temp = "";
 			char tchar;
 			do{

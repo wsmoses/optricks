@@ -2,6 +2,14 @@ def void print(int i, bool b=true){
 	(extern void printi(int i, bool b))(i,b);
 }
 
+def void test(){
+	int x = 7
+	if(rand()%2==0){
+		print(3);
+		print(x);
+	}
+}
+
 import "string.opt"
 
 import "file.opt";

@@ -44,29 +44,17 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, std::vector<Type*>(), false);
-	Function *F = Function::Create(FT, EXTERN_FUNC, "", lexer.rdata.lmod);
+	Function *F = lexer.rdata.CreateFunction("",FT,EXTERN_FUNC);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	lexer.rdata.builder.SetInsertPoint(BB);
 	DATA dat = n->evaluate(lexer.rdata);
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
-		lexer.rdata.builder.CreateRet(dat.getValue(lexer.rdata));
+		lexer.rdata.builder.CreateRet(dat.getValue(lexer.rdata,PositionID(0,0,"<interpreter.main>")));
 	else
 		lexer.rdata.builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
-	if(debug){
-	F->dump();
-	cerr << flush;
-	}
-	VERIFY(*F);
-	//cout << "verified" << endl << flush;
-	lexer.rdata.fpm->run(*F);
-	//cout << "fpm" << endl << flush;
-	if(debug){
-		//lexer.rdata.lmod->dump();
-		F->dump();
-		cerr << flush;
-	}
+	lexer.rdata.FinalizeFunction(F,debug);
 	//cout << "dumped" << endl << flush;
 	void *FPtr = lexer.rdata.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
