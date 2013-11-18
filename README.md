@@ -8,4 +8,4 @@ C is the master of speed, but lacks portability and forces you to rewrite everyt
 
 More information including news, downloads, speed tests, documentation, and tutorials can be found on the main site <a href="http://optricks.thezonecorp.com">http://optricks.thezonecorp.com</a>.
 
-In the event that the main site is down (likely due to a power outage in my area), more information will be posted here. In any case, if the this or the main site has any issues (ranging from javascript errors to typos), please email me at <a href="mailto:wmoses@thezonecorp.com">wmoses@thezonecorp.com</a>.
+In the event that the main site is down (likely due to a power outage in my area), more information will be posted here. In any case, if this or the main site has any issues (ranging from javascript errors to typos), please email me at <a href="mailto:wmoses@thezonecorp.com">wmoses@thezonecorp.com</a>.
