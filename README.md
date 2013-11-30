@@ -9,3 +9,12 @@ C is the master of speed, but lacks portability and forces you to rewrite everyt
 More information including news, downloads, speed tests, documentation, and tutorials can be found on the main site <a href="http://optricks.thezonecorp.com">http://optricks.thezonecorp.com</a>.
 
 In the event that the main site is down (likely due to a power outage in my area), more information will be posted here. In any case, if this or the main site has any issues (ranging from javascript errors to typos), please email me at <a href="mailto:wmoses@thezonecorp.com">wmoses@thezonecorp.com</a>.
+
+<hr/>
+
+The source code for Optricks is now frozen on github in order to allow for a major rewrite of the code base. Since I want to make sure that the public source code on github can always be compiled, the rewrite is taking place on a private repository on my server (thezonecorp.com). If you would like to contribute or see the current source code, please send me an email. This is a major revision and will include new features such as garbage collection, constant detection, allocation demotion from heap to stack, massive speed-ups for the actual compilation process, and a full standard library, among others. The release of this version (1.0.0) is planned for early 2014 and will officially take Optricks out of beta.
+
+However, leading up to this release, the source code will be merged back into this repository to allow for testing and bug-detection before the official release of version 1.0.
+
+Stay tuned and happy coding.
+
