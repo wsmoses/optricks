@@ -1,0 +1,2 @@
+#/bin/bash
+./Optricks.exe mandle.opt -o - -ir | llc | as; gcc a.out

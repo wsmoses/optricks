@@ -1,5 +1,5 @@
 all: 
-	g++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -lopengl32 -lglu32 -lglut
+	g++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb
 
 ddebug: 
 	g++ -std=c++11 main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -lopengl32 -lglu32 -lglut -DNDEBUG

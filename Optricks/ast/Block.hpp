@@ -1,0 +1,71 @@
+/*
+ * Block.hpp
+ *
+ *  Created on: Jul 31, 2013
+ *      Author: wmoses
+ */
+
+#ifndef BLOCK_HPP_
+#define BLOCK_HPP_
+
+#include "../language/statement/Statement.hpp"
+
+class Block : public ErrorStatement{
+	public:
+		std::vector<Statement*> values;
+		void registerClasses() const override final{
+			for(auto& a: values) a->registerClasses();
+		}
+		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
+			for(auto& a:values) a->collectReturns(vals, toBe);
+		}
+		void registerFunctionPrototype(RData& r) const override final{
+			for(auto& a: values) a->registerFunctionPrototype(r);
+		}
+		void buildFunction(RData& r) const override final{
+			for(auto& a: values) a->buildFunction(r);
+		}
+		Block(PositionID a) : ErrorStatement(a),values(){}
+		const Data* evaluate(RData& r) const override{
+			for(auto& a:values){
+				if(r.hadBreak()) error("Already had guaranteed return");
+				a->evaluate(r);
+			}
+			return VOID_DATA;
+		}
+		Statement* simplify() override{
+			unsigned int toPut = 0;
+			for(unsigned int i = 0; i<values.size(); ++i){
+				Statement* s = values[i]->simplify();
+				if(s->getToken()!=T_VOID) values[toPut++] = s;
+			}
+			while(values.size()>toPut) values.pop_back();
+			return this;
+		}
+		void write(ostream& s,String start="") const override{
+			s << "{" << endl;
+			for(const auto& a:values){
+				if(a->getToken()==T_VOID) continue;
+				s << start << "  ";
+				a->write(s,start+"  ");
+				s << ";" << endl;
+			}
+			s << start << "}";
+		}
+
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+			id.error("Block cannot act as function");
+			exit(1);
+		}
+		const AbstractClass* getReturnType() const{
+			error("Cannot getReturnType of Block");
+			return nullptr;
+		}
+		Token const getToken() const override{
+			return T_BLOCK;
+		}
+};
+
+
+
+#endif /* BLOCK_HPP_ */

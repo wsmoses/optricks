@@ -1,0 +1,33 @@
+class List{
+	E e
+	int length;
+	def List(){
+		this.e = null;
+		this.length = 0;
+	}
+	gen iterator(){
+		E t = this.e;
+		while(t!=null){
+			yield t.data;
+			t = t.next;
+		}
+	}
+	def int size(){
+		return this.length;
+	}
+	def void append(int a){
+		this.e = E(a,this.e);
+		this.length++;
+	}
+	static class E{
+		E next;
+		int data;
+		def E(int d, E n){
+			this.data = d; this.next = n;
+		}
+	};
+}
+
+List l = List()
+l.append(5)
+for i in l: print(i)

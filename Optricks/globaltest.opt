@@ -1,0 +1,4 @@
+def void tempF(){
+	print(hi);
+}
+tempF();

@@ -1,0 +1,71 @@
+class primitive Color{
+	byte red;
+	byte green;
+	byte blue;
+	def Color(byte a, byte b, byte c){
+		this.red = a;
+		this.green = b;
+		this.blue = c;
+	}
+	def Color(int a, int b, int c){
+		this.red = byte(a);
+		this.green = byte(b);
+		this.blue = byte(c);
+	}
+	def Color(double a, double b, double c){
+		this.red = byte(255*a);
+		this.green = byte(255*b);
+		this.blue = byte(255*c);
+	}
+}
+
+def void print(Color c,bool endl=true){
+	print('(',false);
+	print(c.red,false);
+	print(', ',false);
+	print(c.green,false);
+	print(', ',false);
+	print(c.blue,false);
+	print(')',false);
+	if(endl) print();
+}
+extern void glMatrixMode(int a);
+extern void glLoadIdentity();
+extern void glFlush();
+class primitive_pointer Display{
+	def Display(int x, int y, c_string s='MyText', function disp
+	){
+		(extern void glutInitWindowSize(int x,int y))(x,y);
+	  (extern void glutCreateWindow(c_string s))(s);
+	  (extern void glClearColor(double x=1,double y=1,double z=1,double a=0))();
+	  (extern void glShadeModel(int a=0x1D01))();
+	  (extern void glutDisplayFunc(function a))(disp);
+//	  (extern void glutReshapeFunc(auto a=_dispReshape))();
+	  (extern void glutMainLoop())();
+	}
+}
+
+//(extern void glutInit(int a, int b))((extern int calloc(int i))(8),0);
+(extern void glutInitDisplayMode(int a))(0x0002 | 0x0000);
+extern void glClear(int a=0x00004000);
+extern void glBegin(int a);
+extern void glEnd();
+extern void glutSwapBuffers();
+extern void glColor3ub(byte a, byte b, byte c);
+def void glColor(Color c){
+	glColor3ub(c.red,c.green,c.blue);
+}
+def void glColor((byte:red,byte:green,byte:blue) c){
+	glColor3ub(c.red,c.green,c.blue);
+}
+def void glColor(byte red,byte green,byte blue){
+	glColor3ub(red,green,blue);
+}
+
+def void glPixel(double x, double y, Color c){
+	glColor(c);
+//	print(x);
+//	print(y);
+	(extern void glVertex2d(double x, double y))(x,y);
+}
+glutInit();

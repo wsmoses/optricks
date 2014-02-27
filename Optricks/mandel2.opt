@@ -1,0 +1,19 @@
+def char printdensity(int d):
+	if    d > 999	return '*';
+	elif  d > 200	return '+';
+	elif  d > 020	return '.';
+	else         	return ' ';
+
+def int mand(complex z0){
+	complex z = z0
+	for(int iter=0; iter<1000; iter+=1)
+		if( z.mag2() > 4 ) return iter
+		else z = z**6 + z0
+	return 1000
+}
+
+for im in range(-1.25,1.25,.04){
+	for re in range(-2,1,.02):
+		print(printdensity(mand(complex(re,im))),false);
+	print();
+}
