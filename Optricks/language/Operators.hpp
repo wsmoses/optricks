@@ -8,12 +8,20 @@
 #ifndef OPERATORS_HPP_
 #define OPERATORS_HPP_
 #include "./function/AbstractFunction.hpp"
+/*
 std::map<String,OverloadedFunction> OPERATOR_MAP;
+
+inline void addOperator(String s, SingleFunction* f, PositionID id){
+	auto find = OPERATOR_MAP.find(s);
+	if(find==OPERATOR_MAP.end()){
+		find = OPERATOR_MAP.insert(std::pair<String, OverloadedFunction>(s, OverloadedFunction(s))).first;
+	}
+	find->second.add(f, id);
+}
 
 void initFunctions(RData& m){
 	PositionID func("#init",0,0);
-	OPERATOR_MAP["&&"].add(new BuiltinInlineFunction(
-			m,func,
+	addOperator("&&", new BuiltinInlineFunction(
 			new FunctionProto(":&&",
 					{
 							AbstractDeclaration(LazyClass::get(boolClass)),
@@ -32,7 +40,7 @@ void initFunctions(RData& m){
 				}
 				else{
 					ElseBB = r.CreateBlock("else",StartBB);
-					MergeBB = r.CreateBlock("ifcont",StartBB/*,ElseBB*/);
+					MergeBB = r.CreateBlock("ifcont",StartBB);
 					r.builder.CreateCondBr(Start, ElseBB, MergeBB);
 				}
 				r.builder.SetInsertPoint(ElseBB);
@@ -49,8 +57,7 @@ void initFunctions(RData& m){
 			}
 	),func);
 
-	OPERATOR_MAP["||"].add(new BuiltinInlineFunction(
-			m,func,
+	addOperator("||",new BuiltinInlineFunction(
 			new FunctionProto(":||",
 					{
 							AbstractDeclaration(LazyClass::get(boolClass)),
@@ -69,7 +76,7 @@ void initFunctions(RData& m){
 				}
 				else{
 					ElseBB = r.CreateBlock("else",StartBB);
-					MergeBB = r.CreateBlock("ifcont",StartBB/*,ElseBB*/);
+					MergeBB = r.CreateBlock("ifcont",StartBB);
 					r.builder.CreateCondBr(Start, MergeBB, ElseBB);
 				}
 				StartBB = r.builder.GetInsertBlock();
@@ -88,5 +95,5 @@ void initFunctions(RData& m){
 	),func);
 }
 
-
+*/
 #endif /* OPERATORS_HPP_ */

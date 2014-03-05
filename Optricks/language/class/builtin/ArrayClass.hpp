@@ -41,6 +41,7 @@ public:
 protected:
 	ArrayClass(const AbstractClass* a,uint64_t le):
 		AbstractClass(nullptr,str(a,le),nullptr,PRIMITIVE_LAYOUT,CLASS_ARRAY,true,getArrayType(a,le)),inner(a),len(le){
+		assert(a->classType!=CLASS_LAZY);
 		///register methods such as print / tostring / tofile / etc
 	}
 public:
@@ -65,19 +66,19 @@ public:
 		}
 		else return int32Class;
 	}
-
+	bool hasLocalData(String s) const override final{
+		return s=="length";
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);
 		}
-		if(len>0)
-			return new IntLiteral(len, int32Class);
-		else{
+		if(len==0 && inner!=nullptr){
 			assert(instance->type==R_LOC);
 			auto f = ((LocationData*)instance)->getMyLocation()->getPointer(r,id);
 			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), int32Class);
-		}
+		} else return new IntLiteral(len);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		switch(toCast->classType){
@@ -111,6 +112,7 @@ public:
 			} else return 0;
 		} else return NEX;
 	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	static ArrayClass* get(const AbstractClass* args, uint64_t l) {
 		if(args==nullptr){
 			static ArrayClass* ac = new ArrayClass(nullptr,0);

@@ -24,8 +24,12 @@ public:
 	}
 	static inline Type* getTupleType(const std::vector<const AbstractClass*>& args,const std::vector<String>& b){
 		const auto len = args.size();
+		if(len==1) return args[0]->type;
 		Type* ar[len];
-		for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
+		for(unsigned int i=0; i<len; i++){
+			assert(args[i]->classType!=CLASS_LAZY);
+			ar[i]=args[i]->type;
+		}
 		return StructType::create(ArrayRef<Type*>(ar, len),str(args,b),false);
 	}
 	const std::vector<String> innerNames;
@@ -64,6 +68,10 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		for(const auto& t: innerNames) if(t==s) return true;
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		for(unsigned int i=0; i<innerNames.size(); i++)
 			if(innerNames[i]==s){

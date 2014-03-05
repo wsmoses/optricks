@@ -17,6 +17,10 @@ public:
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT);
 	}
+
+	bool hasLocalData(String s) const override final{
+		return s=="real" || s=="imag";
+	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		if(s!="real" && s!="imag"){
 			illegalLocal(id,s);

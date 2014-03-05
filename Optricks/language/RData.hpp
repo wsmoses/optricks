@@ -36,6 +36,7 @@ struct Jumpable {
 		}
 };
 
+
 #define RDATA_C_
 struct RData{
 		friend LazyLocation;
@@ -44,13 +45,24 @@ struct RData{
 		std::map<Function*,std::vector<LazyLocation*> > flocs;
 		std::map<Function*,std::map<BasicBlock*,BasicBlock*> > pred;
 	public:
-		RData();
-		//bool guarenteedReturn;
-		Module* lmod;
-		FunctionPassManager* fpm;
-		PassManager* mpm;
+
+		Module lmod;
 		IRBuilder<> builder;
+		FunctionPassManager fpm;
+		PassManager mpm;
 		ExecutionEngine* exec;
+		RData(): lmod("main",getGlobalContext()), builder(getGlobalContext())
+		,fpm(&lmod),mpm(){
+			lmod.setDataLayout("p:64:64:64");
+			InitializeNativeTarget();
+			exec = EngineBuilder(& lmod).create();
+			// Set up optimizers
+			PassManagerBuilder pmb;
+			pmb.Inliner = createFunctionInliningPass();
+			pmb.OptLevel = 3;
+			pmb.populateFunctionPassManager(fpm);
+			pmb.populateModulePassManager(mpm);
+		};
 		PHINode* CreatePHI(Type *Ty, unsigned NumReservedValues, const Twine &Name = ""){
 			PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
 			assert(p);
@@ -59,6 +71,30 @@ struct RData{
 			if(s!=p) p->moveBefore(s);
 			return p;
 		}
+
+		inline BasicBlock* CreateBlockD(String name,Function* F){
+			BasicBlock* b = BasicBlock::Create(lmod.getContext(),Twine(name), F);
+			return b;
+		}
+		inline Function* CreateFunctionD(String name,FunctionType* FT,Function::LinkageTypes L){
+			Function* f = Function::Create(FT,L,Twine(name),&lmod);
+			return f;
+		}
+		void FinalizeFunctionD(Function* f,bool debug=false){
+			BasicBlock* Parent = builder.GetInsertBlock();
+			if(Parent) builder.SetInsertPoint(Parent);
+			if(debug){
+				f->dump();
+				cerr << endl << flush;
+			}
+			fpm.run(*f);
+		}
+		inline bool hadBreak(){
+			BasicBlock* b = builder.GetInsertBlock();
+			if(b->getInstList().size()==0) return false;
+			return b->getInstList().back().isTerminator();
+		}
+		//bool guarenteedReturn;
 		void recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator toFix);
 		void addJump(Jumpable* j){
 			jumps.push_back(j);
@@ -69,11 +105,6 @@ struct RData{
 			return a;
 		}
 
-		//createfunction endfunction
-		Function* CreateFunctionD(String name,FunctionType* FT,Function::LinkageTypes L){
-			Function* f = Function::Create(FT,L,name,lmod);
-			return f;
-		}
 		Function* CreateFunction(String name,FunctionType* FT,Function::LinkageTypes L){
 			Function* f = CreateFunctionD(name,FT,L);
 			flocs.insert(std::pair<Function*,std::vector<LazyLocation*> >(f,std::vector<LazyLocation*>()));
@@ -81,14 +112,6 @@ struct RData{
 			return f;
 		}
 		void FinalizeFunction(Function* f,bool debug=false);
-		BasicBlock* CreateBlockD(String name,Function* F){
-			BasicBlock* b = BasicBlock::Create(lmod->getContext(), name, F);
-			return b;
-		}
-		BasicBlock* CreateBlock1(String name,Function* F){
-			BasicBlock* b = BasicBlock::Create(lmod->getContext(), name, F);
-			return b;
-		}
 		void DeleteBlock(BasicBlock* b){
 
 			b->removeFromParent();
@@ -98,14 +121,9 @@ struct RData{
 			found->second.std::pair<BasicBlock*,BasicBlock* >(b,p));
 			}*/
 		}
-		bool hadBreak(){
-			BasicBlock* b = builder.GetInsertBlock();
-			if(b->getInstList().size()==0) return false;
-			return b->getInstList().back().isTerminator();
-		}
 		BasicBlock* CreateBlock(String name, BasicBlock* p=NULL){
 			Function* F = builder.GetInsertBlock()->getParent();
-			BasicBlock* b = BasicBlock::Create(lmod->getContext(), name, F);
+			BasicBlock* b = BasicBlock::Create(lmod.getContext(), Twine(name), F);
 			if(p!=NULL){
 				auto found = pred.find(F);
 				assert(found!=pred.end() &&  "Compiler error -- could not find function in map");
@@ -116,6 +134,7 @@ struct RData{
 		BasicBlock* getBlock(String name, JumpType jump, BasicBlock* bb, const Data* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
 };
 
+RData rdata;
 /*
 Function* o_malloc;
 Function* o_calloc;

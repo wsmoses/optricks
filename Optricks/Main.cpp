@@ -26,10 +26,9 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		return;
 	}
 	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
-	n = n->simplify();
 	n->registerClasses();
-	n->registerFunctionPrototype(lexer.rdata);
-	n->buildFunction(lexer.rdata);
+	n->registerFunctionPrototype(rdata);
+	n->buildFunction(rdata);
 	const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
 	Type* type;
@@ -37,28 +36,27 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	else type = retType->type;
 	assert(type!=NULL);
 	if(n->getToken()!=T_DECLARATION && retType->classType == CLASS_COMPLEX){
-		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod,PositionID(0,0,"#main"), "printc")), {n});
-		n = n->simplify();
+		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "printc",PositionID(0,0,"#main"))), {n});
 		n->registerClasses();
-		n->registerFunctionPrototype(lexer.rdata);
-		n->buildFunction(lexer.rdata);
+		n->registerFunctionPrototype(rdata);
+		n->buildFunction(rdata);
 		//n->checkTypes();
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, ArrayRef<Type*>(std::vector<Type*>()), false);
-	Function *F = lexer.rdata.CreateFunction("",FT,EXTERN_FUNC);
+	Function *F = rdata.CreateFunction("",FT,EXTERN_FUNC);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-	lexer.rdata.builder.SetInsertPoint(BB);
-	const Data* dat = n->evaluate(lexer.rdata);
+	rdata.builder.SetInsertPoint(BB);
+	const Data* dat = n->evaluate(rdata);
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
-		lexer.rdata.builder.CreateRet(dat->getValue(lexer.rdata,PositionID(0,0,"<interpreter.main>")));
+		rdata.builder.CreateRet(dat->getValue(rdata,PositionID(0,0,"<interpreter.main>")));
 	else
-		lexer.rdata.builder.CreateRetVoid();
+		rdata.builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
-	lexer.rdata.FinalizeFunction(F,debug);
+	rdata.FinalizeFunction(F,debug);
 	//cout << "dumped" << endl << flush;
-	void *FPtr = lexer.rdata.exec->getPointerToFunction(F);
+	void *FPtr = rdata.exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
@@ -265,8 +263,8 @@ int main(int argc, char** argv){
 	}
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	initializeBaseFunctions(lexer.rdata);
-	initFuncsMeta(lexer.rdata);
+	initializeBaseFunctions(rdata);
+	initFuncsMeta(rdata);
 	std::vector<String> files =
 		{
 				"fib2.opt",

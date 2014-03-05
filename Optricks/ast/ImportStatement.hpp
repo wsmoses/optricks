@@ -17,7 +17,7 @@ class ImportStatement:public ErrorStatement{
 			filePos.compilerError("Cannot evaluate IMPORT");
 			exit(1);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("import-statement cannot act as function");
 			exit(1);
 		}
@@ -31,9 +31,6 @@ class ImportStatement:public ErrorStatement{
 
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 		}
-		void write(ostream& a, String s) const override final{
-			a << "import" << "'" << toImport << "';" << endl << s;
-		}
 		const Token getToken() const override final{
 			return T_IMPORT;
 		}
@@ -42,9 +39,6 @@ class ImportStatement:public ErrorStatement{
 		void registerFunctionPrototype(RData& r) const override final{
 		}
 		void buildFunction(RData& r) const override final{
-		}
-		ImportStatement* simplify() override final{
-			return this;
 		}
 };
 

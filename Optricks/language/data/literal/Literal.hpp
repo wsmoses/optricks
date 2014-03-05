@@ -12,9 +12,9 @@
 class Literal: public Data, public Statement{
 public:
 	inline Literal(DataType r): Data(r),Statement(){};
-	virtual Constant* getValue(RData& r, PositionID id) const override=0;
-	virtual const Literal* castTo(RData& r, const AbstractClass* const right, PositionID id) const override=0;
-	virtual Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override=0;
+	//virtual Constant* getValue(RData& r, PositionID id) const override=0;
+	//virtual const Literal* castTo(RData& r, const AbstractClass* const right, PositionID id) const override=0;
+	virtual Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override=0;
 
 	inline const Literal* toValue(RData& r,PositionID id) const override final{
 		return this;
@@ -23,9 +23,6 @@ public:
 
 	}
 	const Literal* evaluate(RData& a) const override final{
-		return this;
-	}
-	Literal* simplify() override final{
 		return this;
 	}
 	void registerClasses() const override final{};

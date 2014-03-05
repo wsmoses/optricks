@@ -18,7 +18,7 @@ public:
 		cerr << "stringLiteral not implemented yet" << endl << flush;
 		exit(1);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("String literal cannot act as function");
 		exit(1);
 	}
@@ -30,7 +30,7 @@ public:
 		PositionID(0,0,"#string").compilerError("StringLiteral not complete");
 		exit(1);
 	}
-	Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override final{
+	Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 		id.error("String literal cannot be used as function");
 		exit(1);
 	}
@@ -52,31 +52,6 @@ public:
 	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		cerr << "stringLiteral not implemented yet" << endl << flush;
 		exit(1);
-	}
-	void write(ostream& s, String st) const override final{
-		s << "\"";
-		for(unsigned i=0; i<st.length(); i++){
-			auto const c=st[i];
-			//if(c>255) s << "\x" << toStringHex(c); else
-			if(c=='\\' || c=='"')
-				s << "\\" << c;
-			else if(c=='\n'){
-				s << "\\n";
-			} else if(c=='\t'){
-				s << "\\t";
-			} else if(c=='\a'){
-				s << "\\a";
-			//} else if(c=='\h'){
-			//	s << "\\h";
-			} else if(c=='\v'){
-				s << "\\v";
-			} else if(c=='\r'){
-				s << "\\r";
-			} else if(c=='\b'){
-				s << "\\b";
-			} else s << c;
-		}
-		s << "\"";
 	}
 };
 

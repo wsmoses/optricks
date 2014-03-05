@@ -9,13 +9,7 @@
 #define DATA_HPP_
 #include "../includes.hpp"
 #include "../evaluatable/Evaluatable.hpp"
-class Location{
-	public:
-		virtual ~Location()=0;
-		virtual Value* getValue(RData& r, PositionID id)=0;
-		virtual void setValue(Value* v, RData& r)=0;
-		virtual Value* getPointer(RData& r,PositionID id) =0;
-};
+#include "../location/Location.hpp"
 
 #define DATA_C_
 class Data: public Evaluatable{
@@ -24,7 +18,7 @@ public:
 		Data(const DataType t):type(t){}
 	public:
 		virtual ~Data(){};
-		inline const Data* evaluate(RData& r) const override final{
+		inline const Data* evaluate(RData& r) const override{
 			return this;
 		}
 		virtual const Data* toValue(RData& r, PositionID id) const=0;
@@ -35,7 +29,7 @@ public:
 		llvm::Value* evalV(RData& r,PositionID id) const override final{
 			return getValue(r,id);
 		}
-		virtual const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const =0;
+		virtual const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const =0;
 		/**
 		 * Returns the class that this represents, if it represents a class
 		 */

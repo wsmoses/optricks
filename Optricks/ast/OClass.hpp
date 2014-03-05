@@ -7,6 +7,7 @@
 
 #ifndef OCLASS_HPP_
 #define OCLASS_HPP_
+
 #include "../language/class/UserClass.hpp"
 class OClass: public ErrorStatement
 {
@@ -24,32 +25,6 @@ class OClass: public ErrorStatement
 			if(outerClass==NULL) return proto->name;
 			else return outerClass->getFullName()+proto->name;
 		}*/
-		OClass* simplify() override final{
-			return this;
-		}
-		void write(ostream& ss, String b) const override{
-			ss << "class ";
-			if(proto->layout==PRIMITIVE_LAYOUT) ss << "primitive ";
-			else if(proto->layout==PRIMITIVEPOINTER_LAYOUT) ss << "primitive_pointer ";
-			ss << proto->getName();
-			if(proto->superClass){
-				ss << " : " << proto->superClass->getName();
-			}
-			ss << "{\n";
-			String c = b;
-			b+="  ";
-			for(auto& a:data){
-				ss << b;
-				a->write(ss, b);
-				ss << ";\n";
-			}
-			for(auto& a:under){
-				ss << b;
-				a->write(ss, b);
-				ss << ";\n";
-			}
-			ss << c << "}";
-		};
 		const Token getToken() const override final {
 			return T_CLASS;
 		}
@@ -58,7 +33,7 @@ class OClass: public ErrorStatement
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Cannot use class-declaration as function");
 			exit(1);
 		}
@@ -66,11 +41,11 @@ class OClass: public ErrorStatement
 			filePos.error("Cannot use class-declaration as data");
 			exit(1);
 		}
-		Data* evaluate(RData& r){
+		const Data* evaluate(RData& r) const override final{
 			if(proto==NULL) registerClasses();
 			if(!eval){
 				eval = true;
-				for(Statement*& a: under) a->evaluate(r);
+				for(Statement* const& a: under) a->evaluate(r);
 			}
 			return proto;
 		}

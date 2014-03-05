@@ -13,6 +13,7 @@ public:
 	const bool isSigned;
 	IntClass(String nam, unsigned len, bool b):
 		RealClass(nam, CLASS_INT,IntegerType::get(getGlobalContext(),len)),isSigned(b){
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
@@ -20,6 +21,9 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -28,10 +32,10 @@ public:
 		return ((IntegerType*)type)->getBitWidth();
 	}
 	ConstantInt* getZero(bool negative=false) const override final{
-		return ConstantInt::get((IntegerType*)type,0);
+		return ConstantInt::get((IntegerType*)type,(int64_t)0);
 	}
 	ConstantInt* getOne() const override final{
-		return ConstantInt::get((IntegerType*)type,1);
+		return ConstantInt::get((IntegerType*)type,(int64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_INT && isSigned==((IntClass*)toCast)->isSigned && type==toCast->type;
@@ -90,7 +94,7 @@ public:
 		checkFit(id,value);
 		auto tmp =  mpz_get_str(nullptr, 10, value);
 		void (*freefunc)(void*,size_t);
-		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),tmp,10);
+		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),StringRef(tmp),10);
 		mp_get_memory_functions(nullptr, nullptr, &freefunc);
 		freefunc(tmp, strlen(tmp)+1);
 		return ret;
@@ -115,6 +119,8 @@ public:
 			return false;
 		}
 	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
+
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final;
 	/**
 	 * Will error with id if this.hasCast(toCast)==false

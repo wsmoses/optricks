@@ -8,17 +8,17 @@
 #ifndef CONSTRUCTORFUNCTION_HPP_
 #define CONSTRUCTORFUNCTION_HPP_
 #include "./E_FUNCTION.hpp"
+#include "../../language/location/Location.hpp"
 
 class ConstructorFunction : public E_FUNCTION{
 private:
 	E_VAR* self;
 	Statement* body;
-	SingleFunction* myFunction;
 	Resolvable _this;
 	bool built;
 public:
 	ConstructorFunction(PositionID id, std::vector<Declaration*> dec, const Resolvable& r, E_VAR* s, Statement* b):
-		E_FUNCTION(id,dec),self(s),body(b),myFunction(nullptr),_this(r),built(false){
+		E_FUNCTION(id,dec),self(s),body(b),_this(r),built(false){
 		assert(s);
 	}
 	void registerClasses() const override final{
@@ -26,35 +26,22 @@ public:
 		//self->registerClasses();
 		//returnV->registerClasses();
 	}
-	void write(ostream& f, String b) const override{
-		f << "def ";
-		f << self->getFullName() ;
-		f << "(" ;
-		bool first = true;
-		for(auto &a: declaration){
-			if(first) first = false;
-			else f << ", " ;
-			a->write(f,"");
-		}
-		f << ")";
-		body->write(f, b+"  ");
-	}
-	void buildFunction(RData& ra){
+	void buildFunction(RData& ra) const override final{
 		if(built) return;
 		registerFunctionPrototype(ra);
 
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
-		BasicBlock *BB = ra.CreateBlock1("entry", F);
+		BasicBlock *BB = ra.CreateBlockD("entry", F);
 		ra.builder.SetInsertPoint(BB);
 
 		unsigned Idx = 0;
 
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
 				++AI, ++Idx) {
-			AI->setName(myFunction->getSingleProto()->declarations[Idx].declarationVariable);
+			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
 			declaration[Idx]->variable->getMetadata().setObject(
-					getLocationData(ra, AI,myFunction->getSingleProto()->declarations[Idx].declarationType));
+					new LocationData(new LazyLocation(ra, AI),myFunction->getSingleProto()->declarations[Idx].declarationType)));
 		}
 		_this.setObject(myFunction->getSingleProto()->returnType->generateData());
 		body->evaluate(ra);
@@ -66,7 +53,7 @@ public:
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		body->buildFunction(ra);
 	}
-	void registerFunctionPrototype(RData& a){
+	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
@@ -82,10 +69,6 @@ public:
 			args.push_back(cl);
 		}
 		const AbstractClass* returnType = self->getSelfClass(filePos);
-
-		if(returnType->classType==CLASS_AUTO){
-			filePos.compilerError("Cannot create constructor for auto class");
-		}
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);

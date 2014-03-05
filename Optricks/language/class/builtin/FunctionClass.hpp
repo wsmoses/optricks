@@ -101,6 +101,9 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);

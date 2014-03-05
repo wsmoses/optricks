@@ -23,9 +23,13 @@ public:
 	}
 	static inline Type* getTupleType(const std::vector<const AbstractClass*>& args){
 		const auto len = args.size();
+		if(len==1) return args[0]->type;
 		Type* ar[len];
-		for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
-		return StructType::create(ArrayRef<Type*>(ar, len),str(args),false);
+		for(unsigned int i=0; i<len; i++){
+			assert(args[i]->classType!=CLASS_LAZY);
+			ar[i]=args[i]->type;
+		}
+		return StructType::create(ArrayRef<Type*>(ar, len),StringRef(str(args)),false);
 	}
 	const std::vector<const AbstractClass*> innerTypes;
 protected:
@@ -51,6 +55,18 @@ public:
 		}
 	}
 
+	bool hasLocalData(String s) const override final{
+		if(s.length()<2 || s[0]!='_') return false;
+		unsigned int i=0;
+		unsigned int p=1;
+		do{
+			if(s[p]<'0' || s[p]>'9') return false;
+			i*=10;
+			i+= (s[p]-'0');
+		}while(p<s.length());
+		if(i>=innerTypes.size()) return false;
+		return true;
+	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
 		if(s.length()<2 || s[0]!='_'){
 			illegalLocal(id,s);

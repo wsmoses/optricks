@@ -32,9 +32,9 @@ private:
 public:
 	Scopable* const surroundingScope;
 	//protected:
-	std::map<String,SCOPE_POS> mapping;
+	std::map<const String,SCOPE_POS> mapping;
 	std::vector<OverloadedFunction*> funcs;
-	std::vector<Data*> vars;
+	std::vector<const Data*> vars;
 	std::vector<Scopable*> scopes;
 	std::vector<AbstractClass*> classes;
 public:
@@ -53,10 +53,10 @@ public:
 		if(!surroundingScope) return name;
 		else return surroundingScope->getName() + "." + name;
 	}
-	inline std::pair<Scopable*,std::map<String,SCOPE_POS>::iterator> find(PositionID id, String s) {
+	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> find(PositionID id, const String s) {
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
-			String n = getName();
+			const String n = getName();
 			if(n==NULL)
 				id.error("Cannot find "+s+" in current scope");
 			else
@@ -64,10 +64,10 @@ public:
 			exit(1);
 		} else return tmp;
 	}
-	inline std::pair<const Scopable*,std::map<String,SCOPE_POS>::const_iterator> find(PositionID id, String s) const{
+	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find(PositionID id, const String s) const{
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
-			String n = getName();
+			const String n = getName();
 			if(n==NULL)
 				id.error("Cannot find "+s+" in current scope");
 			else
@@ -75,67 +75,67 @@ public:
 			exit(1);
 		} else return tmp;
 	}
-	inline SCOPE_TYPE getScopeType(PositionID id, String s) const{
+	inline SCOPE_TYPE getScopeType(PositionID id, const String s) const{
 		auto tmp = find2(id,s);
 		return tmp.second->second.type;
 	}
-	inline std::pair<const Scopable*,std::map<String,SCOPE_POS>::const_iterator> find2(PositionID id, String s) const {
+	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find2(PositionID id, const String s) const {
 			const Scopable* tmp = this;
 			assert(tmp);
 			do{
-				std::map<String,SCOPE_POS>::const_iterator it = tmp->mapping.find(s);
-				if(it!=tmp->mapping.end()) return std::pair<const Scopable*,std::map<String,SCOPE_POS>::const_iterator>(tmp,it);
+				std::map<const String,SCOPE_POS>::const_iterator it = tmp->mapping.find(s);
+				if(it!=tmp->mapping.end()) return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(tmp,it);
 				tmp = tmp->surroundingScope;
 			}while(tmp!=NULL);
-			return std::pair<const Scopable*,std::map<String,SCOPE_POS>::const_iterator>(nullptr,mapping.end());
+			return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(nullptr,mapping.end());
 		}
-	inline std::pair<Scopable*,std::map<String,SCOPE_POS>::iterator> find2(PositionID id, String s) {
+	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> find2(PositionID id, const String s) {
 		Scopable* tmp = this;
 		assert(tmp);
 		do{
-			std::map<String,SCOPE_POS>::iterator it = tmp->mapping.find(s);
-			if(it!=tmp->mapping.end()) return std::pair<Scopable*,std::map<String,SCOPE_POS>::iterator>(tmp,it);
+			std::map<const String,SCOPE_POS>::iterator it = tmp->mapping.find(s);
+			if(it!=tmp->mapping.end()) return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(tmp,it);
 			tmp = tmp->surroundingScope;
 		}while(tmp!=NULL);
-		return std::pair<Scopable*,std::map<String,SCOPE_POS>::iterator>(nullptr,mapping.end());
+		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
-	const AbstractClass* getClass(PositionID id, String name) const{
+	const AbstractClass* getClass(PositionID id, const String name) const{
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
 		return f.first->classes[f.second->second.pos];
 	}
-	AbstractClass*& getClass(PositionID id, String name){
+	AbstractClass*& getClass(PositionID id, const String name){
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
 		return f.first->classes[f.second->second.pos];
 	}
-	OverloadedFunction* getStaticFunction(PositionID id, String name) const{
+	OverloadedFunction* getStaticFunction(PositionID id, const String name) const{
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_FUNC) id.error(name+" found at current scope, but not correct variable type -- needed non-class function");
 		return f.first->funcs[f.second->second.pos];
 	}
-	inline const AbstractClass* getFunctionReturnType(PositionID id, String name, const std::vector<const AbstractClass*>& fp) const;
-	inline const AbstractClass* getFunctionReturnType(PositionID id, String name, const std::vector<Evaluatable*>& fp) const;
-	inline std::pair<SingleFunction*,SCOPE_TYPE> getFunction(PositionID id, String name, const std::vector<const AbstractClass*>& fp) const;
+	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
+	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const;
+	inline std::pair<SingleFunction*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 
-	Data* getVariable(PositionID id, String name) const{
+	const Data* getVariable(PositionID id, const String name) const{
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
 		return f.first->vars[f.second->second.pos];
 	}
-	Data*& getVariable(PositionID id, String name){
+	const Data*& getVariable(PositionID id, const String name){
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
 		return f.first->vars[f.second->second.pos];
 	}
 
-	const AbstractClass* getReturnClass(PositionID id, String name) const;
-	Data* get(PositionID id, String name) const;
-	OverloadedFunction* addFunction(PositionID id, String name, void* generic=nullptr);
+	const AbstractClass* getReturnClass(PositionID id, const String name) const;
+	const Data* get(PositionID id, const String name) const;
+	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
 	void addClass(PositionID id, AbstractClass* c);
-	void addVariable(PositionID id, String name,Data* d){
+	void addVariable(PositionID id, const String name,Data* d){
 		if(exists(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
-		mapping.insert(std::pair<String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));
+		mapping.insert(std::pair<const String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));
 		vars.push_back(d);
 	}
 	virtual void write(ostream& a) const{
@@ -161,21 +161,22 @@ public:
 
 class Resolvable{
 public:
-	String name;
-	Scopable* module;
+	const String name;
+	Scopable* const module;
 	PositionID filePos;
-	Resolvable(Scopable* m,String n, PositionID id): name(n),module(m),filePos(id){};
+	Resolvable(Scopable* m,const String n, PositionID id): name(n),module(m),filePos(id){};
 	const AbstractClass* getReturnType() const;
-	inline Data* getObject() const;
-	void setObject(Data* da);
+	inline const Data* getObject() const;
+	void setObject(const Data* da) const;
 	inline Value* getValue(RData& r) const;
 	inline void setValue(RData& r, Data* d2) const;
 	inline void setValue(RData& r,Value* v) const;
 	inline void addFunction(SingleFunction* d) const;
 	inline void setFunction(SingleFunction* d) const;
+	inline AbstractClass* getClass() const;
 	const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
-	const AbstractClass* getFunctionReturnType(const std::vector<Evaluatable*>& fp) const;
-	std::pair<Data*,SCOPE_TYPE> getFunction(String name, const std::vector<const AbstractClass*>& fp) const;
+	const AbstractClass* getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const;
+	std::pair<SingleFunction*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;
 	/*inline void addLocalFunction(RData& r, PositionID id, DATA d){
 			module->addLocalFunction(id,name).add(d, r, id);
 		}

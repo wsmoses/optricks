@@ -21,7 +21,7 @@ class IfStatement : public ErrorStatement{
 			ErrorStatement(a), condition(cond), then(th), finalElse(stat){
 			if(finalElse) assert(finalElse->getToken()!=T_VOID);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("if-statement cannot act as function");
 			exit(1);
 		}
@@ -113,31 +113,6 @@ class IfStatement : public ErrorStatement{
 			}
 			//r.guarenteedReturn = ret;
 			return VOID_DATA;
-		}
-		Statement* simplify() override{
-			return new IfStatement(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
-		}
-		void write(ostream& a,String t) const override{
-			bool prevIf = false;
-			if(t.length()>=2 && t[0]=='I' && t[1]=='F'){
-				prevIf = true;
-				t = t.substr(2);
-			}
-			a << "if ";
-			if(finalElse->getToken()==T_IF && !prevIf) a << "  ";
-			a << condition << " ";
-			then->write(a,t);
-			if(finalElse->getToken()!=T_VOID){
-				a << ";" << endl;
-				if(finalElse->getToken()==T_IF){
-					a << t << "el";
-					finalElse->write(a, "IF"+t);
-				}
-				else{
-					a << t << "else ";
-					finalElse->write(a, t);
-				}
-			}
 		}
 };
 

@@ -11,44 +11,32 @@
 class LambdaFunction : public E_FUNCTION{
 private:
 	Statement* body;
-	CompiledFunction* myFunction;
 	bool built;
 public:
 	LambdaFunction(PositionID id, std::vector<Declaration*> dec, Statement* b):
-		E_FUNCTION(id,dec),body(b),myFunction(nullptr),built(false){
+		E_FUNCTION(id,dec),body(b),built(false){
 	}
 	void registerClasses() const override final{
 		body->registerClasses();
 		//self->registerClasses();
 		//returnV->registerClasses();
 	}
-	void write(ostream& f, String b) const override{
-		f << "lambda ";
-		bool first = true;
-		for(auto &a: declaration){
-			if(first) first = false;
-			else f << ", " ;
-			a->write(f,"");
-		}
-		f << ": ";
-		body->write(f, b+"  ");
-	}
-	void buildFunction(RData& ra){
+	void buildFunction(RData& ra) const override final{
 		if(built) return;
 		registerFunctionPrototype(ra);
 
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
-		BasicBlock *BB = ra.CreateBlock1("entry", F);
+		BasicBlock *BB = ra.CreateBlockD("entry", F);
 		ra.builder.SetInsertPoint(BB);
 
 		unsigned Idx = 0;
 
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
 				++AI, ++Idx) {
-			AI->setName(myFunction->getSingleProto()->declarations[Idx].declarationVariable);
+			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
 			declaration[Idx]->variable->getMetadata().setObject(
-					(new ConstantData(AI,myFunction->proto->declarations[Idx].declarationType))
+					(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))
 					->toLocation(ra));
 		}
 		const Data* ret = body->evaluate(ra);
@@ -63,7 +51,7 @@ public:
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		body->buildFunction(ra);
 	}
-	void registerFunctionPrototype(RData& a){
+	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);

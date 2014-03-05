@@ -14,6 +14,9 @@
 //#define VERIFY(A) verifyFunction(A);
 //#include <GL/glut.h>
 #undef VOID
+#define __cplusplus 201103L
+#include <algorithm>
+#include <functional>
 #include <initializer_list>
 #include <list>
 #include <cstdio>
@@ -54,6 +57,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
@@ -74,9 +78,24 @@ using namespace llvm;
 #define byte unsigned short
 #define exception std::exception
 
+#ifndef REFERENCECLASS_C_
+#define REFERENCECLASS_C_
+class ReferenceClass;
+#endif
+
+#ifndef LAZYCLASS_C_
+#define LAZYCLASS_C_
+class LazyClass;
+#endif
+
 #ifndef ABSTRACTCLASS_C_
 #define ABSTRACTCLASS_C_
 class AbstractClass;
+#endif
+
+#ifndef LEXER_C_
+#define LEXER_C_
+class Lexer;
 #endif
 
 #ifndef INTCLASS_C_
@@ -97,11 +116,6 @@ class FunctionClass;
 #ifndef COMPLEXCLASS_C_
 #define COMPLEXCLASS_C_
 class ComplexClass;
-#endif
-
-#ifndef INTCLASS_C_
-#define INTCLASS_C_
-class IntClass;
 #endif
 
 #ifndef DATA_C_
@@ -160,7 +174,7 @@ class E_FUNC_CALL;
 #endif
 
 inline ConstantInt* getInt32(int32_t val){
-	return ConstantInt::get(IntegerType::get(getGlobalContext(),32),val);
+	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),val);
 }
 
 const auto C_POINTERTYPE = PointerType::get(IntegerType::get(getGlobalContext(), 8),0);
@@ -218,6 +232,7 @@ enum ClassType{
 	CLASS_SET,
 	CLASS_VECTOR,
 	CLASS_VOID,
+	CLASS_REF,
 //	CLASS_FILE,
 	CLASS_CLASS,
 	CLASS_LAZY,
@@ -247,6 +262,7 @@ enum DataType{
 	R_SET,
 	R_MAP,
 	R_SLICE,
+	R_CLASSFUNC,
 	R_NULL
 };
 template<> String str<DataType>(DataType d){

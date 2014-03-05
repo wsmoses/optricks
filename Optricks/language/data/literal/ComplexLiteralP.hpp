@@ -12,22 +12,33 @@
 #include "../../class/builtin/FloatClass.hpp"
 #include "../../class/builtin/ComplexClass.hpp"
 #include "../../class/builtin/RationalClass.hpp"
-#include "../../class/literal/LiteralClass.hpp"
 
 const AbstractClass* ComplexLiteral::getReturnType() const{
 	if(complexType) return complexType;
 	else{
+		const AbstractClass* rc = real->getReturnType();
+		assert(rc);
+		const AbstractClass* ic = real->getReturnType();
+		assert(ic);
 		return complexLiteralClass;
 	}
 }
 
-Constant* ComplexLiteral::getValue(RData& r, PositionID id) const{
+Value* ComplexLiteral::getValue(RData& r, PositionID id) const{
 	if(complexType==NULL) {
 		id.error("Cannot getValue of complex class without type");
 		exit(1);
 	} else {
-		Constant* z[2] = { real->castToV(r, complexType->innerClass, id),imag->castToV(r, complexType->innerClass, id)};
-		return ConstantVector::get(ArrayRef<Constant*>(z));
+		Value* a = real->castToV(r, complexType->innerClass, id);
+		Value* b = imag->castToV(r, complexType->innerClass, id);
+		/*if(Constant* a1 = dynamic_cast<Constant>(a)){
+			if(Constant* b1 = dynamic_cast<Constant>(b)){
+				return ConstantVector::get(ArrayRef<Constant*>({a,b}));
+			}
+		}*/
+		Value* vec = UndefValue::get(complexType->type);
+		return r.builder.CreateInsertElement(r.builder.CreateInsertElement(
+				UndefValue::get(complexType->type), a, getInt32(0)), b, getInt32(1));
 	}
 }
 
@@ -37,27 +48,10 @@ const ComplexLiteral* ComplexLiteral::castTo(RData& r, const AbstractClass* cons
 		ComplexClass* cc = (ComplexClass*)right;
 		if(complexType!=nullptr && !complexType->innerClass->hasCast(cc->innerClass))
 			id.error("Cannot cast complex type "+complexType->getName()+" to "+cc->getName());
-		if(real->type==R_INT){
-			IntClass* ic = ((IntLiteral*)real)->intType;
-			if(ic && !ic->hasCast(cc->innerClass))
-				id.error("Cannot promote real part of complex literal of type "+ic->getName()+" to "+cc->innerClass->getName());
-		} else{
-			assert(real->type==R_FLOAT);
-			FloatClass* ic = ((FloatLiteral*)real)->floatType;
-			if(ic && !ic->hasCast(cc->innerClass))
-				id.error("Cannot promote real part of complex literal of type "+ic->getName()+" to "+cc->innerClass->getName());
-		}
-		if(real->type==R_INT){
-			IntClass* ic = ((IntLiteral*)imag)->intType;
-			if(ic && !ic->hasCast(cc->innerClass))
-				id.error("Cannot promote imaginary part of complex literal of type "+ic->getName()+" to "+cc->innerClass->getName());
-		} else{
-			assert(real->type==R_FLOAT);
-			FloatClass* ic = ((FloatLiteral*)imag)->floatType;
-			if(ic && !ic->hasCast(cc->innerClass))
-				id.error("Cannot promote imaginary part of complex literal of type "+ic->getName()+" to "+cc->innerClass->getName());
-		}
-		return new ComplexLiteral(real, imag,cc);
+		auto nreal = real->castTo(r, cc->innerClass, id);
+		auto nimag = imag->castTo(r, cc->innerClass, id);
+		if(nreal==real && nimag == imag) return this;
+		else return new ComplexLiteral(nreal, nimag, cc);
 	}
 	default:
 		id.error("Cannot promote complex literal to non-complex type "+right->getName());
@@ -65,14 +59,23 @@ const ComplexLiteral* ComplexLiteral::castTo(RData& r, const AbstractClass* cons
 	}
 }
 
-Constant* ComplexLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
+Value* ComplexLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
 	switch(right->classType){
 		case CLASS_COMPLEX:{
 			ComplexClass* cc = (ComplexClass*)right;
 			if(complexType!=nullptr && !complexType->innerClass->hasCast(cc->innerClass))
 				id.error("Cannot cast complex type "+complexType->getName()+" to "+cc->getName());
-			Constant* z[2] = { real->castToV(r, cc->innerClass, id),imag->castToV(r, cc->innerClass, id)};
-			return ConstantVector::get(ArrayRef<Constant*>(z));
+
+			Value* a = real->castToV(r, cc->innerClass, id);
+			Value* b = imag->castToV(r, cc->innerClass, id);
+			/*if(Constant* a1 = dynamic_cast<Constant>(a)){
+				if(Constant* b1 = dynamic_cast<Constant>(b)){
+					return ConstantVector::get(ArrayRef<Constant*>({a,b}));
+				}
+			}*/
+			Value* vec = UndefValue::get(complexType->type);
+			return r.builder.CreateInsertElement(r.builder.CreateInsertElement(
+					UndefValue::get(complexType->type), a, getInt32(0)), b, getInt32(1));
 		}
 		default:
 			id.error("Cannot promote complex type to non-complex type "+right->getName());

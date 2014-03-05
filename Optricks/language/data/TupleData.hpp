@@ -124,12 +124,12 @@ public:
 		return true;
 	}
 
-	virtual const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override{
+	virtual const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use tuple as function");
 		return VOID_DATA;
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Tuple cannot act as function");
 		exit(1);
 	}

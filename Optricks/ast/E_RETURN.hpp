@@ -35,9 +35,6 @@ class E_RETURN : public ErrorStatement{
 		void buildFunction(RData& r) const override final{
 			if(inner!=NULL) inner->buildFunction(r);
 		}
-		Statement* simplify() override{
-			return this;
-		}
 		const Data* evaluate(RData& r) const override {
 			const Data* t = (inner && inner->getToken()!=T_VOID)?(inner->evaluate(r)):(VOID_DATA);
 			if(jump==YIELD){
@@ -61,27 +58,7 @@ class E_RETURN : public ErrorStatement{
 			}
 			return VOID_DATA;
 		}
-		void write (ostream& f,String b="") const override{
-			switch(jump){
-				case YIELD:
-					f  << "yield";
-					if(inner!= NULL && inner->getToken()!=T_VOID) f << " " << inner;
-					return;
-				case RETURN:
-					f  << "return";
-					if(inner!= NULL && inner->getToken()!=T_VOID) f << " " << inner;
-					return;
-				case BREAK:
-					f  << "break";
-					if(name!= "" ) f << " " << name;
-					return;
-				case CONTINUE:
-					f  << "continue";
-					if(name!= "" ) f << " " << name;
-					return;
-			}
-		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Return statement cannot act as function");
 			exit(1);
 		}

@@ -20,6 +20,9 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -44,9 +47,10 @@ public:
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
-		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast c_pointer type to "+toCast->name);
+		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast c_pointer type to "+toCast->getName());
 		return valueToCast;
 	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 };
 
 CPointerClass* c_pointerClass = new CPointerClass(true);

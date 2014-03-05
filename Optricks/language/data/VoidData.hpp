@@ -49,11 +49,11 @@ public:
 		exit(1);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Void cannot act as function");
 		exit(1);
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use void as function");
 		return this;
 	}

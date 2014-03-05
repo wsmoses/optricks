@@ -40,10 +40,10 @@ class TernaryOperator : public ErrorStatement{
 			then->buildFunction(r);
 			finalElse->buildFunction(r);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			const AbstractClass* const g = then->getFunctionReturnType(id,args);
 			const AbstractClass* const b = finalElse->getFunctionReturnType(id,args);
-			const AbstractClass* tog = g->leastCommonAncestor(b,filePos);
+			const AbstractClass* tog = getMin(g, b, filePos);
 			if(tog==NULL || tog->classType==CLASS_AUTO) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
 			assert(tog);
 			return tog;
@@ -51,7 +51,7 @@ class TernaryOperator : public ErrorStatement{
 		const AbstractClass* getReturnType() const override{
 			const AbstractClass* const g = then->getReturnType();
 			const AbstractClass* const b = finalElse->getReturnType();
-			const AbstractClass* tog = g->leastCommonAncestor(b,filePos);
+			const AbstractClass* tog = getMin(g, b,filePos);
 			if(tog==NULL || tog->classType==CLASS_AUTO) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
 			assert(tog);
 			return tog;
@@ -116,13 +116,6 @@ class TernaryOperator : public ErrorStatement{
 			PN->addIncoming(ThenV, ThenBB);
 			PN->addIncoming(ElseV, ElseBB);
 			return new ConstantData(PN, returnType);
-		}
-
-		Statement* simplify() override{
-			return new TernaryOperator(filePos, condition->simplify(), then->simplify(), finalElse->simplify());
-		}
-		void write(ostream& a,String t) const override{
-			a << condition << "?" << then << ":" << finalElse;
 		}
 };
 

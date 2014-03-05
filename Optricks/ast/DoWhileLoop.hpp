@@ -22,7 +22,7 @@ public:
 		condition(cond), statement(stat){
 		name = n;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		id.error("Do-while cannot act as function");
 		exit(1);
 	}
@@ -81,14 +81,6 @@ public:
 	void buildFunction(RData& r) const override final{
 		condition->buildFunction(r);
 		statement->buildFunction(r);
-	}
-	void write(ostream& a, String b) const override{
-		a << "do ";
-		statement->write(a,b+" ");
-		a << "while(" << condition << ")";
-	}
-	DoWhileLoop* simplify() override final{
-		return new DoWhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 	}
 };
 #endif /* DOWHILELOOP_HPP_ */

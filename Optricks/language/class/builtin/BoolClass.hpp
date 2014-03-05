@@ -8,11 +8,12 @@
 #ifndef BOOLCLASS_HPP_
 #define BOOLCLASS_HPP_
 #include "../AbstractClass.hpp"
+#include "./LazyClass.hpp"
 class BoolClass: public AbstractClass{
 public:
 	inline BoolClass(bool b):
 		AbstractClass(nullptr,"bool", nullptr,PRIMITIVE_LAYOUT,CLASS_BOOL,true,IntegerType::get(getGlobalContext(),1)){
-
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		illegalLocal(id,s);
@@ -23,6 +24,10 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -40,8 +45,11 @@ public:
 		else
 			return (b->classType==CLASS_BOOL)?(1):(0);*/
 	}
-	inline ConstantInt* getValue(PositionID id, bool value){
-		return ConstantInt::get((IntegerType*)type,value);
+	inline Constant* getValue(PositionID id, bool value){
+		if(value)
+			return ConstantInt::getTrue(type);
+		else
+			return ConstantInt::getFalse(type);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_BOOL;

@@ -13,17 +13,9 @@ public:
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
 		inner->collectReturns(vals, toBe);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
-				auto type=getReturnType();
-				if(type->classType==CLASS_FUNC){
-								return ((FunctionClass*)type)->returnType;
-							}  else if(type->classType==CLASS_CLASS){
-								return type;
-							}	else {
-								id.error("Class '"+type->getName()+"' cannot be used as function");
-								exit(1);
-							}
-			}
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		return inner->getFunctionReturnType(id,args);
+	}
 	/*inline Resolvable getMetadata() override final{
 		return inner->getMetadata();
 	}*/
@@ -39,16 +31,10 @@ public:
 	const Data* evaluate(RData& a) const override {
 		return inner->evaluate(a);
 	}
-	Statement* simplify() override{
-		return inner->simplify();
-	}
-	void write (ostream& f,String b="") const override{
-		f  << "(" << inner << ")";
-	}
 	const AbstractClass* getReturnType() const override final{
 		return inner->getReturnType();
 	}
-	const AbstractClass* getSelfClass(PositionID id) override final{ return inner->getSelfClass(id); }
+	AbstractClass* getSelfClass(PositionID id) override final{ return inner->getSelfClass(id); }
 };
 
 

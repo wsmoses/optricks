@@ -23,10 +23,6 @@ class Statement : public Evaluatable{
 		 */
 		virtual void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) = 0;
 		/**
-		 * Simplifies the Statement (if possible)
-		 */
-		virtual Statement* simplify()  = 0;
-		/**
 		 * Creates all functions / prototypes
 		 */
 		virtual void registerClasses() const = 0;
@@ -46,7 +42,7 @@ class Statement : public Evaluatable{
 		/**
 		 * Gets the class which this expression represents (assuming this is a class-type object or reference)
 		 */
-		virtual const AbstractClass* getSelfClass(PositionID id){
+		virtual AbstractClass* getSelfClass(PositionID id){
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
 			return evaluate(r).getMyClass(r);
 		}*/
@@ -56,7 +52,6 @@ class Statement : public Evaluatable{
 		Statement(){};
 		virtual const Token getToken() const = 0;
 		//virtual bool hasCastValue(AbstractClass* a)=0;
-		virtual void write(ostream& s,String start="") const = 0;
 };
 
 class ErrorStatement: public Statement{
@@ -70,15 +65,6 @@ public:
 	}
 };
 
-
-inline ostream& operator << (ostream&f, Statement& s){
-	s.write(f,"");
-	return f;
-}
-inline ostream& operator << (ostream&f, Statement* s){
-	s->write(f,"");
-	return f;
-}
 class VoidStatement : public Statement{
 	public:
 		VoidStatement() : Statement(){}
@@ -86,17 +72,11 @@ class VoidStatement : public Statement{
 			PositionID(0,0,"#Void").error("Attempted evaluation of void statement");
 			exit(1);
 		}
-		Statement* simplify() override final{
-			return this;
-		}
 		const Token getToken() const override{
 			return T_VOID;
 		}
 		bool operator == (Statement* s) const{
 			return s->getToken()==T_VOID;
-		}
-		void write(ostream& a,String r="") const override{
-			a << "void";
 		}
 		//bool hasCastValue(AbstractClass* a){
 		//	return a->classType==CLASS_VOID;
@@ -104,7 +84,7 @@ class VoidStatement : public Statement{
 		void registerClasses() const override final{}
 		void registerFunctionPrototype(RData& r) const override final{};
 		void buildFunction(RData& r) const override final{};
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args) const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 			id.compilerError("Getting return type of voidType");
 			exit(1);
 		}
@@ -129,9 +109,6 @@ class VariableReference : public Statement{
 		 */
 		virtual String getFullName() =0;
 		virtual String getShortName()=0;
-		VariableReference* simplify() override final{
-			return this;
-		}
 };
 
 

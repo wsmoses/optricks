@@ -54,18 +54,8 @@ class E_SET: public ErrorStatement{
 			return new ConstantData(nex,to->getReturnType());
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			return variable->getFunctionReturnType(id,args);
-		}
-		E_SET* simplify() final override{
-			return new E_SET(filePos, variable,(value->simplify()) );
-		}
-		void write(ostream& f, String s="") const final override{
-			variable->write(f);
-			if(value!=NULL) {
-				f << "=";
-				value->write(f);
-			}
 		}
 };
 

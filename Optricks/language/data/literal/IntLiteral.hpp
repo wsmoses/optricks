@@ -27,7 +27,7 @@ public:
 		exit(1);
 	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		if(right==this) return this;
+		if(intType==right) return this;
 		switch(right->classType){
 		case CLASS_INT:{
 			IntClass* ic = (IntClass*)right;
@@ -40,11 +40,11 @@ public:
 		case CLASS_COMPLEX:{
 			ComplexClass* cc = (ComplexClass*)right;
 			const Data* real = castTo(r, cc->innerClass, id);
-			return new ComplexLiteral(real, right);
+			return new ComplexLiteral(real, getZero(), cc);
 		}
 		case CLASS_RATIONAL:
 		default:
-			id.error("Integer literal cannot be cast to "+right->name);
+			id.error("Integer literal cannot be cast to "+right->getName());
 			exit(1);
 		}
 	}
@@ -60,7 +60,6 @@ public:
 		}
 		case CLASS_COMPLEX:{
 			ComplexClass* cc = (ComplexClass*)right;
-			const Data* real = castTo(r, cc->innerClass, id);
 			return cc->getValue(id, intType->value);
 		}
 
@@ -74,7 +73,7 @@ public:
 		}
 		case CLASS_RATIONAL:
 		default:
-			id.error("Integer literal cannot be cast to "+right->name);
+			id.error("Integer literal cannot be cast to "+right->getName());
 			exit(1);
 		}
 
@@ -86,21 +85,14 @@ public:
 		return intType->compare(a,b);
 	}
 	static inline IntLiteral* getZero() {
-		static IntLiteral* zero = new IntLiteral((signed long int)0,nullptr);
+		static IntLiteral* zero = new IntLiteral((signed long int)0);
 		return zero;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Integer literal cannot act as function");
 		exit(1);
 	}
-	void write(ostream& s, String st="") const override final{
-		auto tmp =  mpz_get_str(nullptr, 10, intType->value);
-		void (*freefunc)(void*,size_t);
-		s << tmp;
-		mp_get_memory_functions(nullptr, nullptr, &freefunc);
-		freefunc(tmp, strlen(tmp)+1);
-	}
-	virtual Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override final{
+	virtual Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 		id.error("Cannot call function on int-literal");
 		exit(1);
 	}

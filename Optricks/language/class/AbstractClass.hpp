@@ -15,11 +15,13 @@
 #define ABSTRACTCLASS_C_
 class AbstractClass: public Literal{
 	friend Scopable;
+	friend ReferenceClass;
+	friend LazyClass;
+	friend Lexer;
 public:
 	const Scopable* const myScope;
-	Scopable staticVariables;
+	mutable Scopable staticVariables;
 	OverloadedFunction constructors;
-	std::map<String, OverloadedFunction*> localFunctions;
 	virtual ~AbstractClass(){};
 private:
 	const String name;
@@ -35,16 +37,6 @@ public:
 	/**
 	 * Casting requires no operation
 	 */
-	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const AbstractClass*>& v) const{
-		auto find = localFunctions.find(s);
-		if(find==localFunctions.end()) id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
-		return find->second->getBestFit(id,v);
-	}
-	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<Evaluatable*>& v) const{
-			auto find = localFunctions.find(s);
-			if(find==localFunctions.end()) id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
-			return find->second->getBestFit(id,v);
-	}
 	virtual bool noopCast(const AbstractClass* const toCast) const=0;
 	virtual bool hasCast(const AbstractClass* const toCast) const=0;
 	//virtual std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s)=0;
@@ -67,6 +59,8 @@ public:
 		}
 		return false;
 	}
+
+	virtual SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const=0;
 	String getName() const{
 		if(myScope==nullptr) return name;
 		else return myScope->getName() + "." + name;
@@ -90,10 +84,7 @@ public:
 	}
 	const AbstractClass* getReturnType() const override;//TODO
 	inline Constant* getValue(RData& r, PositionID id) const override final{
-		return ConstantInt::get(CLASSTYPE, (size_t)this, false);
-	}
-	void write(ostream& s, String t="") const override final{
-		s << getName();
+		return ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
 		return a->classType==CLASS_CLASS;
@@ -108,7 +99,7 @@ public:
 		return getValue(r,id);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		return this;
 	}
 	/**
@@ -124,13 +115,13 @@ public:
 	virtual int compare(const AbstractClass* const a, const AbstractClass* const b) const=0;
 
 	virtual const AbstractClass* getLocalReturnClass(PositionID id, String s) const;
-
+	virtual bool hasLocalData(String s) const=0;
 	virtual const Data* getLocalData(RData& r,PositionID id, String s, const Data* instance) const=0;
 
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		return this;
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 		return constructors.callFunction(r,id,args);
 	}
 	inline AbstractClass(const Scopable* const sc, const String nam, const AbstractClass* const supa, LayoutType const t, ClassType const ct, bool const fina, llvm::Type* const tp=NULL)
@@ -142,9 +133,10 @@ public:
 		superClass(supa),
 		layout(t),
 		classType(ct),
-		isFinal(fina),
-		type(tp)
-	{};
+		isFinal(fina)
+	,type(tp)
+	{
+	};
 };
 
 

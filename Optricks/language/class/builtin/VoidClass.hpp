@@ -16,6 +16,9 @@ public:
 		illegalLocal(id,s);
 		exit(1);
 	}
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -38,6 +41,11 @@ public:
 		if(toCast->classType!=CLASS_VOID) illegalCast(id,toCast);
 		return valueToCast;
 	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
+		id.error("No local functions exist for void class");
+		exit(1);
+	}
+
 };
 
 VoidClass* voidClass = new VoidClass(true);

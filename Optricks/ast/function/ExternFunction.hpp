@@ -12,34 +12,21 @@ class ExternFunction : public E_FUNCTION{
 private:
 	E_VAR* self;
 	Statement* returnV;
-	CompiledFunction* myFunction;
 public:
 	ExternFunction(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r):
-		E_FUNCTION(id,dec),self(s),returnV(r),myFunction(nullptr){
+		E_FUNCTION(id,dec),self(s),returnV(r){
 		assert(s);
+		if(r==nullptr) id.error("Cannot have automatic return class for external function");
 		assert(r);
 	}
 	void registerClasses() const override final{
 		//self->registerClasses();
 		//returnV->registerClasses();
 	}
-	void write(ostream& f, String b) const override{
-		f << "ext ";
-		f << returnV->getSelfClass(filePos)->getName() << " ";
-		f << self->getFullName() ;
-		f << "(" ;
-		bool first = true;
-		for(auto &a: declaration){
-			if(first) first = false;
-			else f << ", " ;
-			a->write(f,"");
-		}
-		f << ")";
-	}
-	void buildFunction(RData& a){
+	void buildFunction(RData& a) const override final{
 		registerFunctionPrototype(a);
 	}
-	void registerFunctionPrototype(RData& a){
+	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);

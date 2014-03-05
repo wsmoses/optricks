@@ -10,11 +10,13 @@
 #include "FloatLiteral.hpp"
 #include "ComplexLiteral.hpp"
 #include "../../class/builtin/FloatClass.hpp"
-#include "../../class/literal/LiteralClass.hpp"
+#include "../../class/literal/FloatLiteralClass.hpp"
+
+//TODO separate "constant" floats from float literals
 const AbstractClass* FloatLiteral::getReturnType() const{
 	if(floatType) return floatType;
 	else{
-		return floatLiteralClass;
+		return FloatLiteralClass::get();
 	}
 }
 Constant* FloatLiteral::getValue(RData& r, PositionID id) const{
@@ -99,8 +101,8 @@ bool FloatLiteral::hasCastValue(const AbstractClass* const a) const{
 	}
 
 int FloatLiteral::compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_FLOAT || a->classType==CLASS_COMPLEX);
-	assert(b->classType==CLASS_FLOAT || b->classType==CLASS_COMPLEX);
+	assert(a->classType==CLASS_FLOATLITERAL || a->classType==CLASS_COMPLEX);
+	assert(b->classType==CLASS_FLOATLITERAL || b->classType==CLASS_COMPLEX);
 	if(a->classType==b->classType){
 		if(a->classType==CLASS_COMPLEX){
 			ComplexClass* ca = (ComplexClass*)a;
@@ -111,6 +113,6 @@ int FloatLiteral::compareValue(const AbstractClass* const a, const AbstractClass
 		} else{
 			return 0;
 		}
-	} else return (a->classType==CLASS_FLOAT)?(-1):(1);
+	} else return (a->classType==CLASS_FLOATLITERAL)?(-1):(1);
 }
 #endif /* FLOATLITERAL_CPP_ */

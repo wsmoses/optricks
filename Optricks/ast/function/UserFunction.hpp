@@ -8,69 +8,42 @@
 #ifndef USERFUNCTION_HPP_
 #define USERFUNCTION_HPP_
 #include "./E_FUNCTION.hpp"
+#include "../../language/class/ClassLib.hpp"
 class UserFunction : public E_FUNCTION{
 private:
 	E_VAR* self;
 	Statement* returnV;
 	Statement* body;
-	SingleFunction* myFunction;
-	bool built;
+	mutable bool built;
 public:
 	UserFunction(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r, Statement* b):
-		E_FUNCTION(id,dec),self(s),returnV(r),body(b),myFunction(nullptr),built(false){
+		E_FUNCTION(id,dec),self(s),returnV(r),body(b),built(false){
 		assert(s);
 		assert(r);
 	}
 	void registerClasses() const override final{
 		body->registerClasses();
-		//self->registerClasses();
-		//returnV->registerClasses();
 	}
-	void write(ostream& f, String b) const override{
-		f << "def ";
-		f << returnV->getSelfClass(filePos)->getName() << " ";
-		f << self->getFullName() ;
-		f << "(" ;
-		bool first = true;
-		for(auto &a: declaration){
-			if(first) first = false;
-			else f << ", " ;
-			a->write(f,"");
-		}
-		f << ")";
-		body->write(f, b+"  ");
-	}
-	void buildFunction(RData& ra){
+	void buildFunction(RData& a) const override final{
 		if(built) return;
-		registerFunctionPrototype(ra);
+		built = true;
+		registerFunctionPrototype(a);
 
-		BasicBlock *Parent = ra.builder.GetInsertBlock();
+		BasicBlock *Parent = a.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
-		BasicBlock *BB = ra.CreateBlock1("entry", F);
-		ra.builder.SetInsertPoint(BB);
-
-		unsigned Idx = 0;
-
-		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
-				++AI, ++Idx) {
-			AI->setName(myFunction->getSingleProto()->declarations[Idx].declarationVariable);
-			declaration[Idx]->variable->getMetadata().setObject(
-					DATA::getConstant(AI,myFunction->getSingleProto()->declarations[Idx].declarationType).toLocation(ra));
-		}
-		body->evaluate(ra);
-		if(! ra.hadBreak()){
+		a.builder.SetInsertPoint(& (F->getEntryBlock()));
+		body->evaluate(a);
+		if(! a.hadBreak()){
 			if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
-				ra.builder.CreateRetVoid();
+				a.builder.CreateRetVoid();
 			else error("Could not find return statement");
 		}
-		ra.FinalizeFunction(F);
-		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		body->buildFunction(ra);
+		a.FinalizeFunction(F);
+		if(Parent) a.builder.SetInsertPoint( Parent );
+		body->buildFunction(a);
 	}
-	void registerFunctionPrototype(RData& a){
+	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
-		//self->registerFunctionPrototype(a);
-		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
 		std::vector<Type*> args;
 		std::vector<AbstractDeclaration> ad;
@@ -82,9 +55,9 @@ public:
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args.push_back(cl);
 		}
-		const AbstractClass* returnType = returnV->getSelfClass(filePos);
+		const AbstractClass* returnType = (returnType)?(returnV->getSelfClass(filePos)):(nullptr);
 
-		if(returnType->classType==CLASS_AUTO){
+		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
 			body->collectReturns(yields,returnType);
 			if(yields.size()==0) returnType = voidClass;
@@ -101,7 +74,19 @@ public:
 		llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
 		self->getMetadata().addFunction(myFunction);
-		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
+
+		BasicBlock *BB = a.CreateBlockD("entry", F);
+		a.builder.SetInsertPoint(BB);
+
+		unsigned Idx = 0;
+		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
+			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))->toLocation(a)
+			);
+		}
+
+		if(Parent) a.builder.SetInsertPoint( Parent );
 		body->registerFunctionPrototype(a);
 	}
 };

@@ -13,7 +13,7 @@
 class LocationData:public LLVMData{
 public:
 	Location* const value;
-	LocationData(Location* const val, AbstractClass* cp):LLVMData(R_LOC, type),value(val){
+	LocationData(Location* const val, const AbstractClass* cp):LLVMData(R_LOC, type),value(val){
 		assert(val); assert(cp); assert(cp->classType!=CLASS_CLASS); assert(cp->classType!=CLASS_FUNC);
 		assert(cp->classType!=CLASS_GEN); assert(cp->layout!=LITERAL_LAYOUT);
 	}

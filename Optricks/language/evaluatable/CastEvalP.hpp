@@ -11,7 +11,7 @@
 #include "../class/AbstractClass.hpp"
 #include "../class/builtin/FunctionClass.hpp"
 
-const AbstractClass* CastEval::getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args) const{
+const AbstractClass* CastEval::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const{
 		if(ac->classType==CLASS_FUNC){
 			return ((FunctionClass*)ac)->returnType;
 		} else if(ac->classType==CLASS_CLASS){

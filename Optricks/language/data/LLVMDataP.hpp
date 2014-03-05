@@ -12,7 +12,7 @@
 #include "../class/builtin/FunctionClass.hpp"
 
 
-	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;
 			}  else if(type->classType==CLASS_CLASS){
@@ -22,7 +22,7 @@
 				exit(1);
 			}
 		}
-const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const{
+const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const{
 	if(type->classType==CLASS_FUNC){
 		Value* F = getValue(r,id);
 		FunctionClass* fc = (FunctionClass*)type;

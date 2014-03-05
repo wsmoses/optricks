@@ -17,7 +17,7 @@ public:
 	bool hasCastValue(const AbstractClass* const a) const override final{
 		return a->classType==CLASS_BOOL;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Boolean literal cannot act as function");
 		exit(1);
 	}
@@ -28,7 +28,7 @@ public:
 		return 0;
 	}
 
-	const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Boolean literal cannot be called as a function");
 		return VOID_DATA;
 	}
@@ -40,9 +40,5 @@ public:
 	ConstantInt* getValue(RData& r, PositionID id) const override final;
 	const Literal* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	ConstantInt* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
-	void write(ostream& s,String start="") const override final{
-		if(value) s << "true";
-		else s << "false";
-	}
 };
 #endif /* BOOLLITERAL_HPP_ */

@@ -24,7 +24,7 @@ class WhileLoop : public ErrorStatement{
 			name = n;
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("While-loop cannot act as function");
 			exit(1);
 		}
@@ -101,15 +101,6 @@ class WhileLoop : public ErrorStatement{
 		void buildFunction(RData& r) const override final{
 			condition->buildFunction(r);
 			statement->buildFunction(r);
-		}
-		void write(ostream& a, String b) const override{
-			a << "while(";
-			condition->write(a,b+"      ");
-			a << ")";
-			statement->write(a,b+" ");
-		}
-		WhileLoop* simplify() override final{
-			return new WhileLoop(filePos, condition->simplify(), statement->simplify(), name);
 		}
 };
 

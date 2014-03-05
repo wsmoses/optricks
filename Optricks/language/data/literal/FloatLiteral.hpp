@@ -61,11 +61,11 @@ public:
 	const AbstractClass* getReturnType() const override final;
 	Constant* getValue(RData& r, PositionID id) const override final;
 
-	const Data* callFunction(RData& r, PositionID id, const std::vector<Evaluatable*>& args) const override{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use floating-point literal as function");
 		return VOID_DATA;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		id.error("Floating-point literal cannot act as function");
 		exit(1);
 	}
@@ -81,7 +81,7 @@ public:
 	virtual ~FloatLiteral(){
 		mpfr_clear(value);
 	}
-	void write(ostream& s, String t="") const override final{
+	void toStream(ostream& s) const {
 		if(mpfr_regular_p(value)){
 			//hard part
 			assert(0);

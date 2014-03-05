@@ -12,12 +12,31 @@
 //TODO note if class has 0 arg, does not make anything
 class UserClass: public AbstractClass{
 private:
+	std::map<String, OverloadedFunction*> localFunctions;
 	std::vector<const AbstractClass*> localVars;
 	std::map<String,unsigned int> localMap;
 	unsigned int start;
 	bool final;
 public:
 	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false);
+	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
+		auto find = localFunctions.find(s);
+		if(find==localFunctions.end()){
+			return localFunctions.insert(
+					std::pair<String,OverloadedFunction*>(s,new OverloadedFunction(s, generic))).first->second;
+		}
+		return find->second;
+	}
+	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const AbstractClass*>& v) const{
+		auto find = localFunctions.find(s);
+		if(find==localFunctions.end()) id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		return find->second->getBestFit(id,v);
+	}
+	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
+		auto find = localFunctions.find(s);
+		if(find==localFunctions.end()) id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		return find->second->getBestFit(id,v);
+	}
 	void finalize(PositionID id){
 		assert(!final);
 		final = true;
@@ -63,45 +82,56 @@ public:
 		localMap[s]=localVars.size();
 		localVars.push_back(ac);
 	}
-
+	bool hasLocalData(String s) const override final{
+		if(!final) PositionID(0,0,"#user").compilerError("Cannot hasLocalData() on unfinalized type");
+		auto tmp=this;
+		do{
+			auto fd = tmp->localMap.find(s);
+			if(fd!=tmp->localMap.end()){
+				return true;
+			}
+			tmp = (UserClass*)(tmp->superClass);
+		}while(tmp);
+		return false;
+	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		if(!final) id.compilerError("Cannot getLocalReturnClass() on unfinalized type");
+		auto tmp=this;
+			do{
+				auto fd = tmp->localMap.find(s);
+				if(fd!=tmp->localMap.end()){
+					return tmp->localVars[fd->second];
+				}
+				tmp = (UserClass*)(tmp->superClass);
+			}while(tmp);
+		illegalLocal(id,s);
+		exit(1);
+	}
+
+	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
+		if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
+
 		auto tmp=this;
 				do{
 					auto fd = tmp->localMap.find(s);
 					if(fd!=tmp->localMap.end()){
-						return tmp->localVars[fd->second];
+						unsigned start = tmp->start+fd->second;
+						assert(instance->type==R_LOC || instance->type==R_CONST);
+						assert(instance->getReturnType()==this);
+						if(instance->type==R_LOC){
+							//TODO location
+							id.compilerError("TODO:// allow getting class data from location");
+						} else{
+							assert(instance->type==R_CONST);
+							Value* v = ((ConstantData*)instance)->value;
+							return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
+						}
 					}
 					tmp = (UserClass*)(tmp->superClass);
 				}while(tmp);
 			illegalLocal(id,s);
 			exit(1);
-		}
-
-		const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
-			if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
-
-			auto tmp=this;
-					do{
-						auto fd = tmp->localMap.find(s);
-						if(fd!=tmp->localMap.end()){
-							unsigned start = tmp->start+fd->second;
-							assert(instance->type==R_LOC || instance->type==R_CONST);
-							assert(instance->getReturnType()==this);
-							if(instance->type==R_LOC){
-								//TODO location
-								id.compilerError("TODO:// allow getting class data from location");
-							} else{
-								assert(instance->type==R_CONST);
-								Value* v = ((ConstantData*)instance)->value;
-								return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
-							}
-						}
-						tmp = (UserClass*)(tmp->superClass);
-					}while(tmp);
-				illegalLocal(id,s);
-				exit(1);
-		}
+	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		if(!final) id.compilerError("Cannot getLocalVariable() on unfinalized type");
 		auto tmp=this;

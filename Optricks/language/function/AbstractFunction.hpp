@@ -21,7 +21,7 @@
  */
 
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args);
-String toClassArgString(String funcName, const std::vector<Evaluatable*>& args);
+String toClassArgString(String funcName, const std::vector<const Evaluatable*>& args);
 
 class AbstractFunction: public Data{
 public:
@@ -62,7 +62,7 @@ public:
 		assert(fp);
 		assert(f);
 	};
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 		return proto->returnType;
 	}
 	Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
@@ -77,13 +77,13 @@ public:
 	inline llvm::Function* getValue(RData& r, PositionID id) const override{
 		return myFunc;
 	}
-	std::vector<const Evaluatable*>& validatePrototype(RData& r,PositionID id,std::vector<const Evaluatable*>& args) const;
+	std::vector<const Evaluatable*> validatePrototype(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const;
 	static const Evaluatable* deLazy(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
 	static const Evaluatable* deLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
 	static Value* fixLazy(RData& r, PositionID id, Evaluatable* val, const AbstractClass* const t) ;
-	static ArrayRef<Value*> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<Evaluatable*>& args);
-	Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<Evaluatable*>& args, Value* V) const;
+	static ArrayRef<Value*> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
+	Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const;
 };
 
 class CompiledFunction: public SingleFunction{
@@ -91,8 +91,8 @@ private:
 public:
 	CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
 	}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<Evaluatable*>& args) const override final{
-		return new ConstantData(r.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args)),proto->returnType);
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
+		return new ConstantData(rdata.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args)),proto->returnType);
 	}
 };
 
@@ -101,41 +101,17 @@ class GeneratorFunction: public SingleFunction{
 public:
 	GeneratorFunction(FunctionProto* const fp, RData& r, PositionID id):SingleFunction(fp,createGeneratorFunction(fp,r,id)){
 	}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<Evaluatable*>& args) const override final;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final;
 };
-
 class BuiltinInlineFunction: public SingleFunction{
 private:
-	const Data* (*inlined)(RData&,PositionID,const std::vector<Evaluatable*>&);
+	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> inlined;
 public:
-	static inline llvm::Function* getF(RData& r, FunctionProto* fp);
-	BuiltinInlineFunction(RData& r, PositionID id, FunctionProto* fp, const Data* (*tmp)(RData&,PositionID,const std::vector<Evaluatable*>&)):
-		SingleFunction(fp,getF(r, fp)),inlined(tmp){
-		BasicBlock *Parent = r.builder.GetInsertBlock();
-				BasicBlock *BB = r.CreateBlock1("entry", myFunc);
-				r.builder.SetInsertPoint(BB);
-
-				unsigned Idx = 0;
-				std::vector<Evaluatable*> args;
-				for (Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
-						++AI, ++Idx) {
-					AI->setName(proto->declarations[Idx].declarationVariable);
-					//todo should have this be location?
-					args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
-				}
-				const Data* ret = inlined(r, id, args);
-				if(! r.hadBreak()){
-					if(proto->returnType->classType==CLASS_VOID)
-						r.builder.CreateRetVoid();
-					else
-						r.builder.CreateRet(ret->getValue(r,id));
-				}
-				r.FinalizeFunction(myFunc);
-				if(Parent) r.builder.SetInsertPoint( Parent );
-	}
-	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,const Data* (*tmp)(RData&,PositionID,const std::vector<Evaluatable*>&)):
+	static inline llvm::Function* getF(FunctionProto* fp);
+	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp);
+	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,const Data* (*tmp)(RData&,PositionID,const std::vector<const Evaluatable*>&)):
 		SingleFunction(fp,f),inlined(tmp){}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
 		return inlined(r,id,args);
 	}
 };
@@ -182,12 +158,12 @@ public:
 		exit(1);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 		return getBestFit(id,args)->proto->returnType;
 	}
-	SingleFunction* getBestFit(const PositionID id, const std::vector<Evaluatable*>& args) const;
+	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args) const;
 	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args) const;
-	const Data* callFunction(RData& r,PositionID id,const std::vector<Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
 		return getBestFit(id,args)->callFunction(r,id,args);
 	}
 	llvm::Function* getValue(RData& r, PositionID id) const override final{

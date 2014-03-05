@@ -10,6 +10,7 @@
 
 #include "../language/statement/Statement.hpp"
 #include "./E_VAR.hpp"
+#include "../language/location/Location.hpp"
 
 #define DECLR_P_
 class Declaration: public ErrorStatement{
@@ -68,7 +69,7 @@ public:
 		return returnType;
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		getReturnType();
 		if(returnType->classType==CLASS_FUNC){
 			return ((FunctionClass*)returnType)->returnType;
@@ -108,7 +109,7 @@ public:
 				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
-			GV->setName(variable->getFullName());
+			((Value*)GV)->setName(Twine(variable->getFullName()));
 			Alloca = GV;
 			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),variable->getReturnType()));
 		}
@@ -117,7 +118,7 @@ public:
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
 			Type* t = returnType->type;
-			auto al = TmpB.CreateAlloca(t, NULL,variable->pointer.name);
+			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable->pointer.name));
 			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
 				if(tmp!=NULL) r.builder.CreateStore(tmp,al);
 				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),variable->getReturnType()));
@@ -127,20 +128,6 @@ public:
 		}
 		//todo check lazy for globals
 		return ld;
-	}
-	Declaration* simplify() final override{
-		return new Declaration(filePos, classV, variable, global, (value)?(value->simplify()):nullptr);
-	}
-	void write(ostream& f, String s="") const final override{
-		//f << "d(";
-		if(classV!=NULL) f << classV << " ";
-		else f << "auto ";
-		variable->write(f);
-		if(value!=NULL) {
-			f << "=";
-			value->write(f);
-		}
-		//f << ")";
 	}
 };
 

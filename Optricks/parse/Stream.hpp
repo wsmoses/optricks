@@ -620,7 +620,8 @@ public:
 		}while(true);
 		if(base==-1) base=10;
 		//hi.pop_back();
-		Literal* tmp = (decimal)?(new FloatLiteral(hi.c_str(),base)):(new IntLiteral(hi.c_str(),base));
+		Literal* tmp = (decimal)?((Literal*)(new FloatLiteral(hi.c_str(),base))):(
+				(Literal*)(new IntLiteral(hi.c_str(),base)));
 		if(done) return tmp;
 		auto pek = peek();
 		if(pek=='i' || pek=='j'){
@@ -704,7 +705,7 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 			}
 		}
 		stack.clear();
-		Statement* e = new oslice(f->pos(), start,end,step);
+		Statement* e = new SliceLiteral(f->pos(), start,end,step);
 		return new E_BINOP(f->pos(), toIndex,e,"[]");
 	}
 }

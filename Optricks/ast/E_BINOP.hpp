@@ -82,37 +82,27 @@ class E_BINOP : public ErrorStatement{
 		const Token getToken() const override{
 			return T_BINOP;
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
-					auto type=getReturnType();
-					if(type->classType==CLASS_FUNC){
-									return ((FunctionClass*)type)->returnType;
-								}  else if(type->classType==CLASS_CLASS){
-									return type;
-								}	else {
-									id.error("Class '"+type->getName()+"' cannot be used as function");
-									exit(1);
-								}
-				}
-		const Data* evaluate(RData& a) const override final{
-			auto tmp = OPERATOR_MAP.find(operation);
-			if(tmp==OPERATOR_MAP.end()){
-				filePos.error("Could not find binary operator "+operation);
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+			auto type=getReturnType();
+			if(type->classType==CLASS_FUNC){
+				return ((FunctionClass*)type)->returnType;
+			}  else if(type->classType==CLASS_CLASS){
+				return type;
+			}	else {
+				id.error("Class '"+type->getName()+"' cannot be used as function");
 				exit(1);
 			}
-			return tmp->second.callFunction(a, filePos, {left, right});
+		}
+		const Data* evaluate(RData& a) const override final{
+			auto L = left->evaluate(a);
+			auto LC = L->getReturnType();
+			return LC->getLocalFunction(filePos, ":"+operation, {L, right})->callFunction(a, filePos, {L, right});
 		}
 		const AbstractClass* getReturnType() const override final{
-			auto tmp = OPERATOR_MAP.find(operation);
-			if(tmp==OPERATOR_MAP.end()){
-				filePos.error("Could not find binary operator "+operation);
-				exit(1);
-			}
-			return tmp->second.getFunctionReturnType(filePos, {left, right});
+			auto LC = left->getReturnType();
+			return LC->getLocalFunction(filePos, ":"+operation, {left, right})->getSingleProto()->returnType;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
-		}
-		Statement* simplify() override{
-			return new E_BINOP(filePos, left->simplify(), right->simplify(), operation);
 		}
 		void registerClasses() const override final{
 			left->registerClasses();
@@ -126,21 +116,6 @@ class E_BINOP : public ErrorStatement{
 			left->buildFunction(r);
 			right->buildFunction(r);
 		};
-		void write(ostream& f,String s="") const override{
-			if(operation!="[]") f << "(";
-			left->write(f,s);
-			if(operation=="[]"){
-				f << "[";
-				right->write(f,s);
-				f << "]";
-			}
-			else{
-				f << " " << operation << " ";
-				right->write(f,s);
-				f << ")";
-			}
-		}
-
 		Statement* fixOrderOfOperations(){
 			if(operation=="[]") return this;
 			Statement* tl = left;

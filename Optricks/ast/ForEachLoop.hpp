@@ -11,6 +11,7 @@
 #include "../language/statement/Statement.hpp"
 #include "./Declaration.hpp"
 #include "./function/E_GEN.hpp"
+#include "../language/location/Location.hpp"
 
 class ForEachLoop : public ErrorStatement{
 	public:
@@ -37,7 +38,7 @@ class ForEachLoop : public ErrorStatement{
 			toLoop->buildFunction(r);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 			id.error("For-each cannot act as function");
 			exit(1);
 		}
@@ -78,18 +79,20 @@ class ForEachLoop : public ErrorStatement{
 					return myGen;
 				}
 			}*/
+
+			/*
 			const Data* toEv = iterable->evaluate(ra);
 			const AbstractClass* iterC = toEv->getReturnType();
-			E_GEN* myGen = (E_GEN*)(iterC->getLocalFunction(filePos,"iterator",std::vector<AbstractClass*>()).getPointer());
+			E_GEN* myGen = (E_GEN*)(iterC->getLocalFunction(filePos,"iterator",std::vector<const AbstractClass*>()).getPointer());
 
 			if(iterC->isGen){
-				Value* tv = toEv.getValue(ra,filePos);
+				Value* tv = toEv->getValue(ra,filePos);
 				if(myGen->thisPointer.module!=NULL){
 					const AbstractClass* genClass = myGen->self->getSelfClass(filePos);
 					assert(genClass!=NULL);
 					Data* self = new ConstantData(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(0)), genClass);
 					if(iterC->layout==PRIMITIVEPOINTER_LAYOUT || iterC->layout==POINTER_LAYOUT) myGen->thisPointer.setObject(self);
-					else myGen->thisPointer.setObject(self.toLocation(ra));
+					else myGen->thisPointer.setObject(self->toLocation(ra));
 
 					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
 						myGen->prototype->declarations[i]->variable->getMetadata().setObject(
@@ -105,8 +108,8 @@ class ForEachLoop : public ErrorStatement{
 			} else{
 				if(myGen->thisPointer.module!=NULL){
 					if(iterC->layout==PRIMITIVEPOINTER_LAYOUT || iterC->layout==POINTER_LAYOUT)
-						myGen->thisPointer.setObject(toEv.toValue(ra,filePos));
-					else myGen->thisPointer.setObject(toEv.toLocation(ra));
+						myGen->thisPointer.setObject(toEv->toValue(ra,filePos));
+					else myGen->thisPointer.setObject(toEv->toLocation(ra));
 				}
 				for(auto& a: myGen->prototype->declarations){
 					if(a->value==NULL || a->value->getToken()==T_VOID) error("iterator generator has non-optional arguments");
@@ -114,10 +117,12 @@ class ForEachLoop : public ErrorStatement{
 				}
 			}
 			return myGen;
+			*/
 		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
-
+			filePos.compilerError("For-each loops not implemented");
+			/*
 			E_GEN* myGen = setUp(ra);
 			myGen->buildFunction(ra);
 			Jumpable j("", GENERATOR, NULL, NULL, theClass);
@@ -134,7 +139,7 @@ class ForEachLoop : public ErrorStatement{
 				//todo -- remove this
 				if(!(v->type==R_LOC || v->type==R_CONST))
 					filePos.error("Cannot use object designated as "+str(v->type)+" for iterable");
-				localVariable->pointer.setObject(v.toLocation(ra));
+				localVariable->pointer.setObject(v->toLocation(ra));
 				assert(NEXT.second);
 				assert(END);
 				Jumpable k(name, LOOP, NEXT.second, END, NULL);
@@ -171,6 +176,7 @@ class ForEachLoop : public ErrorStatement{
 				}
 			}
 			ra.builder.SetInsertPoint(END);
+			*/
 			return VOID_DATA;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
@@ -178,13 +184,6 @@ class ForEachLoop : public ErrorStatement{
 		}
 		const Token getToken() const override {
 			return T_FOREACH;
-		}
-		void write(ostream& a, String b="") const override{
-			a << "for " << localVariable << " in "<< iterable << ":";
-			toLoop->write(a,b+"  ");
-		}
-		Statement* simplify() override{
-			return this;
 		}
 };
 

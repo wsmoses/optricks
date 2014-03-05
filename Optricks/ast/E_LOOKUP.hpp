@@ -9,6 +9,7 @@
 #define E_LOOKUP_HPP_
 
 #include "../language/statement/Statement.hpp"
+#include "../language/data/ClassFunctionData.hpp"
 class E_LOOKUP :
 		public Statement
 //		public VariableReference
@@ -25,20 +26,14 @@ public:
 			left(a), right(b),filePos(id){};
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
-	void write(ostream& f,String a="") const override{
-		f << left << "." << right;
-	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
-		const AbstractClass* superC = left->getReturnType();
-		if(superC->classType==CLASS_CLASS){
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* cla= left->getReturnType();
+		if(cla->classType==CLASS_CLASS){
 			return left->getSelfClass(filePos);
 		} else {
-			auto found = superC->localFunctions.find(right);
-			if(found!=superC->localFunctions.end()){
-				return found->second->getBestFit(id,args)->getSingleProto()->returnType;
-			}
-			if(found==superC->localFunctions.end()){
-				const AbstractClass* tmp = superC->getLocalReturnClass(id,right);
+
+			if(cla->hasLocalData(right)){
+				const AbstractClass* tmp = cla->getLocalReturnClass(id,right);
 				if(tmp->classType==CLASS_FUNC){
 					FunctionClass* fc = (FunctionClass*)tmp;
 					return fc->returnType;
@@ -47,8 +42,12 @@ public:
 					exit(1);
 				}
 			}
-			return superC->getLocalFunction(id,right,args)->getSingleProto()->returnType;
-			//return superC->getLocalReturnClass(filePos, right);
+			else{
+				std::vector<const Evaluatable*> ev;
+				ev.push_back(left);
+				for(const auto& a: args)ev.push_back(a);
+				return cla->getLocalFunction(filePos, right,ev)->getSingleProto()->returnType;
+			}
 		}
 		auto type=getReturnType();
 		if(type->classType==CLASS_FUNC){
@@ -59,9 +58,6 @@ public:
 			id.error("Class '"+type->getName()+"' cannot be used as function");
 			exit(1);
 		}
-	}
-	E_LOOKUP* simplify() override final{
-		return this;
 	}
 	//String getShortName() override final{
 	//	return right;
@@ -78,8 +74,8 @@ public:
 	void buildFunction(RData& r) const override final{
 		left->buildFunction(r);
 	};
-	const AbstractClass* getSelfClass(PositionID id) override final{
-		const AbstractClass* t = left->getSelfClass(id);
+	AbstractClass* getSelfClass(PositionID id) override final{
+		AbstractClass* t = left->getSelfClass(id);
 		return t->staticVariables.getClass(id,right);
 	}
 	const AbstractClass* getReturnType() const override final{
@@ -98,7 +94,9 @@ public:
 			const AbstractClass* c = eval->getMyClass(a, filePos);
 			return c->staticVariables.get(filePos, right);
 		} else {
-			return cla->getLocalData(a, filePos, right, eval);
+			//todo allow use of functions here
+			if(cla->hasLocalData(right)) return cla->getLocalData(a, filePos, right, eval);
+			else return new ClassFunctionData(eval, right);
 		}
 		/*
 			SCOPE_TYPE varType = lT->getScopeType(filePos, right);

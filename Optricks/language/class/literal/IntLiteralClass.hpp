@@ -27,7 +27,6 @@ public:
 		freefunc(tmp, strlen(tmp)+1);
 		return tmp;
 	}
-	const AbstractClass* inner;
 	mutable mpz_t value;
 protected:
 	IntLiteralClass(const mpz_t& val):
@@ -42,6 +41,7 @@ public:
 			ComplexClass* ic = (ComplexClass*)toCast;
 			return hasCast(ic->innerClass);
 		}
+		case CLASS_FLOATLITERAL:
 		case CLASS_FLOAT:{
 			return true;
 		}
@@ -61,24 +61,15 @@ public:
 		illegalLocal(id,s);
 		exit(1);
 	}
-
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
 		illegalLocal(id,s);
 		exit(1);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
-
-		//todo allow complex/floats as well
-		switch(toCast->classType){
-		case CLASS_INTLITERAL: return toCast==this;
-		case CLASS_INT: {
-			//if(!inner) return true;
-			IntClass* ic = (IntClass*)toCast;
-			return ic->hasFit(value);
-		}
-		default:
-			return false;
-		}
+		return hasCast(toCast);
 	}
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 		id.compilerError("This method should never be called.....ever....");

@@ -11,7 +11,7 @@
 class E_FUNCTION:public ErrorStatement{
 	public:
 		std::vector<Declaration*> declaration;
-		SingleFunction* myFunction;
+		mutable SingleFunction* myFunction;
 		E_FUNCTION(PositionID id, std::vector<Declaration*> dec):
 			ErrorStatement(id),
 				declaration(dec),myFunction(nullptr){
@@ -21,7 +21,7 @@ class E_FUNCTION:public ErrorStatement{
 			assert(myFunction);
 			return myFunction;
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args) const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 			error("Function Declaration cannot be used as function");
 			exit(1);
 		}
@@ -31,11 +31,8 @@ class E_FUNCTION:public ErrorStatement{
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 		}
-		const Token getToken() const override final{
+		const Token getToken() const override{
 			return T_FUNC;
-		}
-		E_FUNCTION* simplify() override final{
-			return this;
 		}
 };
 

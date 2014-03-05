@@ -30,14 +30,6 @@ class E_TUPLE : public Statement{
 			}
 			return s+")";
 		}*/
-		void write(ostream& f,String a="") const override{
-			f << "(";
-			for(unsigned int i = 0; i<values.size(); ++i){
-				f << values[i];
-				if(i<values.size()-1 || i==0) f << ", ";
-			}
-			f << ")";
-		}
 		const Data* evaluate(RData& m) const override {
 			std::vector<const Data*> vec(values.size());
 			for(unsigned i=0; i<values.size(); i++)
@@ -45,12 +37,9 @@ class E_TUPLE : public Statement{
 			return new TupleData(vec);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Tuple-literal cannot act as function");
 			exit(1);
-		}
-		Statement* simplify() override{
-			return this;
 		}
 
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
@@ -110,16 +99,8 @@ class E_NAMED_TUPLE : public ErrorStatement{
 		const AbstractClass* getReturnType() const override final{
 			return classClass;
 		}
-		void write(ostream& f,String a="") const override{
-			f << "(";
-			for(unsigned int i = 0; i<values.size(); ++i){
-				f << values[i] << ":" << names[i];
-				if(i<values.size()-1 || i==0) f << ", ";
-			}
-			f << ")";
-		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 			id.error("Tuple-literal cannot act as function");
 			exit(1);
 		}
@@ -130,11 +111,13 @@ class E_NAMED_TUPLE : public ErrorStatement{
 			}
 			return NamedTupleClass::get(vec,names);
 		}
-
-		Statement* simplify() override{
-			return this;
+		AbstractClass* getSelfClass(PositionID id) override final{
+			std::vector<const AbstractClass*> vec;
+			for(unsigned int i = 0; i<values.size(); i++){
+				vec.push_back(values[i]->getSelfClass(filePos));
+			}
+			return NamedTupleClass::get(vec,names);
 		}
-
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 		void registerClasses() const override final{

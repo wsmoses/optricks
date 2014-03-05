@@ -25,4 +25,6 @@
 #include "./module/ScopableP.hpp"
 #include "./function/AbstractFunctionP.hpp"
 #include "./statement/StatementP.hpp"
+#include "./location/LocationP.hpp"
+#include "./class/builtin/ClassFunctionPost.hpp"
 #endif /* POST_HPP_ */

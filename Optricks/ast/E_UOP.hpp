@@ -9,7 +9,7 @@
 #define E_UOP_HPP_
 
 #include "../language/statement/Statement.hpp"
-
+#include "../language/class/builtin/ReferenceClass.hpp"
 class E_UOP : public ErrorStatement{
 public:
 	Statement *value;
@@ -30,30 +30,37 @@ public:
 	void buildFunction(RData& r) const override final{
 		value->buildFunction(r);
 	};
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* t = getReturnType();
+		if(t->classType!=CLASS_FUNC)
+			id.error("Class '"+t->getName()+"' cannot be used as function");
+		FunctionClass* fc = (FunctionClass*)t;
+		return fc->returnType;
+	}
 };
 class E_PREOP : public E_UOP{
 public:
 	E_PREOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
-	Statement* simplify() override final {
-		return new E_PREOP(filePos, operation,value->simplify());
-	}
-
 	const AbstractClass* getReturnType() const override{
-		return value->operationReturnType(filePos, "::"+operation, nullptr);
-	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
-		const AbstractClass* t = value->operationReturnType(filePos, "::"+operation, nullptr);
-		if(t->classType!=CLASS_FUNC)
-			id.error("Class '"+t->getName()+"' cannot be used as function");
-		FunctionClass* fc = (FunctionClass*)t;
-		//todo add check for argument validation?
-		return fc->returnType;
+		const AbstractClass* const cc = value->getReturnType();
+		if(operation=="&"){
+			if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
+			if(cc->classType==CLASS_LAZY) filePos.error("Cannot get reference of lazy");
+			else return ReferenceClass::get(cc);
+		}
+		return cc->getLocalFunction(filePos,":"+operation,{value})->getSingleProto()->returnType;
 	}
 	const Data* evaluate(RData& r) const override final {
-		return value->evaluate(r)->applyOperation(r, filePos, "::"+operation, nullptr);
-	}
-	void write(ostream& f,String s="") const override{
-		f << "(" << operation << value << ")";
+		const AbstractClass* const cc = value->getReturnType();
+		if(operation=="&"){
+			if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
+			if(cc->classType==CLASS_LAZY) filePos.error("Cannot get reference of lazy");
+			else{
+				filePos.compilerError("Allow creating references");
+				exit(1);
+			}
+		}
+		return cc->getLocalFunction(filePos,":"+operation,{value})->callFunction(r,filePos,{value});
 	}
 };
 
@@ -61,25 +68,14 @@ public:
 class E_POSTOP : public E_UOP{
 public:
 	E_POSTOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
-	Statement* simplify() override final {
-		return new E_POSTOP(filePos, operation,value->simplify());
-	}
 	const AbstractClass* getReturnType() const override{
-		return value->operationReturnType(filePos, ":"+operation, nullptr);
-	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
-		const AbstractClass* t = value->operationReturnType(filePos, "::"+operation, nullptr);
-		if(t->classType!=CLASS_FUNC)
-			id.error("Class '"+t->getName()+"' cannot be used as function");
-		FunctionClass* fc = (FunctionClass*)t;
-		//todo add check for argument validation?
-		return fc->returnType;
+		const AbstractClass* const cc = value->getReturnType();
+		return cc->getLocalFunction(filePos,":"+operation,{value,nullptr})->getSingleProto()->returnType;
 	}
 	const Data* evaluate(RData& r) const override final {
-		return value->evaluate(r)->applyOperation(r, filePos, "::"+operation, nullptr);
-	}
-	void write(ostream& f,String s="") const override{
-		f << "(" << value << " " << operation << ")";
+		const AbstractClass* const cc = value->getReturnType();
+		//todo check if second should have null
+		return cc->getLocalFunction(filePos,":"+operation,{value,nullptr})->callFunction(r,filePos,{value});
 	}
 };
 

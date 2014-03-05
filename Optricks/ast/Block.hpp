@@ -33,27 +33,7 @@ class Block : public ErrorStatement{
 			}
 			return VOID_DATA;
 		}
-		Statement* simplify() override{
-			unsigned int toPut = 0;
-			for(unsigned int i = 0; i<values.size(); ++i){
-				Statement* s = values[i]->simplify();
-				if(s->getToken()!=T_VOID) values[toPut++] = s;
-			}
-			while(values.size()>toPut) values.pop_back();
-			return this;
-		}
-		void write(ostream& s,String start="") const override{
-			s << "{" << endl;
-			for(const auto& a:values){
-				if(a->getToken()==T_VOID) continue;
-				s << start << "  ";
-				a->write(s,start+"  ");
-				s << ";" << endl;
-			}
-			s << start << "}";
-		}
-
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Block cannot act as function");
 			exit(1);
 		}

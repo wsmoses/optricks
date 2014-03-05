@@ -27,10 +27,13 @@
 #include "../ast/E_TUPLE.hpp"
 #include "../ast/E_PARENS.hpp"
 #include "../ast/E_TERNARY.hpp"
+#include "../ast/E_PARENS.hpp"
+#include "../ast/E_FUNC_CALL.hpp"
 #include "../ast/OClass.hpp"
 #include "../ast/function/E_GEN.hpp"
 #include "../ast/function/ExternFunction.hpp"
 #include "../ast/function/UserFunction.hpp"
+#include "../ast/function/ClassFunction.hpp"
 #include "../ast/function/LambdaFunction.hpp"
 #include "../ast/function/ConstructorFunction.hpp"
 #include "../language/data/literal/BoolLiteral.hpp"
@@ -64,14 +67,15 @@ class ParseData{
 			return ParseData(endWith,mod,c, loc);
 		}
 };
+
+#define LEXER_C_
 class Lexer{
 	public:
 		Stream* f;
 		OModule* myMod;
 		//char endWith;
 		//	bool inter;
-		RData rdata;
-		Lexer(Stream* t, bool inter):f(t),rdata(){
+		Lexer(Stream* t, bool inter):f(t){
 			//endWith=EOF;
 			myMod = new OModule(LANG_M);
 		}
@@ -103,7 +107,6 @@ class Lexer{
 					if(debug && s->getToken()!=T_VOID){
 						std::cout << s << ";" << endl << endl << flush;
 					}
-					s = s->simplify();
 					stats.push_back(s);
 				}
 				f = tmp;
@@ -132,10 +135,11 @@ class Lexer{
 			rdata.FinalizeFunction(F,debug);
 			if(debug){
 				this->myMod->write(cerr);
-				rdata.lmod->dump();
+				rdata.lmod.dump();
 				cerr << endl << flush;
 			}
-			if(toFile>0) verifyModule(*(rdata.lmod));
+			if(toFile>0)
+				llvm::verifyModule(rdata.lmod);
 			//auto modOpt = new PassManager();
 			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
 
@@ -146,7 +150,7 @@ class Lexer{
 			//if(toFile>0) pmb.populateModulePassManager(*modOpt);
 			//fnOpt->run(*F);
 			//if(toFile>0) modOpt->run(*(rdata.lmod));
-			if(toFile>0) rdata.mpm->run(*(rdata.lmod));
+			if(toFile>0) rdata.mpm.run(rdata.lmod);
 
 			if(debug){
 				//rdata.lmod->dump();
@@ -154,11 +158,11 @@ class Lexer{
 			if(toFile==3){
 				//				llvm::raw_os_ostream raw_stream(file);
 
-				WriteBitcodeToFile(rdata.lmod, *file);
+				WriteBitcodeToFile(& rdata.lmod, *file);
 				//				rdata.lmod->print(raw_stream, 0);
 			} else if(toFile==2){
 				//				llvm::raw_os_ostream raw_stream(file);
-				rdata.lmod->print(*file,0);
+				rdata.lmod.print(*file,0);
 				//				WriteBitcodeToFile(rdata.lmod, file);
 				//				rdata.lmod->print(raw_stream, 0);
 			} else {
@@ -498,15 +502,21 @@ class Lexer{
 		Statement* getFunction(ParseData data, String temp="", AbstractClass* outer=nullptr){
 			if(temp=="") temp = f->getNextName(EOF);
 			trim(EOF);
-			if (temp == "def" || temp=="gen"){
+			if (temp == "def" || temp=="gen" || temp=="inl"){
 				auto mark = f->getMarker();
+				bool staticF = false;
+				if(f->getNextName(EOF)=="static"){
+					staticF = true;
+					trim(EOF);
+					mark = f->getMarker();
+				} else f->undoMarker(mark);
 				auto returnName = getNextType(data);
 				f->trim(EOF);
 				{
 					auto nex = f->peek();
 					if(!isStartName(nex)){
 						f->undoMarker(mark);
-						returnName = autoClass;
+						returnName = nullptr;
 					}
 				}
 
@@ -545,13 +555,16 @@ class Lexer{
 					trim(data);
 				}
 				bool paren;
-				Statement* funcName;
 				Statement* func;
 				if(methodName.size()<=1 && outer==nullptr){
+					if(staticF){
+						pos().error("Cannot preface non-class function with keyword static");
+					}
+					E_VAR* funcName;
 					if(methodName.size()==0) funcName = nullptr;
 					else if(methodName.size()==1){
 						if(isOperator){
-							funcName = new E_VAR(Resolvable(NULL,methodName[0].first,pos()));
+							funcName = new E_VAR(Resolvable(nullptr,methodName[0].first,pos()));
 						} else {
 							data.mod->addFunction(pos(), methodName[0].first);
 							funcName = new E_VAR(Resolvable(data.mod,methodName[0].first,pos()));
@@ -560,11 +573,12 @@ class Lexer{
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_LOCAL),&paren);
 					auto tmp = pos();
 					if(temp=="gen")
-						func = new E_GEN(tmp, funcName, returnName, arguments, methodBody);
+						func = new E_GEN(tmp, arguments, funcName, returnName, methodBody);
 					else
 						func = new UserFunction(tmp, arguments, funcName, returnName, methodBody);
 				}
 				else {
+					Statement* funcName;
 					//TODO change scope
 					//myMod = nullptr;//make combined scope
 					if(outer==nullptr){
@@ -581,14 +595,16 @@ class Lexer{
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					PositionID tmp = pos();
 					if((outer!=nullptr)?(methodName.back().first == outer->name):(methodName.back().first==methodName[methodName.size()-2].first)){
+						if(staticF)
+							pos().error("Cannot precede constructor with static keyword");
 						func = new ConstructorFunction(tmp, arguments, Resolvable(module,"this",pos()), funcName, methodBody);
 					}
 					else{
 						if(temp=="gen"){
-							func = new E_GEN(tmp, funcName, returnName, arguments, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
+							func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
 						}
 						else
-							func = new ClassFunction(tmp, arguments, Resolvable(module,"this",pos()), methodName[methodName.size()-1].first, funcName, returnName, methodBody);
+							func = new ClassFunction(tmp, arguments, staticF, Resolvable(module,"this",pos()), methodName.back().first, funcName, returnName, methodBody);
 					}
 				}
 				trim(data);
@@ -647,12 +663,20 @@ class Lexer{
 			}
 			if(f->read()!='{') f->error("Need opening brace for class definition");
 			f->trim(EOF);
-			AbstractClass* superC = (primitive==POINTER_LAYOUT && superClass==nullptr)?(objectClass):(
-					(superClass==nullptr)?nullptr:(superClass->getSelfClass(pos())));
+			bool isFinal = false /*todo parse*/;
+			const AbstractClass* superC;
+			if(superClass==nullptr){
+				if(primitive==POINTER_LAYOUT) superC = objectClass;
+				else superClass = nullptr;
+			} else superC = superClass->getSelfClass(pos());
 			//todo register in outer class instead of whereever this place is...
-			if(superC && superC->layout!=primitive)
-				f->error("Cannot have a class with a superclass of a different layout type "+superC->getName()+" "+name+" "+str<LayoutType>(primitive),true);
-			UserClass* proto = new UserClass(superC, name, (primitive==PRIMITIVEPOINTER_LAYOUT)?C_POINTERTYPE:NULL, primitive,false);
+			if(superC){
+				if(superC->layout!=primitive)
+					f->error("Cannot have a class with a superclass of a different layout type "+superC->getName()+" "+name+" "+str<LayoutType>(primitive),true);
+				if(superC->isFinal)
+					f->error("Cannot create subclass to final class");
+			}
+			UserClass* proto = new UserClass(data.mod, name, superC,primitive, isFinal);
 			data.mod->addClass(pos(), proto);
 			OModule* classMod = new OModule(data.mod);
 			OClass* selfClass = new OClass(pos(), proto,(!stat)?outer:(nullptr));
@@ -999,8 +1023,8 @@ Statement* Lexer::getNextStatement(ParseData data){
 				if(open=='(' && seconds.size()>0 && values.size()!=seconds.size())
 					f->error("Cannot have partially-named tuple",true);
 				Statement* arr = (open=='(')?((Statement*)(new E_TUPLE(values))):(
-						(open=='[')?((Statement*)(new E_ARR(values))):
-								((Statement*)(new E_ARR(values))) //todo change to E_SET
+						(open=='[')?((Statement*)(new E_ARR(pos(), values))):
+								((Statement*)(new E_ARR(pos(), values))) //todo change to E_SET
 				);
 
 

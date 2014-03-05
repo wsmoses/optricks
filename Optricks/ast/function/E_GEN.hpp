@@ -10,82 +10,85 @@
 
 #include "../../language/statement/Statement.hpp"
 #include "./E_FUNCTION.hpp"
+#include "../../language/class/ClassLib.hpp"
+#include "../../language/location/Location.hpp"
 #define E_GEN_C_
 class E_GEN : public E_FUNCTION{
 public:
-	VariableReference* self;
-//FunctionProto* prototype;
+	E_VAR* self;
+	Statement* returnV;
 	Statement* body;
-	VariableReference* returnClass;
-	Resolvable thisPointer;
-	mutable bool registereD, builtF;
-	AbstractClass* myClass;
-	GeneratorFunction generatorFunction;
-	AbstractClass* returnType;
-	E_GEN(PositionID id, std::vector<Declaration*>& dec, VariableReference* s, VariableReference* ren, Statement* r,Resolvable thi=Resolvable(NULL,"",PositionID(0,0,"<#e_gen.default>"))):
-		E_FUNCTION(id,dec),
-		self(s),
-		//prototype(new FunctionProto("",dec,NULL)),
-		body(r),
-		returnClass(ren),
-		thisPointer(thi){
-		registereD = builtF = false;
-		//prototype->name = getFullName();
-		myClass = prototype->getGeneratorType();
-		SingleFunction* sf = new GeneratorFunction(this, new FunctionProto(""));
-		myClass->staticVariables.addFunction(filePos,"iterator")->add(sf,filePos);
-		//TODO allow closure for iterator types
-		if(thisPointer.name.length()==0){
-			Resolvable re = self->getMetadata();
-			Data* tmp = DATA::getGenerator(this, prototype);
-			re.setObject(tmp);
-			//TODO fix this
-			re.addFunction(tmp);
-		}
-		returnType = nullptr;
-		assert(body);
+	mutable bool built;
+	E_GEN(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r, Statement* b):
+		E_FUNCTION(id,dec),self(s),returnV(r),body(b),built(false){
+		assert(s);
+		assert(r);
 	}
 	void registerClasses() const override final{
-		if(returnClass) returnClass->registerClasses();
-		//self->registerClasses(r);
-		for(auto& a:declaration) a->registerClasses();
 		body->registerClasses();
 	}
+/*
+	void registerFunctionPrototype(RData& a) const override final{
+		if(myFunction) return;
+		BasicBlock *Parent = a.builder.GetInsertBlock();
+		std::vector<AbstractDeclaration> ad;
+		for(auto & b: declaration){
+			const AbstractClass* ac = b->getClass(filePos);
+			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in generator declaration");
+			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
+			Type* cl = ac->type;
+			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
+		}
+		const AbstractClass* returnType = (returnType)?(returnV->getSelfClass(filePos)):(nullptr);
 
-	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
-		//toLoop->collectReturns(r, vals);
-	}
-	E_GEN* simplify() override final{
-		return this;
-	}
+		if(returnType==nullptr){
+			std::vector<const AbstractClass*> yields;
+			body->collectReturns(yields,returnType);
+			if(yields.size()==0) returnType = voidClass;
+			else {
+				returnType = getMin(yields,filePos);
+				if(returnType->classType==CLASS_AUTO)
+					filePos.compilerError("Cannot deduce return type of generator "+self->getFullName());
+			}
+		}
+		assert(returnType);
+		llvm::Type* r = returnType->type;
+		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
+		String nam = "!"+((self)?(self->getShortName()):("anon"));
+		llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
+		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
+		self->getMetadata().addFunction(myFunction);
+
+		BasicBlock *BB = a.CreateBlock1("entry", F);
+		a.builder.SetInsertPoint(BB);
+
+		unsigned Idx = 0;
+		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
+			AI->setName(myFunction->getSingleProto()->declarations[Idx].declarationVariable);
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))->toLocation(a)
+			);
+		}
+
+		if(Parent) a.builder.SetInsertPoint( Parent );
+		body->registerFunctionPrototype(a);
+	}*/
 	const Token getToken() const{
 		return T_GEN;
 	}
-	void write(ostream& f, String b) const override{
-		f << "gen ";
-		//f << prototype->returnType->name << " ";
-		if(returnClass) f << returnClass;
-		f << "(" ;
-		bool first = true;
-		for(auto &a: declaration){
-			if(first) first = false;
-			else f << ", " ;
-			a->write(f,"");
-		}
-		f << ")";
-		body->write(f, b+"  ");
-	}
 	void registerFunctionPrototype(RData& ra) const override{
+
+		filePos.compilerError("Generators not implemented");
+		/*
 		if(registereD) return;
 		registereD = true;
 		if(returnClass) returnClass->registerFunctionPrototype(ra);
 		self->registerFunctionPrototype(ra);
 		for(auto& a:declaration) a->registerFunctionPrototype(ra);
-		//for(auto& a:prototype->declarations) a->checkTypes();
 		if(thisPointer.name.length()>0){
 			const AbstractClass* sC = self->getSelfClass(filePos);
 			thisPointer.setObject(new ConstantData(nullptr,sC));
-			sC->addFunction(innerName, filePos)->add((SingleFunction*)myFunction, filePos);
+			sC->addLocalFunction((String)innerName)->add((SingleFunction*)myFunction, filePos);
 		}
 		body->registerFunctionPrototype(ra);
 
@@ -105,15 +108,18 @@ public:
 			}
 		}
 		//TODO use ret to build generator
+		*/
 	};
 	void buildFunction(RData& r) const override final{
+		filePos.compilerError("Generators not implemented");
+		/*
 		registerFunctionPrototype(r);
 		if(builtF) return;
 		builtF = true;
 		if(returnClass!=NULL) returnClass->buildFunction(r);
 		for(auto& a:declaration) a->buildFunction(r);
 		self->buildFunction(r);
-		body->buildFunction(r);
+		body->buildFunction(r);*/
 	};
 };
 

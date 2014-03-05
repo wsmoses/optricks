@@ -9,6 +9,7 @@
 #define LAZYCLASS_HPP_
 #include "../AbstractClass.hpp"
 
+#define LAZYCLASS_C_
 class LazyClass: public AbstractClass{
 public:
 	const AbstractClass* const innerType;
@@ -34,6 +35,9 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -61,6 +65,10 @@ public:
 		LazyClass* la = (LazyClass*)a;
 		LazyClass* lb = (LazyClass*)b;
 		return innerType->compare(la,lb);
+	}
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
+		id.error("No local functions exist for void class");
+		exit(1);
 	}
 	static LazyClass* get(const AbstractClass* const arg) {
 		static std::map<const AbstractClass*,LazyClass*> map;

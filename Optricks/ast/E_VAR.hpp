@@ -33,11 +33,6 @@ class E_VAR : public VariableReference {
 		const Data* evaluate(RData& r) const override final{
 			return pointer.getObject();
 		}
-		void write(ostream& f,String t="") const override{
-			f  << pointer.name;
-//			f << "v'" << pointer->name << "'";
-		}
-
 		void registerClasses() const override final{
 			//TODO force var register classes
 		}
@@ -53,8 +48,12 @@ class E_VAR : public VariableReference {
 			return temp;
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 			return pointer.getFunctionReturnType(args);
+		}
+
+		AbstractClass* getSelfClass(PositionID id) override final{
+			return pointer.getClass();
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}

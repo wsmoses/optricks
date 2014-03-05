@@ -31,7 +31,7 @@ class ForLoop : public ErrorStatement{
 			toLoop->collectReturns(vals,toBe);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<Evaluatable*>& args)const{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 			id.error("for-loop cannot act as function");
 			exit(1);
 		}
@@ -89,10 +89,6 @@ class ForLoop : public ErrorStatement{
 			r.builder.SetInsertPoint(afterBlock);
 			return VOID_DATA;
 		}
-		void write(ostream& a, String b="") const override{
-			a << "for(" << initialize << "; "<< condition << "; " << increment << ")";
-			toLoop->write(a,b);
-		}
 		void registerClasses() const override final{
 			condition->registerClasses();
 			initialize->registerClasses();
@@ -110,9 +106,6 @@ class ForLoop : public ErrorStatement{
 			initialize->buildFunction(r);
 			increment->buildFunction(r);
 			toLoop->buildFunction(r);
-		}
-		ForLoop* simplify() override{
-			return new ForLoop(filePos, initialize->simplify(), condition->simplify(),increment->simplify(),toLoop->simplify(),name);
 		}
 };
 #endif /* FORLOOP_HPP_ */

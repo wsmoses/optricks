@@ -19,6 +19,9 @@ public:
 		exit(1);
 	}
 
+	bool hasLocalData(String s) const override final{
+		return false;
+	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -33,6 +36,8 @@ public:
 		assert(b->classType==CLASS_CLASS);
 		return 0;
 	}
+
+	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_CLASS;
 	}
