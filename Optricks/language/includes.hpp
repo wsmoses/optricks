@@ -289,6 +289,7 @@ template<> String str<DataType>(DataType d){
 	case R_SET: return "R_SET";
 	case R_MAP: return "R_MAP";
 	case R_NULL: return "R_NULL";
+	case R_CLASSFUNC: return "R_CLASSFUNC";
 	}
 	return "unknown DATATYPE";
 }

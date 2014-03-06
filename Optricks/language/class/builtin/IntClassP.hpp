@@ -16,29 +16,19 @@ inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, Posi
 	switch(toCast->classType){
 	case CLASS_INT:{
 		IntClass* nex = (IntClass*)toCast;
-		if(isSigned && !nex->isSigned) id.error("Cannot cast signed integer type to unsigned integer type");
 		auto n_width = nex->getWidth();
 		auto s_width = getWidth();
 		if(n_width>s_width){
-			if(isSigned) return r.builder.CreateSExt(valueToCast,nex->type);
-			else return r.builder.CreateZExt(valueToCast, nex->type);
+			return r.builder.CreateSExt(valueToCast,nex->type);
 		}
 		else if(n_width<s_width) id.error("Cannot cast integer type of width "+str(getWidth())+" to integer type of width"+str(nex->getWidth()));
-		//else{
-		if(isSigned!=nex->isSigned) id.error(
-				isSigned?
-						("Cannot cast signed integer type of width "+str(getWidth())+" to "):
-						("Cannot cast unsigned integer type of width "+str(getWidth())+" to ")
-						+(nex->isSigned?"signed integer type of width":"unsigned integer type of width")+str(nex->getWidth()));
 		assert(n_width==s_width);
-		assert(isSigned==nex->isSigned);
 		return valueToCast;
 		//}
 	}
 	case CLASS_FLOAT:{
 		assert(((FloatClass*)toCast)->type);
-		if(isSigned) return r.builder.CreateSIToFP(valueToCast, toCast->type);
-		else return r.builder.CreateUIToFP(valueToCast, toCast->type);
+		return r.builder.CreateSIToFP(valueToCast, toCast->type);
 	}
 	//case CLASS_RATIONAL:
 	case CLASS_COMPLEX:{

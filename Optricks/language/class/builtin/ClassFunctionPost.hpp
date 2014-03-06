@@ -397,7 +397,7 @@ SingleFunction* IntClass::getLocalFunction(PositionID id, String s, const std::v
 			});
 			return tmp;
 		}
-		else if(isSigned && s==":-"){
+		else if(s==":-"){
 			static SingleFunction* tmp = new BuiltinInlineFunction(
 					new FunctionProto(":-",{AbstractDeclaration(this)},this),
 					[this](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
@@ -497,6 +497,351 @@ SingleFunction* IntClass::getLocalFunction(PositionID id, String s, const std::v
 		auto rt = v[0]->getReturnType();
 		switch(rt->classType){
 		case CLASS_INT:{
+			const IntClass* max = (IntClass*)rt;
+			if(max->getWidth()<=getWidth()){
+				max = this;
+			}
+			if(s==":=="){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":==",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpEQ(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":!="){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":!=",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpNE(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":>"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":>",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpSGT(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":>="){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":>=",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpSGE(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":<"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":<",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpSLT(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":<="){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":<=",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateICmpSLE(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":+"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":+",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateAdd(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":-"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":-",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateSub(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":*"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":*",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateMul(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":/"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":/",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateSDiv(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":%"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":%",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateSRem(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":&"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":&",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateAnd(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":|"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":|",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateOr(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":<<"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":<<",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateShl(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":>>"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":>>",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateAShr(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":>>>"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":>>>",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					auto t1 = args[0]->evaluate(r)->castToV(r, max, id);
+					auto t2 = args[1]->evaluate(r)->castToV(r, max, id);
+					return new ConstantData(r.builder.CreateLShr(t1, t2), max);
+				});
+				return tmp;
+			} else if(s==":**"){
+				static std::map<const IntClass*, SingleFunction*> tmp;
+				auto found = tmp.find(max);
+				if(found!=tmp.end()) return found->second;
+				else return tmp[max] = new BuiltinInlineFunction(
+						new FunctionProto(":**",{AbstractDeclaration(this),AbstractDeclaration(rt)},this),
+						[max](RData& r, PositionID id, const std::vector<const Evaluatable*>& args) -> const Data*{
+					assert(args.size()==2);
+					Value *a = args[0]->getValue(r,id);
+					Value *b = args[1]->getValue(r,id);
+					if(ConstantInt* d = dyn_cast<ConstantInt>(b)){
+						auto b1 = d->getValue().getSExtValue();
+						if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
+							auto a1 = c->getValue();
+							if(b1<0){
+								id.warning()
+								double denom = a1*a1+a2*a2;
+								a1 /=  denom;
+								a2 /= -denom;
+								b1=-b1;
+							}
+							if(b1==0){
+								a1 = a2 = 0.;
+							} else{
+								double result1 = 1;
+								double result2 = 0;
+								while(true){
+									if(b1%2==1){
+										double tmp1 = result1*a1-result2*a2;
+										double tmp2 = result1*a2+result2*a1;
+										result1 = tmp1;
+										result2 = tmp2;
+										if(b1==1) break;
+									}
+									double tmp1 = a1*a1-a2*a2;
+									double tmp2 = 2*a1*a2;
+									a1 = tmp1;
+									a2 = tmp2;
+									b1 /= 2;
+								}
+								a1 = result1;
+								a2 = result2;
+							}
+							double data[2] = {a1, a2};
+							return DATA::getConstant(ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data)),complexClass);
+						}
+						if(b1==0){
+							double data[2] = {1,0};
+							return DATA::getConstant(ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(data)),complexClass);
+						}
+						if(b1<0){
+							a = complexInverse(a, m);
+							b1=-b1;
+						}
+						Value* result = NULL;
+						while(true){
+							if(b1%2==1){
+								if(result==NULL) result = a;
+								else result = complexMultiply(result, a, m);
+								if(b1==1) break;
+							}
+							a = complexSquare(a,m);
+							b1 /= 2;
+						}
+						return DATA::getConstant(result,complexClass);
+					}
+
+					Function *TheFunction = m.builder.GetInsertBlock()->getParent();
+					BasicBlock *ThenBB = m.CreateBlockD("if_zero", TheFunction);
+					BasicBlock *ElseBB = m.CreateBlockD("_nonzero", TheFunction);
+					BasicBlock *MergeBB = m.CreateBlockD("all_pow", TheFunction);
+					m.builder.CreateCondBr(m.builder.CreateICmpEQ(b,getInt(0)), ThenBB, ElseBB);
+					m.builder.SetInsertPoint(ThenBB);
+					double temp1[2] = {1,0};
+					Value* ifZero = ConstantDataVector::get(m.lmod->getContext(), ArrayRef<double>(temp1));
+					m.builder.CreateBr(MergeBB);
+					//INCOMING ifZero MergeBB
+					m.builder.SetInsertPoint(ElseBB);
+					BasicBlock *LessBB = m.CreateBlockD("_lesszero", TheFunction);
+					BasicBlock *PreLoopBB = m.CreateBlockD("_preLoop", TheFunction);
+					BasicBlock *GreatBB = m.CreateBlockD("_greatzero", TheFunction);
+					m.builder.CreateCondBr(m.builder.CreateICmpSLT(b, getInt(0)), LessBB, PreLoopBB);
+					m.builder.SetInsertPoint(PreLoopBB);
+					Value* subOne = m.builder.CreateSub(b, getInt(1));
+					m.builder.CreateCondBr(m.builder.CreateICmpEQ(subOne, getInt(0)), MergeBB, GreatBB);
+					m.builder.SetInsertPoint(LessBB);
+					Value* inversed = complexInverse(a,m);
+					Value* realExp = m.builder.CreateSub(getInt(-1), b);
+					m.builder.CreateCondBr(m.builder.CreateICmpEQ(realExp,getInt(0)), MergeBB,GreatBB);
+					m.builder.SetInsertPoint(GreatBB);
+					PHINode* X = m.CreatePHI(COMPLEXTYPE, 3, "temp");
+					X->addIncoming(inversed, LessBB);
+					X->addIncoming(a, PreLoopBB);
+					//X->addIncoming();
+					PHINode* PN = m.CreatePHI(COMPLEXTYPE, 3, "result");
+					PN->addIncoming(inversed, LessBB);
+					PN->addIncoming(a, PreLoopBB);
+					//PN->addIncoming();
+					PHINode* exp = m.CreatePHI(INTTYPE, 3, "pow");
+					exp->addIncoming(realExp, LessBB);
+					exp->addIncoming(subOne, PreLoopBB);
+					//exp->addIncoming();
+					BasicBlock *OddBB = m.CreateBlockD("if_odd", TheFunction);
+					BasicBlock *EvenBB = m.CreateBlockD("if_even", TheFunction);
+					m.builder.CreateCondBr(m.builder.CreateTrunc(exp, BOOLTYPE), OddBB, EvenBB);
+					m.builder.SetInsertPoint(OddBB);
+					Value* resultOdd = complexMultiply(PN, X, m);
+					m.builder.CreateCondBr(m.builder.CreateICmpEQ(exp, getInt(1)), MergeBB, EvenBB);
+					//INCOMING resuldOdd to MergeBB;
+					m.builder.SetInsertPoint(EvenBB);
+					PHINode* res = m.CreatePHI(COMPLEXTYPE, 2, "res2");
+					res->addIncoming(resultOdd, OddBB);
+					res->addIncoming(PN, GreatBB);
+					Value* nExp = m.builder.CreateUDiv(exp, getInt(2));
+					Value* nX = complexSquare(X, m);
+					m.builder.CreateBr(GreatBB);
+					//INCOMING res to MergeBB;
+					X->addIncoming(nX, EvenBB);
+					PN->addIncoming(res, EvenBB);
+					exp->addIncoming(nExp, EvenBB);
+					TheFunction->getBasicBlockList().remove(MergeBB);
+					TheFunction->getBasicBlockList().push_back(MergeBB);
+					m.builder.SetInsertPoint(MergeBB);
+					PHINode* comp = m.CreatePHI(COMPLEXTYPE, 4, "finalExp");
+					comp->addIncoming(ifZero, ThenBB);
+					comp->addIncoming(resultOdd, OddBB);
+					comp->addIncoming(inversed, LessBB);
+					comp->addIncoming(a, PreLoopBB);
+					//comp->addIncoming(res, EvenBB);
+					return DATA::getConstant(comp,complexClass);
+				});
+				return tmp;
+			}
 
 		}
 		}

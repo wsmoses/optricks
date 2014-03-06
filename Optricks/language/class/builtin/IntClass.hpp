@@ -10,9 +10,8 @@
 #include "RealClass.hpp"
 class IntClass: public RealClass{
 public:
-	const bool isSigned;
-	IntClass(String nam, unsigned len, bool b):
-		RealClass(nam, CLASS_INT,IntegerType::get(getGlobalContext(),len)),isSigned(b){
+	IntClass(String nam, unsigned len):
+		RealClass(nam, CLASS_INT,IntegerType::get(getGlobalContext(),len)){
 		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 
@@ -38,17 +37,16 @@ public:
 		return ConstantInt::get((IntegerType*)type,(int64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_INT && isSigned==((IntClass*)toCast)->isSigned && type==toCast->type;
+		return toCast->classType==CLASS_INT && type==toCast->type;
 	}
 	inline bool hasFit(mpz_t const value) const{
 		if(mpz_sgn(value)<0){
-			if(!isSigned) return false;
 			auto t_width=mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
 			if(t_width > r_width) return false;
 			return true;
 		} else {
-			auto t_width = (isSigned)?(mpz_sizeinbase(value,2)+1):(mpz_sizeinbase(value,2));
+			auto t_width = mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
 			if(t_width > r_width) return false;
 			return true;
@@ -56,24 +54,21 @@ public:
 	}
 	inline void checkFit(PositionID id, mpz_t const value) const{
 		if(mpz_sgn(value)<0){
-			if(!isSigned) id.error("Cannot cast negative integer literal to unsigned type");
 			auto t_width=mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
 			if(t_width > r_width) id.error("Cannot fit negative integer literal needing "+str(t_width)+" bits in signed type of size "+str(r_width)+" bits");
 		} else {
-			auto t_width = (isSigned)?(mpz_sizeinbase(value,2)+1):(mpz_sizeinbase(value,2));
+			auto t_width = mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
 			if(t_width > r_width) id.error("Cannot fit positive integer literal needing "+str(t_width)+" bits in integral type of size "+str(r_width)+" bits");
 			//TODO force APInt to be right width/sign for value
 		}
 	}
 	inline ConstantInt* getMaxValue () const {
-		if(isSigned) return ConstantInt::get(getGlobalContext(), APInt::getSignedMaxValue(getWidth()));
-		else return ConstantInt::get(getGlobalContext(), APInt::getMaxValue(getWidth()));
+		return ConstantInt::get(getGlobalContext(), APInt::getSignedMaxValue(getWidth()));
 	}
 	inline ConstantInt* getMinValue () const {
-		if(isSigned) return ConstantInt::get(getGlobalContext(), APInt::getSignedMinValue(getWidth()));
-		else return ConstantInt::get(getGlobalContext(), APInt::getMinValue(getWidth()));
+		return ConstantInt::get(getGlobalContext(), APInt::getSignedMinValue(getWidth()));
 	}
 	inline ConstantInt* getAllOnes() const{
 		return ConstantInt::get(getGlobalContext(), APInt::getAllOnesValue(getWidth()));
@@ -104,12 +99,7 @@ public:
 		switch(toCast->classType){
 		case CLASS_INT:{
 			IntClass* nex = (IntClass*)toCast;
-			if(isSigned && !nex->isSigned) return false;
-			auto n_width = nex->getWidth();
-			auto s_width = getWidth();
-			if(n_width>s_width) return true;
-			else if(n_width<s_width) return false;
-			else return isSigned==nex->isSigned;
+			return nex->getWidth()>=getWidth();
 		}
 		case CLASS_FLOAT:
 		case CLASS_RATIONAL:
@@ -128,24 +118,14 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
 };
 
-IntClass* uint8Class = new IntClass("uint8", 8, false);
-IntClass* uint16Class = new IntClass("uint16", 16, false);
-IntClass* uint32Class = new IntClass("uint32", 32, false);
-IntClass* uint64Class = new IntClass("uint64", 64, false);
+IntClass* byteClass = new IntClass("byte", 8);
+IntClass* shortClass = new IntClass("short", 16);
+IntClass* intClass = new IntClass("int", 32);
+IntClass* longClass = new IntClass("long", 64);
 
-IntClass* int8Class = new IntClass("int8",8, true);
-IntClass* int16Class = new IntClass("int16", 16, true);
-IntClass* int32Class = new IntClass("int32", 32, true);
-IntClass* int64Class = new IntClass("int64", 64, true);
-
-IntClass* byteClass = new IntClass("byte", 8, false);
-IntClass* shortClass = new IntClass("short", 16, true);
-IntClass* intClass = new IntClass("int", 32, true);
-IntClass* longClass = new IntClass("long", 32, true);
-
-IntClass* c_intClass = new IntClass("c_int", 8*sizeof(int),true);
-IntClass* c_longClass = new IntClass("c_long", 8*sizeof(long),true);
-IntClass* c_longlongClass = new IntClass("c_longlong", 8*sizeof(long long),true);
-IntClass* c_size_tClass = new IntClass("c_size_t", 8*sizeof(size_t),true);
+IntClass* c_intClass = new IntClass("c_int", 8*sizeof(int));
+IntClass* c_longClass = new IntClass("c_long", 8*sizeof(long));
+IntClass* c_longlongClass = new IntClass("c_longlong", 8*sizeof(long long));
+IntClass* c_size_tClass = new IntClass("c_size_t", 8*sizeof(size_t));
 
 #endif /* INTCLASS_HPP_ */
