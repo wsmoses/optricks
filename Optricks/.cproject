@@ -53,10 +53,10 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1073850621" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
 							<tool command="g++ -std=c++11" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GLDErrorParser" id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.1268638917" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.libs.63124535" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="imagehlp"/>
 									<listOptionValue builtIn="false" value="LLVMX86Disassembler"/>
 									<listOptionValue builtIn="false" value="opengl32"/>
 									<listOptionValue builtIn="false" value="glu32"/>
-									<listOptionValue builtIn="false" value="glut"/>
 									<listOptionValue builtIn="false" value="LLVMInstrumentation"/>
 									<listOptionValue builtIn="false" value="LLVMLinker"/>
 									<listOptionValue builtIn="false" value="LLVMIRReader"/>

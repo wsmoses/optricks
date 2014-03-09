@@ -20,12 +20,7 @@ public:
 	inline const ConstantData* toValue(RData& r,PositionID id) const override final{
 		return this;
 	}
-	inline LocationData* toLocation(RData& r) const override final{
-		//TODO complete ConstantData toLocation
-		assert(0);
-		cerr << "ConstantData::toLocation has yet to be implemented" << endl << flush;
-		exit(1);
-	}
+	LocationData* toLocation(RData& r) const override final;
 	Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 };
 

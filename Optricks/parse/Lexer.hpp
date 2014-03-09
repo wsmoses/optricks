@@ -669,10 +669,11 @@ class Lexer{
 			const AbstractClass* superC;
 			if(superClass==nullptr){
 				if(primitive==POINTER_LAYOUT) superC = objectClass;
-				else superClass = nullptr;
+				else superC = nullptr;
 			} else superC = superClass->getSelfClass(pos());
 			//todo register in outer class instead of whereever this place is...
 			if(superC){
+				assert(superC);
 				if(superC->layout!=primitive)
 					f->error("Cannot have a class with a superclass of a different layout type "+superC->getName()+" "+name+" "+str<LayoutType>(primitive),true);
 				if(superC->isFinal)

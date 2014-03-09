@@ -31,6 +31,7 @@ public:
 				/*t==PPC_FP128Ty*/Type::getPPC_FP128Ty(getGlobalContext())
 				)))))
 	),floatType(t){
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{

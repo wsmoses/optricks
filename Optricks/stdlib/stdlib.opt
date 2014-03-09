@@ -12,7 +12,7 @@ def void test(){
 
 //import "string.opt"
 
-import "file.opt";
+//import "file.opt";
 extern int rand();
 
 gen int range(int start=0,int stop,int step=1){

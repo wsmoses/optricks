@@ -12,10 +12,17 @@
 class ComplexClass: public AbstractClass{
 public:
 	const RealClass* innerClass;
+	static llvm::Type* cType(const RealClass* inner){
+		assert(inner);
+		return inner->type;
+	}
 	inline ComplexClass(String name, const RealClass* inner):
-		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(innerClass->type,2)),innerClass(inner){
+		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(cType(inner),2)),innerClass(inner){
+		assert(inner);
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT);
+		assert(LANG_M);
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 	inline Constant* getValue(PositionID id, mpfr_t const value) const{
 		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());
@@ -86,6 +93,6 @@ public:
 	}
 };
 
-//ComplexClass* complexClass = new ComplexClass("complex",doubleClass);
+ComplexClass* complexClass = new ComplexClass("complex",doubleClass);
 
 #endif /* COMPLEXCLASS_HPP_ */

@@ -9,6 +9,15 @@
 #define CONSTANTDATAP_HPP_
 #include "ConstantData.hpp"
 #include "../class/AbstractClass.hpp"
+#include "LocationData.hpp"
+
+LocationData* ConstantData::toLocation(RData& r) const{
+		//TODO complete ConstantData toLocation
+		Value* L = r.builder.CreateAlloca(value->getType(), nullptr);
+		r.builder.CreateStore(value, L);
+		return new LocationData(new StandardLocation(value), type);
+	}
+
 	ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVMData(R_CONST, cp),value(val){
 		assert(val); assert(cp); assert(cp->classType!=CLASS_CLASS); assert(cp->classType!=CLASS_FUNC);
 		//assert(cp->classType!=CLASS_GEN);

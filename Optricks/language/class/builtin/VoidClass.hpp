@@ -11,7 +11,9 @@
 
 class VoidClass: public AbstractClass{
 public:
-	VoidClass(bool b): AbstractClass(nullptr,"void",nullptr,LITERAL_LAYOUT,CLASS_VOID,true,VOIDTYPE){};
+	VoidClass(bool b): AbstractClass(nullptr,"void",nullptr,LITERAL_LAYOUT,CLASS_VOID,true,VOIDTYPE){
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
+	};
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);
 		exit(1);

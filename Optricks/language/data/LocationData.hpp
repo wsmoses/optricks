@@ -9,7 +9,7 @@
 #define LOCATIONDATA_HPP_
 #include "LLVMData.hpp"
 
-#define CONSTANTDATA_C_
+#define LOCATIONDATA_C_
 class LocationData:public LLVMData{
 public:
 	Location* const value;
