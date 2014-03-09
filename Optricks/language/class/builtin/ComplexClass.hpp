@@ -11,13 +11,18 @@
 #include "../AbstractClass.hpp"
 class ComplexClass: public AbstractClass{
 public:
-	RealClass* innerClass;
-	inline ComplexClass(String name, RealClass* inner):
+	const RealClass* innerClass;
+	inline ComplexClass(String name, const RealClass* inner):
 		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(innerClass->type,2)),innerClass(inner){
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT);
 	}
-
+	inline Constant* getValue(PositionID id, mpfr_t const value) const{
+		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());
+		const FloatClass* in = (const FloatClass*)innerClass;
+		Constant* c[2] = { in->getValue(id,value), in->getZero(id)};
+		return ConstantVector::get(ArrayRef<Constant*>(c));
+	}
 	bool hasLocalData(String s) const override final{
 		return s=="real" || s=="imag";
 	}
@@ -54,29 +59,29 @@ public:
 		//if(!innerClass->hasCast(((ComplexClass*)toCast)->innerClass)) id.error()
 		return innerClass->castTo(((ComplexClass*)toCast)->innerClass, r, id, valueToCast);
 	}
-	static inline ComplexClass* get(RealClass* inner) {
-		static std::map<RealClass*, ComplexClass*> cache;
+	static inline ComplexClass* get(const RealClass* inner) {
+		static std::map<const RealClass*, ComplexClass*> cache;
 		auto found = cache.find(inner);
 		if(found==cache.end()){
 			ComplexClass* nex = new ComplexClass("complex<"+inner->getName()+">",inner);
-			cache.insert(std::pair<RealClass*,ComplexClass*>(inner, nex));
+			cache.insert(std::pair<const RealClass*,ComplexClass*>(inner, nex));
 			return nex;
 		}
 		else return found->second;
 	}
-	inline Constant* getZero(bool negative=false) const{
-		return ConstantVector::getSplat(2, innerClass->getZero(negative));
+	inline Constant* getZero(PositionID id, bool negative=false) const{
+		return ConstantVector::getSplat(2, innerClass->getZero(id,negative));
 	}
-	inline Constant* getOne() const{
-		Constant* c[2] = { innerClass->getOne(), innerClass->getZero()};
+	inline Constant* getOne(PositionID id) const{
+		Constant* c[2] = { innerClass->getOne(id), innerClass->getZero(id)};
 		return ConstantVector::get(ArrayRef<Constant*>(c));
 	}
-	inline Constant* getI() const{
-		Constant* c[2] = { innerClass->getZero(), innerClass->getOne()};
+	inline Constant* getI(PositionID id) const{
+		Constant* c[2] = { innerClass->getZero(id), innerClass->getOne(id)};
 		return ConstantVector::get(ArrayRef<Constant*>(c));
 	}
 	inline Constant* getValue(PositionID id, mpz_t const value) const{
-		Constant* c[2] = { innerClass->getValue(id, value), innerClass->getZero()};
+		Constant* c[2] = { innerClass->getValue(id, value), innerClass->getZero(id)};
 		return ConstantVector::get(ArrayRef<Constant*>(c));
 	}
 };

@@ -27,7 +27,6 @@ public:
 	bool hasLocalData(String s) const override final{
 		return false;
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		illegalLocal(id,s);
 		exit(1);

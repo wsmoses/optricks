@@ -32,9 +32,9 @@ inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, Posi
 	}
 	//case CLASS_RATIONAL:
 	case CLASS_COMPLEX:{
-		RealClass* ac = ((ComplexClass*)toCast)->innerClass;
+		const RealClass* ac = ((const ComplexClass*)toCast)->innerClass;
 		Value* tmp = castTo(ac, r, id, valueToCast);
-		auto v = ConstantVector::getSplat(2, ac->getZero());
+		auto v = ConstantVector::getSplat(2, ac->getZero(id));
 		return r.builder.CreateInsertElement(v,tmp,getInt32(0));
 	}
 	default:

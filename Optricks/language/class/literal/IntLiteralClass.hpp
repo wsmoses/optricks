@@ -17,7 +17,7 @@
 	        return mpz_cmp(val1, val2) > 0;
 	    }
 	};
-class IntLiteralClass: public AbstractClass{
+class IntLiteralClass: public RealClass{
 public:
 	static inline String str(const mpz_t& value){
 		auto tmp =  mpz_get_str(nullptr, 10, value);
@@ -30,7 +30,7 @@ public:
 	mutable mpz_t value;
 protected:
 	IntLiteralClass(const mpz_t& val):
-		AbstractClass(nullptr,str(val),nullptr,LITERAL_LAYOUT,CLASS_INTLITERAL,true,nullptr),value(val){
+		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,nullptr),value(val){
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
@@ -76,6 +76,18 @@ public:
 		exit(1);
 	}
 
+	Constant* getZero(PositionID id, bool negative=false) const{
+		id.compilerError("Cannot convert int-literal to llvm type");
+		exit(1);
+	}
+	Constant* getOne(PositionID id) const{
+		id.compilerError("Cannot convert int-literal to llvm type");
+		exit(1);
+	}
+	Constant* getValue(PositionID id, mpz_t const c) const{
+		id.compilerError("Cannot convert int-literal to llvm type");
+		exit(1);
+	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		//todo allow complex/floats as well
 		assert(a->classType==CLASS_INT || a==this );

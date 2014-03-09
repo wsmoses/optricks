@@ -174,7 +174,7 @@ class E_FUNC_CALL;
 #endif
 
 inline ConstantInt* getInt32(int32_t val){
-	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),val);
+	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),(int64_t)val);
 }
 
 const auto C_POINTERTYPE = PointerType::get(IntegerType::get(getGlobalContext(), 8),0);
@@ -219,6 +219,7 @@ enum ClassType{
 	CLASS_BOOL,
 	CLASS_FLOAT, // floating point classes and literals
 	CLASS_NULL,
+	CLASS_MATHLITERAL,
 	CLASS_INT, // int classes and literals
 		CLASS_INTLITERAL,
 	CLASS_STR, // string classes and literals
@@ -255,19 +256,21 @@ enum DataType{
 	R_RATIONAL,
 	R_FLOAT,
 	R_FILE,
-	R_COMPLEX,
+	R_IMAG,
 	R_EXACT,
 	R_TUPLE,
 	R_ARRAY,
 	R_SET,
 	R_MAP,
 	R_SLICE,
+	R_MATH,
 	R_CLASSFUNC,
 	R_NULL
 };
 template<> String str<DataType>(DataType d){
 	switch(d){
 	case R_VOID: return "R_VOID";
+	case R_MATH: return "R_MATH";
 	case R_BOOL: return "R_BOOL";
 	case R_SLICE: return "R_SLICE";
 	case R_CONST: return "R_CONST"; // constant variable
@@ -282,7 +285,7 @@ template<> String str<DataType>(DataType d){
 	case R_RATIONAL: return "R_RATIONAL";
 	case R_FLOAT: return "R_FLOAT";
 	case R_FILE: return "R_FILE";
-	case R_COMPLEX: return "R_COMPLEX";
+	case R_IMAG: return "R_IMAG";
 	case R_EXACT: return "R_EXACT";
 	case R_TUPLE: return "R_TUPLE";
 	case R_ARRAY: return "R_ARRAY";
@@ -293,7 +296,13 @@ template<> String str<DataType>(DataType d){
 	}
 	return "unknown DATATYPE";
 }
-
+enum MathConstant{
+	MATH_PI,
+	MATH_EULER_MASC,
+	MATH_E,
+	MATH_LN2,
+	MATH_CATALAN,
+};
 template<typename N> inline N check(const N& a){
 	assert(a);
 	return a;

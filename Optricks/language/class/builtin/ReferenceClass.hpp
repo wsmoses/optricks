@@ -65,10 +65,6 @@ public:
 		return 0;
 //		return innerType->compare(a,b);
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
-		id.error("No local functions exist for reference class");
-		exit(1);
-	}
 	static ReferenceClass* get(const AbstractClass* const arg) {
 		static std::map<const AbstractClass*,ReferenceClass*> map;
 		ReferenceClass*& fc = map[arg];

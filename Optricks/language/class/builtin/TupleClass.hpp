@@ -55,7 +55,7 @@ public:
 		}
 	}
 
-	bool hasLocalData(String s) const override final{
+	bool hasLocalData(String s) const override {
 		if(s.length()<2 || s[0]!='_') return false;
 		unsigned int i=0;
 		unsigned int p=1;

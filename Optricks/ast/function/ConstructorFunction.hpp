@@ -12,12 +12,12 @@
 
 class ConstructorFunction : public E_FUNCTION{
 private:
-	E_VAR* self;
+	Statement* self;
 	Statement* body;
 	Resolvable _this;
 	bool built;
 public:
-	ConstructorFunction(PositionID id, std::vector<Declaration*> dec, const Resolvable& r, E_VAR* s, Statement* b):
+	ConstructorFunction(PositionID id, std::vector<Declaration*> dec, const Resolvable& r, Statement* s, Statement* b):
 		E_FUNCTION(id,dec),self(s),body(b),_this(r),built(false){
 		assert(s);
 	}
@@ -41,9 +41,11 @@ public:
 				++AI, ++Idx) {
 			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
 			declaration[Idx]->variable->getMetadata().setObject(
-					new LocationData(new LazyLocation(ra, AI),myFunction->getSingleProto()->declarations[Idx].declarationType)));
+					new LocationData(new LazyLocation(ra, AI),myFunction->getSingleProto()->declarations[Idx].declarationType));
 		}
-		_this.setObject(myFunction->getSingleProto()->returnType->generateData());
+		auto uc = myFunction->getSingleProto()->returnType;
+		assert(uc->classType==CLASS_USER);
+		_this.setObject(new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc));
 		body->evaluate(ra);
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
@@ -70,12 +72,13 @@ public:
 		}
 		const AbstractClass* returnType = self->getSelfClass(filePos);
 		assert(returnType);
+		if(returnType->classType!=CLASS_USER) filePos.error("Cannot make constructor for built-in types");
 		llvm::Type* r = returnType->type;
 		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
-		String nam = "!"+((self)?(self->getShortName()):("anon"));
+		String nam = "!"+(returnType->getName());
 		llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
-		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
-		self->getMetadata().addFunction(myFunction);
+		myFunction = new CompiledFunction(new FunctionProto(returnType->getName(), ad, returnType), F);
+		((const UserClass*)returnType)->constructors.add((SingleFunction*)myFunction, filePos);
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 		body->registerFunctionPrototype(a);
 	}

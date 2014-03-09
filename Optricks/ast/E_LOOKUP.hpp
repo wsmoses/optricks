@@ -10,9 +10,9 @@
 
 #include "../language/statement/Statement.hpp"
 #include "../language/data/ClassFunctionData.hpp"
+#include "../operators/LocalFuncs.hpp"
 class E_LOOKUP :
 		public Statement
-//		public VariableReference
 {
 public:
 	const Token getToken() const override{ return T_LOOKUP; }
@@ -22,7 +22,6 @@ public:
 	PositionID filePos;
 	E_LOOKUP(PositionID id, Statement* a,  String b):
 		Statement(),
-		//VariableReference(),
 			left(a), right(b),filePos(id){};
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
@@ -43,10 +42,7 @@ public:
 				}
 			}
 			else{
-				std::vector<const Evaluatable*> ev;
-				ev.push_back(left);
-				for(const auto& a: args)ev.push_back(a);
-				return cla->getLocalFunction(filePos, right,ev)->getSingleProto()->returnType;
+				return getLocalFunctionReturnType(filePos, right, left->getReturnType(), args);
 			}
 		}
 		auto type=getReturnType();

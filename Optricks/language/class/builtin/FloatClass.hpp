@@ -22,7 +22,7 @@ public:
 	};
 	const FloatType floatType;
 	inline FloatClass(String nam, FloatType t):
-		RealClass(nam, CLASS_FLOAT,
+		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_FLOAT,
 				(t==HalfTy)?Type::getHalfTy(getGlobalContext()):(
 				(t==FloatTy)?Type::getFloatTy(getGlobalContext()):(
 				(t==DoubleTy)?Type::getDoubleTy(getGlobalContext()):(
@@ -96,41 +96,53 @@ public:
 	inline ConstantFP* getNaN() const{
 		return ConstantFP::get(getGlobalContext(), APFloat::getNaN(getSemantics()));
 	}
-	inline ConstantFP* getZero(bool negative=false) const override final{
+	inline ConstantFP* getZero(PositionID id, bool negative=false) const override final{
 		return ConstantFP::get(getGlobalContext(), APFloat::getZero(getSemantics(),negative));
 	}
-	inline ConstantFP* getOne() const override final{
+	inline ConstantFP* getOne(PositionID id) const override final{
 		return ConstantFP::get(getGlobalContext(), APFloat(getSemantics(),1));
 	}
-	inline ConstantFP* getE() const{
+	inline ConstantFP* getEulerMasc(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_euler(e, MPFR_RNDN);
-		auto tmp = getValue(e);
+		auto tmp = getValue(id,e);
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getPi() const{
+	inline ConstantFP* getPi(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_pi(e, MPFR_RNDN);
-		auto tmp = getValue(e);
+		auto tmp = getValue(id,e);
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getLN2() const{
+	inline ConstantFP* getE(PositionID id) const{
+		mpfr_t e;
+		mpfr_init2(e, getWidth());
+		mpfr_t ze;
+		mpfr_init2(ze,getWidth());
+		mpfr_set_ui(ze,1,MPFR_RNDN);
+		mpfr_exp(e,ze,MPFR_RNDN);
+		mpfr_const_pi(e, MPFR_RNDN);
+		auto tmp = getValue(id,e);
+		mpfr_clear(e);
+		return tmp;
+	}
+	inline ConstantFP* getLN2(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_log2(e, MPFR_RNDN);
-		auto tmp = getValue(e);
+		auto tmp = getValue(id,e);
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getCatalan() const{
+	inline ConstantFP* getCatalan(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_catalan(e, MPFR_RNDN);
-		auto tmp = getValue(e);
+		auto tmp = getValue(id, e);
 		mpfr_clear(e);
 		return tmp;
 	}
@@ -145,10 +157,8 @@ public:
 		freefunc(tmp, strlen(tmp)+1);
 		return ret;
 	}
-	inline ConstantFP* getValue(mpfr_t const value) const{
+	inline ConstantFP* getValue(PositionID id, mpfr_t const value) const{
 		if(mpfr_regular_p(value)){
-			//hard part
-			assert(0);
 
 		    char *s = NULL;
 		    std::string out;
@@ -158,7 +168,7 @@ public:
 				out = std::string(s);
 
 				mpfr_free_str(s);
-			} else assert(0);
+			} else id.compilerError("Error creating string for float to llvm conversion");
 
 			return ConstantFP::get(getGlobalContext(),APFloat(getSemantics(),out));
 		}
@@ -167,7 +177,7 @@ public:
 			return getInfinity(mpfr_signbit(value));
 		} else{
 			assert(mpfr_zero_p(value));
-			return getZero(mpfr_signbit(value));
+			return getZero(id,mpfr_signbit(value));
 		}
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{

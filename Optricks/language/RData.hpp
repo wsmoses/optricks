@@ -29,7 +29,7 @@ struct Jumpable {
 		BasicBlock* end;
 		AbstractClass* returnType;
 		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
-		std::vector<std::pair<BasicBlock*,Data*> > endings;
+		std::vector<std::pair<BasicBlock*,const Data*> > endings;
 		Jumpable(String n, TJump t, BasicBlock* s, BasicBlock* e, AbstractClass* p):
 			name(n), toJump(t), start(s), end(e), returnType(p){
 
@@ -111,7 +111,17 @@ struct RData{
 			pred.insert(std::pair<Function*,std::map<BasicBlock*,BasicBlock*> >(f,std::map<BasicBlock*,BasicBlock*>()));
 			return f;
 		}
-		void FinalizeFunction(Function* f,bool debug=false);
+		void FinalizeFunction(Function* f,bool debug=false){
+			BasicBlock* Parent = builder.GetInsertBlock();
+			if(Parent) builder.SetInsertPoint(Parent);
+			if(debug){
+				f->dump();
+				cerr << endl << flush;
+			}
+			fpm.run(*f);
+			flocs.erase(f);
+			pred.erase(f);
+		}
 		void DeleteBlock(BasicBlock* b){
 
 			b->removeFromParent();

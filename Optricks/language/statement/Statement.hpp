@@ -107,7 +107,7 @@ class VariableReference : public Statement{
 		/**
 		 * Gets the name of the variable
 		 */
-		virtual String getFullName() =0;
+//		virtual String getFullName() =0;
 		virtual String getShortName()=0;
 };
 

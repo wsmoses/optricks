@@ -50,7 +50,6 @@ public:
 		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast c_pointer type to "+toCast->getName());
 		return valueToCast;
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 };
 
 CPointerClass* c_pointerClass = new CPointerClass(true);

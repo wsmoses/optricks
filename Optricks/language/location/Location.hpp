@@ -11,7 +11,7 @@
 
 class Location{
 	public:
-		virtual ~Location()=0;
+		virtual ~Location(){};
 		virtual Value* getValue(RData& r, PositionID id)=0;
 		virtual void setValue(Value* v, RData& r)=0;
 		virtual Value* getPointer(RData& r,PositionID id) =0;
@@ -21,6 +21,7 @@ class StandardLocation : public Location{
 	private:
 		Value* position;
 	public:
+		~StandardLocation() override{};
 		StandardLocation(Value* a):position(a){}
 		Value* getValue(RData& r, PositionID id) override final;
 		void setValue(Value* v, RData& r) override final;
@@ -34,6 +35,7 @@ class LazyLocation: public Location{
 private:
 	Value* position;
 public:
+	~LazyLocation() override{};
 	LazyLocation(RData& r,Value* p, BasicBlock* b=NULL,Value* d=NULL,bool u = false);
 	Value* getValue(RData& r, PositionID id) override final;
 	void setValue(Value* v, RData& r) override final;

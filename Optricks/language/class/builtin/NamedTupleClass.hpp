@@ -30,7 +30,7 @@ public:
 			assert(args[i]->classType!=CLASS_LAZY);
 			ar[i]=args[i]->type;
 		}
-		return StructType::create(ArrayRef<Type*>(ar, len),str(args,b),false);
+		return StructType::create(ArrayRef<Type*>(ar, len),StringRef(str(args,b)),false);
 	}
 	const std::vector<String> innerNames;
 private:

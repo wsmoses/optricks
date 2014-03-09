@@ -8,91 +8,43 @@
 #ifndef FLOATLITERALP_HPP_
 #define FLOATLITERALP_HPP_
 #include "FloatLiteral.hpp"
-#include "ComplexLiteral.hpp"
+#include "ImaginaryLiteral.hpp"
 #include "../../class/builtin/FloatClass.hpp"
 #include "../../class/literal/FloatLiteralClass.hpp"
 
 //TODO separate "constant" floats from float literals
 const AbstractClass* FloatLiteral::getReturnType() const{
-	if(floatType) return floatType;
-	else{
-		return FloatLiteralClass::get();
-	}
+	return FloatLiteralClass::get();
 }
-Constant* FloatLiteral::getValue(RData& r, PositionID id) const{
-	if(floatType==nullptr){
-		id.error("Cannot getValue of class without type");
-		exit(1);
-	} else {
-		switch(floatValueType){
-		case FLOAT_PI:
-			return floatType->getPi();
-		case FLOAT_E:
-			return floatType->getE();
-		case FLOAT_CATALAN:
-			return floatType->getCatalan();
-		case FLOAT_LN2:
-			return floatType->getLN2();
-		case FLOAT_NORMAL:
-		default:
-			return floatType->getValue(value);
-		}
-	}
+ConstantFP* FloatLiteral::getValue(RData& r, PositionID id) const{
+	id.error("Cannot getValue of class without type");
+	exit(1);
 }
-const Literal* FloatLiteral::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+const Data* FloatLiteral::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+	if(right->classType==CLASS_FLOATLITERAL) return this;
 	switch(right->classType){
 		case CLASS_FLOAT:{
-			if(right==floatClass) return this;
-			if(floatType!=nullptr && !floatType->hasCast(right))
-					id.error("Cannot cast float type "+floatType->getName()+" to "+right->getName());
-			return new FloatLiteral(value, floatValueType, (FloatClass*)right);
+			return new ConstantData(((const FloatClass*)right)->getValue(id,value), right);
 		}
 		case CLASS_COMPLEX:{
-			ComplexClass* cc = (ComplexClass*)right;
-			if(floatType!=nullptr && !floatType->hasCast(cc->innerClass))
-					id.error("Cannot cast float type "+floatType->getName()+" to "+right->getName());
-			return new ComplexLiteral(this,nullptr,cc);
+			return new ConstantData(((const ComplexClass*)right)->getValue(id, value), right);
 		}
 		default:
 			id.error("Cannot cast floating-point literal to non-float type "+right->getName());
 			exit(1);
-		}
+	}
 }
 Constant* FloatLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
 	switch(right->classType){
-	case CLASS_FLOAT:{
-		FloatClass* fc = ((FloatClass*)right);
-		if(floatType!=nullptr && !floatType->hasCast(fc))
-					id.error("Cannot cast float type "+floatType->getName()+" to "+fc->getName());
-		switch(floatValueType){
-		case FLOAT_PI: return fc->getPi();
-		case FLOAT_E: return fc->getE();
-		case FLOAT_LN2: return fc->getLN2();
-		case FLOAT_CATALAN: return fc->getCatalan();
-		case FLOAT_NORMAL: return fc->getValue(value);break;
+		case CLASS_FLOAT:{
+			return ((const FloatClass*)right)->getValue(id,value);
 		}
-		exit(1);
-	}
-	case CLASS_COMPLEX:{
-		ComplexClass* cc = (ComplexClass*)right;
-		if(cc->innerClass->classType!=CLASS_FLOAT) id.error("Cannot promote floating-point literal to complex type "+cc->getName());
-		if(floatType!=nullptr && !floatType->hasCast(cc->innerClass))
-			id.error("Cannot cast float type "+floatType->getName()+" to "+cc->getName());
-		FloatClass* fc = ((FloatClass*)cc->innerClass);
-		Constant* re;
-		switch(floatValueType){
-		case FLOAT_PI: re= fc->getPi();break;
-		case FLOAT_E: re=fc->getE();break;
-		case FLOAT_LN2: re=fc->getLN2();break;
-		case FLOAT_CATALAN: re=fc->getCatalan();break;
-		case FLOAT_NORMAL: re=fc->getValue(value);break;
+		case CLASS_COMPLEX:{
+			return ((const ComplexClass*)right)->getValue(id, value);
 		}
-		Constant* c[2] = { re, fc->getZero()};
-		return ConstantVector::get(ArrayRef<Constant*>(c));
-	}
-	default:
-		id.error("Cannot cast floating-point literal to non-float type "+right->getName());
-		exit(1);
+		default:
+			id.error("Cannot cast floating-point literal to non-float type "+right->getName());
+			exit(1);
 	}
 }
 
@@ -101,8 +53,8 @@ bool FloatLiteral::hasCastValue(const AbstractClass* const a) const{
 	}
 
 int FloatLiteral::compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_FLOATLITERAL || a->classType==CLASS_COMPLEX);
-	assert(b->classType==CLASS_FLOATLITERAL || b->classType==CLASS_COMPLEX);
+	assert(a->classType==CLASS_FLOAT || a->classType==CLASS_FLOATLITERAL || a->classType==CLASS_COMPLEX);
+	assert(b->classType==CLASS_FLOAT || b->classType==CLASS_FLOATLITERAL || b->classType==CLASS_COMPLEX);
 	if(a->classType==b->classType){
 		if(a->classType==CLASS_COMPLEX){
 			ComplexClass* ca = (ComplexClass*)a;
@@ -113,6 +65,13 @@ int FloatLiteral::compareValue(const AbstractClass* const a, const AbstractClass
 		} else{
 			return 0;
 		}
-	} else return (a->classType==CLASS_FLOATLITERAL)?(-1):(1);
+	} else if(a->classType==CLASS_FLOATLITERAL){
+		return -1;
+	} else if(a->classType==CLASS_FLOAT){
+		return (b->classType==CLASS_FLOATLITERAL)?(1):(-1);
+	} else{
+		assert(b->classType==CLASS_COMPLEX);
+		return 1;
+	}
 }
 #endif /* FLOATLITERAL_CPP_ */

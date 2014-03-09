@@ -8,7 +8,7 @@
 #ifndef ARRAYCLASS_HPP_
 #define ARRAYCLASS_HPP_
 #include "../AbstractClass.hpp"
-
+#include "./IntClass.hpp"
 class ArrayClass: public AbstractClass{
 public:
 	static inline String str(const AbstractClass* const d, uint64_t l){
@@ -24,7 +24,7 @@ public:
 	}
 	static inline Type* getArrayType(const AbstractClass* const d, uint64_t l){
 		if(l>0){
-			ArrayType* at = ArrayType::get(d->type,l);
+			ArrayType* at = ArrayType::get((llvm::Type*) ( d->type) ,l);
 			return at;
 		} else {
 			Type* ar[4] = {
@@ -33,7 +33,7 @@ public:
 					/* Amount of memory allocated */ IntegerType::get(getGlobalContext(),64),
 					/* Actual data */ PointerType::getUnqual(d->type)
 				};
-		return PointerType::getUnqual(StructType::create(ArrayRef<Type*>(ar, l),str(d,l),false));
+		return PointerType::getUnqual(StructType::create(ArrayRef<Type*>(ar, l),StringRef(str(d,l)),false));
 		}
 	}
 	const AbstractClass* inner;
@@ -59,12 +59,13 @@ public:
 		}
 	}
 
-	AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
+	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);
 		}
-		else return int32Class;
+		if(len==0 && inner!=nullptr) return intClass;
+		else return IntLiteralClass::get(len);
 	}
 	bool hasLocalData(String s) const override final{
 		return s=="length";
@@ -77,7 +78,7 @@ public:
 		if(len==0 && inner!=nullptr){
 			assert(instance->type==R_LOC);
 			auto f = ((LocationData*)instance)->getMyLocation()->getPointer(r,id);
-			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), int32Class);
+			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), intClass);
 		} else return new IntLiteral(len);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
@@ -112,7 +113,6 @@ public:
 			} else return 0;
 		} else return NEX;
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	static ArrayClass* get(const AbstractClass* args, uint64_t l) {
 		if(args==nullptr){
 			static ArrayClass* ac = new ArrayClass(nullptr,0);

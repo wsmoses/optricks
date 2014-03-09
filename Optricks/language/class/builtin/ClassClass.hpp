@@ -37,7 +37,6 @@ public:
 		return 0;
 	}
 
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_CLASS;
 	}
@@ -58,6 +57,8 @@ public:
 
 ClassClass* classClass = new ClassClass(true);
 
-
+const AbstractClass* AbstractClass::getReturnType() const{
+	return classClass;
+}
 
 #endif /* CLASSCLASS_HPP_ */

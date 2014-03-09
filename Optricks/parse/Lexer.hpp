@@ -601,7 +601,8 @@ class Lexer{
 					}
 					else{
 						if(temp=="gen"){
-							func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
+							pos().compilerError("Class-based generators not implemented yet");
+							//func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
 						}
 						else
 							func = new ClassFunction(tmp, arguments, staticF, Resolvable(module,"this",pos()), methodName.back().first, funcName, returnName, methodBody);

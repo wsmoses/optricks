@@ -8,7 +8,8 @@
 #ifndef COMPLEXCLASSP_HPP_
 #define COMPLEXCLASSP_HPP_
 #include "./ComplexClass.hpp"
-#include "../../data/literal/ComplexLiteral.hpp"
+#include "../../data/literal/ImaginaryLiteral.hpp"
+#include "../../data/literal/IntLiteral.hpp"
 #include "../../data/ConstantData.hpp"
 #include "../../data/LocationData.hpp"
 
@@ -17,14 +18,14 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		illegalLocal(id,s);
 		exit(1);
 	}
-	assert(instance->type==R_COMPLEX || instance->type==R_LOC || instance->type==R_CONST);
+	assert(instance->type==R_IMAG || instance->type==R_LOC || instance->type==R_CONST);
 	assert(instance->getReturnType()==this);
-	if(instance->type==R_COMPLEX){
-		ComplexLiteral* cl = (ComplexLiteral*)instance;
-		auto a = (s=="real")?cl->real : cl->imag;
-//if(cl->complexType)
-			return a->castTo(r, this, id);
-//	else return a;
+	if(instance->type==R_IMAG){
+		ImaginaryLiteral* cl = (ImaginaryLiteral*)instance;
+		if(s=="real") return innerClass->getZero(id);
+		else{
+			return cl->imag->castTo(r, innerClass, id);
+		}
 	} else if(instance->type==R_CONST){
 		Value* v = ((ConstantData*)instance)->value;
 		return new ConstantData(r.builder.CreateExtractElement(v,(s=="real")?(0):(1)),this);

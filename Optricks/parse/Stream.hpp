@@ -10,7 +10,7 @@
 
 #include "../language/data/literal/IntLiteral.hpp"
 #include "../language/data/literal/FloatLiteral.hpp"
-#include "../language/data/literal/ComplexLiteral.hpp"
+#include "../language/data/literal/ImaginaryLiteral.hpp"
 #include "../language/data/literal/StringLiteral.hpp"
 #include "../language/data/literal/SliceLiteral.hpp"
 
@@ -626,7 +626,7 @@ public:
 		auto pek = peek();
 		if(pek=='i' || pek=='j'){
 			read();
-			return new ComplexLiteral(IntLiteral::getZero(),tmp);
+			return new ImaginaryLiteral(tmp);
 		}
 		else return tmp;
 	}
@@ -705,8 +705,10 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 			}
 		}
 		stack.clear();
-		Statement* e = new SliceLiteral(f->pos(), start,end,step);
-		return new E_BINOP(f->pos(), toIndex,e,"[]");
+		f->pos().compilerError("Slicing not implemented yet!");
+		exit(1);
+		//Statement* e = new SliceLiteral(f->pos(), start,end,step);
+		//return new E_BINOP(f->pos(), toIndex,e,"[]");
 	}
 }
 

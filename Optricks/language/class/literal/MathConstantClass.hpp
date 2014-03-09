@@ -1,34 +1,47 @@
 /*
- * FloatLiteralClass.hpp
+ * MathConstantLiteral.hpp
  *
- *  Created on: Mar 2, 2014
+ *  Created on: Mar 8, 2014
  *      Author: Billy
  */
 
-#ifndef FLOATLITERALCLASS_HPP_
-#define FLOATLITERALCLASS_HPP_
-#include "../AbstractClass.hpp"
-#include "../builtin/RealClass.hpp"
+#ifndef MATHCONSTANTCLASS_HPP_
+#define MATHCONSTANTCLASS_HPP_
 
-class FloatLiteralClass: public RealClass{
+#include "../AbstractClass.hpp"
+
+class MathConstantClass: public AbstractClass{
 protected:
-	FloatLiteralClass(bool b):
-		RealClass("floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,nullptr){
+	inline String fromC(MathConstant mc){
+		switch(mc){
+		case MATH_PI:
+			return "PiClass";
+		case MATH_E:
+			return "EClass";
+		case MATH_EULER_MASC:
+			return "EulerGammaClass";
+		case MATH_LN2:
+			return "Log2Class";
+		case MATH_CATALAN:
+			return "CatalanClass";
+		}
+	}
+	MathConstant mathType;
+	MathConstantClass(MathConstant mc):
+		AbstractClass(nullptr,fromC(mc),nullptr,LITERAL_LAYOUT,CLASS_MATHLITERAL,true,nullptr){
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
+		if(toCast==this) return true;
 		switch(toCast->classType){
 		case CLASS_COMPLEX:{
-			ComplexClass* ic = (ComplexClass*)toCast;
-			return hasCast(ic->innerClass);
+			return hasCast(((const ComplexClass*)toCast)->innerClass);
 		}
 		case CLASS_FLOAT:{
 			return true;
 		}
-		case CLASS_FLOATLITERAL: return toCast==this;
-		case CLASS_RATIONAL:
 		default:
 			return false;
 		}
@@ -55,30 +68,23 @@ public:
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		//todo allow complex/floats as well
-		assert(a->classType==CLASS_FLOAT || a==this );
-		assert(b->classType==CLASS_FLOAT || b==this);
+		assert(a->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT || a==this );
+		assert(b->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT|| b==this);
 		if(a==this){
 			if(b==this) return 0;
 			else return -1;
 		} else if(b==this) return 1;
 		else return 0;
 	}
-	Constant* getZero(PositionID id, bool negative=false) const{
-		id.compilerError("Cannot convert float-literal to llvm type");
-		exit(1);
-	}
-	Constant* getOne(PositionID id) const{
-		id.compilerError("Cannot convert float-literal to llvm type");
-		exit(1);
-	}
-	Constant* getValue(PositionID id, mpz_t const c) const{
-		id.compilerError("Cannot convert float-literal to llvm type");
-		exit(1);
-	}
-	static FloatLiteralClass* get() {
-		static FloatLiteralClass* fc = new FloatLiteralClass(true);
-		return fc;
+	static MathConstantClass* get(MathConstant mc) {
+		static std::map<MathConstant,MathConstantClass> m;
+		auto find = m.find(mc);
+		if(find!=m.end()) return & (find->second);
+		auto tmp = m.insert(std::pair<MathConstant, MathConstantClass>(mc, MathConstantClass(mc)));
+		return & tmp.first->second;
 	}
 };
 
-#endif /* FLOATLITERALCLASS_HPP_ */
+
+
+#endif /* MATHCONSTANTLITERAL_HPP_ */

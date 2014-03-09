@@ -8,11 +8,12 @@ public:
 	/**
 	 * If type is null, then this can be any long/integer type
 	 */
-	IntLiteralClass* const intType;
+	const IntLiteralClass* const intType;
 	//IntLiteral(const mpz_t& val, IntClass* cp=NULL):Literal(R_INT),value(val),intType(cp){ assert(val);}
 	IntLiteral(signed long int v):Literal(R_INT),
 			intType(IntLiteralClass::get(v)){
 	}
+	IntLiteral(const IntLiteralClass* ic): Literal(R_INT),intType(ic){};
 	IntLiteral(const mpz_t& val):Literal(R_INT),
 			intType(IntLiteralClass::get(val)){
 	}
@@ -29,20 +30,20 @@ public:
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(intType==right) return this;
 		switch(right->classType){
+		case CLASS_FLOATLITERAL:
+			return new FloatLiteral(intType->value);
 		case CLASS_INT:{
-			IntClass* ic = (IntClass*)right;
+			const IntClass* ic = (const IntClass*)right;
 			return new ConstantData(ic->getValue(id,intType->value), right);
 		}
 		case CLASS_FLOAT:{
-			FloatClass* fc = (FloatClass*)right;
+			const FloatClass* fc = (const FloatClass*)right;
 			return new ConstantData(fc->getValue(id, intType->value), right);
 		}
 		case CLASS_COMPLEX:{
-			ComplexClass* cc = (ComplexClass*)right;
-			const Data* real = castTo(r, cc->innerClass, id);
-			return new ComplexLiteral(real, getZero(), cc);
+			const ComplexClass* cc = (const ComplexClass*)right;
+			return new ConstantData(cc->getValue(id, intType->value), right);
 		}
-		case CLASS_RATIONAL:
 		default:
 			id.error("Integer literal cannot be cast to "+right->getName());
 			exit(1);

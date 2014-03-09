@@ -14,9 +14,9 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(objectClass):(supa),
 			t,CLASS_USER, fina,
 			(t==POINTER_LAYOUT)?(
-					(llvm::Type*) PointerType::getUnqual(StructType::create(getGlobalContext(), nam))
+					(llvm::Type*) PointerType::getUnqual(StructType::create(getGlobalContext(), StringRef(nam)))
 	):(
-					(llvm::Type*)StructType::create(getGlobalContext(), nam)
+					(llvm::Type*)StructType::create(getGlobalContext(), StringRef(nam))
 			)
 			),
 					start(0),final(false)
@@ -24,11 +24,22 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 		assert(t==PRIMITIVE_LAYOUT || t==POINTER_LAYOUT);
 		if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
 		if(isObject){
-			localVars.push_back(uint32Class);
+			localVars.push_back(intClass);
 			final = true;
 		}
 	};
 
+Value* UserClass::generateData(RData& r, PositionID id) const{
+	if(!final) id.compilerError("Cannot generateData of non-finalized type");
+	if(layout==PRIMITIVEPOINTER_LAYOUT || layout==PRIMITIVE_LAYOUT) return UndefValue::get(type);
+	else {
+		uint64_t s = DataLayout(r.lmod.getDataLayout()).getTypeAllocSize(((PointerType*)type)->getElementType());
+		IntegerType* ic = llvm::IntegerType::get(getGlobalContext(), 8*sizeof(size_t));
+		Value* v = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+				((PointerType*)type)->getArrayElementType(), ConstantInt::get(ic, s));
+		return v;
+	}
+}
 
 
 #endif /* USERCLASSP_HPP_ */

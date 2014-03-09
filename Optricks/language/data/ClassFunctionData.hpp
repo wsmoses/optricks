@@ -10,6 +10,7 @@
 
 #include "Data.hpp"
 #include "./VoidData.hpp"
+#include "../../operators/LocalFuncs.hpp"
 class ClassFunctionData:public Data{
 public:
 	const Data* const instance;
@@ -49,18 +50,12 @@ public:
 		exit(1);
 	}
 
-	virtual const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
-		std::vector<const Evaluatable*> ev;
-		ev.push_back(instance);
-		for(auto& a: args) ev.push_back(a);
-		return instance->getReturnType()->getLocalFunction(id,function, ev)->callFunction(r, id, ev);
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
+		return getLocalFunction(r, id, function, instance, args);
 	}
 
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override {
-		std::vector<const Evaluatable*> ev;
-		ev.push_back(instance);
-		for(auto& a: args) ev.push_back(a);
-		return instance->getReturnType()->getLocalFunction(id,function, ev)->getSingleProto()->returnType;
+		return getLocalFunctionReturnType(id, function, instance->getReturnType(), args);
 	}
 	/**
 	 * Returns the class that this represents, if it represents a class

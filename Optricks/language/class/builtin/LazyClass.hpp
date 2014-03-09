@@ -66,10 +66,6 @@ public:
 		LazyClass* lb = (LazyClass*)b;
 		return innerType->compare(la,lb);
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
-		id.error("No local functions exist for void class");
-		exit(1);
-	}
 	static LazyClass* get(const AbstractClass* const arg) {
 		static std::map<const AbstractClass*,LazyClass*> map;
 		LazyClass*& fc = map[arg];

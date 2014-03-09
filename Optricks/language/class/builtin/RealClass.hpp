@@ -10,14 +10,10 @@
 #include "../AbstractClass.hpp"
 class RealClass: public AbstractClass{
 public:
-	RealClass(String nam, ClassType ct, Type* tp=NULL):AbstractClass(nullptr,nam, nullptr, PRIMITIVE_LAYOUT, ct, true, tp){};
-	virtual Constant* getZero(bool negative=false) const=0;
-	virtual Constant* getOne() const=0;
+	RealClass(String nam, LayoutType lt,ClassType ct, Type* tp=NULL):AbstractClass(nullptr,nam, nullptr, lt, ct, true, tp){};
+	virtual Constant* getZero(PositionID id, bool negative=false) const=0;
+	virtual Constant* getOne(PositionID id) const=0;
 	virtual Constant* getValue(PositionID id, mpz_t const c) const=0;
-	/*	std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
-			illegalLocal(id,s);
-			return std::pair<AbstractClass*,unsigned int>(this,0);
-		}*/
 };
 
 

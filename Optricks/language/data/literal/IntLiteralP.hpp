@@ -8,7 +8,7 @@
 #define IntLiteralP_HPP_
 #include "IntLiteral.hpp"
 #include "FloatLiteral.hpp"
-#include "ComplexLiteral.hpp"
+#include "ImaginaryLiteral.hpp"
 #include "RationalLiteral.hpp"
 #include "../../class/builtin/IntClass.hpp"
 #include "../../class/builtin/FloatClass.hpp"

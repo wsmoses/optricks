@@ -10,6 +10,7 @@
 #include "../language/Operators.hpp"
 #include "../language/statement/Statement.hpp"
 #include "../language/data/Data.hpp"
+#include "../operators/Binary.hpp"
 byte precedence(String tmp){
 	if (tmp == "." || tmp==":" || tmp=="::" || tmp == "->"){
 		return 0;
@@ -95,12 +96,12 @@ class E_BINOP : public ErrorStatement{
 		}
 		const Data* evaluate(RData& a) const override final{
 			auto L = left->evaluate(a);
-			auto LC = L->getReturnType();
-			return LC->getLocalFunction(filePos, ":"+operation, {L, right})->callFunction(a, filePos, {L, right});
+			return getBinop(a, filePos, L, right, operation);
 		}
 		const AbstractClass* getReturnType() const override final{
 			auto LC = left->getReturnType();
-			return LC->getLocalFunction(filePos, ":"+operation, {left, right})->getSingleProto()->returnType;
+			auto RC = right->getReturnType();
+			return getBinopReturnType(filePos, LC, RC, operation);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 		}

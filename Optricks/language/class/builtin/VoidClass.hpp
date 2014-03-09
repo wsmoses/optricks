@@ -41,11 +41,6 @@ public:
 		if(toCast->classType!=CLASS_VOID) illegalCast(id,toCast);
 		return valueToCast;
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final{
-		id.error("No local functions exist for void class");
-		exit(1);
-	}
-
 };
 
 VoidClass* voidClass = new VoidClass(true);

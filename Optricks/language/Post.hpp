@@ -7,6 +7,7 @@
 
 #ifndef POST_HPP_
 #define POST_HPP_
+#include "./RDataP.hpp"
 #include "./evaluatable/EvaluatableP.hpp"
 #include "./evaluatable/CastEvalP.hpp"
 #include "./class/builtin/FloatClassP.hpp"
@@ -20,7 +21,7 @@
 #include "./data/LLVMDataP.hpp"
 #include "./data/literal/FloatLiteralP.hpp"
 #include "./data/literal/IntLiteralP.hpp"
-#include "./data/literal/ComplexLiteralP.hpp"
+#include "./data/literal/ImaginaryLiteralP.hpp"
 #include "./FunctionProtoP.hpp"
 #include "./module/ScopableP.hpp"
 #include "./function/AbstractFunctionP.hpp"

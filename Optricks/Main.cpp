@@ -263,11 +263,10 @@ int main(int argc, char** argv){
 	}
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
-	initializeBaseFunctions(rdata);
-	initFuncsMeta(rdata);
+	//initializeBaseFunctions(rdata);
+	//initFuncsMeta(rdata);
 	std::vector<String> files =
 		{
-				"fib2.opt",
 				"./stdlib/stdlib.opt"
 				};
 	if(!interactive){

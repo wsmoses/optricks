@@ -9,6 +9,7 @@
 #define E_UOP_HPP_
 
 #include "../language/statement/Statement.hpp"
+#include "../operators/Unary.hpp"
 #include "../language/class/builtin/ReferenceClass.hpp"
 class E_UOP : public ErrorStatement{
 public:
@@ -42,25 +43,10 @@ class E_PREOP : public E_UOP{
 public:
 	E_PREOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
 	const AbstractClass* getReturnType() const override{
-		const AbstractClass* const cc = value->getReturnType();
-		if(operation=="&"){
-			if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
-			if(cc->classType==CLASS_LAZY) filePos.error("Cannot get reference of lazy");
-			else return ReferenceClass::get(cc);
-		}
-		return cc->getLocalFunction(filePos,":"+operation,{value})->getSingleProto()->returnType;
+		return getPreopReturnType(filePos, value->getReturnType(), operation);
 	}
 	const Data* evaluate(RData& r) const override final {
-		const AbstractClass* const cc = value->getReturnType();
-		if(operation=="&"){
-			if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
-			if(cc->classType==CLASS_LAZY) filePos.error("Cannot get reference of lazy");
-			else{
-				filePos.compilerError("Allow creating references");
-				exit(1);
-			}
-		}
-		return cc->getLocalFunction(filePos,":"+operation,{value})->callFunction(r,filePos,{value});
+		return getPreop(r, filePos, operation, value->evaluate(r));
 	}
 };
 
@@ -69,13 +55,10 @@ class E_POSTOP : public E_UOP{
 public:
 	E_POSTOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
 	const AbstractClass* getReturnType() const override{
-		const AbstractClass* const cc = value->getReturnType();
-		return cc->getLocalFunction(filePos,":"+operation,{value,nullptr})->getSingleProto()->returnType;
+		return getPostopReturnType(filePos, value->getReturnType(), operation);
 	}
 	const Data* evaluate(RData& r) const override final {
-		const AbstractClass* const cc = value->getReturnType();
-		//todo check if second should have null
-		return cc->getLocalFunction(filePos,":"+operation,{value,nullptr})->callFunction(r,filePos,{value});
+		return getPostop(r, filePos, operation, value->evaluate(r));
 	}
 };
 

@@ -21,7 +21,7 @@ class AbstractClass: public Literal{
 public:
 	const Scopable* const myScope;
 	mutable Scopable staticVariables;
-	OverloadedFunction constructors;
+	mutable OverloadedFunction constructors;
 	virtual ~AbstractClass(){};
 private:
 	const String name;
@@ -60,7 +60,6 @@ public:
 		return false;
 	}
 
-	virtual SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const=0;
 	String getName() const{
 		if(myScope==nullptr) return name;
 		else return myScope->getName() + "." + name;
@@ -82,7 +81,7 @@ public:
 	AbstractClass* getSelfClass(PositionID id) override final{
 		return this;
 	}
-	const AbstractClass* getReturnType() const override;//TODO
+	const AbstractClass* getReturnType() const override;
 	inline Constant* getValue(RData& r, PositionID id) const override final{
 		return ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
@@ -114,7 +113,7 @@ public:
 	 */
 	virtual int compare(const AbstractClass* const a, const AbstractClass* const b) const=0;
 
-	virtual const AbstractClass* getLocalReturnClass(PositionID id, String s) const;
+	virtual const AbstractClass* getLocalReturnClass(PositionID id, String s) const=0;
 	virtual bool hasLocalData(String s) const=0;
 	virtual const Data* getLocalData(RData& r,PositionID id, String s, const Data* instance) const=0;
 

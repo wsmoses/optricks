@@ -11,7 +11,7 @@
 class IntClass: public RealClass{
 public:
 	IntClass(String nam, unsigned len):
-		RealClass(nam, CLASS_INT,IntegerType::get(getGlobalContext(),len)){
+		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
 		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 
@@ -30,11 +30,11 @@ public:
 	unsigned getWidth() const{
 		return ((IntegerType*)type)->getBitWidth();
 	}
-	ConstantInt* getZero(bool negative=false) const override final{
-		return ConstantInt::get((IntegerType*)type,(int64_t)0);
+	ConstantInt* getZero(PositionID id, bool negative=false) const override final{
+		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)0);
 	}
-	ConstantInt* getOne() const override final{
-		return ConstantInt::get((IntegerType*)type,(int64_t)1);
+	ConstantInt* getOne(PositionID id) const override final{
+		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_INT && type==toCast->type;
@@ -109,7 +109,6 @@ public:
 			return false;
 		}
 	}
-	SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const override final;
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final;
 	/**
