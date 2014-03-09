@@ -40,6 +40,9 @@ public:
 public:
 	virtual ~Scopable(){};
 	Scopable(Scopable* above):surroundingScope(above){};
+	const bool existsHere(String s) const{
+		return mapping.find(s)!=mapping.end();
+	}
 	const bool exists(String s) const{
 		auto tmp = this;
 		assert(tmp);
@@ -78,6 +81,16 @@ public:
 	inline SCOPE_TYPE getScopeType(PositionID id, const String s) const{
 		auto tmp = find2(id,s);
 		return tmp.second->second.type;
+	}
+	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find2Here(PositionID id, const String s) const {
+		std::map<const String,SCOPE_POS>::const_iterator it = mapping.find(s);
+		if(it!=mapping.end()) return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(this,it);
+		return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(nullptr,mapping.end());
+	}
+	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> find2Here(PositionID id, const String s) {
+		std::map<const String,SCOPE_POS>::iterator it = mapping.find(s);
+		if(it!=mapping.end()) return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(this,it);
+		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
 	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find2(PositionID id, const String s) const {
 			const Scopable* tmp = this;
@@ -134,7 +147,7 @@ public:
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
 	void addClass(PositionID id, AbstractClass* c);
 	void addVariable(PositionID id, const String name,Data* d){
-		if(exists(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
+		if(existsHere(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
 		mapping.insert(std::pair<const String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));
 		vars.push_back(d);
 	}

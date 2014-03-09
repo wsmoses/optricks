@@ -15,7 +15,7 @@
 #include "../data/LocationData.hpp"
 #include "../class/builtin/ClassClass.hpp"
 void Scopable::addClass(PositionID id, AbstractClass* c){
-	if(exists(c->name)) id.error("Cannot define class "+c->name+" -- identifier already used at this scope");
+	if(existsHere(c->name)) id.error("Cannot define class "+c->name+" -- identifier already used at this scope");
 	mapping.insert(std::pair<String,SCOPE_POS>(c->name,SCOPE_POS(SCOPE_CLASS,classes.size())));
 	classes.push_back(c);
 //	return ( classes.back() );
@@ -112,14 +112,14 @@ const Data* Scopable::get(PositionID id, const String name) const{
 		}
 	}
 	OverloadedFunction* Scopable::addFunction(PositionID id, const String name, void* generic){
-		auto f = find2(id,name);
+		auto f = find2Here(id,name);
 		if(f.first==NULL){
 			mapping.insert(std::pair<const String,SCOPE_POS>(name, SCOPE_POS(SCOPE_FUNC,funcs.size())));
 			funcs.push_back(new OverloadedFunction(name, generic));
 			return funcs.back();
 		}
 		else{
-			if(f.second->second.type!=SCOPE_FUNC) id.error(name+" found at current scope, but not correct variable type -- needed non-class function");
+			if(f.second->second.type!=SCOPE_FUNC) id.error(name+" found at current scope, but not correct variable type -- needed function");
 			return f.first->funcs[f.second->second.pos];
 		}
 	}
