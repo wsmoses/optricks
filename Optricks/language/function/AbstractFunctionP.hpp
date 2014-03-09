@@ -183,9 +183,6 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
-		id.warning(proto->name);
-		if(!at) id.error("What..."+proto->name);
-		assert(at);
 		if(at->classType==CLASS_VOID){
 			if(proto->declarations[i].defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
@@ -196,7 +193,8 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		else{
 			temp[i] = fixLazy(r, id, args[i]->evaluate(r), t);
 		}
-		assert(temp[i] != NULL);
+		assert(temp[i]);
+		assert(temp[i]->getType());
 	}
 	for(unsigned int i = as; i<ds; i++){
 		if(proto->declarations[i].defaultValue==nullptr){
@@ -205,6 +203,8 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		}
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
+		assert(temp[i]);
+		assert(temp[i]->getType());
 	}
 	return ArrayRef<Value*>(temp, ds);
 }

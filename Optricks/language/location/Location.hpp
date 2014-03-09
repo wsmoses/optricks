@@ -22,7 +22,7 @@ class StandardLocation : public Location{
 		Value* position;
 	public:
 		~StandardLocation() override{};
-		StandardLocation(Value* a):position(a){}
+		StandardLocation(Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		Value* getValue(RData& r, PositionID id) override final;
 		void setValue(Value* v, RData& r) override final;
 		Value* getPointer(RData& r,PositionID id) override final{

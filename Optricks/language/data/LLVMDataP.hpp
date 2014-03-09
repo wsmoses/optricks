@@ -37,6 +37,8 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			v.push_back(AbstractDeclaration(a));
 		}
 		FunctionProto fp("#data",v,fc->returnType);
+		assert(F);
+		assert(dyn_cast<Function>(F));
 		return new ConstantData(r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args)),fp.returnType);
 	}
 	else if(type->classType==CLASS_CLASS){

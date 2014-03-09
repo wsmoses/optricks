@@ -43,7 +43,7 @@ class ClassFunction : public E_FUNCTION{
 				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 				args.push_back(ac->type);
 			}
-			const AbstractClass* returnType = (returnType)?(returnV->getSelfClass(filePos)):(nullptr);
+			const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
 			if(returnType==nullptr){
 				std::vector<const AbstractClass*> yields;

@@ -18,6 +18,8 @@ void StandardLocation:: setValue(Value* v, RData& r){
 
 LazyLocation::LazyLocation(RData& r,Value* p, BasicBlock* b,Value* d,bool u)
 	:position(p){
+	assert(position);
+	assert(position->getType()->isPointerTy());
 	if(b!=nullptr && d!= nullptr){
 		if(r.builder.GetInsertBlock()!=b) PositionID(0,0,"#lazy").compilerError("Cannot fake lazy");
 		setValue(d, r);

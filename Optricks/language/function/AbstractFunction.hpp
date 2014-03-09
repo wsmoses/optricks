@@ -61,6 +61,7 @@ public:
 	SingleFunction(FunctionProto* const fp, llvm::Function* const f):AbstractFunction(),proto(fp), myFunc(f){
 		assert(fp);
 		assert(f);
+		assert(f->getReturnType());
 	};
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 		return proto->returnType;
@@ -92,6 +93,8 @@ public:
 	CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
 	}
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
+		assert(myFunc);
+		assert(myFunc->getReturnType());
 		return new ConstantData(rdata.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args)),proto->returnType);
 	}
 };
