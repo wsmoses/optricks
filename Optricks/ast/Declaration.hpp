@@ -99,7 +99,7 @@ public:
 		getReturnType();
 		assert(returnType);
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
-				(value->evaluate(r)->castToV(r, getReturnType(), filePos));
+				(value->evaluate(r)->castToV(r, returnType, filePos));
 		LocationData* ld;
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
@@ -110,7 +110,7 @@ public:
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
 			((Value*)GV)->setName(Twine(variable->getFullName()));
-			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),variable->getReturnType()));
+			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
@@ -120,9 +120,9 @@ public:
 			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable->pointer.name));
 			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
 				if(tmp!=NULL) r.builder.CreateStore(tmp,al);
-				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),variable->getReturnType()));
+				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),returnType));
 			} else
-				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),variable->getReturnType()));
+				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
 		return ld;
