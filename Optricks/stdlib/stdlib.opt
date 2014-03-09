@@ -14,7 +14,7 @@ def void test(){
 
 //import "file.opt";
 extern int rand();
-
+/*
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
 		for(int i = start; i<stop; i+=step)
@@ -38,7 +38,7 @@ gen double range(double start=0, double stop, double step=1){
 
 gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
-}
+}*/
   
 def bool isNaN(double d){
 	return !(d==d);
@@ -54,10 +54,10 @@ double NaN = 0./0.;
 double PI = 3.141592653589793;
 double  E = 2.718281828459045;
 complex I = complex(0,1);
-def complex.complex(double a=0, double b=0){
+/*def complex.complex(double a=0, double b=0){
   this.real = a
   this.imag = b
-}
+}*/
 
 def void print(bool i, bool b=true){
 	(extern void printb(bool i, bool b))(i,b);
@@ -65,12 +65,12 @@ def void print(bool i, bool b=true){
 def void print(byte i, bool b=true){
 	(extern void printby(byte i, bool b))(i,b);
 }
-	extern void putchar(char i);
+//	extern void putchar(char i);
 
-def void print(c_string i, bool b=true){
+/*def void print(c_string i, bool b=true){
 	for a in i: putchar(a);
 	if(b) putchar('\n');
-}
+}*/
 
 //def void print(string i, bool b=true){
 //	print(i._cstr,b);
@@ -84,13 +84,13 @@ def void print(complex i, bool b=true){
 def void print(double i, bool b=true){
 	(extern void printd(double i, bool b))(i,b);
 }
-def void print(){
+/*def void print(){
 	putchar('\n');
 }
 def void print(char i, bool b=true){
 	putchar(i);
 	if(b) putchar('\n');
-}
+}*/
 extern double	cos		(double a);
 extern double	sin		(double a);
 extern double	tan		(double a);
@@ -192,9 +192,9 @@ def double operator ** (double a, double b){
 }
 */
 
-def double complex.mag2( ) {
+/*def double complex.mag2( ) {
 	return this.real*this.real+this.imag*this.imag;
-}
+}*/
 def int abs(int a){
 	return (a<0)?(-a):a;
 }
@@ -204,21 +204,21 @@ def double abs(double a){
 def double abs(complex z){
 	return sqrt(z.real*z.real+z.imag*z.imag);
 }
-def double complex.mag(){
+/*def double complex.mag(){
 	return sqrt(this.real*this.real+this.imag*this.imag);
 }
 def double complex.angle(){
 	return atan2(this.imag,this.real);
-}
+}*/
 /*
 def complex operator ** (complex a, double b){
 	double mag = a.mag()**b;
 	double angle = a.angle()*b;
 	return complex(cos(angle)*mag,sin(angle)*mag);
 }
-*/
+
 def double double.print(bool newline=true){
 	print(this,newline);
 	return this;
-}
+}*/
 // */

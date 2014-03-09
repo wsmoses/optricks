@@ -183,7 +183,8 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
-		if(!at) id.error("What...");
+		id.warning(proto->name);
+		if(!at) id.error("What..."+proto->name);
 		assert(at);
 		if(at->classType==CLASS_VOID){
 			if(proto->declarations[i].defaultValue==nullptr){

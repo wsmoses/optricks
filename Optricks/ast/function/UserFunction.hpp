@@ -55,7 +55,7 @@ public:
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args.push_back(cl);
 		}
-		const AbstractClass* returnType = (returnType)?(returnV->getSelfClass(filePos)):(nullptr);
+		const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
