@@ -22,13 +22,13 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 	assert(instance->getReturnType()==this);
 	if(instance->type==R_IMAG){
 		ImaginaryLiteral* cl = (ImaginaryLiteral*)instance;
-		if(s=="real") return innerClass->getZero(id);
+		if(s=="real") return new ConstantData(innerClass->getZero(id), innerClass);
 		else{
 			return cl->imag->castTo(r, innerClass, id);
 		}
 	} else if(instance->type==R_CONST){
 		Value* v = ((ConstantData*)instance)->value;
-		return new ConstantData(r.builder.CreateExtractElement(v,(s=="real")?(0):(1)),this);
+		return new ConstantData(r.builder.CreateExtractElement(v,getInt32((s=="real")?0:1)),this);
 
 	} else {
 		assert(instance->type==R_LOC);

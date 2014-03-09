@@ -81,7 +81,10 @@ public:
 			return false;
 		}
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
+	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+		id.compilerError("Casting vector types has not been implemented");
+		exit(1);
+	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		assert(a->classType==CLASS_VECTOR);

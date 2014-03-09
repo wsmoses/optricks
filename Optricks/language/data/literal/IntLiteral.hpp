@@ -1,6 +1,7 @@
 #ifndef IntLiteral_HPP_
 #define IntLiteral_HPP_
 #include "Literal.hpp"
+#include "FloatLiteral.hpp"
 #include "../../class/literal/IntLiteralClass.hpp"
 class IntLiteral:public Literal{
 private:

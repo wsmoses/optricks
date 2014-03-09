@@ -176,6 +176,21 @@ class E_FUNC_CALL;
 inline ConstantInt* getInt32(int32_t val){
 	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),(int64_t)val);
 }
+template<typename T> inline void toStringStream(ostream& o, T s)
+{
+    o << s;
+}
+
+template<typename T, typename... Args> inline void toStringStream(ostream& o, T s, Args... args){
+	o << s;
+	toStringStream(o, args...);
+}
+
+template<typename... Args> String toStr(Args... args){
+	std::stringstream ss;
+	toStringStream(ss, args...);
+	return ss.str();
+}
 
 const auto C_POINTERTYPE = PointerType::get(IntegerType::get(getGlobalContext(), 8),0);
 const auto VOIDTYPE = Type::getVoidTy(getGlobalContext());

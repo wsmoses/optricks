@@ -94,17 +94,9 @@ public:
 		illegalLocal(id,s);
 		exit(1);
 	}
-	/*
-	std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
-		for(unsigned int i=0; i<innerNames.size(); i++)
-			if(innerNames[i]==s)
-				return std::pair<AbstractClass*,unsigned int>(innerTypes[i],i);
-		illegalLocal(id,s);
-		exit(1);
-	}*/
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		if(toCast->classType!=CLASS_NAMED_TUPLE) return false;
-		NamedTupleClass* tc = (NamedTupleClass*)toCast;
+		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) return false;
 		for(unsigned i=0; i<innerTypes.size(); i++){
 			if(!innerTypes[i]->noopCast(tc->innerTypes[i])) return false;
@@ -112,7 +104,19 @@ public:
 		}
 		return true;
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
+	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+		if(toCast==this) return valueToCast;
+		if(toCast->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast named tuple class to "+toCast->getName());
+		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
+		if(tc->innerTypes.size()!=innerTypes.size()) id.error(toStr("Cannot cast named tuple class of length ",innerTypes.size()," to named tuple class of length ",tc->innerTypes.size()));
+		Value* V = UndefValue::get(toCast->type);
+		for(unsigned i=0; i<innerTypes.size(); i++){
+			if(innerNames[i]!=tc->innerNames[i]) id.error("Cannot cast named tuple "+getName()+" to "+tc->getName());
+			Value* M = innerTypes[i]->castTo(tc->innerTypes[i], r, id, r.builder.CreateExtractElement(valueToCast, getInt32(i)));
+			r.builder.CreateInsertElement(V, M, getInt32(i));
+		}
+		return V;
+	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		assert(a->classType==CLASS_NAMED_TUPLE);
