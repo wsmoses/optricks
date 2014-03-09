@@ -52,29 +52,24 @@ public:
 		}while(tmp!=NULL);
 		return false;
 	}
-	inline String getName() const{
+	inline String getScopeName() const{
 		if(!surroundingScope) return name;
-		else return surroundingScope->getName() + "." + name;
+		else{
+			String s = surroundingScope->getScopeName();
+			return  s + "." + name;
+		}
 	}
 	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> find(PositionID id, const String s) {
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
-			const String n = getName();
-			if(n==NULL)
-				id.error("Cannot find "+s+" in current scope");
-			else
-				id.error("Cannot find "+s+" in class "+n);
+			id.error("Cannot find "+s+" in current scope");
 			exit(1);
 		} else return tmp;
 	}
 	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find(PositionID id, const String s) const{
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
-			const String n = getName();
-			if(n==NULL)
-				id.error("Cannot find "+s+" in current scope");
-			else
-				id.error("Cannot find "+s+" in class "+n);
+			id.error("Cannot find "+s+" in current scope");
 			exit(1);
 		} else return tmp;
 	}

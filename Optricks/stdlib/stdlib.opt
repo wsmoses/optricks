@@ -10,7 +10,7 @@ def void test(){
 	}
 }
 
-import "string.opt"
+//import "string.opt"
 
 import "file.opt";
 extern int rand();

@@ -17,7 +17,7 @@ class E_VAR : public VariableReference {
 		E_VAR(const Resolvable& a) : VariableReference(),pointer(a){};
 //		E_VAR(PositionID id, Resolvable& a) : VariableReference(id),pointer(a){};
 		String getFullName() {
-			return pointer.module->getName()+"."+pointer.name;
+			return pointer.module->getScopeName()+"."+pointer.name;
 		}
 		String getShortName() override final{
 			return pointer.name;

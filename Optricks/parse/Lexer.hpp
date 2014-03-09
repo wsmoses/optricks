@@ -365,7 +365,7 @@ class Lexer{
 			while(!f->done && f->peek()==';') f->read();
 			auto marker = f->getMarker();
 			String test = f->getNextName(data.endWith);
-			Statement* finalElse = VOID_STATEMENT;
+			Statement* finalElse = nullptr;
 			while(!f->done && (test=="else" || test=="elif")){
 				f->trim(EOF);
 				bool elif = test=="elif";
@@ -399,6 +399,7 @@ class Lexer{
 				building = new IfStatement(pos(), statements[i].first, statements[i].second, building);
 				if(i==0) break;
 			}
+			assert(building);
 			return building;
 		}
 		Statement* getForLoop(ParseData data, bool read=false){
