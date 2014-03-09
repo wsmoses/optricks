@@ -98,7 +98,8 @@ public:
 	const Data* evaluate(RData& r) const final override{
 		getReturnType();
 		assert(returnType);
-		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r)->castToV(r, variable->getReturnType(), filePos));
+		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
+				(value->evaluate(r)->castToV(r, getReturnType(), filePos));
 		LocationData* ld;
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());

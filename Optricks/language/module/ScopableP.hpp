@@ -24,8 +24,9 @@ void Scopable::addClass(PositionID id, AbstractClass* c){
 	const AbstractClass* Scopable::getReturnClass(PositionID id, const String name) const{
 		auto f = find(id,name);
 		switch(f.second->second.type){
-		case SCOPE_VAR:
+		case SCOPE_VAR:{
 			return f.first->vars[f.second->second.pos]->getReturnType();
+		}
 		case SCOPE_FUNC:
 			return f.first->funcs[f.second->second.pos]->getReturnType();
 		case SCOPE_CLASS:
