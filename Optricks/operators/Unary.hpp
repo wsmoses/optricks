@@ -230,6 +230,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
+		break;
 	}
 	case CLASS_FLOAT:{
 		if(operation=="+") return value->toValue(r, filePos);
@@ -404,6 +405,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
+		break;
 	}
 	case CLASS_FLOAT:{
 		if(operation=="++"){

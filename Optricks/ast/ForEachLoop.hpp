@@ -48,7 +48,7 @@ class ForEachLoop : public ErrorStatement{
 		}
 		E_GEN* setUp(RData& ra) const{
 			filePos.compilerError("For-each loops not implemented");
-
+			exit(1);
 			/*if(iterable->getToken()==T_FUNC_CALL){
 				E_FUNC_CALL* func = (E_FUNC_CALL*)iterable;
 				std::pair<std::vector<Value*>,const Data* > tempVal = func->getArgs(ra);

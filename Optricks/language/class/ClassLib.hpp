@@ -16,9 +16,11 @@
 #include "./literal/IntLiteralClass.hpp"
 
 const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, PositionID id){
-
+	id.compilerError("GetMin inf has not been implemented");
+	exit(1);
 }
 const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, PositionID id){
-
+	id.compilerError("GetMin 2 has not been implemented");
+	exit(1);
 }
 #endif /* CLASSLIB_HPP_ */

@@ -88,6 +88,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				exit(1);
 			}
 			}
+			break;
 		}
 		case CLASS_INTLITERAL:{
 			const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
@@ -151,6 +152,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				exit(1);
 			}
 			}
+			break;
 		}
 		case CLASS_FLOATLITERAL:{
 			if(operation=="+") return cc;
@@ -181,7 +183,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		}
 		case CLASS_STR:
 		case CLASS_CHAR:{
-
+			break;
 		}
 		case CLASS_TUPLE:
 		case CLASS_NAMED_TUPLE:
@@ -194,6 +196,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		case CLASS_MAP:
 		case CLASS_AUTO:
 		case CLASS_SET:
+		case CLASS_MATHLITERAL:
 		case CLASS_CLASS:{
 			if(false) return cc;
 			else{
@@ -215,6 +218,8 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 
 inline const AbstractClass* getBinop(RData&, PositionID filePos, const Data* value, const Evaluatable* ev, const String operation){
 	const AbstractClass* cc = value->getReturnType();
+	filePos.compilerError("Binary operations not implemented yet "+cc->getName());
+	exit(1);
 }
 
 

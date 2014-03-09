@@ -100,7 +100,6 @@ public:
 		assert(returnType);
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(value->evaluate(r)->castToV(r, variable->getReturnType(), filePos));
 		LocationData* ld;
-		Value* Alloca;
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			GlobalVariable* GV;
@@ -110,7 +109,6 @@ public:
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
 			((Value*)GV)->setName(Twine(variable->getFullName()));
-			Alloca = GV;
 			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),variable->getReturnType()));
 		}
 		else{
@@ -124,7 +122,6 @@ public:
 				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),variable->getReturnType()));
 			} else
 				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),variable->getReturnType()));
-			Alloca = al;
 		}
 		//todo check lazy for globals
 		return ld;

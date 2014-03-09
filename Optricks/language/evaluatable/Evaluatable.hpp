@@ -14,6 +14,7 @@ public:
 	/**
 	* Creates LLVM IR for all pieces (either by lazy evaluation or immediately).
 	*/
+	virtual ~Evaluatable(){};
 	virtual const Data* evaluate(RData& r) const = 0;
 	virtual llvm::Value* evalV(RData& r,PositionID id) const;
 	virtual const AbstractClass* getReturnType() const =0;

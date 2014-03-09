@@ -19,12 +19,7 @@ public:
 			return 0;
 		}
 	inline const AbstractClass* getReturnType() const override final{
-#ifdef NDEBUG
-		cerr << "Cannot getReturnType of void" << type << endl << flush;
-		exit(1);
-#else
-		assert(0);
-#endif
+		PositionID(0,0,"#void").compilerError("Cannot get returntype of void data");
 		exit(1);
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
