@@ -53,6 +53,7 @@ public:
 		return false;
 	}
 	inline String getScopeName() const{
+		assert(this);
 		if(!surroundingScope) return name;
 		else{
 			String s = surroundingScope->getScopeName();
@@ -172,7 +173,9 @@ public:
 	const String name;
 	Scopable* const module;
 	PositionID filePos;
-	Resolvable(Scopable* m,const String n, PositionID id): name(n),module(m),filePos(id){};
+	Resolvable(Scopable* m,const String n, PositionID id): name(n),module(m),filePos(id){
+		assert(module);
+	};
 	const AbstractClass* getReturnType() const;
 	inline const Data* getObject() const;
 	void setObject(const Data* da) const;

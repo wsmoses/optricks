@@ -144,7 +144,7 @@ def complex conjugate(complex a){
 	a.imag*=-1;
 	return a;
 }
-
+/*
 def bool operator==(complex a, double b){
 	if(a.imag!=0) return false;
 	return a.real==b;
@@ -157,6 +157,7 @@ def bool operator==(complex a, complex b){
 	if(a.imag!=b.imag) return false;
 	return a.real==b.real;
 }
+*/
 def complex exp(complex c){
 	complex z = complex(cos(c.imag),sin(c.imag));
 	return exp(c.real)*z
@@ -164,11 +165,11 @@ def complex exp(complex c){
 def complex cos(complex z){
 	return .5*(exp(complex(0,1)*z)+exp(-complex(0,1)*z));
 }
-
+/*
 def int operator ** (int a, int b){
 	return pow(a, b);
 };
-
+*/
 def int pow(int a, int b){
 	if(b<0) return 0;
 	elif(b==0) return 1;
@@ -185,10 +186,11 @@ def int pow(int a, int b){
 def complex pow(complex a, int b){
 	return a**b;
 }
-
+/*
 def double operator ** (double a, double b){
 	return pow(a, b);
 }
+*/
 
 def double complex.mag2( ) {
 	return this.real*this.real+this.imag*this.imag;
@@ -208,11 +210,13 @@ def double complex.mag(){
 def double complex.angle(){
 	return atan2(this.imag,this.real);
 }
+/*
 def complex operator ** (complex a, double b){
 	double mag = a.mag()**b;
 	double angle = a.angle()*b;
 	return complex(cos(angle)*mag,sin(angle)*mag);
 }
+*/
 def double double.print(bool newline=true){
 	print(this,newline);
 	return this;

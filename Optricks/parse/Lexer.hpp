@@ -565,6 +565,8 @@ class Lexer{
 					if(methodName.size()==0) funcName = nullptr;
 					else if(methodName.size()==1){
 						if(isOperator){
+							pos().error("Operator overloading not implemented yet");
+							exit(1);
 							funcName = new E_VAR(Resolvable(nullptr,methodName[0].first,pos()));
 						} else {
 							data.mod->addFunction(pos(), methodName[0].first);

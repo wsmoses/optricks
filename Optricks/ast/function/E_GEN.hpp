@@ -82,18 +82,11 @@ public:
 		/*
 		if(registereD) return;
 		registereD = true;
-		if(returnClass) returnClass->registerFunctionPrototype(ra);
-		self->registerFunctionPrototype(ra);
 		for(auto& a:declaration) a->registerFunctionPrototype(ra);
-		if(thisPointer.name.length()>0){
-			const AbstractClass* sC = self->getSelfClass(filePos);
-			thisPointer.setObject(new ConstantData(nullptr,sC));
-			sC->addLocalFunction((String)innerName)->add((SingleFunction*)myFunction, filePos);
-		}
 		body->registerFunctionPrototype(ra);
-
+		self->pointer.addFunction();
 		std::vector<const AbstractClass*> cp;
-		const AbstractClass* ret = (returnClass)?(returnClass->getSelfClass(filePos)):(nullptr);
+		const AbstractClass* ret = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 		body->collectReturns(cp,myFunction->getSingleProto()->returnType);
 		if(!ret){
 			if(cp.size()==0){
