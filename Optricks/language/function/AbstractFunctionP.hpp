@@ -225,7 +225,7 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
 		assert(temp[i]);
 		assert(temp[i]->getType());
-		assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
+		//assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
 		temp[i]->dump();
 		cerr << endl << flush;
 	}
