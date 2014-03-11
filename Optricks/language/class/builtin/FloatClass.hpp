@@ -31,8 +31,28 @@ public:
 				/*t==PPC_FP128Ty*/Type::getPPC_FP128Ty(getGlobalContext())
 				)))))
 	),floatType(t){
-		LANG_M->addClass(PositionID(0,0,"#int"),this);
-	}
+		LANG_M->addClass(PositionID(0,0,"#float"),this);
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M->addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(& rdata.lmod, llvm::Intrinsic::Y, ArrayRef<Type*>(type))), PositionID(0,0,"#float"));
+		SINGLE_FUNC_DECLR("abs",fabs)
+		SINGLE_FUNC_DECLR("sqrt",sqrt)
+		SINGLE_FUNC_DECLR("sin",sin)
+		SINGLE_FUNC_DECLR("cos",cos)
+		SINGLE_FUNC_DECLR("exp",exp)
+		SINGLE_FUNC_DECLR("exp2",exp2)
+		SINGLE_FUNC_DECLR("log",log)
+		SINGLE_FUNC_DECLR("log2",log2)
+		SINGLE_FUNC_DECLR("log10",log10)
+		SINGLE_FUNC_DECLR("floor",floor)
+		SINGLE_FUNC_DECLR("ceil",ceil)
+		SINGLE_FUNC_DECLR("trunc",trunc)
+		SINGLE_FUNC_DECLR("rint",rint)
+
+		SINGLE_FUNC_DECLR("nearbyint",nearbyint)
+		SINGLE_FUNC_DECLR("round",round)
+
+
+#undef SINGLE_FUNC_DECLR
+}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);

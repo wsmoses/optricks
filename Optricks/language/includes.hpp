@@ -45,6 +45,7 @@
 #include <mpfr.h>
 #include <mpf2mpfr.h>
 
+#include "llvm/IR/Intrinsics.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Transforms/IPO.h"
