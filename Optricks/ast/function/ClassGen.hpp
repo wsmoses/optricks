@@ -8,7 +8,7 @@
 #ifndef CLASSGEN_HPP_
 #define CLASSGEN_HPP_
 
-
+/*
 #include "../../language/statement/Statement.hpp"
 #include "./E_FUNCTION.hpp"
 #include "../../language/class/ClassLib.hpp"
@@ -98,6 +98,6 @@ public:
 	};
 };
 
-
+*/
 
 #endif /* CLASSGEN_HPP_ */
