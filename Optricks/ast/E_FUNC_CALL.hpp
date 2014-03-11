@@ -46,7 +46,10 @@ class E_FUNC_CALL : public ErrorStatement{
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
 		const Data* evaluate(RData& a) const override{
-			return toCall->evaluate(a)->callFunction(a,filePos,vals);
+			const Data* tC = toCall->evaluate(a);
+			assert(tC);
+			assert(tC->type);
+			return tC->callFunction(a,filePos,vals);
 		}
 };
 
