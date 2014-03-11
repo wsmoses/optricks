@@ -134,11 +134,13 @@ struct RData{
 		BasicBlock* CreateBlock(String name, BasicBlock* p=NULL){
 			Function* F = builder.GetInsertBlock()->getParent();
 			BasicBlock* b = BasicBlock::Create(lmod.getContext(), Twine(name), F);
-			if(p!=NULL){
+			if(p!=nullptr){
 				auto found = pred.find(F);
 				assert(found!=pred.end() &&  "Compiler error -- could not find function in map");
 				assert(this);
 				assert(pred.size()>=0);
+				assert(found->second.size()>=0);
+				std::cout << found->second.size() << endl << flush;
 				found->second.insert(std::pair<BasicBlock*,BasicBlock* >(b,p));
 			}
 			return b;

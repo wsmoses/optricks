@@ -10,9 +10,9 @@
 class E_FUNC_CALL : public ErrorStatement{
 	public:
 		Statement* toCall;
-		const std::vector<Statement*> vals;
+		const std::vector<const Evaluatable*> vals;
 		virtual ~E_FUNC_CALL(){};
-		E_FUNC_CALL(PositionID a, Statement* t, const std::vector<Statement*>& val) : ErrorStatement(a),
+		E_FUNC_CALL(PositionID a, Statement* t, const std::vector<const Evaluatable*>& val) : ErrorStatement(a),
 				toCall(t), vals(val){
 		};
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
@@ -31,22 +31,22 @@ class E_FUNC_CALL : public ErrorStatement{
 		};
 		void registerClasses() const override final{
 			toCall->registerClasses();
-			for(auto &a : vals) a->registerClasses();
+			for(auto &a : vals) ((const Statement*)a)->registerClasses();
 		}
 		void registerFunctionPrototype(RData& r) const override final{
 			toCall->registerFunctionPrototype(r);
-			for(auto &a : vals) a->registerFunctionPrototype(r);
+			for(auto &a : vals) ((const Statement*)a)->registerFunctionPrototype(r);
 		}
 		void buildFunction(RData& r) const override final{
 			toCall->buildFunction(r);
-			for(auto &a : vals) a->buildFunction(r);
+			for(auto &a : vals) ((const Statement*)a)->buildFunction(r);
 		}
 		const AbstractClass* getReturnType() const override{
-			return toCall->getFunctionReturnType(filePos,*reinterpret_cast<const std::vector<const Evaluatable*>* >(&vals));
+			return toCall->getFunctionReturnType(filePos,vals);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
 		const Data* evaluate(RData& a) const override{
-			return toCall->evaluate(a)->callFunction(a,filePos,*reinterpret_cast<const std::vector<const Evaluatable*>* >(&vals));
+			return toCall->evaluate(a)->callFunction(a,filePos,vals);
 		}
 };
 

@@ -778,9 +778,14 @@ class Lexer{
 				Statement* e = getNextStatement(ParseData(data.endWith, data.mod, false,PARSE_EXPR));
 				Statement* ret;
 				if(e->getToken()==T_PARENS)
-					ret = new E_FUNC_CALL(pos(), exp, std::vector<Statement*>(1,
+					ret = new E_FUNC_CALL(pos(), exp, std::vector<const Evaluatable*>(1,
 							((E_PARENS*)e)->inner));
-				else ret = new E_FUNC_CALL(pos(), exp, ((E_TUPLE*)e)->values);
+				else{
+					auto V = ((E_TUPLE*)e)->values;
+					std::vector<const Evaluatable*> E;
+					for(auto& a: V) E.push_back(a);
+					ret = new E_FUNC_CALL(pos(), exp, E);
+				}
 
 				f->trim(data.endWith);
 
