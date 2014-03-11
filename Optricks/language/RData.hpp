@@ -137,6 +137,8 @@ struct RData{
 			if(p!=NULL){
 				auto found = pred.find(F);
 				assert(found!=pred.end() &&  "Compiler error -- could not find function in map");
+				assert(this);
+				assert(pred.size()>=0);
 				found->second.insert(std::pair<BasicBlock*,BasicBlock* >(b,p));
 			}
 			return b;
