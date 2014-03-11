@@ -13,6 +13,19 @@
 #include "../class/builtin/ReferenceClass.hpp"
 
 
+	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
+		assert(myFunc);
+		assert(myFunc->getReturnType());
+		id.warning("Test");
+		myFunc->dump();
+		cerr << endl << flush;
+		auto val = validatePrototypeNow(proto,r,id,args);
+		cerr << "Val"  << endl << flush;
+		auto cal = rdata.builder.CreateCall(myFunc,val);
+		cerr << "Done"  << endl << flush;
+		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;
+		else return new ConstantData(cal,proto->returnType);
+	}
 BuiltinInlineFunction::BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 SingleFunction(fp,getF(fp)),inlined(tmp){
 	BasicBlock *Parent = rdata.builder.GetInsertBlock();

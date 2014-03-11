@@ -92,11 +92,7 @@ private:
 public:
 	CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
 	}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
-		assert(myFunc);
-		assert(myFunc->getReturnType());
-		return new ConstantData(rdata.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args)),proto->returnType);
-	}
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final;
 };
 
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id);
