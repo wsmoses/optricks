@@ -212,7 +212,7 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		}
 		assert(temp[i]);
 		assert(temp[i]->getType());
-		assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
+		//assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
 		temp[i]->dump();
 		cerr << endl << flush;
 	}
