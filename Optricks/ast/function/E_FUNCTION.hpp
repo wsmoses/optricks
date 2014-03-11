@@ -19,6 +19,7 @@ class E_FUNCTION:public ErrorStatement{
 		const AbstractFunction* evaluate(RData& a) const override{
 			registerFunctionPrototype(a);
 			assert(myFunction);
+			assert(myFunction->getReturnType());
 			return myFunction;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
