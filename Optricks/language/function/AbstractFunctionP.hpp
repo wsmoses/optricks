@@ -20,7 +20,11 @@
 		myFunc->dump();
 		cerr << endl << flush;
 		auto val = validatePrototypeNow(proto,r,id,args);
-		cerr << "Val"  << endl << flush;
+		assert(val.size()==myFunc->getFunctionType()->getNumParams());
+		for(unsigned i = 0; i<val.size(); i++){
+			assert(val[i]->getType()==myFunc->getFunctionType()->getParamType(i));
+		}
+		cerr << "Val" << val.size()  << endl << flush;
 		auto cal = rdata.builder.CreateCall(myFunc,val);
 		cerr << "Done"  << endl << flush;
 		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;

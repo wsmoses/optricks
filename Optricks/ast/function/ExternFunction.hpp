@@ -48,13 +48,13 @@ public:
 		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
 		String nam = self->getShortName();
 		llvm::Function *F = a.CreateFunctionD(nam,FT, EXTERN_FUNC);
-		if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
+		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 		else if(nam=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 		else if(nam=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
 		else if(nam=="printby") a.exec->addGlobalMapping(F, (void*)(&printby));
 		else if(nam=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 		else if(nam=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
-		else
+		else*/
 		if(F->getName().str()!=nam){
 			error("Cannot extern function due to name in use "+nam+" was replaced with "+F->getName().str());
 		}
