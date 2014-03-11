@@ -108,7 +108,7 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,Posit
 		}
 		else
 			arg2.push_back(deLazy(r,id,args[i],t));
-		assert(arg2.back() != NULL);
+		assert(arg2.back());
 	}
 	for(unsigned int i = as; i<ds; i++){
 		if(proto->declarations[i].defaultValue==nullptr){
@@ -212,6 +212,9 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		}
 		assert(temp[i]);
 		assert(temp[i]->getType());
+		assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
+		temp[i]->dump();
+		cerr << endl << flush;
 	}
 	for(unsigned int i = as; i<ds; i++){
 		if(proto->declarations[i].defaultValue==nullptr){
@@ -222,6 +225,9 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
 		assert(temp[i]);
 		assert(temp[i]->getType());
+		assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
+		temp[i]->dump();
+		cerr << endl << flush;
 	}
 	return ArrayRef<Value*>(temp, ds);
 }
