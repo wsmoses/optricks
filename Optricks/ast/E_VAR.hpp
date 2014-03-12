@@ -31,7 +31,9 @@ class E_VAR : public VariableReference {
 			return pointer;
 		}
 		const Data* evaluate(RData& r) const override final{
-			return pointer.getObject();
+			auto tmp =  pointer.getObject();
+			assert(tmp->getReturnType());
+			return tmp;
 		}
 		void registerClasses() const override final{
 			//TODO force var register classes

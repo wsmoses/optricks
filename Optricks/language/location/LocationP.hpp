@@ -10,9 +10,16 @@
 #include "./Location.hpp"
 
 Value* StandardLocation::getValue(RData& r, PositionID id){
-	return r.builder.CreateLoad(position);
+	assert(position);
+	assert(position->getType()->isPointerTy());
+	auto V = r.builder.CreateLoad(position);
+	assert(V);
+	assert(V->getType());
+	return V;
 }
 void StandardLocation:: setValue(Value* v, RData& r){
+	assert(position);
+	assert(position->getType()->isPointerTy());
 	r.builder.CreateStore(v, position);
 }
 
@@ -27,9 +34,16 @@ LazyLocation::LazyLocation(RData& r,Value* p, BasicBlock* b,Value* d,bool u)
 }
 
 Value* LazyLocation::getValue(RData& r, PositionID id){
-	return r.builder.CreateLoad(position);
+	assert(position);
+	assert(position->getType()->isPointerTy());
+	auto V = r.builder.CreateLoad(position);
+	assert(V);
+	assert(V->getType());
+	return V;
 }
 void LazyLocation:: setValue(Value* v, RData& r){
+	assert(position);
+	assert(position->getType()->isPointerTy());
 	r.builder.CreateStore(v, position);
 }
 
