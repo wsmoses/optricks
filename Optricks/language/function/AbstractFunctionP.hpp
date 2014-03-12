@@ -16,17 +16,7 @@
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
-		id.warning("Test");
-		myFunc->dump();
-		cerr << endl << flush;
-		auto val = validatePrototypeNow(proto,r,id,args);
-		assert(val.size()==myFunc->getFunctionType()->getNumParams());
-		for(unsigned i = 0; i<val.size(); i++){
-			assert(val[i]->getType()==myFunc->getFunctionType()->getParamType(i));
-		}
-		cerr << "Val" << val.size()  << endl << flush;
-		auto cal = rdata.builder.CreateCall(myFunc,val);
-		cerr << "Done"  << endl << flush;
+		auto cal = rdata.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
 		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;
 		else return new ConstantData(cal,proto->returnType);
 	}
@@ -60,10 +50,10 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	auto tmp=fp->declarations.size();
-	Type* ar[tmp];
+	llvm::SmallVector<Type*,0> ar(tmp);
 	for(unsigned i=0; i<tmp; i++)
 		ar[i] = fp->declarations[i].declarationType->type;
-	llvm::FunctionType* FT = FunctionType::get(fp->returnType->type, ArrayRef<Type*>(ar, tmp), false);
+	llvm::FunctionType* FT = FunctionType::get(fp->returnType->type, ar, false);
 	return rdata.CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args){
@@ -192,11 +182,11 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const 
 		return val->evaluate(r)->castToV(r, t, id);
 	}
 }
-ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
+llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
-	Value* temp[ds];
+	llvm::SmallVector<Value*,0> temp(as);
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
@@ -212,9 +202,6 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		}
 		assert(temp[i]);
 		assert(temp[i]->getType());
-		//assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
-		temp[i]->dump();
-		cerr << endl << flush;
 	}
 	for(unsigned int i = as; i<ds; i++){
 		if(proto->declarations[i].defaultValue==nullptr){
@@ -225,11 +212,8 @@ ArrayRef<Value*> SingleFunction::validatePrototypeNow(FunctionProto* proto, RDat
 		temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
 		assert(temp[i]);
 		assert(temp[i]->getType());
-		//assert(temp[i]->getType()==myFunc->getFunctionType()->getFunctionParamType(i));
-		temp[i]->dump();
-		cerr << endl << flush;
 	}
-	return ArrayRef<Value*>(temp, ds);
+	return temp;
 }
 Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const{
 	const auto as = args.size();
@@ -303,11 +287,10 @@ Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, Posit
 }
 
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id){
-	std::vector<Type*> args;
-
-	for(auto& a: fp->declarations) args.push_back(a.declarationType->type);
+	llvm::SmallVector<Type*,0> args(fp->declarations.size());
+	for(unsigned i = 0; i<args.size(); i++) args[i] = fp->declarations[i].declarationType->type;
 	auto gt = fp->getGeneratorType()->type;
-	FunctionType *FT = FunctionType::get(gt, ArrayRef<Type*>(args), false);
+	FunctionType *FT = FunctionType::get(gt, args, false);
 	Function* F = r.CreateFunctionD(fp->name,FT,LOCAL_FUNC);
 	BasicBlock *Parent = r.builder.GetInsertBlock();
 	BasicBlock *BB = BasicBlock::Create(r.lmod.getContext(), "entry", F);
@@ -318,7 +301,7 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	unsigned Idx = 0;
 	for (Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
 			++AI, ++Idx)
-		V = r.builder.CreateInsertValue(V, (Value*)AI, ArrayRef<unsigned int>({Idx}));
+		V = r.builder.CreateInsertValue(V, (Value*)AI, llvm::SmallVector<unsigned int,1>({Idx}));
 	r.builder.CreateRet(V);
 	if(Parent) r.builder.SetInsertPoint(Parent);
 	return F;

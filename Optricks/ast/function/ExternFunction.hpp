@@ -32,20 +32,21 @@ public:
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
-		std::vector<Type*> args;
+		llvm:SmallVector<Type*,0> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
-		for(auto & b: declaration){
+		for(unsigned i=0; i<declaration.size(); i++){
+			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
 			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 			Type* cl = ac->type;
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
-			args.push_back(cl);
+			args[i] = cl;
 		}
 		const AbstractClass* returnType = returnV->getSelfClass(filePos);
 		assert(returnType);
 		llvm::Type* r = returnType->type;
-		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
+		FunctionType *FT = FunctionType::get(r, args, false);
 		String nam = self->getShortName();
 		llvm::Function *F = a.CreateFunctionD(nam,FT, EXTERN_FUNC);
 		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));

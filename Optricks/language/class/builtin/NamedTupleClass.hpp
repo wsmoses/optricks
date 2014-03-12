@@ -25,12 +25,12 @@ public:
 	static inline Type* getTupleType(const std::vector<const AbstractClass*>& args,const std::vector<String>& b){
 		const auto len = args.size();
 		if(len==1) return args[0]->type;
-		Type* ar[len];
+		llvm::SmallVector<Type*,2> ar(len);
 		for(unsigned int i=0; i<len; i++){
 			assert(args[i]->classType!=CLASS_LAZY);
 			ar[i]=args[i]->type;
 		}
-		return StructType::create(ArrayRef<Type*>(ar, len),StringRef(str(args,b)),false);
+		return StructType::create(ar,StringRef(str(args,b)),false);
 	}
 	const std::vector<String> innerNames;
 private:

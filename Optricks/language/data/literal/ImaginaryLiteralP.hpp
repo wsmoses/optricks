@@ -42,8 +42,10 @@ const Data* ImaginaryLiteral::castTo(RData& r, const AbstractClass* const right,
 	case CLASS_INT:{
 		Value* nimag = imag->castToV(r, cc->innerClass, id);
 		if(Constant* d = dyn_cast<Constant>(nimag)){
-			Constant* a[2] = { cc->innerClass->getZero(id), d };
-			return new ConstantData(ConstantVector::get(ArrayRef<Constant*>(a)),cc);
+			SmallVector<Constant*,2> ar(2);
+			ar[0] = cc->innerClass->getZero(id);
+			ar[1] = d;
+			return new ConstantData(ConstantVector::get(ar),cc);
 		}
 		else{
 			return new ConstantData(r.builder.CreateInsertElement(ConstantVector::getSplat(2, cc->innerClass->getZero(id))
@@ -67,8 +69,10 @@ Value* ImaginaryLiteral::castToV(RData& r, const AbstractClass* const right, con
 	case CLASS_INT:{
 		Value* nimag = imag->castToV(r, cc->innerClass, id);
 		if(Constant* d = dyn_cast<Constant>(nimag)){
-			Constant* a[2] = { cc->innerClass->getZero(id), d };
-			return ConstantVector::get(ArrayRef<Constant*>(a));
+			SmallVector<Constant*,2> ar(2);
+			ar[0] = cc->innerClass->getZero(id);
+			ar[1] = d;
+			return ConstantVector::get(ar);
 		}
 		else{
 			Constant* cv = ConstantVector::getSplat(2, cc->innerClass->getZero(id));

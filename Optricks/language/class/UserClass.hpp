@@ -83,20 +83,23 @@ public:
 		StructType* structType = (layout==POINTER_LAYOUT)?(
 			(StructType*)(((PointerType*)type)->getArrayElementType())):
 		((StructType*)type);
-		std::vector<Type*> types;
+		int counter = start+localVars.size();
+		llvm::SmallVector<Type*,0> types(counter);
+		counter--;
 		UserClass* tmp = this;
 		do{
 			const auto at=tmp->localVars.size();
 			if(at >0){
 			for(unsigned int i=at-1; ; i--){
-				types.push_back(tmp->localVars[i]->type);
+				assert(counter>0);
+				types[counter] = tmp->localVars[i]->type;
+				counter--;
 				if(i==0) break;
 			}
 			}
 			tmp = (UserClass*) tmp->superClass;
 		}while(tmp);
-		reverse(types.begin(), types.end());
-		structType->setBody(ArrayRef<Type*>(types),false);
+		structType->setBody(types,false);
 	}
 	void addLocalVariable(PositionID id, String s, const AbstractClass* const ac){
 		assert(ac);

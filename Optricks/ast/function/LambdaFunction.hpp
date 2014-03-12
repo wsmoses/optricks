@@ -56,9 +56,10 @@ public:
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
-		std::vector<Type*> args;
+		llvm::SmallVector<Type*,0> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
-		for(auto & b: declaration){
+		for(unsigned i=0; i<declaration.size(); i++){
+			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
 			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
@@ -73,9 +74,9 @@ public:
 		}
 		assert(returnType);
 		llvm::Type* r = returnType->type;
-		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
+		FunctionType *FT = FunctionType::get(r, args, false);
 		String nam = "!lambda";
-		llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
+		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto("lambda", ad, returnType), F);
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 		body->registerFunctionPrototype(a);

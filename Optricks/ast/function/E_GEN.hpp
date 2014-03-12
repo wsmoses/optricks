@@ -53,9 +53,9 @@ public:
 		}
 		assert(returnType);
 		llvm::Type* r = returnType->type;
-		FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
+		FunctionType *FT = FunctionType::get(r, args, false);
 		String nam = "!"+((self)?(self->getShortName()):("anon"));
-		llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
+		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
 		self->getMetadata().addFunction(myFunction);
 

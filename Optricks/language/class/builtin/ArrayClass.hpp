@@ -27,13 +27,12 @@ public:
 			ArrayType* at = ArrayType::get((llvm::Type*) ( d->type) ,l);
 			return at;
 		} else {
-			Type* ar[4] = {
-					/* Counts (for garbage collection) */ IntegerType::get(getGlobalContext(),32),
-					/* Length of array */ IntegerType::get(getGlobalContext(),64),
-					/* Amount of memory allocated */ IntegerType::get(getGlobalContext(),64),
-					/* Actual data */ PointerType::getUnqual(d->type)
-				};
-		return PointerType::getUnqual(StructType::create(ArrayRef<Type*>(ar, l),StringRef(str(d,l)),false));
+			llvm::SmallVector<Type*,4> ar(4);
+			ar[0] = /* Counts (for garbage collection) */ IntegerType::get(getGlobalContext(),32);
+			ar[1] = /* Length of array */ IntegerType::get(getGlobalContext(),64);
+			ar[2] = /* Amount of memory allocated */ IntegerType::get(getGlobalContext(),64);
+			ar[3] = /* Actual data */ PointerType::getUnqual(d->type);
+			return PointerType::getUnqual(StructType::create(ar,StringRef(str(d,l)),false));
 		}
 	}
 	const AbstractClass* inner;

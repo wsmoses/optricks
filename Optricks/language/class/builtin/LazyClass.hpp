@@ -14,7 +14,7 @@ class LazyClass: public AbstractClass{
 public:
 	const AbstractClass* const innerType;
 	inline llvm::Type* getLazyType(const AbstractClass* const& a){
-		return FunctionType::get(a->type, ArrayRef<Type*>(),false);
+		return FunctionType::get(a->type, llvm::SmallVector<Type*,0>(0),false);
 	}
 protected:
 	LazyClass(const AbstractClass* const in):

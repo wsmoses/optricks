@@ -26,7 +26,7 @@ class ClassFunction : public E_FUNCTION{
 		void registerFunctionPrototype(RData& a) const override final{
 
 			BasicBlock *Parent = a.builder.GetInsertBlock();
-			std::vector<Type*> args;
+			llvm::SmallVector<Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 			std::vector<AbstractDeclaration> ad;
 			AbstractClass* upperClass = surroundingClass->getSelfClass(filePos);
 			if(!staticF){
@@ -35,13 +35,14 @@ class ClassFunction : public E_FUNCTION{
 					tA = ReferenceClass::get(upperClass);
 				else tA = upperClass;
 				ad.push_back(AbstractDeclaration(tA, "this"));
-				args.push_back(tA->type);
+				args[0] = tA->type;
 			}
-			for(auto & b: declaration){
+			for(unsigned i=0; i<declaration.size(); i++){
+				const auto& b = declaration[i];
 				const AbstractClass* ac = b->getClass(filePos);
 				if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
-				args.push_back(ac->type);
+				args[i+(staticF)?0:1] = ac->type;
 			}
 			const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
@@ -58,9 +59,9 @@ class ClassFunction : public E_FUNCTION{
 			}
 			assert(returnType);
 			llvm::Type* r = returnType->type;
-			FunctionType *FT = FunctionType::get(r, ArrayRef<Type*>(args), false);
+			FunctionType *FT = FunctionType::get(r, args, false);
 			String nam = "!"+upperClass->getName()+"."+name;
-			llvm::Function *F = a.CreateFunctionD(nam,FT, LOCAL_FUNC);
+			llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 			myFunction = new CompiledFunction(new FunctionProto(upperClass->getName()+"."+name, ad, returnType), F);
 
 			if(staticF){

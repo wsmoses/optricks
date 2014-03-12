@@ -32,7 +32,7 @@ public:
 				)))))
 	),floatType(t){
 		LANG_M->addClass(PositionID(0,0,"#float"),this);
-#define SINGLE_FUNC_DECLR(X,Y) LANG_M->addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(& rdata.lmod, llvm::Intrinsic::Y, ArrayRef<Type*>(type))), PositionID(0,0,"#float"));
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M->addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(& rdata.lmod, llvm::Intrinsic::Y, SmallVector<Type*,1>(1,type))), PositionID(0,0,"#float"));
 		SINGLE_FUNC_DECLR("abs",fabs)
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
 		SINGLE_FUNC_DECLR("sin",sin)

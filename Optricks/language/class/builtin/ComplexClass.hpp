@@ -27,8 +27,10 @@ public:
 	inline Constant* getValue(PositionID id, mpfr_t const value) const{
 		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());
 		const FloatClass* in = (const FloatClass*)innerClass;
-		Constant* c[2] = { in->getValue(id,value), in->getZero(id)};
-		return ConstantVector::get(ArrayRef<Constant*>(c));
+		SmallVector<Constant*,2> ar(2);
+		ar[0] = in->getValue(id,value);
+		ar[1] = innerClass->getZero(id);
+		return ConstantVector::get(ar);
 	}
 	bool hasLocalData(String s) const override final{
 		return s=="real" || s=="imag";
@@ -80,16 +82,22 @@ public:
 		return ConstantVector::getSplat(2, innerClass->getZero(id,negative));
 	}
 	inline Constant* getOne(PositionID id) const{
-		Constant* c[2] = { innerClass->getOne(id), innerClass->getZero(id)};
-		return ConstantVector::get(ArrayRef<Constant*>(c));
+		SmallVector<Constant*,2> ar(2);
+		ar[0] = innerClass->getOne(id);
+		ar[1] = innerClass->getZero(id);
+		return ConstantVector::get(ar);
 	}
 	inline Constant* getI(PositionID id) const{
-		Constant* c[2] = { innerClass->getZero(id), innerClass->getOne(id)};
-		return ConstantVector::get(ArrayRef<Constant*>(c));
+		SmallVector<Constant*,2> ar(2);
+		ar[0] = innerClass->getZero(id);
+		ar[1] = innerClass->getOne(id);
+		return ConstantVector::get(ar);
 	}
 	inline Constant* getValue(PositionID id, mpz_t const value) const{
-		Constant* c[2] = { innerClass->getValue(id, value), innerClass->getZero(id)};
-		return ConstantVector::get(ArrayRef<Constant*>(c));
+		SmallVector<Constant*,2> ar(2);
+		ar[0] = innerClass->getValue(id,value);
+		ar[1] = innerClass->getZero(id);
+		return ConstantVector::get(ar);
 	}
 };
 

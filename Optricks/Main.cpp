@@ -43,7 +43,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		//n->checkTypes();
 		type = VOIDTYPE;
 	}
-	FunctionType *FT = FunctionType::get(type, ArrayRef<Type*>(std::vector<Type*>()), false);
+	FunctionType *FT = FunctionType::get(type, SmallVector<Type*,0>(0), false);
 	Function *F = rdata.CreateFunction("",FT,EXTERN_FUNC);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	rdata.builder.SetInsertPoint(BB);

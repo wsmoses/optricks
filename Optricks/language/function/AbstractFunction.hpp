@@ -83,7 +83,7 @@ public:
 	static const Evaluatable* deLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
 	static Value* fixLazy(RData& r, PositionID id, Evaluatable* val, const AbstractClass* const t) ;
-	static ArrayRef<Value*> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
+	static llvm::SmallVector<Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
 	Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const;
 };
 
@@ -154,7 +154,7 @@ public:
 	}
 	const AbstractClass* getReturnType() const override final{
 		if(innerFuncs.size()==1) return (AbstractClass*) innerFuncs[0]->proto->getFunctionClass();
-		cerr << "Cannot deduce return-type of overloaded function "+myName << endl << flush;
+		PositionID(0,0,"#overload").compilerError("Cannot deduce return-type of overloaded function "+myName);
 		exit(1);
 	}
 
@@ -180,27 +180,5 @@ public:
 			exit(1);
 		}
 	}
-protected:
-
-	//inline ArrayRef<Value*> validatePrototype(RData& r,PositionID id,const std::vector<Data*>& args) const{
-	/*const auto as = args.size();
-		const auto ds = proto->declarations.size();
-		if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
-		Value* temp[ds];
-
-		for(unsigned int i = 0; i<as; i++){
-			AbstractClass* t = proto->declarations[i]->classV->getSelfClass();
-			if(args[i]->type==R_VOID)
-				temp[i] = proto->declarations[i]->value->evalCastV(r, t);
-			else
-				temp[i] = args[i]->castToV(r, t, id);
-			assert(temp[i] != NULL);
-		}
-		for(unsigned int i = as; i<ds; i++){
-			ClassProto* t = proto->declarations[i]->classV->getSelfClass();
-			temp[i] = proto->declarations[i]->value->evalCastV(r, t);
-		}
-		return ArrayRef<Value*>(temp);*/
-	//}
 };
 #endif /* ABSTRACTFUNCTION_HPP_ */

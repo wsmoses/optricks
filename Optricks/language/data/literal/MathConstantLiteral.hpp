@@ -55,7 +55,7 @@ public:
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
 			}
-			return new ComplexLiteral(ConstantVector::get(ArrayRef<Constant*>({cfp,fc->getZero()})),cc);
+			return new ConstantData(ConstantVector::get(llvm::SmallVector<Constant*,2>({cfp,fc->getZero(id)})),cc);
 		}
 		default:
 			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());
@@ -88,7 +88,7 @@ public:
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
 			}
-			return ConstantVector::get(ArrayRef<Constant*>({cfp,fc->getZero()}));
+			return ConstantVector::get(llvm::SmallVector<Constant*,2>({cfp,fc->getZero(id)}));
 		}
 		default:
 			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());

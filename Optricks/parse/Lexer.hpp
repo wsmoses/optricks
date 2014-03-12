@@ -126,7 +126,7 @@ class Lexer{
 			}
 			//for(auto& n: stats) n->checkTypes();
 
-			FunctionType *FT = FunctionType::get(VOIDTYPE, ArrayRef<Type*>(std::vector<Type*>()), false);
+			FunctionType *FT = FunctionType::get(VOIDTYPE, SmallVector<Type*,0>(0), false);
 			Function *F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);

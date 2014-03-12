@@ -23,13 +23,13 @@ public:
 		const auto len = args.size();
 		if(len==0) return VOIDTYPE;
 		if(len==1) return args[0].first->type;
-		Type* ar[len];
+		llvm::SmallVector<Type*,0> ar(len);
 		for(unsigned int i=0; i<len; i++){
 			assert(args[i]->classType!=CLASS_LAZY);
 			assert(args[i]->classType!=CLASS_REF);
 			ar[i]=args[i].first->type;
 		}
-		return StructType::create(ArrayRef<Type*>(ar, len),StringRef(nam),false);
+		return StructType::create(ar,StringRef(nam),false);
 	}
 	const std::vector<std::pair<const AbstractClass*,String>> innerTypes;
 protected:

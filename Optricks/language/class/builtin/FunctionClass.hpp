@@ -20,9 +20,9 @@ public:
 	}
 	static inline Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
 				const auto len = args.size();
-				Type* ar[len];
+				llvm:SmallVector<Type*,0> ar(len);
 				for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
-				return FunctionType::get(r1->type,ArrayRef<Type*>(ar, len),isVarArg);
+				return FunctionType::get(r1->type,ar,isVarArg);
 	}
 	const AbstractClass* const returnType;
 	std::vector<const AbstractClass*> argumentTypes;
