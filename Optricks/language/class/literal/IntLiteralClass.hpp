@@ -31,7 +31,8 @@ public:
 	mutable mpz_t value;
 protected:
 	IntLiteralClass(const mpz_t& val):
-		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,nullptr),value(val){
+		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,nullptr){
+		mpz_init_set(value, val);
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
