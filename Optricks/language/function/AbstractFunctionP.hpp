@@ -186,7 +186,7 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
-	llvm::SmallVector<Value*,0> temp(as);
+	llvm::SmallVector<Value*,0> temp(ds);
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
