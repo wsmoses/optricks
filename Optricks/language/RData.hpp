@@ -140,7 +140,6 @@ struct RData{
 				assert(this);
 				assert(pred.size()>=0);
 				assert(found->second.size()>=0);
-				std::cout << found->second.size() << endl << flush;
 				found->second.insert(std::pair<BasicBlock*,BasicBlock* >(b,p));
 			}
 			return b;

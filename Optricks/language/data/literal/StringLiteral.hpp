@@ -15,7 +15,7 @@ public:
 	StringLiteral(const String val):Literal(R_STR),value(val){}
 	//TODO
 	const AbstractClass* getReturnType() const override final{
-		cerr << "stringLiteral not implemented yet" << endl << flush;
+		PositionID(0,0,"#stringLiteral").compilerError("stringLiteral not implemented yet");
 		exit(1);
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
@@ -40,17 +40,17 @@ public:
 	}
 	//TODO
 	Constant* getValue(RData& r, PositionID id) const override final{
-		cerr << "stringLiteral not implemented yet" << endl << flush;
+		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}
 	//TODO allow cast to string, char, c_string (c_char ?)
 	const StringLiteral* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		cerr << "stringLiteral not implemented yet" << endl << flush;
+		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}
 	//TODO
 	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		cerr << "stringLiteral not implemented yet" << endl << flush;
+		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}
 };

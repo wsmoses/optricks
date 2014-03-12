@@ -73,12 +73,6 @@ public:
 		}
 		return new ConstantData(v, tc);
 	}
-	/*inline LocationData* toLocation(RData& r) const override final{
-		//TODO complete ConstantData toLocation
-		assert(0);
-		cerr << "TupleData::toLocation has yet to be implemented" << endl << flush;
-		exit(1);
-	}*/
 	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;

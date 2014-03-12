@@ -34,30 +34,6 @@ public:
 		 * Returns the class that this represents, if it represents a class
 		 */
 		virtual const AbstractClass* getMyClass(RData& r, PositionID id)const =0;
-		//virtual AbstractFunction* getMyFunction(PositionID id) const=0;
-		/*FunctionProto* getFunctionType() const{
-			if(type!=R_FUNC && type!=R_GEN) PositionID(0,0,"<start.gft>").error("Could not gtf "+str<DataType>(type));
-			assert(info.funcType !=NULL);
-			return info.funcType;
-		}
-		E_GEN* getMyGenerator() const{
-			if(type!=R_GEN){
-				cerr << "Cannot getGenerator of non-gen " << type << endl << flush;
-				exit(1);
-			}
-			assert(data.pointer);
-			return data.generator;
-		}
-		Function* getMyFunction() const{
-			if(type!=R_FUNC){
-				cerr << "Cannot getFunction of non-function " << type << endl << flush;
-				exit(1);
-			}
-			assert(data.pointer!=NULL);
-			return data.function;
-		}
-		AbstractClass* getMyClass() const;
-		*/
 };
 
 #endif /* DATA_HPP_ */

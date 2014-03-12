@@ -50,14 +50,9 @@ public:
 		return toCast ==this;
 	}
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
-
-
 		id.error("Cannot get local of reference");
 		exit(1);
 		/////todo
-		//cerr << "todo cast of lazy" << endl << flush;
-		//assert(0);
-		//exit(1);
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{

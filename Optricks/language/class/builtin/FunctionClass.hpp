@@ -20,7 +20,7 @@ public:
 	}
 	static inline Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
 				const auto len = args.size();
-				llvm:SmallVector<Type*,0> ar(len);
+				llvm::SmallVector<Type*,0> ar(len);
 				for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
 				return FunctionType::get(r1->type,ar,isVarArg);
 	}
@@ -36,12 +36,6 @@ public:
 		case CLASS_CPOINTER: return true;
 		case CLASS_FUNC: {
 			return noopCast(toCast);
-	/*
-			if(toCast==this) return true;
-			//TODO
-			assert(0 & "Function class autocasting has yet to be determined in the Optricks spec");
-			cerr << "Function class autocasting has yet to be determined in the Optricks spec" << endl << flush;
-			exit(1);*/
 		}
 		default:
 			return false;

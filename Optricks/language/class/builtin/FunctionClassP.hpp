@@ -18,12 +18,6 @@ inline Value* FunctionClass::castTo(const AbstractClass* const toCast, RData& r,
 				id.error("Cannot cast value of function type "+getName()+" to "+toCast->getName());
 				exit(1);
 			}
-	/*
-			if(toCast==this) return true;
-			//TODO
-			assert(0 & "Function class autocasting has yet to be determined in the Optricks spec");
-			cerr << "Function class autocasting has yet to be determined in the Optricks spec" << endl << flush;
-			exit(1);*/
 		}
 		default:
 			id.error("Cannot cast value of type "+getName()+" to "+toCast->getName());

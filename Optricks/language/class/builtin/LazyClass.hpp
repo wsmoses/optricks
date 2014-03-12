@@ -54,8 +54,7 @@ public:
 	}
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 		///todo
-		cerr << "todo cast of lazy" << endl << flush;
-		assert(0);
+		id.compilerError("todo cast of lazy");
 		exit(1);
 	}
 

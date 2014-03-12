@@ -121,10 +121,8 @@ class Lexer{
 				n->registerFunctionPrototype(rdata);
 			}
 			for(auto& n: stats){
-				//cerr << n << endl << flush;
 				n->buildFunction(rdata);
 			}
-			//for(auto& n: stats) n->checkTypes();
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, SmallVector<Type*,0>(0), false);
 			Function *F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
@@ -762,7 +760,7 @@ class Lexer{
 				auto mark = f->getMarker();
 				if(f->read()=='=' && f->peek()!='='){
 					//TODO ternary operator #[#] = #
-					cerr << "TODO ternary operator #[#] = #" << endl << flush;
+					pos().compilerError("TODO ternary operator #[#] = #");
 					exit(1);
 				} else f->undoMarker(mark);
 				bool semi  = false;
@@ -802,8 +800,8 @@ class Lexer{
 			else if(tchar=='{'){
 				f->read();
 				f->trim(data.endWith);
-				cerr << " '{' operatorCheck not implemented yet" << endl << flush;
-				exit(0);
+				pos().compilerError(" '{' operatorCheck not implemented yet");
+				exit(1);
 			}
 			else if (tchar=='?'){
 				f->read();

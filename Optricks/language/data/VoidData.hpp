@@ -23,13 +23,8 @@ public:
 		exit(1);
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		PositionID(0,0,"#void").compilerError("Cannot get castTo of void data");
 
-#ifdef NDEBUG
-		cerr << "Cannot castTo void" << type << endl << flush;
-		exit(1);
-#else
-		assert(0);
-#endif
 		exit(1);
 	}
 	const Data* toValue(RData& r, PositionID id) const override final{
