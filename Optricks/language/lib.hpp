@@ -64,8 +64,9 @@ class PositionID{
 		}
 		void compilerError(String s, bool end=true) const __attribute__ ((noreturn)){
 			#ifndef NDEBUG
-				throw ("Compiler Error: "+s + " at " + fileName + ":" + str(lineN) + ":" + str(charN));
+				cerr <<  "Compiler Error: " << s <<  " at " <<  fileName <<  ":" << lineN << ":" << charN;
 				assert(0);
+				exit(1);
 			#else
 				cerr << s << " at " << fileName << ":" << lineN << ":" << charN << endl << flush;
 				exit(1);

@@ -53,7 +53,6 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				return new ConstantData(r.builder.CreateTrunc(M, type), this);
 			}
 		} else if(V->classType==CLASS_INTLITERAL){
-			Value* M = d->getValue(r, filePos);
 			const IntClass* T = (const IntClass*)this;
 			const IntLiteralClass* I = (const IntLiteralClass*)V;
 			return new ConstantData(T->getValue(filePos, I->value),this);
