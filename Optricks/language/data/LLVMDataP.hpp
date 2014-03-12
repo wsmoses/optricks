@@ -46,7 +46,7 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
 			auto t = c->getLimitedValue();
 			AbstractClass* a= (AbstractClass*)(  ((size_t)t)  );
-			return a->constructors.callFunction(r,id,args);
+			return a->callFunction(r,id,args);
 		} else{
 			id.error("Cannot use non-constant class type");
 			exit(1);

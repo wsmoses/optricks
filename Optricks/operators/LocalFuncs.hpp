@@ -15,7 +15,7 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 	exit(1);
 }
 
-const Data* getLocalFunction(RData&, PositionID id, String s, const Data* inst, const std::vector<const Evaluatable*>& v){
+const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst, const std::vector<const Evaluatable*>& v){
 	const AbstractClass* cc = inst->getReturnType();
 	id.compilerError("Local functions not implemented yet  "+cc->getName());
 	exit(1);

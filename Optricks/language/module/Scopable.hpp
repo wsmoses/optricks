@@ -125,7 +125,7 @@ public:
 	}
 	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const;
-	inline std::pair<SingleFunction*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
+	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 
 	const Data* getVariable(PositionID id, const String name) const{
 		auto f = find(id,name);
@@ -187,7 +187,7 @@ public:
 	inline AbstractClass* getClass() const;
 	const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
 	const AbstractClass* getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const;
-	std::pair<SingleFunction*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;
+	std::pair<const Data*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;
 	/*inline void addLocalFunction(RData& r, PositionID id, DATA d){
 			module->addLocalFunction(id,name).add(d, r, id);
 		}

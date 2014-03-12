@@ -21,6 +21,8 @@ private:
 	unsigned int start;
 	bool final;
 public:
+	mutable OverloadedFunction constructors;
+	friend AbstractClass;
 	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false);
 	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
 		auto find = localFunctions.find(s);

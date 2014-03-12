@@ -21,7 +21,6 @@ class AbstractClass: public Literal{
 public:
 	const Scopable* const myScope;
 	mutable Scopable staticVariables;
-	mutable OverloadedFunction constructors;
 	virtual ~AbstractClass(){};
 private:
 	const String name;
@@ -122,14 +121,11 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		return this;
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-		return constructors.callFunction(r,id,args);
-	}
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final;
 	inline AbstractClass(const Scopable* const sc, const String nam, const AbstractClass* const supa, LayoutType const t, ClassType const ct, bool const fina, llvm::Type* const tp=NULL)
 	:
 		Literal(R_CLASS),myScope(sc),
 		staticVariables((supa==nullptr)?nullptr:(&(supa->staticVariables))),
-		constructors(nam,nullptr),
 		name(nam),
 		superClass(supa),
 		layout(t),

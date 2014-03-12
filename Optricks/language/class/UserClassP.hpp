@@ -19,7 +19,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 					(llvm::Type*)StructType::create(getGlobalContext(), StringRef(nam))
 			)
 			),
-					start(0),final(false)
+					constructors(nam, nullptr),start(0),final(false)
 	{
 		if(t==PRIMITIVEPOINTER_LAYOUT) PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
 		if(superClass) assert(dynamic_cast<const UserClass*>(superClass));

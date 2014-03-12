@@ -130,7 +130,7 @@ public:
 		mpz_clear(value);//should check
 		return tmp;
 	}
-	virtual ~IntLiteralClass(){
+	virtual ~IntLiteralClass() override{
 		mpz_clear(value);
 	}
 
