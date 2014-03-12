@@ -57,6 +57,26 @@ public:
 		}
 	}
 
+	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
+		//todo allow complex/floats as well
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a==this) return (b==this)?0:-1;
+		else if(b==this) return 1;
+		if(a->classType==CLASS_INT) return (b->classType==CLASS_INT)?0:-1;
+		else if(b->classType==CLASS_INT) return 1;
+		if(a->classType==CLASS_FLOATLITERAL) return (b->classType==CLASS_FLOATLITERAL)?0:-1;
+		else if(b->classType==CLASS_FLOATLITERAL) return 1;
+		if(a->classType==CLASS_FLOAT) return (b->classType==CLASS_FLOAT)?0:-1;
+		else if(b->classType==CLASS_FLOAT) return 1;
+		if(a->classType==CLASS_RATIONAL) return (b->classType==CLASS_RATIONAL)?0:-1;
+		else if(b->classType==CLASS_RATIONAL) return 1;
+		if(a->classType==CLASS_COMPLEX) return (b->classType==CLASS_COMPLEX)?compare(((const ComplexClass*)a)->innerClass, ((const ComplexClass*)b)->innerClass):-1;
+		else{
+			assert(b->classType==CLASS_COMPLEX);
+			return 1;
+		}
+	}
 	AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
 		illegalLocal(id,s);
 		exit(1);
@@ -87,16 +107,6 @@ public:
 	Constant* getValue(PositionID id, mpz_t const c) const{
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
-	}
-	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		//todo allow complex/floats as well
-		assert(a->classType==CLASS_INT || a==this );
-		assert(b->classType==CLASS_INT || b==this);
-		if(a==this){
-			if(b==this) return 0;
-			else return -1;
-		} else if(b==this) return 1;
-		else return 0;
 	}
 	static IntLiteralClass* get(const mpz_t& l) {
 		std::map<const mpz_t, IntLiteralClass*, mpzCompare> mmap;

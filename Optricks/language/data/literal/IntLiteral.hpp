@@ -13,13 +13,18 @@ public:
 	//IntLiteral(const mpz_t& val, IntClass* cp=NULL):Literal(R_INT),value(val),intType(cp){ assert(val);}
 	IntLiteral(signed long int v):Literal(R_INT),
 			intType(IntLiteralClass::get(v)){
+		assert(intType);
 	}
-	IntLiteral(const IntLiteralClass* ic): Literal(R_INT),intType(ic){};
+	IntLiteral(const IntLiteralClass* ic): Literal(R_INT),intType(ic){
+		assert(intType);
+	};
 	IntLiteral(const mpz_t& val):Literal(R_INT),
 			intType(IntLiteralClass::get(val)){
+			assert(intType);
 	}
 	IntLiteral(const char* str, unsigned base, IntClass* cp=NULL):Literal(R_INT),
 			intType(IntLiteralClass::get(str,base)){
+			assert(intType);
 	}
 	const AbstractClass* getReturnType() const override final{
 		return intType;

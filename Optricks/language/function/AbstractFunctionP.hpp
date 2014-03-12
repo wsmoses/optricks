@@ -495,11 +495,15 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->proto->declarations.size(); i++)
+			for(unsigned int i=args.size(); i<a->proto->declarations.size(); i++){
 				if(a->proto->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
+				} else if(!a->proto->declarations[i].defaultValue->hasCastValue(a->proto->declarations[i].declarationType)){
+					valid=false;
+					break;
 				}
+			}
 			if(!valid) continue;
 			choices.push_back(a);
 		}
