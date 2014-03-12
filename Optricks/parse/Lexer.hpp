@@ -777,13 +777,17 @@ class Lexer{
 				//TODO do better job of this actually parsing arguments
 				Statement* e = getNextStatement(ParseData(data.endWith, data.mod, false,PARSE_EXPR));
 				Statement* ret;
-				if(e->getToken()==T_PARENS)
+				if(e->getToken()==T_PARENS){
+					auto IN = ((E_PARENS*)e)->inner;
+					delete e;
 					ret = new E_FUNC_CALL(pos(), exp, std::vector<const Evaluatable*>(1,
-							((E_PARENS*)e)->inner));
+							IN));
+				}
 				else{
 					auto V = ((E_TUPLE*)e)->values;
 					std::vector<const Evaluatable*> E;
 					for(auto& a: V) E.push_back(a);
+					delete e;
 					ret = new E_FUNC_CALL(pos(), exp, E);
 				}
 
