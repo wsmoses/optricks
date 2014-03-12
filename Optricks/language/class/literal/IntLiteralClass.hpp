@@ -20,11 +20,12 @@
 class IntLiteralClass: public RealClass{
 public:
 	static inline String str(const mpz_t& value){
-		auto tmp =  mpz_get_str(nullptr, 10, value);
-		void (*freefunc)(void*,size_t);
+		char temp[mpz_sizeinbase (value, 10) + 2];
+		auto tmp =  mpz_get_str(temp, 10, value);
+		//void (*freefunc)(void*,size_t);
 		String s(tmp);
-		mp_get_memory_functions(nullptr, nullptr, &freefunc);
-		freefunc(tmp, strlen(tmp)+1);
+		//mp_get_memory_functions(nullptr, nullptr, &freefunc);
+		//freefunc(tmp, strlen(tmp)+1);
 		return tmp;
 	}
 	mutable mpz_t value;
