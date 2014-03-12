@@ -14,7 +14,7 @@
 			return getReturnType()->hasCast(a);
 		}
 		int Statement::compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-			return getReturnType()->compareValue(a,b);
+			return getReturnType()->compare(a,b);
 		}
 
 

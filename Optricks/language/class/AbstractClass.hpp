@@ -90,6 +90,8 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(a);
 		assert(b);
+		assert(hasCast(a));
+		assert(hasCast(b));
 		assert(a->classType==CLASS_CLASS);
 		assert(b->classType==CLASS_CLASS);
 		return 0;

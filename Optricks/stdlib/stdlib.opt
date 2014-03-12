@@ -5,7 +5,7 @@ def void print(int i, bool b=true){
 def void test(){
 	int x = 7
 	if(rand()%2==0){
-		print(long(3));
+		print(int(3));
 		print(x);
 	}
 }
