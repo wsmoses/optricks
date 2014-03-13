@@ -38,7 +38,8 @@ public:
 				a.builder.CreateRetVoid();
 			else error("Could not find return statement");
 		}
-		a.FinalizeFunction(F);
+		assert(F);
+		a.FinalizeFunction(F, true);
 		if(Parent) a.builder.SetInsertPoint( Parent );
 		body->buildFunction(a);
 	}

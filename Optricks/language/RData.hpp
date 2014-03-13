@@ -87,6 +87,7 @@ struct RData{
 				f->dump();
 				cerr << endl << flush;
 			}
+			assert(f);
 			fpm.run(*f);
 		}
 		inline bool hadBreak(){
@@ -118,6 +119,9 @@ struct RData{
 				f->dump();
 				cerr << endl << flush;
 			}
+
+
+
 			fpm.run(*f);
 			flocs.erase(f);
 			pred.erase(f);

@@ -64,7 +64,6 @@ class IfStatement : public ErrorStatement{
 				}
 				return VOID_DATA;
 			}
-			bool ret = true;
 			BasicBlock* StartBB = r.builder.GetInsertBlock();
 			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
 			BasicBlock *ElseBB;
@@ -81,13 +80,14 @@ class IfStatement : public ErrorStatement{
 			}
 			//r.guarenteedReturn = false;
 			r.builder.SetInsertPoint(ThenBB);
-
+			bool usesMerge;
 			then->evaluate(r);
 			if(!r.hadBreak()){
 				ThenBB = r.builder.GetInsertBlock();
 				//r.addPred(MergeBB,ThenBB);
 				r.builder.CreateBr(MergeBB);
-			}
+				usesMerge = true;
+			} else usesMerge = false;
 			//ret = ret && r.guarenteedReturn;
 
 			// Emit else block.
@@ -100,13 +100,11 @@ class IfStatement : public ErrorStatement{
 					ElseBB = r.builder.GetInsertBlock();
 					//r.addPred(MergeBB,ElseBB);
 					r.builder.CreateBr(MergeBB);
+					usesMerge = true;
 				}
-			}
-			//else{
-			//	ret = false;
-			//}
+			} else usesMerge = true;
 
-			if(!ret){
+			if(usesMerge){
 				r.builder.SetInsertPoint(MergeBB);
 			} else{
 				r.DeleteBlock(MergeBB);

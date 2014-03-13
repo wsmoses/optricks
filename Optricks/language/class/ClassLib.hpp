@@ -20,6 +20,7 @@ const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, Positio
 	exit(1);
 }
 const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, PositionID id){
+	if(a==b) return a;
 	id.compilerError("GetMin 2 has not been implemented");
 	exit(1);
 }
