@@ -159,11 +159,11 @@ def bool operator==(complex a, complex b){
 }
 */
 def complex exp(complex c){
-	complex z = complex(cos(c.imag),sin(c.imag));
+	complex z = cos(c.imag) + sin(c.imag)*1j;
 	return exp(c.real)*z
 }
 def complex cos(complex z){
-	return .5*(exp(complex(0,1)*z)+exp(-complex(0,1)*z));
+	return .5*(exp(1j*z)+exp(-1j*z));
 }
 /*
 def int operator ** (int a, int b){

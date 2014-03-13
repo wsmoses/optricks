@@ -34,8 +34,9 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		assert(instance->type==R_LOC);
 		auto LD = ((const LocationData*)instance)->value;
 		id.warning("Location framework not complete -- complex");
-		return new LocationData(new StandardLocation(r.builder.CreateExtractElement(
-				LD->getPointer(r, id),getInt32((s=="real")?0:1))), innerClass);
+		Value* V = LD->getPointer(r, id);
+		return new LocationData(
+				new StandardLocation(r.builder.CreateConstGEP2_32(V, 0, (s=="real")?0:1)), innerClass);
 	}
 	exit(1);
 }
