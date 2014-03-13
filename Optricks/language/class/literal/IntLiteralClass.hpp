@@ -26,7 +26,7 @@ public:
 		String s(tmp);
 		//mp_get_memory_functions(nullptr, nullptr, &freefunc);
 		//freefunc(tmp, strlen(tmp)+1);
-		return tmp;
+		return "intliteral{"+s+"}";
 	}
 	mutable mpz_t value;
 protected:

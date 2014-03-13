@@ -72,7 +72,8 @@ public:
 		static std::map<const RealClass*, ComplexClass*> cache;
 		auto found = cache.find(inner);
 		if(found==cache.end()){
-			ComplexClass* nex = new ComplexClass("complex<"+inner->getName()+">",inner);
+			assert(inner);
+			ComplexClass* nex = new ComplexClass("complex{"+inner->getName()+"}",inner);
 			cache.insert(std::pair<const RealClass*,ComplexClass*>(inner, nex));
 			return nex;
 		}
