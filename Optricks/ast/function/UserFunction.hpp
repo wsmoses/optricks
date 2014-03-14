@@ -39,7 +39,7 @@ public:
 			else error("Could not find return statement");
 		}
 		assert(F);
-		a.FinalizeFunction(F, true);
+		a.FinalizeFunction(F);
 		if(Parent) a.builder.SetInsertPoint( Parent );
 		body->buildFunction(a);
 	}

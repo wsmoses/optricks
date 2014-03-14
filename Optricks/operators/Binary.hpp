@@ -318,23 +318,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		break;
 	}
 	case CLASS_COMPLEX:{
-		const ComplexClass* comp = (const ComplexClass*)cc;
-		switch(comp->innerClass->classType){
-		case CLASS_FLOATLITERAL:
-		case CLASS_INTLITERAL:{
-			filePos.compilerError("todo -- complex binops 1");
-			exit(1);
-		}
-		case CLASS_INT:
-		case CLASS_FLOAT:{
-			return ComplexClass::get((const RealClass*)getMin(cc,dd, filePos));
-		}
-		default:{
-			filePos.compilerError("complex - this should never happen!");
-			exit(1);
-		}
-		}
-		break;
+		return getMin(cc, dd,filePos);
 	}
 	case CLASS_BOOL:{
 		if(operation=="||" || operation=="&&" || operation=="|" || operation=="&"
@@ -718,7 +702,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		break;
 	}
 	case CLASS_COMPLEX:{
-		const ComplexClass* comp = (const ComplexClass*)cc;
+		const ComplexClass* comp = (const ComplexClass*)getMin(cc, dd, filePos);
 		switch(comp->innerClass->classType){
 		case CLASS_FLOATLITERAL:
 		case CLASS_INTLITERAL:{
@@ -727,24 +711,23 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		case CLASS_INT:
 		case CLASS_FLOAT:{//todo
-			auto in = (const ComplexClass*)getMin(cc,dd, filePos);
-			Value* L = value->castToV(r, in, filePos);
-			Value* R = ev->evaluate(r)->castToV(r, in, filePos);
+			Value* L = value->castToV(r, comp, filePos);
+			Value* R = ev->evaluate(r)->castToV(r, comp, filePos);
 			if(operation=="+"){
-				if(in->innerClass->classType==CLASS_INT)
-					return new ConstantData(r.builder.CreateAdd(L,R), in);
-				else return new ConstantData(r.builder.CreateFAdd(L,R),in);
+				if(comp->innerClass->classType==CLASS_INT)
+					return new ConstantData(r.builder.CreateAdd(L,R), comp->innerClass);
+				else return new ConstantData(r.builder.CreateFAdd(L,R),comp->innerClass);
 			} else if(operation=="-"){
-				if(in->innerClass->classType==CLASS_INT)
-					return new ConstantData(r.builder.CreateSub(L,R), in);
-				else return new ConstantData(r.builder.CreateFSub(L,R),in);
+				if(comp->innerClass->classType==CLASS_INT)
+					return new ConstantData(r.builder.CreateSub(L,R), comp->innerClass);
+				else return new ConstantData(r.builder.CreateFSub(L,R),comp->innerClass);
 			} else if(operation=="*"){
 				Value* DOT =
-					(in->innerClass->classType==CLASS_INT)?
+					(comp->innerClass->classType==CLASS_INT)?
 						r.builder.CreateMul(L, R):
 						r.builder.CreateFMul(L,R);
 				Value* NR =
-						(in->innerClass->classType==CLASS_INT)?
+						(comp->innerClass->classType==CLASS_INT)?
 							r.builder.CreateSub(r.builder.CreateExtractElement(DOT, getInt32(0)), r.builder.CreateExtractElement(DOT, getInt32(1))):
 							r.builder.CreateFSub(r.builder.CreateExtractElement(DOT, getInt32(0)), r.builder.CreateExtractElement(DOT, getInt32(1)));
 				Value* LR = r.builder.CreateExtractElement(L, getInt32(0));
@@ -752,22 +735,22 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				Value* RR = r.builder.CreateExtractElement(R, getInt32(0));
 				Value* RI = r.builder.CreateExtractElement(R, getInt32(1));
 				Value* I1 =
-						(in->innerClass->classType==CLASS_INT)?
+						(comp->innerClass->classType==CLASS_INT)?
 							r.builder.CreateMul(LR, RI):
 							r.builder.CreateFMul(LR,RI);
 				Value* I2 =
-						(in->innerClass->classType==CLASS_INT)?
+						(comp->innerClass->classType==CLASS_INT)?
 							r.builder.CreateMul(LI, RR):
 							r.builder.CreateFMul(LI,RR);
 				Value* NI =
-						(in->innerClass->classType==CLASS_INT)?
+						(comp->innerClass->classType==CLASS_INT)?
 							r.builder.CreateAdd(I1, I2):
 							r.builder.CreateFAdd(I1, I2);
 
-				Value* V = UndefValue::get(in->type);
+				Value* V = UndefValue::get(comp->type);
 				V = r.builder.CreateInsertElement(V, NR, getInt32(0));
 				V = r.builder.CreateInsertElement(V, NI, getInt32(1));
-				return new ConstantData(V,in);
+				return new ConstantData(V,comp);
 			} else {
 			filePos.compilerError("todo -- complex binops 2 '"+ operation+"'");
 			exit(1);

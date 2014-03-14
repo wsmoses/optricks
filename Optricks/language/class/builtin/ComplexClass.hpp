@@ -21,13 +21,13 @@ public:
 		assert(inner->type->isFloatingPointTy() || inner->type->isIntegerTy());
 		return inner->type;
 	}
-	inline ComplexClass(String name, const RealClass* inner):
+	inline ComplexClass(String name, const RealClass* inner, bool reg = false):
 		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(cType(inner),2)),innerClass(inner){
 		assert(inner);
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
 		assert(LANG_M);
-		LANG_M->addClass(PositionID(0,0,"#int"),this);
+		if(reg) LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
 	inline Constant* getValue(PositionID id, mpfr_t const value) const{
 		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());
@@ -108,6 +108,6 @@ public:
 	}
 };
 
-ComplexClass* complexClass = new ComplexClass("complex",doubleClass);
+ComplexClass* complexClass = new ComplexClass("complex",doubleClass, true);
 
 #endif /* COMPLEXCLASS_HPP_ */

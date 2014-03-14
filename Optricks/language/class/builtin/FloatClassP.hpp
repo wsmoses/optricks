@@ -58,6 +58,14 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 			auto bi = getWidth();
 			if( ai < bi) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small");
 			if(ai==bi) return valueToCast;
+			if(valueToCast->getType()->isVectorTy()){
+				unsigned g = ((VectorType*)valueToCast->getType())->getVectorNumElements();
+				auto TC = VectorType::get(toCast->type, g);
+				//valueToCast->getType()->dump();
+				//TC->dump();
+				//cerr << endl << flush;
+				return r.builder.CreateFPExt(valueToCast, TC);
+			}
 			return r.builder.CreateFPExt(valueToCast, toCast->type);
 		}
 		case CLASS_COMPLEX:
