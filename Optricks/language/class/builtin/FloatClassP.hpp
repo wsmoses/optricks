@@ -54,7 +54,10 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 		if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
 		switch(toCast->classType){
 		case CLASS_FLOAT:{
-			if( ((FloatClass*)toCast)->getWidth() < getWidth()) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small");
+			auto ai = ((FloatClass*)toCast)->getWidth();
+			auto bi = getWidth();
+			if( ai < bi) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small");
+			if(ai==bi) return valueToCast;
 			return r.builder.CreateFPExt(valueToCast, toCast->type);
 		}
 		case CLASS_COMPLEX:
