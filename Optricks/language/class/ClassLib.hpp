@@ -21,6 +21,12 @@ const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, Positio
 }
 const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, PositionID id){
 	if(a==b) return a;
+	if(a->classType==CLASS_COMPLEX){
+		if(b->classType==CLASS_COMPLEX) return ComplexClass::get((const RealClass*)
+				getMin(((ComplexClass*)a)->innerClass,((ComplexClass*)b)->innerClass, id) );
+		else return ComplexClass::get((const RealClass*)
+				getMin(((ComplexClass*)a)->innerClass,b, id) );
+	}
 	id.compilerError("GetMin 2 has not been implemented");
 	exit(1);
 }

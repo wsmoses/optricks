@@ -14,6 +14,11 @@ public:
 	const RealClass* innerClass;
 	static llvm::Type* cType(const RealClass* inner){
 		assert(inner);
+		if(!(inner->type->isFloatingPointTy() || inner->type->isIntegerTy())){
+			inner->type->dump();
+			cerr << endl << flush;
+		}
+		assert(inner->type->isFloatingPointTy() || inner->type->isIntegerTy());
 		return inner->type;
 	}
 	inline ComplexClass(String name, const RealClass* inner):

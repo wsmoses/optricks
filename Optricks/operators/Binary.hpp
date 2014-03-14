@@ -727,7 +727,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		case CLASS_INT:
 		case CLASS_FLOAT:{//todo
-			auto in = ComplexClass::get((const RealClass*)getMin(cc,dd, filePos));
+			auto in = (const ComplexClass*)getMin(cc,dd, filePos);
 			Value* L = value->castToV(r, in, filePos);
 			Value* R = ev->evaluate(r)->castToV(r, in, filePos);
 			if(operation=="+"){
@@ -738,8 +738,38 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				if(in->innerClass->classType==CLASS_INT)
 					return new ConstantData(r.builder.CreateSub(L,R), in);
 				else return new ConstantData(r.builder.CreateFSub(L,R),in);
+			} else if(operation=="*"){
+				Value* DOT =
+					(in->innerClass->classType==CLASS_INT)?
+						r.builder.CreateMul(L, R):
+						r.builder.CreateFMul(L,R);
+				Value* NR =
+						(in->innerClass->classType==CLASS_INT)?
+							r.builder.CreateSub(r.builder.CreateExtractElement(DOT, getInt32(0)), r.builder.CreateExtractElement(DOT, getInt32(1))):
+							r.builder.CreateFSub(r.builder.CreateExtractElement(DOT, getInt32(0)), r.builder.CreateExtractElement(DOT, getInt32(1)));
+				Value* LR = r.builder.CreateExtractElement(L, getInt32(0));
+				Value* LI = r.builder.CreateExtractElement(L, getInt32(1));
+				Value* RR = r.builder.CreateExtractElement(R, getInt32(0));
+				Value* RI = r.builder.CreateExtractElement(R, getInt32(1));
+				Value* I1 =
+						(in->innerClass->classType==CLASS_INT)?
+							r.builder.CreateMul(LR, RI):
+							r.builder.CreateFMul(LR,RI);
+				Value* I2 =
+						(in->innerClass->classType==CLASS_INT)?
+							r.builder.CreateMul(LI, RR):
+							r.builder.CreateFMul(LI,RR);
+				Value* NI =
+						(in->innerClass->classType==CLASS_INT)?
+							r.builder.CreateAdd(I1, I2):
+							r.builder.CreateFAdd(I1, I2);
+
+				Value* V = UndefValue::get(in->type);
+				V = r.builder.CreateInsertElement(V, NR, getInt32(0));
+				V = r.builder.CreateInsertElement(V, NI, getInt32(1));
+				return new ConstantData(V,in);
 			} else {
-			filePos.compilerError("todo -- complex binops 2");
+			filePos.compilerError("todo -- complex binops 2 '"+ operation+"'");
 			exit(1);
 			}
 		}

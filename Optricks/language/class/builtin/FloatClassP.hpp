@@ -51,16 +51,16 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
-		if(toCast->layout!=LITERAL_LAYOUT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+		if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
 		switch(toCast->classType){
 		case CLASS_FLOAT:{
-			if( ((FloatClass*)toCast)->getWidth() < getWidth()) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+			if( ((FloatClass*)toCast)->getWidth() < getWidth()) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small");
 			return r.builder.CreateFPExt(valueToCast, toCast->type);
 		}
 		case CLASS_COMPLEX:
-			if(((ComplexClass*)toCast)->innerClass->classType!=CLASS_FLOAT
-					|| ((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth()){
-			id.error(((ComplexClass*)toCast)->innerClass->classType + "Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+			if(((ComplexClass*)toCast)->innerClass->classType!=CLASS_FLOAT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName()+" inner type not float");
+			if(((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth()){
+			id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName()+ " width too small");
 			}
 			return r.builder.CreateInsertElement(ConstantVector::getSplat(2, getZero(id)), valueToCast, getInt32(0));
 		case CLASS_RATIONAL:
