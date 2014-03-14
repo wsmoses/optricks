@@ -13,7 +13,7 @@
 class FloatLiteralClass: public RealClass{
 protected:
 	FloatLiteralClass(bool b):
-		RealClass("floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,nullptr){
+		RealClass("floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,llvm::IntegerType::get(getGlobalContext(), 1)){
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}

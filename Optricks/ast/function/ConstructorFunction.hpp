@@ -60,7 +60,7 @@ public:
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
-		llvm:SmallVector<Type*,1> args(declaration.size());
+		llvm::SmallVector<Type*,1> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];

@@ -11,6 +11,7 @@
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
 #include "../language/evaluatable/CastEval.hpp"
+#include "../language/class/ClassLib.hpp"
 inline const AbstractClass* getBinopReturnType(PositionID filePos, const AbstractClass* cc, const AbstractClass* dd, const String operation){
 	if(operation=="+"){
 		if(cc->classType==CLASS_STR) return cc;
@@ -326,8 +327,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		}
 		case CLASS_INT:
 		case CLASS_FLOAT:{
-			filePos.compilerError("todo -- complex binops 2");
-			exit(1);
+			return ComplexClass::get((const RealClass*)getMin(cc,dd, filePos));
 		}
 		default:{
 			filePos.compilerError("complex - this should never happen!");
@@ -727,8 +727,21 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		case CLASS_INT:
 		case CLASS_FLOAT:{//todo
+			auto in = ComplexClass::get((const RealClass*)getMin(cc,dd, filePos));
+			Value* L = value->castToV(r, in, filePos);
+			Value* R = ev->evaluate(r)->castToV(r, in, filePos);
+			if(operation=="+"){
+				if(in->innerClass->classType==CLASS_INT)
+					return new ConstantData(r.builder.CreateAdd(L,R), in);
+				else return new ConstantData(r.builder.CreateFAdd(L,R),in);
+			} else if(operation=="-"){
+				if(in->innerClass->classType==CLASS_INT)
+					return new ConstantData(r.builder.CreateSub(L,R), in);
+				else return new ConstantData(r.builder.CreateFSub(L,R),in);
+			} else {
 			filePos.compilerError("todo -- complex binops 2");
 			exit(1);
+			}
 		}
 		default:{
 			filePos.compilerError("complex - this should never happen!");
@@ -870,7 +883,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		Value* V = ConstantInt::getTrue(getGlobalContext());
 		for(unsigned i=0; i<t1->innerTypes.size(); i++){
 			auto a1 = cc->getLocalData(r, filePos, (nt1)?(nt1->innerNames[i]):("_"+str(i)),value);
-			auto a2 = dd->getLocalData(r, filePos, (nt2)?(nt2->innerNames[i]):("_"+str(i)),value);
+			auto a2 = dd->getLocalData(r, filePos, (nt2)?(nt2->innerNames[i]):("_"+str(i)),d);
 			auto M = getBinop(r, filePos, a1, a2, operation);
 			V = r.builder.CreateAnd(V,M->castToV(r, boolClass, filePos));
 		}

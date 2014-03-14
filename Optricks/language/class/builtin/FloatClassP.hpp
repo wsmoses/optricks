@@ -59,8 +59,9 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 		}
 		case CLASS_COMPLEX:
 			if(((ComplexClass*)toCast)->innerClass->classType!=CLASS_FLOAT
-					|| ((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth())
-			id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+					|| ((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth()){
+			id.error(((ComplexClass*)toCast)->innerClass->classType + "Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+			}
 			return r.builder.CreateInsertElement(ConstantVector::getSplat(2, getZero(id)), valueToCast, getInt32(0));
 		case CLASS_RATIONAL:
 			id.error("Does not exist");

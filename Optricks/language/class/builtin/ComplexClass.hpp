@@ -20,7 +20,7 @@ public:
 		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(cType(inner),2)),innerClass(inner){
 		assert(inner);
 		assert(inner->classType!=CLASS_COMPLEX);
-		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT);
+		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
 		assert(LANG_M);
 		LANG_M->addClass(PositionID(0,0,"#int"),this);
 	}
@@ -73,7 +73,8 @@ public:
 		auto found = cache.find(inner);
 		if(found==cache.end()){
 			assert(inner);
-			ComplexClass* nex = new ComplexClass("complex{"+inner->getName()+"}",inner);
+			auto a="complex{"+inner->getName()+"}";
+			ComplexClass* nex = new ComplexClass(a,inner);
 			cache.insert(std::pair<const RealClass*,ComplexClass*>(inner, nex));
 			return nex;
 		}
