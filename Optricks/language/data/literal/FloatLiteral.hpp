@@ -17,7 +17,7 @@ public:
 		Literal(R_FLOAT),value(){
 		mpfr_init_set_str(value,str,base,MPFR_RNDN);
 	}
-	FloatLiteral(mpfr_t m):
+	FloatLiteral(const mpfr_t& m):
 		Literal(R_FLOAT),value(){
 		mpfr_init_set(value, m, MPFR_RNDN);
 	}
@@ -29,10 +29,13 @@ public:
 			Literal(R_FLOAT),value(){
 			mpfr_init_set_ld(value,d,MPFR_RNDN);
 	}
-	FloatLiteral(mpz_t const val):
+	FloatLiteral(const mpz_t& val):
 		Literal(R_FLOAT),value(){
 		mpfr_init(value);
 		mpfr_set_z(value, val, MPFR_RNDN);
+		cerr << "fl ";
+		toStream(cerr);
+		cerr << endl << flush;
 	}
 	const AbstractClass* getReturnType() const override final;
 	ConstantFP* getValue(RData& r, PositionID id) const override final;

@@ -29,11 +29,10 @@ public:
 		return "intliteral{"+s+"}";
 	}
 	mutable mpz_t value;
-protected:
+private:
 	IntLiteralClass(const mpz_t& val):
-		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1)){
-		mpz_init_set(value, val);
-		cerr << "creating literal " << getName() << endl << flush;
+		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
+		,value(val){
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
@@ -107,14 +106,18 @@ public:
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}
-	Constant* getValue(PositionID id, mpz_t const c) const{
+	Constant* getValue(PositionID id, const mpz_t& c) const{
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}
 	static IntLiteralClass* get(const mpz_t& l) {
 		static std::map<const mpz_t, IntLiteralClass*, mpzCompare> mmap;
 		auto find = mmap.find(l);
-		if(find==mmap.end()) return mmap[l] = new IntLiteralClass(l);
+		if(find==mmap.end()){
+			mpz_t mt;
+			mpz_init_set(mt,l);
+			return mmap.insert(std::pair<const mpz_t, IntLiteralClass*>(mt,new IntLiteralClass(mt))).first->second;
+		}
 		else return find->second;
 	}
 	static inline IntLiteralClass* get(const char* str, unsigned base) {

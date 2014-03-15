@@ -45,7 +45,10 @@ public:
 		}
 		auto uc = myFunction->getSingleProto()->returnType;
 		assert(uc->classType==CLASS_USER);
+
 		_this.setObject(new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc));
+		auto tmp = ra.functionReturn;
+		ra.functionReturn = nullptr;
 		body->evaluate(ra);
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
@@ -53,6 +56,8 @@ public:
 		ra.builder.CreateRet(_this.getValue(ra));
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
+		assert(ra.functionReturn == nullptr);
+		ra.functionReturn = tmp;
 		body->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

@@ -1,4 +1,4 @@
-def den(int d):
+def char den(int d):
 	if    d > 999	return '*';
 	elif  d > 200	return '+';
 	elif  d > 020	return '.';

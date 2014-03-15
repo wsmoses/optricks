@@ -8,17 +8,17 @@
 #ifndef DATA_HPP_
 #define DATA_HPP_
 #include "../includes.hpp"
-#include "../evaluatable/Evaluatable.hpp"
+#include "../statement/Statement.hpp"
 #include "../location/Location.hpp"
 
 #define DATA_C_
-class Data: public Evaluatable{
+class Data: public Statement{
 public:
 	const DataType type;
 		Data(const DataType t):type(t){}
 	public:
 		virtual ~Data(){};
-		inline const Data* evaluate(RData& r) const override{
+		inline const Data* evaluate(RData& r) const override final{
 			return this;
 		}
 		virtual const Data* toValue(RData& r, PositionID id) const=0;
@@ -34,6 +34,14 @@ public:
 		 * Returns the class that this represents, if it represents a class
 		 */
 		virtual const AbstractClass* getMyClass(RData& r, PositionID id)const =0;
+
+		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
+
+		}
+		void registerClasses() const override final{};
+		void registerFunctionPrototype(RData& r) const override final{};
+		void buildFunction(RData& r) const override final{};
+		const Token getToken() const override{ return T_LITERAL; };
 };
 
 #endif /* DATA_HPP_ */

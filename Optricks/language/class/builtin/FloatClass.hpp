@@ -170,12 +170,10 @@ public:
 	inline ConstantFP* getInfinity(bool negative=false) const{
 		return (ConstantFP*) ConstantFP::getInfinity(type,negative);
 	}
-	inline Constant* getValue(PositionID id, mpz_t const value) const override final{
-		auto tmp =  mpz_get_str(nullptr, 10, value);
-		void (*freefunc)(void*,size_t);
-		Constant* ret = ConstantFP::get(type,tmp);
-		mp_get_memory_functions(nullptr, nullptr, &freefunc);
-		freefunc(tmp, strlen(tmp)+1);
+	inline Constant* getValue(PositionID id, const mpz_t& value) const override final{
+		char temp[mpz_sizeinbase (value, 10) + 2];
+		auto tmp =  mpz_get_str(temp, 10, value);
+		Constant* ret = ConstantFP::get(type,String(tmp));
 		return ret;
 	}
 	inline ConstantFP* getValue(PositionID id, mpfr_t const value) const{

@@ -22,7 +22,7 @@ public:
 			intType(IntLiteralClass::get(val)){
 			assert(intType);
 	}
-	IntLiteral(const char* str, unsigned base, IntClass* cp=NULL):Literal(R_INT),
+	IntLiteral(const char* str, unsigned base):Literal(R_INT),
 			intType(IntLiteralClass::get(str,base)){
 			assert(intType);
 	}

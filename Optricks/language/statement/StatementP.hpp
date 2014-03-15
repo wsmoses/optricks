@@ -9,7 +9,10 @@
 #define STATEMENTP_HPP_
 #include "Statement.hpp"
 #include "../class/AbstractClass.hpp"
-
+#include "../data/Data.hpp"
+		Value* Statement::evalCastV(RData& r,AbstractClass* c, PositionID id){
+			return evaluate(r)->castToV(r,c,id);
+		}
 		bool Statement::hasCastValue(const AbstractClass* const a) const {
 			return getReturnType()->hasCast(a);
 		}

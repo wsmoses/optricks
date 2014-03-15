@@ -51,7 +51,10 @@ class E_RETURN : public ErrorStatement{
 						//t.getType()==R_UNDEF
 						)
 					r.builder.CreateRetVoid();
-				else r.builder.CreateRet(t->getValue(r,filePos));
+				else{
+					assert(r.functionReturn);
+					r.builder.CreateRet(t->castToV(r, r.functionReturn, filePos));
+				}
 			} else {
 				BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),NULL));
 				if(toBreak!=NULL) r.builder.CreateBr(toBreak);

@@ -715,12 +715,12 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			Value* R = ev->evaluate(r)->castToV(r, comp, filePos);
 			if(operation=="+"){
 				if(comp->innerClass->classType==CLASS_INT)
-					return new ConstantData(r.builder.CreateAdd(L,R), comp->innerClass);
-				else return new ConstantData(r.builder.CreateFAdd(L,R),comp->innerClass);
+					return new ConstantData(r.builder.CreateAdd(L,R), comp);
+				else return new ConstantData(r.builder.CreateFAdd(L,R),comp);
 			} else if(operation=="-"){
 				if(comp->innerClass->classType==CLASS_INT)
-					return new ConstantData(r.builder.CreateSub(L,R), comp->innerClass);
-				else return new ConstantData(r.builder.CreateFSub(L,R),comp->innerClass);
+					return new ConstantData(r.builder.CreateSub(L,R), comp);
+				else return new ConstantData(r.builder.CreateFSub(L,R),comp);
 			} else if(operation=="*"){
 				Value* DOT =
 					(comp->innerClass->classType==CLASS_INT)?

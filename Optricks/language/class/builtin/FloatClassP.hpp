@@ -52,6 +52,8 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 	 */
 	Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 		if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
+		assert(valueToCast->getType()==type ||
+				(valueToCast->getType()->isVectorTy() && valueToCast->getType()->getVectorElementType()==type));
 		switch(toCast->classType){
 		case CLASS_FLOAT:{
 			auto ai = ((FloatClass*)toCast)->getWidth();

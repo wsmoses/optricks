@@ -15,10 +15,6 @@
 #include "./builtin/FloatClass.hpp"
 #include "./literal/IntLiteralClass.hpp"
 
-const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, PositionID id){
-	id.compilerError("GetMin inf has not been implemented");
-	exit(1);
-}
 const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, PositionID id){
 	if(a==b) return a;
 	if(a->classType==CLASS_COMPLEX){
@@ -80,6 +76,13 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 		}
 	}
 	id.compilerError("GetMin 2 has not been implemented "+a->getName()+" "+b->getName());
+	exit(1);
+}
+
+const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, PositionID id){
+	if(ac.size()==1) return ac[0];
+	else if(ac.size()==2) return getMin(ac[0],ac[1],id);
+	id.compilerError("GetMin inf has not been implemented "+ str(ac.size()));
 	exit(1);
 }
 #endif /* CLASSLIB_HPP_ */

@@ -175,6 +175,7 @@ public:
 	PositionID filePos;
 	Resolvable(Scopable* m,const String n, PositionID id): name(n),module(m),filePos(id){
 		assert(module);
+		assert(n!="auto");
 	};
 	const AbstractClass* getReturnType() const;
 	inline const Data* getObject() const;

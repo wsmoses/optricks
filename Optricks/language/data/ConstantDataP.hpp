@@ -23,6 +23,7 @@ ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVM
 	assert(val); assert(cp); assert(cp->classType!=CLASS_CLASS); assert(cp->classType!=CLASS_FUNC);
 	//assert(cp->classType!=CLASS_GEN);
 	assert(cp->layout!=LITERAL_LAYOUT);
+	assert(val->getType()==cp->type);
 }
 
 

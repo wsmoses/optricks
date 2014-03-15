@@ -85,13 +85,11 @@ public:
 	inline ConstantInt* getLowBitsSet( unsigned hiBit) const {
 		return ConstantInt::get(getGlobalContext(), APInt::getLowBitsSet(getWidth(),hiBit));
 	}
-	inline ConstantInt* getValue(PositionID id, mpz_t const value) const override final{
+	inline ConstantInt* getValue(PositionID id, const mpz_t& value) const override final{
 		checkFit(id,value);
-		auto tmp =  mpz_get_str(nullptr, 10, value);
-		void (*freefunc)(void*,size_t);
-		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),StringRef(tmp),10);
-		mp_get_memory_functions(nullptr, nullptr, &freefunc);
-		freefunc(tmp, strlen(tmp)+1);
+		char temp[mpz_sizeinbase (value, 10) + 2];
+		auto tmp =  mpz_get_str(temp, 10, value);
+		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),StringRef(String(tmp)),10);
 		return ret;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{

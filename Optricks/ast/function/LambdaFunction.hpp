@@ -39,6 +39,9 @@ public:
 					(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))
 					->toLocation(ra));
 		}
+		auto tmp = ra.functionReturn;
+		ra.functionReturn = nullptr;
+
 		const Data* ret = body->evaluate(ra);
 		if(! ra.hadBreak()){
 			if(ret->type==R_VOID)
@@ -49,6 +52,8 @@ public:
 		}
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
+		assert(ra.functionReturn == nullptr);
+		ra.functionReturn = tmp;
 		body->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

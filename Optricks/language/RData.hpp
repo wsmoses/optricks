@@ -51,8 +51,9 @@ struct RData{
 		FunctionPassManager fpm;
 		PassManager mpm;
 		ExecutionEngine* exec;
+		const AbstractClass* functionReturn;
 		RData(): lmod("main",getGlobalContext()), builder(getGlobalContext())
-		,fpm(&lmod),mpm(){
+		,fpm(&lmod),mpm(),functionReturn(nullptr){
 			lmod.setDataLayout("p:64:64:64");
 			InitializeNativeTarget();
 			exec = EngineBuilder(& lmod).create();

@@ -53,7 +53,6 @@ def int min(int a,int b){
 double NaN = 0./0.;
 double PI = 3.141592653589793;
 double  E = 2.718281828459045;
-complex I = complex(0,1);
 /*def complex.complex(double a=0, double b=0){
   this.real = a
   this.imag = b
@@ -183,9 +182,9 @@ def int pow(int a, int b){
 }
 
 
-def complex pow(complex a, int b){
-	return a**b;
-}
+//def complex pow(complex a, int b){
+//	return a**b;
+//}
 /*
 def double operator ** (double a, double b){
 	return pow(a, b);

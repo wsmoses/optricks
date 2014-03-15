@@ -100,7 +100,7 @@ public:
 		ar[1] = innerClass->getOne(id);
 		return ConstantVector::get(ar);
 	}
-	inline Constant* getValue(PositionID id, mpz_t const value) const{
+	inline Constant* getValue(PositionID id, const mpz_t& value) const{
 		SmallVector<Constant*,2> ar(2);
 		ar[0] = innerClass->getValue(id,value);
 		ar[1] = innerClass->getZero(id);

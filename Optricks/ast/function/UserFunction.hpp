@@ -19,7 +19,6 @@ public:
 	UserFunction(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r, Statement* b):
 		E_FUNCTION(id,dec),self(s),returnV(r),body(b),built(false){
 		assert(s);
-		assert(r);
 	}
 	void registerClasses() const override final{
 		body->registerClasses();
@@ -32,6 +31,8 @@ public:
 		BasicBlock *Parent = a.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
 		a.builder.SetInsertPoint(& (F->getEntryBlock()));
+		auto tmp = a.functionReturn;
+		a.functionReturn = myFunction->getSingleProto()->returnType;
 		body->evaluate(a);
 		if(! a.hadBreak()){
 			if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
@@ -41,6 +42,8 @@ public:
 		assert(F);
 		a.FinalizeFunction(F);
 		if(Parent) a.builder.SetInsertPoint( Parent );
+		assert(a.functionReturn == myFunction->getSingleProto()->returnType);
+		a.functionReturn = tmp;
 		body->buildFunction(a);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

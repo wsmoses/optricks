@@ -38,6 +38,7 @@
 #include "../ast/function/ConstructorFunction.hpp"
 #include "../language/data/literal/BoolLiteral.hpp"
 #include "../language/data/literal/StringLiteral.hpp"
+#include "../language/class/builtin/CharClass.hpp"
 
 enum ParseLoc{
 	PARSE_GLOBAL = 1,
@@ -177,8 +178,17 @@ class Lexer{
 			if(in<String>(BINARY_OPERATORS, temp)) f->error("Variable name is a binary operator");
 			return temp;
 		}
-		E_VAR* getNextVariable(ParseData data/*, bool late=true*/){
-			return new E_VAR(Resolvable(data.mod,getNextName(data.endWith),pos()));
+		E_VAR* getNextVariable(ParseData data, bool allowsAuto){
+			auto tmp = getNextName(data.endWith);
+			if(tmp=="auto"){
+				if(allowsAuto) return nullptr;
+				else{
+					pos().error("Cannot use 'auto' has variable -- is a keyword");
+					assert(0);
+					exit(1);
+				}
+			}
+			return new E_VAR(Resolvable(data.mod,tmp,pos()));
 			//Resolvable pointer;
 			//if(late) pointer = new;
 			//else pointer = &data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull());
@@ -186,7 +196,7 @@ class Lexer{
 		}
 		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
 			trim(data);
-			auto declarationType = getNextType(data.getEndWith(EOF));
+			auto declarationType = getNextType(data.getEndWith(EOF),true);
 			trim(EOF);
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
@@ -276,7 +286,7 @@ class Lexer{
 				return s;
 			}
 		}
-		Statement* getNextType(ParseData data){
+		Statement* getNextType(ParseData data, bool allowsAuto){
 			trim(EOF);
 			if(f->done || !isStartType(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
 			char tc = f->peek();
@@ -288,7 +298,8 @@ class Lexer{
 					std::vector<Statement*> cp1;
 					f->trim(EOF);
 					while(f->peek()!=')'){
-						Statement* s = getNextType(data.getEndWith(EOF));
+						Statement* s = getNextType(data.getEndWith(EOF),true);
+						if(!s) pos().error("Cannot have auto class inside of tuple");
 						cp1.push_back(s);
 						f->trim(EOF);
 						String st = "";
@@ -320,7 +331,8 @@ class Lexer{
 					f->error("Cannot parse variable-length array types yet");
 				}
 			}
-			Statement* currentType = getNextVariable(data);
+			Statement* currentType = getNextVariable(data, allowsAuto);
+			if(!currentType) return nullptr;
 			do{
 				trim(data);
 				auto marker = f->getMarker();
@@ -509,9 +521,9 @@ class Lexer{
 					trim(EOF);
 					mark = f->getMarker();
 				} else f->undoMarker(mark);
-				auto returnName = getNextType(data);
+				auto returnName = getNextType(data,true);
 				f->trim(EOF);
-				{
+				if(returnName){
 					auto nex = f->peek();
 					if(!isStartName(nex)){
 						f->undoMarker(mark);
@@ -617,7 +629,8 @@ class Lexer{
 				return func;
 			}
 			else if (temp == "extern"){
-				auto retV = getNextType(ParseData(EOF, data.mod,true,data.loc));
+				auto retV = getNextType(ParseData(EOF, data.mod,true,data.loc),true);
+				if(!retV) pos().error("Cannot use auto return type for external function");
 				trim(data);
 				String methodName = getNextName(EOF);
 				data.mod->addFunction(pos(), methodName);
@@ -660,7 +673,8 @@ class Lexer{
 			Statement* superClass=nullptr;
 			if(f->peek()==':'){
 				f->read();
-				superClass = getNextType(data.getEndWith(EOF));
+				superClass = getNextType(data.getEndWith(EOF),true);
+				if(superClass==nullptr) pos().error("Cannot have auto as superclass");
 				f->trim(EOF);
 			}
 			if(f->read()!='{') f->error("Need opening brace for class definition");
@@ -932,7 +946,8 @@ Statement* Lexer::getNextStatement(ParseData data){
 				return getNextDeclaration(data);
 			} else {
 				f->undoMarker(undoRead);
-				E_VAR* nextVar = getNextVariable(data);
+				E_VAR* nextVar = getNextVariable(data,true);
+				if(!nextVar) pos().error("Cannot use 'auto' as variable");
 				semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
 				trim(data);
@@ -966,7 +981,9 @@ Statement* Lexer::getNextStatement(ParseData data){
 			}
 			case '\'':
 			case '"':{
-				StringLiteral* str = new StringLiteral(f->readString(data.endWith));
+				String s = f->readString(data.endWith);
+				Statement* str = (s.length()==1)?((Statement*) new ConstantData(CharClass::getValue(s[0]), charClass))
+						: ((Statement* )new StringLiteral(s));
 				trim(data);
 				semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }

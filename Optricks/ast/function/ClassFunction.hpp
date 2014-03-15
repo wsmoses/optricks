@@ -112,6 +112,8 @@ class ClassFunction : public E_FUNCTION{
 			registerFunctionPrototype(a);
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			a.builder.SetInsertPoint(&(myFunction->getSingleFunc()->getEntryBlock()));
+			auto tmp = a.functionReturn;
+			a.functionReturn = myFunction->getSingleProto()->returnType;
 			body->evaluate(a);
 			if( !a.hadBreak()){
 				if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
@@ -121,6 +123,8 @@ class ClassFunction : public E_FUNCTION{
 
 			a.FinalizeFunction(myFunction->getSingleFunc());
 			if(Parent) a.builder.SetInsertPoint( Parent );
+			assert(a.functionReturn == myFunction->getSingleProto()->returnType);
+			a.functionReturn = tmp;
 			body->buildFunction(a);
 		};
 

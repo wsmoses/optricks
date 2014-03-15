@@ -45,8 +45,8 @@ inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, Posi
 
 //todo allow rationals
 int IntClass::compare(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT || a->classType==CLASS_INT);
-	assert(b->classType==CLASS_COMPLEX || b->classType==CLASS_FLOAT || a->classType==CLASS_INT);
+	assert(hasCast(a));
+	assert(hasCast(b));
 	if(a->classType==b->classType){
 		if(a->classType==CLASS_COMPLEX){
 			ComplexClass* ca = (ComplexClass*)a;

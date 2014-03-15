@@ -200,6 +200,7 @@ template<typename... Args> String toStr(Args... args){
 const auto C_POINTERTYPE = PointerType::get(IntegerType::get(getGlobalContext(), 8),0);
 const auto VOIDTYPE = Type::getVoidTy(getGlobalContext());
 const auto BOOLTYPE = IntegerType::get(getGlobalContext(),1);
+const auto CHARTYPE = IntegerType::get(getGlobalContext(),8);
 const auto CLASSTYPE = IntegerType::get(getGlobalContext(),8*sizeof(void*));
 #ifdef NULL
 #undef NULL

@@ -71,7 +71,7 @@ public:
 		id.compilerError("Cannot convert float-literal to llvm type");
 		exit(1);
 	}
-	Constant* getValue(PositionID id, mpz_t const c) const{
+	Constant* getValue(PositionID id, const mpz_t& c) const{
 		id.compilerError("Cannot convert float-literal to llvm type");
 		exit(1);
 	}

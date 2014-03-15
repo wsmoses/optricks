@@ -24,6 +24,20 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		lexer.execFiles(true,pl, NULL,debug,0);
 		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
+	} else if(n->getToken()==T_LITERAL){
+		Data* d = (Data*)n;
+		if(d->type==R_INT){
+			IntLiteral* i = (IntLiteral*)d;
+			char temp[mpz_sizeinbase (i->intType->value, 10) + 2];
+			auto tmp =  mpz_get_str(temp, 10, i->intType->value);
+			std::cout << tmp << endl << flush;
+			return;
+		} else if(d->type==R_FLOAT){
+			FloatLiteral* i = (FloatLiteral*)d;
+			i->toStream(std::cout);
+			std::cout << endl << flush;
+			return;
+		}
 	}
 	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n->registerClasses();
