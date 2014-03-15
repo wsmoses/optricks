@@ -90,8 +90,6 @@ def void print(char i, bool b=true){
 	putchar(i);
 	if(b) putchar('\n');
 }*/
-extern double	cos		(double a);
-extern double	sin		(double a);
 extern double	tan		(double a);
 extern double	acos	(double a);
 extern double	asin	(double a);
@@ -102,13 +100,9 @@ extern double	sinh	(double a);
 extern double	acosh	(double a);
 extern double	asinh	(double a);
 extern double	atanh	(double a);
-extern double	exp		(double a);
 extern double	frexp	(double a);
 extern double	ldexp	(double a);
-extern double	log		(double a);
-extern double	log10	(double a);
 extern double	modf	(double a);
-extern double	exp2	(double a);
 extern double	expm1	(double a);
 extern int 		ilogb	(double a);
 extern double 	log1p	(double a);
@@ -117,23 +111,17 @@ extern double 	logb	(double a);
 extern double	scalbn	(double	a);
 extern double	scalbln	(double a);
 extern double 	pow		(double a, double b);
-extern double	sqrt	(double a);
 extern double	cbrt	(double a);
 extern double	erf		(double a);
 extern double	erfc	(double a);
 extern double	tgamma	(double a);
 extern double	lgamma	(double a);
-extern double	ceil	(double a);
 extern double	floor	(double a);
 extern double	fmod	(double a);
-extern double 	trunc	(double a);
-extern double	round	(double a);
 extern double	lround	(double a);
 extern double	llround	(double a);
-extern double	rint	(double a);
 extern double	lrint	(double a);
 extern double	llrint	(double a);
-extern double 	nearbyint(double a);
 extern double	remainder(double a);
 extern double	remquo	(double a);
 extern void exit(int i=0);
@@ -195,9 +183,6 @@ def double operator ** (double a, double b){
 	return this.real*this.real+this.imag*this.imag;
 }*/
 def int abs(int a){
-	return (a<0)?(-a):a;
-}
-def double abs(double a){
 	return (a<0)?(-a):a;
 }
 def double abs(complex z){

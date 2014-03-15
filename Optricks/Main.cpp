@@ -20,24 +20,9 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		String dir, file;
 		getDir(import->toImport, dir, file);
 		if(chdir(dir.c_str())!=0) import->error("Could not change directory to "+dir+"/"+file);
-		std::vector<String> pl = {file};
-		lexer.execFiles(true,pl, NULL,debug,0);
+		lexer.execFiles(true,{file}, NULL,debug,0);
 		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
-	} else if(n->getToken()==T_LITERAL){
-		Data* d = (Data*)n;
-		if(d->type==R_INT){
-			IntLiteral* i = (IntLiteral*)d;
-			char temp[mpz_sizeinbase (i->intType->value, 10) + 2];
-			auto tmp =  mpz_get_str(temp, 10, i->intType->value);
-			std::cout << tmp << endl << flush;
-			return;
-		} else if(d->type==R_FLOAT){
-			FloatLiteral* i = (FloatLiteral*)d;
-			i->toStream(std::cout);
-			std::cout << endl << flush;
-			return;
-		}
 	}
 	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n->registerClasses();
@@ -62,6 +47,20 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	rdata.builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(rdata);
+	if(dat->getToken()==T_LITERAL){
+		if(dat->type==R_INT){
+			IntLiteral* i = (IntLiteral*)dat;
+			char temp[mpz_sizeinbase (i->intType->value, 10) + 2];
+			auto tmp =  mpz_get_str(temp, 10, i->intType->value);
+			std::cout << tmp << endl << flush;
+			return;
+		} else if(dat->type==R_FLOAT){
+			FloatLiteral* i = (FloatLiteral*)dat;
+			i->toStream(std::cout);
+			std::cout << endl << flush;
+			return;
+		}
+	}
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
 		rdata.builder.CreateRet(dat->getValue(rdata,PositionID(0,0,"<interpreter.main>")));
