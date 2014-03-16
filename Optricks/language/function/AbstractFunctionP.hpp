@@ -143,7 +143,7 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 	if(t->classType==CLASS_LAZY){
 		const LazyClass* const lc = (const LazyClass*)t;
 		FunctionType *FT = (llvm::FunctionType*)(lc->type);
-		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",& r.lmod);
+		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
 		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
@@ -164,7 +164,7 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const 
 	if(t->classType==CLASS_LAZY){
 		const LazyClass* lc = (const LazyClass*)t;
 		FunctionType *FT = (llvm::FunctionType*)(lc->type);
-		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",& r.lmod);
+		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
 		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
@@ -293,7 +293,7 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	FunctionType *FT = FunctionType::get(gt, args, false);
 	Function* F = r.CreateFunctionD(fp->name,FT,LOCAL_FUNC);
 	BasicBlock *Parent = r.builder.GetInsertBlock();
-	BasicBlock *BB = BasicBlock::Create(r.lmod.getContext(), "entry", F);
+	BasicBlock *BB = BasicBlock::Create(r.lmod->getContext(), "entry", F);
 	r.builder.SetInsertPoint(BB);
 	assert(dyn_cast<VectorType>(gt)!=nullptr);
 	Value *V = UndefValue::get(gt);

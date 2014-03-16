@@ -589,7 +589,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="==") return new ConstantData(r.builder.CreateFCmpOEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
 			else if(operation=="!=") return new ConstantData(r.builder.CreateFCmpONE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
 			else if(operation=="**"){
-				auto IN = llvm::Intrinsic::getDeclaration(& r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,max->type));
+				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,max->type));
 				return new ConstantData(r.builder.CreateCall2(IN, value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			}
 			else {
@@ -600,7 +600,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		case CLASS_INT:
 		case CLASS_INTLITERAL:{
 			if(operation=="**" && dd->hasCast(intClass)){
-				auto IN = llvm::Intrinsic::getDeclaration(& r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,cc->type));
+				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,cc->type));
 				return new ConstantData(r.builder.CreateCall2(IN, value->getValue(r, filePos), ev->evaluate(r)->castToV(r, intClass, filePos)), cc);
 			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
 		}

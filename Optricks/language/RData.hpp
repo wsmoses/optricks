@@ -46,18 +46,19 @@ struct RData{
 		std::map<Function*,std::map<BasicBlock*,BasicBlock*> > pred;
 	public:
 
-		Module lmod;
+		Module* lmod;
 		IRBuilder<> builder;
 		FunctionPassManager fpm;
 		PassManager mpm;
 		ExecutionEngine* exec;
 		const AbstractClass* functionReturn;
-		RData(): lmod("main",getGlobalContext()), builder(getGlobalContext())
-		,fpm(&lmod),mpm(),functionReturn(nullptr){
-			lmod.setDataLayout("p:64:64:64");
+		RData(): lmod(new Module("main",getGlobalContext())),
+				builder(getGlobalContext())
+		,fpm(lmod),mpm(),functionReturn(nullptr){
+			lmod->setDataLayout("p:64:64:64");
 			InitializeNativeTarget();
 			InitializeAllTargets();
-			EngineBuilder eb(& lmod);
+			EngineBuilder eb( lmod);
 			String erS="";
 			eb.setErrorStr(& erS);
 			exec = eb.create();
@@ -83,11 +84,11 @@ struct RData{
 		}
 
 		inline BasicBlock* CreateBlockD(String name,Function* F){
-			BasicBlock* b = BasicBlock::Create(lmod.getContext(),Twine(name), F);
+			BasicBlock* b = BasicBlock::Create(lmod->getContext(),Twine(name), F);
 			return b;
 		}
 		inline Function* CreateFunctionD(String name,FunctionType* FT,Function::LinkageTypes L){
-			Function* f = Function::Create(FT,L,Twine(name),&lmod);
+			Function* f = Function::Create(FT,L,Twine(name),lmod);
 			return f;
 		}
 		void FinalizeFunctionD(Function* f,bool debug=false){
@@ -147,7 +148,7 @@ struct RData{
 		}
 		BasicBlock* CreateBlock(String name, BasicBlock* p=NULL){
 			Function* F = builder.GetInsertBlock()->getParent();
-			BasicBlock* b = BasicBlock::Create(lmod.getContext(), Twine(name), F);
+			BasicBlock* b = BasicBlock::Create(lmod->getContext(), Twine(name), F);
 			if(p!=nullptr){
 				auto found = pred.find(F);
 				assert(found!=pred.end() &&  "Compiler error -- could not find function in map");

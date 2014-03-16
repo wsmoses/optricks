@@ -136,11 +136,11 @@ class Lexer{
 			getRData().FinalizeFunction(F,debug);
 			if(debug){
 				this->myMod->write(cerr);
-				getRData().lmod.dump();
+				getRData().lmod->dump();
 				cerr << endl << flush;
 			}
 			if(toFile>0)
-				llvm::verifyModule(getRData().lmod);
+				llvm::verifyModule(* getRData().lmod);
 			//auto modOpt = new PassManager();
 			//FunctionPassManager* fnOpt = new FunctionPassManager(getRData().lmod);
 
@@ -151,7 +151,7 @@ class Lexer{
 			//if(toFile>0) pmb.populateModulePassManager(*modOpt);
 			//fnOpt->run(*F);
 			//if(toFile>0) modOpt->run(*(getRData().lmod));
-			if(toFile>0) getRData().mpm.run(getRData().lmod);
+			if(toFile>0) getRData().mpm.run(* getRData().lmod);
 
 			if(debug){
 				//getRData().lmod->dump();
@@ -159,12 +159,12 @@ class Lexer{
 			if(toFile==3){
 				//				llvm::raw_os_ostream raw_stream(file);
 				assert(file);
-				WriteBitcodeToFile(& getRData().lmod, *file);
+				WriteBitcodeToFile(getRData().lmod, *file);
 				//				getRData().lmod->print(raw_stream, 0);
 			} else if(toFile==2){
 				//				llvm::raw_os_ostream raw_stream(file);
 				assert(file);
-				getRData().lmod.print(*file,0);
+				getRData().lmod->print(*file,0);
 				//				WriteBitcodeToFile(getRData().lmod, file);
 				//				getRData().lmod->print(raw_stream, 0);
 			} else {

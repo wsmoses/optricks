@@ -33,7 +33,7 @@ Value* UserClass::generateData(RData& r, PositionID id) const{
 	if(!final) id.compilerError("Cannot generateData of non-finalized type");
 	if(layout==PRIMITIVEPOINTER_LAYOUT || layout==PRIMITIVE_LAYOUT) return UndefValue::get(type);
 	else {
-		uint64_t s = DataLayout(r.lmod.getDataLayout()).getTypeAllocSize(((PointerType*)type)->getElementType());
+		uint64_t s = DataLayout(r.lmod->getDataLayout()).getTypeAllocSize(((PointerType*)type)->getElementType());
 		IntegerType* ic = llvm::IntegerType::get(getGlobalContext(), 8*sizeof(size_t));
 		Value* v = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
 				((PointerType*)type)->getArrayElementType(), ConstantInt::get(ic, s));
