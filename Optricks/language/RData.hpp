@@ -57,6 +57,7 @@ struct RData{
 			lmod.setDataLayout("p:64:64:64");
 			InitializeNativeTarget();
 			exec = EngineBuilder(& lmod).create();
+			assert(exec);
 			// Set up optimizers
 			PassManagerBuilder pmb;
 			pmb.Inliner = createFunctionInliningPass();
