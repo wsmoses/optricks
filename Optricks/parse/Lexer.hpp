@@ -126,7 +126,9 @@ class Lexer{
 			}
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, SmallVector<Type*,0>(0), false);
+			assert(FT);
 			Function *F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
+			assert(F);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 			rdata.builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(rdata);
@@ -156,11 +158,12 @@ class Lexer{
 			}
 			if(toFile==3){
 				//				llvm::raw_os_ostream raw_stream(file);
-
+				assert(file);
 				WriteBitcodeToFile(& rdata.lmod, *file);
 				//				rdata.lmod->print(raw_stream, 0);
 			} else if(toFile==2){
 				//				llvm::raw_os_ostream raw_stream(file);
+				assert(file);
 				rdata.lmod.print(*file,0);
 				//				WriteBitcodeToFile(rdata.lmod, file);
 				//				rdata.lmod->print(raw_stream, 0);
