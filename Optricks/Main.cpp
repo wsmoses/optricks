@@ -53,11 +53,13 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			char temp[mpz_sizeinbase (i->intType->value, 10) + 2];
 			auto tmp =  mpz_get_str(temp, 10, i->intType->value);
 			std::cout << tmp << endl << flush;
+			F->eraseFromParent();
 			return;
 		} else if(dat->type==R_FLOAT){
 			FloatLiteral* i = (FloatLiteral*)dat;
 			i->toStream(std::cout);
 			std::cout << endl << flush;
+			F->eraseFromParent();
 			return;
 		} else if(dat->type==R_MATH){
 			switch(((const MathConstantLiteral*)dat)->mathType->mathType){
@@ -78,6 +80,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			case MATH_N_INF:
 				std::cout << "-Inf" << endl << flush; break;
 			}
+			F->eraseFromParent();
 			return;
 		}
 	}
@@ -302,6 +305,15 @@ int main(int argc, char** argv){
 		{
 				"./stdlib/stdlib.opt"
 				};
+
+	InitializeNativeTarget();
+	InitializeAllTargets();
+	String erS;
+	getRData().exec = EngineBuilder(getRData().lmod).setErrorStr(& erS).create();
+	if(!getRData().exec){
+		cerr << erS << endl << flush;
+		exit(1);
+	}
 	if(!interactive){
 		if(command==""){
 			files.push_back(files[0]);

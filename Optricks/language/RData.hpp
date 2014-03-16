@@ -56,17 +56,7 @@ struct RData{
 				builder(getGlobalContext())
 		,fpm(lmod),mpm(),functionReturn(nullptr){
 			lmod->setDataLayout("p:64:64:64");
-			InitializeNativeTarget();
-			InitializeAllTargets();
-			EngineBuilder eb( lmod);
-			String erS="";
-			eb.setErrorStr(& erS);
-			exec = eb.create();
-			if(erS!=""){
-				cerr << erS << endl << flush;
-				exit(1);
-			}
-			assert(exec);
+			exec=nullptr;
 			// Set up optimizers
 			PassManagerBuilder pmb;
 			pmb.Inliner = createFunctionInliningPass();
