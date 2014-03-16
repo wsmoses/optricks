@@ -168,6 +168,8 @@ class Lexer{
 				//				WriteBitcodeToFile(rdata.lmod, file);
 				//				rdata.lmod->print(raw_stream, 0);
 			} else {
+				assert(rdata.exec);
+				assert(rdata.exec->isCompilingLazily() || true);
 				void *FPtr = rdata.exec->getPointerToFunction(F);
 				void (*FP)() = (void (*)())(intptr_t)FPtr;
 				FP();
