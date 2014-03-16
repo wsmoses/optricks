@@ -16,15 +16,15 @@
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
-		auto cal = rdata.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
+		auto cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
 		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;
 		else return new ConstantData(cal,proto->returnType);
 	}
 BuiltinInlineFunction::BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 SingleFunction(fp,getF(fp)),inlined(tmp){
-	BasicBlock *Parent = rdata.builder.GetInsertBlock();
-	BasicBlock *BB = rdata.CreateBlockD("entry", myFunc);
-	rdata.builder.SetInsertPoint(BB);
+	BasicBlock *Parent = getRData().builder.GetInsertBlock();
+	BasicBlock *BB = getRData().CreateBlockD("entry", myFunc);
+	getRData().builder.SetInsertPoint(BB);
 
 	unsigned Idx = 0;
 	std::vector<const Evaluatable*> args;
@@ -37,15 +37,15 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 		else
 			args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 	}
-	const Data* ret = inlined(rdata, PositionID(0,0,"#inliner"), args);
-	if(! rdata.hadBreak()){
+	const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args);
+	if(! getRData().hadBreak()){
 		if(proto->returnType->classType==CLASS_VOID)
-			rdata.builder.CreateRetVoid();
+			getRData().builder.CreateRetVoid();
 		else
-			rdata.builder.CreateRet(ret->getValue(rdata,PositionID(0,0,"#inliner")));
+			getRData().builder.CreateRet(ret->getValue(getRData(),PositionID(0,0,"#inliner")));
 	}
-	rdata.FinalizeFunctionD(myFunc);
-	if(Parent) rdata.builder.SetInsertPoint( Parent );
+	getRData().FinalizeFunctionD(myFunc);
+	if(Parent) getRData().builder.SetInsertPoint( Parent );
 }
 
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
@@ -54,7 +54,7 @@ inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	for(unsigned i=0; i<tmp; i++)
 		ar[i] = fp->declarations[i].declarationType->type;
 	llvm::FunctionType* FT = FunctionType::get(fp->returnType->type, ar, false);
-	return rdata.CreateFunctionD(fp->name, FT, LOCAL_FUNC);
+	return getRData().CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args){
 	String s=funcName+"(";

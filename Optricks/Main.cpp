@@ -26,8 +26,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	}
 	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n->registerClasses();
-	n->registerFunctionPrototype(rdata);
-	n->buildFunction(rdata);
+	n->registerFunctionPrototype(getRData());
+	n->buildFunction(getRData());
 	const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
 	Type* type;
@@ -37,16 +37,16 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	if(n->getToken()!=T_DECLARATION && retType->classType == CLASS_COMPLEX){
 		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "printc",PositionID(0,0,"#main"))), {n});
 		n->registerClasses();
-		n->registerFunctionPrototype(rdata);
-		n->buildFunction(rdata);
+		n->registerFunctionPrototype(getRData());
+		n->buildFunction(getRData());
 		//n->checkTypes();
 		type = VOIDTYPE;
 	}
 	FunctionType *FT = FunctionType::get(type, SmallVector<Type*,0>(0), false);
-	Function *F = rdata.CreateFunction("",FT,EXTERN_FUNC);
+	Function *F = getRData().CreateFunction("",FT,EXTERN_FUNC);
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-	rdata.builder.SetInsertPoint(BB);
-	const Data* dat = n->evaluate(rdata);
+	getRData().builder.SetInsertPoint(BB);
+	const Data* dat = n->evaluate(getRData());
 	if(dat->getToken()==T_LITERAL){
 		if(dat->type==R_INT){
 			IntLiteral* i = (IntLiteral*)dat;
@@ -83,13 +83,13 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	}
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
-		rdata.builder.CreateRet(dat->getValue(rdata,PositionID(0,0,"<interpreter.main>")));
+		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
 	else
-		rdata.builder.CreateRetVoid();
+		getRData().builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
-	rdata.FinalizeFunction(F,debug);
+	getRData().FinalizeFunction(F,debug);
 	//cout << "dumped" << endl << flush;
-	void *FPtr = rdata.exec->getPointerToFunction(F);
+	void *FPtr = getRData().exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;

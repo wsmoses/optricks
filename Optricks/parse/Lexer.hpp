@@ -119,30 +119,30 @@ class Lexer{
 			getStatements(global, debug, fileNames, stats);
 			for(auto& n: stats) n->registerClasses();
 			for(auto& n: stats){
-				n->registerFunctionPrototype(rdata);
+				n->registerFunctionPrototype(getRData());
 			}
 			for(auto& n: stats){
-				n->buildFunction(rdata);
+				n->buildFunction(getRData());
 			}
 
 			FunctionType *FT = FunctionType::get(VOIDTYPE, SmallVector<Type*,0>(0), false);
 			assert(FT);
-			Function *F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
+			Function *F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
 			assert(F);
 			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
-			rdata.builder.SetInsertPoint(BB);
-			for(auto& n: stats) n->evaluate(rdata);
-			rdata.builder.CreateRetVoid();
-			rdata.FinalizeFunction(F,debug);
+			getRData().builder.SetInsertPoint(BB);
+			for(auto& n: stats) n->evaluate(getRData());
+			getRData().builder.CreateRetVoid();
+			getRData().FinalizeFunction(F,debug);
 			if(debug){
 				this->myMod->write(cerr);
-				rdata.lmod.dump();
+				getRData().lmod.dump();
 				cerr << endl << flush;
 			}
 			if(toFile>0)
-				llvm::verifyModule(rdata.lmod);
+				llvm::verifyModule(getRData().lmod);
 			//auto modOpt = new PassManager();
-			//FunctionPassManager* fnOpt = new FunctionPassManager(rdata.lmod);
+			//FunctionPassManager* fnOpt = new FunctionPassManager(getRData().lmod);
 
 			// Set up optimisers
 			//PassManagerBuilder pmb;
@@ -150,27 +150,27 @@ class Lexer{
 			//pmb.populateFunctionPassManager(*fnOpt);
 			//if(toFile>0) pmb.populateModulePassManager(*modOpt);
 			//fnOpt->run(*F);
-			//if(toFile>0) modOpt->run(*(rdata.lmod));
-			if(toFile>0) rdata.mpm.run(rdata.lmod);
+			//if(toFile>0) modOpt->run(*(getRData().lmod));
+			if(toFile>0) getRData().mpm.run(getRData().lmod);
 
 			if(debug){
-				//rdata.lmod->dump();
+				//getRData().lmod->dump();
 			}
 			if(toFile==3){
 				//				llvm::raw_os_ostream raw_stream(file);
 				assert(file);
-				WriteBitcodeToFile(& rdata.lmod, *file);
-				//				rdata.lmod->print(raw_stream, 0);
+				WriteBitcodeToFile(& getRData().lmod, *file);
+				//				getRData().lmod->print(raw_stream, 0);
 			} else if(toFile==2){
 				//				llvm::raw_os_ostream raw_stream(file);
 				assert(file);
-				rdata.lmod.print(*file,0);
-				//				WriteBitcodeToFile(rdata.lmod, file);
-				//				rdata.lmod->print(raw_stream, 0);
+				getRData().lmod.print(*file,0);
+				//				WriteBitcodeToFile(getRData().lmod, file);
+				//				getRData().lmod->print(raw_stream, 0);
 			} else {
-				assert(rdata.exec);
-				assert(rdata.exec->isCompilingLazily() || true);
-				void *FPtr = rdata.exec->getPointerToFunction(F);
+				assert(getRData().exec);
+				assert(getRData().exec->isCompilingLazily() || true);
+				void *FPtr = getRData().exec->getPointerToFunction(F);
 				void (*FP)() = (void (*)())(intptr_t)FPtr;
 				FP();
 			}

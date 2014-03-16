@@ -161,5 +161,8 @@ struct RData{
 		BasicBlock* getBlock(String name, JumpType jump, BasicBlock* bb, const Data* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
 };
 
-RData rdata;
+RData& getRData(){
+	static RData rdata;
+	return rdata;
+}
 #endif /* RDATA_HPP_ */
