@@ -56,7 +56,14 @@ struct RData{
 		,fpm(&lmod),mpm(),functionReturn(nullptr){
 			lmod.setDataLayout("p:64:64:64");
 			InitializeNativeTarget();
-			exec = EngineBuilder(& lmod).create();
+			EngineBuilder eb(& lmod);
+			String erS="";
+			eb.setErrorStr(& erS);
+			exec = eb.create();
+			if(erS!=""){
+				cerr << erS << endl << flush;
+				exit(1);
+			}
 			assert(exec);
 			// Set up optimizers
 			PassManagerBuilder pmb;
