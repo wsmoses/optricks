@@ -17,6 +17,12 @@
 
 const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, PositionID id){
 	if(a==b) return a;
+	if(a->classType==CLASS_MATHLITERAL){
+		if(a->hasCast(b)) return b;
+	}
+	if(b->classType==CLASS_MATHLITERAL){
+		if(b->hasCast(a)) return a;
+	}
 	if(a->classType==CLASS_COMPLEX){
 		if(b->classType==CLASS_COMPLEX) return ComplexClass::get((const RealClass*)
 				getMin(((ComplexClass*)a)->innerClass,((ComplexClass*)b)->innerClass, id) );

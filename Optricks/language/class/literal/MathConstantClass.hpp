@@ -24,15 +24,21 @@ protected:
 			return "Log2Class";
 		case MATH_CATALAN:
 			return "CatalanClass";
+		case MATH_NAN:
+			return "NanClass";
+		case MATH_P_INF:
+			return "InfClass";
+		case MATH_N_INF:
+			return "-InfClass";
 		}
 	}
-	MathConstant mathType;
 	MathConstantClass(MathConstant mc):
-		AbstractClass(nullptr,fromC(mc),nullptr,LITERAL_LAYOUT,CLASS_MATHLITERAL,true,nullptr){
+		AbstractClass(nullptr,fromC(mc),nullptr,LITERAL_LAYOUT,CLASS_MATHLITERAL,true,BOOLTYPE){
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
 public:
+	MathConstant mathType;
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		if(toCast==this) return true;
 		switch(toCast->classType){
@@ -68,13 +74,13 @@ public:
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		//todo allow complex/floats as well
-		assert(a->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT || a==this );
-		assert(b->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT|| b==this);
-		if(a==this){
-			if(b==this) return 0;
-			else return -1;
-		} else if(b==this) return 1;
-		else return 0;
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a==this) return (b==this)?0:-1;
+		else if(b==this) return 1;
+		if(a->classType==CLASS_FLOAT) return (b->classType==CLASS_FLOAT)?0:-1;
+		else if(b->classType==CLASS_FLOAT) return 1;
+		return 0;
 	}
 	static MathConstantClass* get(MathConstant mc) {
 		static std::map<MathConstant,MathConstantClass> m;
@@ -84,7 +90,5 @@ public:
 		return & tmp.first->second;
 	}
 };
-
-
 
 #endif /* MATHCONSTANTLITERAL_HPP_ */

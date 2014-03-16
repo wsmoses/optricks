@@ -100,6 +100,12 @@ public:
 		assert(returnType);
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
 				(value->evaluate(r)->castToV(r, returnType, filePos));
+		if(tmp->getType()!=returnType->type){
+			tmp->getType()->dump();
+			returnType->type->dump();
+			cerr << endl << flush;
+		}
+		assert(tmp->getType()==returnType->type);
 		LocationData* ld;
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());

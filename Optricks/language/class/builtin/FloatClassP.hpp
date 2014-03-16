@@ -26,8 +26,8 @@ bool FloatClass::hasCast(const AbstractClass* const toCast) const {
 		}
 	}
 int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_COMPLEX || a->classType==CLASS_FLOAT);
-	assert(b->classType==CLASS_COMPLEX || b->classType==CLASS_FLOAT);
+	assert(hasCast(a));
+	assert(hasCast(b));
 	if(a->classType==b->classType){
 		if(a->classType==CLASS_COMPLEX){
 			ComplexClass* ca = (ComplexClass*)a;
@@ -36,13 +36,21 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 			assert(cb->innerClass->classType==CLASS_FLOAT);
 			FloatClass* fa = (FloatClass*)(ca->innerClass);
 			FloatClass* fb = (FloatClass*)(cb->innerClass);
-			if(fa->floatType==fb->floatType) return 0;
+			if(fa->floatType==fb->floatType){
+				if(fa==this)
+					return (fb==this)?0:-1;
+				else return (fb==this)?1:0;
+			}
 			else return (fa->floatType < fb->floatType)?(-1):(1);
 
 		} else {
 			FloatClass* fa = (FloatClass*)a;
 			FloatClass* fb = (FloatClass*)b;
-			if(fa->floatType==fb->floatType) return 0;
+			if(fa->floatType==fb->floatType){
+				if(fa==this)
+					return (fb==this)?0:-1;
+				else return (fb==this)?1:0;
+			}
 			else return (fa->floatType < fb->floatType)?(-1):(1);
 		}
 	} else return (a->classType==CLASS_FLOAT)?(-1):(1);
@@ -56,16 +64,13 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 				(valueToCast->getType()->isVectorTy() && valueToCast->getType()->getVectorElementType()==type));
 		switch(toCast->classType){
 		case CLASS_FLOAT:{
-			auto ai = ((FloatClass*)toCast)->getWidth();
-			auto bi = getWidth();
-			if( ai < bi) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small");
+			auto ai = getWidth();
+			auto bi = ((FloatClass*)toCast)->getWidth();
+			if(ai>bi) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small ("+str(ai)+","+str(bi)+")");
 			if(ai==bi) return valueToCast;
 			if(valueToCast->getType()->isVectorTy()){
 				unsigned g = ((VectorType*)valueToCast->getType())->getVectorNumElements();
 				auto TC = VectorType::get(toCast->type, g);
-				//valueToCast->getType()->dump();
-				//TC->dump();
-				//cerr << endl << flush;
 				return r.builder.CreateFPExt(valueToCast, TC);
 			}
 			return r.builder.CreateFPExt(valueToCast, toCast->type);

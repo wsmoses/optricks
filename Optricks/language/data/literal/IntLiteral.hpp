@@ -91,10 +91,6 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		return intType->compare(a,b);
 	}
-	static inline IntLiteral* getZero() {
-		static IntLiteral* zero = new IntLiteral((signed long int)0);
-		return zero;
-	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Integer literal cannot act as function");
 		exit(1);
@@ -108,7 +104,8 @@ public:
 		exit(1);
 	}
 };
-
+IntLiteral ZERO_LITERAL((signed long int)0);
+IntLiteral ONE_LITERAL((signed long int)0);
 /*
  * class IntLiteral:public Literal{
 private:

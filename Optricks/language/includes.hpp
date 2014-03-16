@@ -323,6 +323,9 @@ enum MathConstant{
 	MATH_E,
 	MATH_LN2,
 	MATH_CATALAN,
+	MATH_NAN,
+	MATH_P_INF,
+	MATH_N_INF
 };
 template<typename N> inline N check(const N& a){
 	assert(a);

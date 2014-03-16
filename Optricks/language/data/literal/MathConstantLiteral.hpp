@@ -18,8 +18,9 @@ public:
 	 */
 	const MathConstantClass* mathType;
 	//IntLiteral(const mpz_t& val, IntClass* cp=NULL):Literal(R_INT),value(val),intType(cp){ assert(val);}
-	MathConstantLiteral(MathConstant mt):Literal(R_MATH),
-			mathType(MathConstantClass::get(mt)){
+	MathConstantLiteral(MathConstantClass* mt, String toAdd):Literal(R_MATH),
+			mathType(mt){
+		if(toAdd.length()>0) LANG_M->addVariable(PositionID(0,0,"#math"),toAdd,this);
 	}
 	const AbstractClass* getReturnType() const override final{
 		return mathType;
@@ -32,7 +33,7 @@ public:
 		if(mathType==right) return this;
 		switch(right->classType){
 		case CLASS_FLOAT:{
-			ConstantFP* cfp;
+			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
 			switch(mathType->mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -40,13 +41,16 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
+				case MATH_NAN: cfp = fc->getNaN(); break;
+				case MATH_P_INF: cfp = fc->getInfinity(); break;
+				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
 			return new ConstantData(cfp, fc);
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
 			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType->getName()+"' to '"+cc->getName()+"'");
-			ConstantFP* cfp;
+			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
 			switch(mathType->mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -54,8 +58,14 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
+				case MATH_NAN: cfp = fc->getNaN(); break;
+				case MATH_P_INF: cfp = fc->getInfinity(); break;
+				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
-			return new ConstantData(ConstantVector::get(llvm::SmallVector<Constant*,2>({cfp,fc->getZero(id)})),cc);
+			SmallVector<Constant*,2> ar(2);
+			ar[0] = cfp;
+			ar[1] = cc->innerClass->getZero(id);
+			return new ConstantData(ConstantVector::get(llvm::SmallVector<Constant*,2>(ar)),cc);
 		}
 		default:
 			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());
@@ -65,7 +75,7 @@ public:
 	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		switch(right->classType){
 		case CLASS_FLOAT:{
-			ConstantFP* cfp;
+			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
 			switch(mathType->mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -73,13 +83,18 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
+				case MATH_NAN: cfp = fc->getNaN(); break;
+				case MATH_P_INF: cfp = fc->getInfinity(); break;
+				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
-			return new ConstantData(cfp, fc);
+			cfp->dump();
+			cerr << endl << flush;
+			return cfp;
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
 			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType->getName()+"' to '"+cc->getName()+"'");
-			ConstantFP* cfp;
+			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
 			switch(mathType->mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -87,8 +102,14 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
+				case MATH_NAN: cfp = fc->getNaN(); break;
+				case MATH_P_INF: cfp = fc->getInfinity(); break;
+				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
-			return ConstantVector::get(llvm::SmallVector<Constant*,2>({cfp,fc->getZero(id)}));
+			SmallVector<Constant*,2> ar(2);
+			ar[0] = cfp;
+			ar[1] = cc->innerClass->getZero(id);
+			return ConstantVector::get(llvm::SmallVector<Constant*,2>(ar));
 		}
 		default:
 			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());
@@ -114,7 +135,14 @@ public:
 		exit(1);
 	}
 };
-
+const MathConstantLiteral MY_PI(MathConstantClass::get(MATH_PI),"Pi");
+const MathConstantLiteral MY_E(MathConstantClass::get(MATH_E),"E");
+const MathConstantLiteral MY_EULER_MASC(MathConstantClass::get(MATH_EULER_MASC),"EulerGamma");
+const MathConstantLiteral MY_LN2(MathConstantClass::get(MATH_LN2),"Log2");
+const MathConstantLiteral MY_CATALAN(MathConstantClass::get(MATH_CATALAN),"Catalan");
+const MathConstantLiteral MY_NAN(MathConstantClass::get(MATH_NAN),"Nan");
+const MathConstantLiteral MY_P_INF(MathConstantClass::get(MATH_P_INF),"Inf");
+const MathConstantLiteral MY_N_INF(MathConstantClass::get(MATH_N_INF),"");
 
 
 #endif /* MATHCONSTANTLITERAL_HPP_ */

@@ -59,6 +59,26 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			i->toStream(std::cout);
 			std::cout << endl << flush;
 			return;
+		} else if(dat->type==R_MATH){
+			switch(((const MathConstantLiteral*)dat)->mathType->mathType){
+			case MATH_PI:
+				std::cout << "Pi" << endl << flush; break;
+			case MATH_E:
+				std::cout << "E" << endl << flush; break;
+			case MATH_EULER_MASC:
+				std::cout << "EulerGamma" << endl << flush; break;
+			case MATH_LN2:
+				std::cout << "Log2" << endl << flush; break;
+			case MATH_CATALAN:
+				std::cout << "Catalan" << endl << flush; break;
+			case MATH_NAN:
+				std::cout << "Nan" << endl << flush; break;
+			case MATH_P_INF:
+				std::cout << "Inf" << endl << flush; break;
+			case MATH_N_INF:
+				std::cout << "-Inf" << endl << flush; break;
+			}
+			return;
 		}
 	}
 //	Value* v = dat.getValue(lexer.rdata);

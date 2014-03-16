@@ -66,9 +66,6 @@ public:
 		illegalLocal(id,s);
 		exit(1);
 	}
-	unsigned getWidth() const{
-		return ((IntegerType*)type)->getBitWidth();
-	}
 	/*
 	inline void checkFit(PositionID id, mpz_class const value) const{
 		if(sgn(value)<0){
@@ -94,7 +91,7 @@ public:
 		default: return APFloat::Bogus;
 		}
 	}
-	inline unsigned getWidth(){
+	inline unsigned getWidth() const{
 		switch(floatType){
 		case HalfTy: return 16;
 		case FloatTy: return 32;
@@ -102,7 +99,7 @@ public:
 		case X86_FP80Ty: return 80;
 		case FP128Ty: return 128;
 		case PPC_FP128Ty: return 128;
-		default: assert(0); return 0;
+		//default: assert(0); return 0;
 		}
 	}
 	inline ConstantFP* getLargest (bool Negative=false) const {
@@ -123,7 +120,7 @@ public:
 	inline ConstantFP* getOne(PositionID id) const override final{
 		return ConstantFP::get(getGlobalContext(), APFloat(getSemantics(),1));
 	}
-	inline ConstantFP* getEulerMasc(PositionID id) const{
+	inline Constant* getEulerMasc(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_euler(e, MPFR_RNDN);
@@ -131,7 +128,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getPi(PositionID id) const{
+	inline Constant* getPi(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_pi(e, MPFR_RNDN);
@@ -139,7 +136,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getE(PositionID id) const{
+	inline Constant* getE(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_t ze;
@@ -151,7 +148,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getLN2(PositionID id) const{
+	inline Constant* getLN2(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_log2(e, MPFR_RNDN);
@@ -159,7 +156,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getCatalan(PositionID id) const{
+	inline Constant* getCatalan(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_catalan(e, MPFR_RNDN);
@@ -167,16 +164,15 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline ConstantFP* getInfinity(bool negative=false) const{
-		return (ConstantFP*) ConstantFP::getInfinity(type,negative);
+	inline Constant* getInfinity(bool negative=false) const{
+		return ConstantFP::getInfinity(type,negative);
 	}
 	inline Constant* getValue(PositionID id, const mpz_t& value) const override final{
 		char temp[mpz_sizeinbase (value, 10) + 2];
-		auto tmp =  mpz_get_str(temp, 10, value);
-		Constant* ret = ConstantFP::get(type,String(tmp));
-		return ret;
+		mpz_get_str(temp, 10, value);
+		return ConstantFP::get(type,String(temp));
 	}
-	inline ConstantFP* getValue(PositionID id, mpfr_t const value) const{
+	inline Constant* getValue(PositionID id, mpfr_t const value) const{
 		if(mpfr_regular_p(value)){
 
 		    char *s = NULL;

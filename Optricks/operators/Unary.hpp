@@ -9,6 +9,7 @@
 #define UNARY_HPP_
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
+#include "../language/data/literal/MathConstantLiteral.hpp"
 inline const AbstractClass* getPreopReturnType(PositionID filePos, const AbstractClass* cc, const String operation){
 	if(operation=="&"){
 		if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
@@ -79,6 +80,20 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 			exit(1);
 		}
 	}
+	case CLASS_MATHLITERAL:{
+		const MathConstantClass* mlc = (const MathConstantClass*)cc;
+		if(operation=="+") return mlc;
+		if(operation=="-"){
+			if(mlc->mathType==MATH_P_INF) return MathConstantClass::get(MATH_N_INF);
+			if(mlc->mathType==MATH_N_INF) return MathConstantClass::get(MATH_P_INF);
+			if(mlc->mathType==MATH_NAN) return mlc;
+		}
+		if(false) return cc;
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -92,8 +107,7 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	case CLASS_CHAR:
 	case CLASS_AUTO:
 	case CLASS_SET:
-	case CLASS_CLASS:
-	case CLASS_MATHLITERAL:{
+	case CLASS_CLASS:{
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
@@ -267,6 +281,20 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			exit(1);
 		}
 	}
+	case CLASS_MATHLITERAL:{
+		const MathConstantClass* mlc = (const MathConstantClass*)cc;
+		if(operation=="+") return value;
+		if(operation=="-"){
+			if(mlc->mathType==MATH_P_INF) return & MY_N_INF;
+			if(mlc->mathType==MATH_N_INF) return & MY_P_INF;
+			if(mlc->mathType==MATH_NAN) return value;
+		}
+		if(false) return cc;
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -280,8 +308,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	case CLASS_CHAR:
 	case CLASS_AUTO:
 	case CLASS_SET:
-	case CLASS_CLASS:
-	case CLASS_MATHLITERAL:{
+	case CLASS_CLASS:{
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
