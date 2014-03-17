@@ -71,6 +71,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	//cout << "testing cos" << cos(3) << endl << flush;
 	getRData().FinalizeFunction(F,debug);
 	//cout << "dumped" << endl << flush;
+	//getRData().lmod->dump();
+	//cerr << endl << flush;
 	void *FPtr = getRData().exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
 	if(retType->classType==CLASS_FUNC){

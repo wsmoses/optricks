@@ -65,7 +65,7 @@ public:
 		}
 		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
 			declaration[Idx]->variable->getMetadata().setObject(
-				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))->toLocation(a)
+				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
 			);
 		}
 		const AbstractClass* returnType = body->getReturnType();
@@ -87,7 +87,9 @@ public:
 		unsigned Idx = 0;
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
 			((Value*)AI)->setName(Twine(ad[Idx].declarationVariable));
-			((LocationData*)declaration[Idx]->variable->getMetadata().getObject())->value->setValue(((Value*)AI),a);
+			declaration[Idx]->variable->getMetadata().setObject(
+			(new ConstantData((Value*)AI,ad[Idx].declarationType))->toLocation(a)
+			);
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );
