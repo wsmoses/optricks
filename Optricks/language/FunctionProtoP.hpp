@@ -12,13 +12,11 @@
 #include "./class/UserClass.hpp"
 
 FunctionClass* FunctionProto::getFunctionClass() const{
-	static FunctionClass* fc=nullptr;
-	if(fc==nullptr){
 		std::vector<const AbstractClass*> ac;
 		for(const auto& a: declarations) ac.push_back(a.declarationType);
-		fc=FunctionClass::get(returnType, ac);
-	}
-	return fc;
+		auto fc = FunctionClass::get(returnType, ac);
+		//cerr << toString() << " vs " << fc->getName() << endl << flush;
+		return fc;
 }
 /*
 std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(FunctionProto* func) const{

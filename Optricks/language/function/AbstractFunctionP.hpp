@@ -16,9 +16,11 @@
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
-		auto cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
+		Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
 		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;
-		else return new ConstantData(cal,proto->returnType);
+		else{
+			return new ConstantData(cal,proto->returnType);
+		}
 	}
 BuiltinInlineFunction::BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 SingleFunction(fp,getF(fp)),inlined(tmp){
@@ -41,8 +43,10 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 	if(! getRData().hadBreak()){
 		if(proto->returnType->classType==CLASS_VOID)
 			getRData().builder.CreateRetVoid();
-		else
-			getRData().builder.CreateRet(ret->getValue(getRData(),PositionID(0,0,"#inliner")));
+		else{
+			Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
+			getRData().builder.CreateRet(V);
+		}
 	}
 	getRData().FinalizeFunctionD(myFunc);
 	if(Parent) getRData().builder.SetInsertPoint( Parent );
@@ -183,16 +187,19 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const 
 	}
 }
 llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
-	const auto as = args.size();
+	auto as = args.size();
 	const auto ds = proto->declarations.size();
-	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
+	if(as>ds){
+		id.error("Gave too many arguments to function "+proto->toString());
+		as = ds;
+	}
 	llvm::SmallVector<Value*,0> temp(ds);
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
 		if(at->classType==CLASS_VOID){
 			if(proto->declarations[i].defaultValue==nullptr){
-				id.error("No default argument available for argument "+str(i+1));
+				id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
 				exit(1);
 			}
 			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue, t);
@@ -205,7 +212,7 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 	}
 	for(unsigned int i = as; i<ds; i++){
 		if(proto->declarations[i].defaultValue==nullptr){
-			id.error("No default argument available for argument "+str(i+1));
+			id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
 			exit(1);
 		}
 		const AbstractClass* const t = proto->declarations[i].declarationType;

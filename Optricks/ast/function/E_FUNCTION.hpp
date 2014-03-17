@@ -23,12 +23,12 @@ class E_FUNCTION:public ErrorStatement{
 			return myFunction;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-			error("Function Declaration cannot be used as function");
-			exit(1);
+			assert(myFunction);
+			return myFunction->getSingleProto()->returnType;
 		}
 		const AbstractClass* getReturnType() const override final{
-			error("Function Declaration cannot be used as value");
-			exit(1);
+			assert(myFunction);
+			return myFunction->getSingleProto()->getFunctionClass();
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 		}

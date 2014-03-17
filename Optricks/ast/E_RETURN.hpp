@@ -53,7 +53,8 @@ class E_RETURN : public ErrorStatement{
 					r.builder.CreateRetVoid();
 				else{
 					assert(r.functionReturn);
-					r.builder.CreateRet(t->castToV(r, r.functionReturn, filePos));
+					Value* V = t->castToV(r, r.functionReturn, filePos);
+					r.builder.CreateRet(V);
 				}
 			} else {
 				BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),NULL));

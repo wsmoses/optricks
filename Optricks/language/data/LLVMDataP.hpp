@@ -36,10 +36,10 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		for(const AbstractClass* a: fc->argumentTypes){
 			v.push_back(AbstractDeclaration(a));
 		}
-		FunctionProto fp("#data",v,fc->returnType);
-		assert(F);
-		assert(dyn_cast<Function>(F));
-		return new ConstantData(r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args)),fp.returnType);
+		FunctionProto fp("",v,fc->returnType);
+		Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
+		if(fp.returnType->classType==CLASS_VOID) return VOID_DATA;
+		else return new ConstantData(V,fp.returnType);
 	}
 	else if(type->classType==CLASS_CLASS){
 		Value* v = getValue(r,id);

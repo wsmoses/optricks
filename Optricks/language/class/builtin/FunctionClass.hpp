@@ -19,17 +19,21 @@ public:
 		return s+">";
 	}
 	static inline Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
-				const auto len = args.size();
-				llvm::SmallVector<Type*,0> ar(len);
-				for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
-				return FunctionType::get(r1->type,ar,isVarArg);
+		const auto len = args.size();
+		llvm::SmallVector<Type*,0> ar(len);
+		for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
+		return PointerType::getUnqual(FunctionType::get(r1->type,ar,isVarArg));
 	}
 	const AbstractClass* const returnType;
 	std::vector<const AbstractClass*> argumentTypes;
 	bool isVarArg;
 private:
 	FunctionClass(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool var=false):
-		AbstractClass(nullptr,str(r1,args,var),nullptr,PRIMITIVE_LAYOUT,CLASS_FUNC,true,getFuncType(r1,args,var)),returnType(r1),argumentTypes(args),isVarArg(var){}
+		AbstractClass(nullptr,str(r1,args,var),nullptr,PRIMITIVE_LAYOUT,CLASS_FUNC,true,getFuncType(r1,args,var)),returnType(r1),argumentTypes(args),isVarArg(var){
+		//cerr << getName() << " is ";
+		//type->dump();
+		//cerr << endl << flush;
+	}
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		switch(toCast->classType){
@@ -107,7 +111,8 @@ public:
 		args.push_back(ret);
 		FunctionClass*& fc = map.get(args);
 		args.pop_back();
-		if(fc==nullptr) return fc= new FunctionClass(ret, args);
+		if(fc==nullptr) fc= new FunctionClass(ret, args);
+		//cerr << FunctionClass::str(ret, args,false) << " VS " << fc->getName() << endl << flush;
 		return fc;
 	}
 };

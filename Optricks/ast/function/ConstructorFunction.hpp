@@ -53,7 +53,8 @@ public:
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
 		}
-		ra.builder.CreateRet(_this.getValue(ra));
+		Value* V = _this.getValue(ra);
+		ra.builder.CreateRet(V);
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		assert(ra.functionReturn == nullptr);

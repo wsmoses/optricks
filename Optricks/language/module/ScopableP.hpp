@@ -78,43 +78,54 @@ void Resolvable::setObject(const Data* da) const{
 }
 
 
-const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const{
+/*const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const{
 	auto f = find(id,name);
-	if(f.second->second.type==SCOPE_FUNC){
+	switch(f.second->second.type){
+	case SCOPE_FUNC:{
 		SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
 		return d->getSingleProto()->returnType;
-	} else if(f.second->second.type==SCOPE_CLASS){
-		return f.first->classes[f.second->second.pos];
-	} else{
-		id.error(name+" found at current scope, but not correct variable type -- needed function");
-		exit(1);
 	}
-}
+	case SCOPE_CLASS:{
+		return f.first->classes[f.second->second.pos];
+	}
+	case SCOPE_VAR:{
+		auto P = f.first->vars[f.second->second.pos];
+		return P->getFunctionReturnType(id,fp);
+	}
+	}
+}*/
 const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const{
 	auto f = find(id,name);
-	if(f.second->second.type==SCOPE_FUNC){
-		SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
-		return d->getSingleProto()->returnType;
-	} else if(f.second->second.type==SCOPE_CLASS){
-		return f.first->classes[f.second->second.pos];
-	} else{
-		id.error(name+" found at current scope, but not correct variable type -- needed function");
-		exit(1);
+	switch(f.second->second.type){
+		case SCOPE_FUNC:{
+			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
+			return d->getSingleProto()->returnType;
+		}
+		case SCOPE_CLASS:{
+			return f.first->classes[f.second->second.pos];
+		}
+		case SCOPE_VAR:{
+			auto P = f.first->vars[f.second->second.pos];
+			return P->getFunctionReturnType(id,fp);
+		}
 	}
 }
 
 inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const{
 	auto f = find(id,name);
-
-	if(f.second->second.type==SCOPE_FUNC){
-		SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
-		return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
-	} else if(f.second->second.type==SCOPE_CLASS){
-		const Data* d = f.first->classes[f.second->second.pos];
-		return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
-	} else{
-		id.error(name+" found at current scope, but not correct variable type -- needed function");
-		exit(1);
+	switch(f.second->second.type){
+		case SCOPE_FUNC:{
+			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
+			return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
+		}
+		case SCOPE_CLASS:{
+			const Data* d = f.first->classes[f.second->second.pos];
+			return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
+		}
+		case SCOPE_VAR:{
+			auto P = f.first->vars[f.second->second.pos];
+			return std::pair<const Data*,SCOPE_TYPE>(P, SCOPE_VAR);
+		}
 	}
 }
 
@@ -186,9 +197,9 @@ const Data* Scopable::get(PositionID id, const String name) const{
 	inline void Resolvable::setFunction(SingleFunction* d) const{
 		module->addFunction(filePos,name)->set(d,filePos);
 	}
-	const AbstractClass* Resolvable::getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const{
-		return module->getFunctionReturnType(filePos,name,fp);
-	}
+	//const AbstractClass* Resolvable::getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const{
+	//	return module->getFunctionReturnType(filePos,name,fp);
+	//}
 	const AbstractClass* Resolvable::getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const{
 		return module->getFunctionReturnType(filePos,name,fp);
 	}

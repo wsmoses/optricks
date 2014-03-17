@@ -47,7 +47,8 @@ public:
 			if(ret->type==R_VOID)
 				ra.builder.CreateRetVoid();
 			else{
-				ra.builder.CreateRet(ret->getValue(ra, filePos));
+				Value* V = ret->getValue(ra, filePos);
+				ra.builder.CreateRet(V);
 			}
 		}
 		ra.FinalizeFunction(F);

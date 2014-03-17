@@ -96,7 +96,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	//cout << "ran" << endl << flush;
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
-		std::cout << "function<" << FP() << ">" << endl << flush;
+		std::cout << retType->getName() << "(" << FP() << ")" << endl << flush;
 	}else if(retType->classType==CLASS_CLASS){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		FP();
@@ -153,6 +153,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		((void* (*)())(intptr_t)FPtr)();
 		cerr << "Unknown print function for type " << retType->getName() << endl << flush;
 	}
+	F->eraseFromParent();
 }
 /**
  * Returns whether s starts with b;

@@ -118,12 +118,12 @@ public:
 		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
 		return f.first->classes[f.second->second.pos];
 	}
-	OverloadedFunction* getStaticFunction(PositionID id, const String name) const{
+	/*OverloadedFunction* getStaticFunction(PositionID id, const String name) const{
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_FUNC) id.error(name+" found at current scope, but not correct variable type -- needed non-class function");
 		return f.first->funcs[f.second->second.pos];
-	}
-	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
+	}*/
+	//inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const;
 	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 
@@ -186,7 +186,7 @@ public:
 	inline void addFunction(SingleFunction* d) const;
 	inline void setFunction(SingleFunction* d) const;
 	inline AbstractClass* getClass() const;
-	const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
+	//const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
 	const AbstractClass* getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const;
 	std::pair<const Data*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;
 	/*inline void addLocalFunction(RData& r, PositionID id, DATA d){

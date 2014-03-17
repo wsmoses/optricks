@@ -100,6 +100,18 @@ public:
 		assert(returnType);
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
 				(value->evaluate(r)->castToV(r, returnType, filePos));
+		if(tmp){
+			if(tmp->getType()!=returnType->type){
+				cerr << returnType->getName() << endl << flush;
+				returnType->type->dump();
+				cerr << endl << flush;
+				tmp->getType()->dump();
+				cerr << endl << flush;
+				tmp->dump();
+				cerr << endl << flush;
+				cerr << endl << flush;
+			}
+		}
 		assert(!tmp || tmp->getType()==returnType->type);
 		LocationData* ld;
 		if(global){
