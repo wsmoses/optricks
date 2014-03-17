@@ -24,7 +24,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 		if(t==PRIMITIVEPOINTER_LAYOUT) PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
 		if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
 		if(isObject){
-			localVars.push_back(intClass);
+			localVars.push_back(&intClass);
 			final = true;
 		}
 	};

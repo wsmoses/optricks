@@ -45,6 +45,6 @@ public:
 	}
 };
 
-VoidClass* voidClass = new VoidClass(true);
+const VoidClass voidClass(true);
 
 #endif /* VOIDCLASS_HPP_ */

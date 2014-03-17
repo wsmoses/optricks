@@ -9,10 +9,10 @@
 #include "BoolLiteral.hpp"
 #include "../../class/builtin/BoolClass.hpp"
 const AbstractClass* BoolLiteral::getReturnType() const{
-	return boolClass;
+	return &boolClass;
 }
 ConstantInt* BoolLiteral::getValue(RData& r, PositionID id) const{
-	return ConstantInt::get((IntegerType*) boolClass->type,value);
+	return ConstantInt::get(BOOLTYPE,value);
 }
 const Literal* BoolLiteral::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
 	if(right->classType!=CLASS_BOOL) id.error("Cannot cast bool to "+right->getName());
@@ -20,6 +20,6 @@ const Literal* BoolLiteral::castTo(RData& r, const AbstractClass* const right, P
 }
 ConstantInt* BoolLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
 	if(right->classType!=CLASS_BOOL) id.error("Cannot cast bool to "+right->getName());
-	return ConstantInt::get((IntegerType*) boolClass->type,value);
+	return ConstantInt::get(BOOLTYPE,value);
 }
 #endif

@@ -58,7 +58,7 @@ public:
 
 		r.builder.CreateBr(incBlock);
 		r.builder.SetInsertPoint(incBlock);
-		Value *EndCond = condition->evaluate(r)->castToV(r,boolClass,filePos);
+		Value *EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 		if(!r.hadBreak()){
 			if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
 				if(c->isOne()) r.builder.CreateBr(loopBlock);

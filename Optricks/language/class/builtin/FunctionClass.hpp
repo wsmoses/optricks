@@ -13,10 +13,10 @@
 class FunctionClass: public AbstractClass{
 public:
 	static inline String str(const AbstractClass* const r, const std::vector<const AbstractClass*>& a, bool va){
-		String s= "function<"+r->getName();
+		String s= "function{"+r->getName();
 		for(const auto& b: a) s+=", "+b->getName();
 		if(va)s+=", ...";
-		return s+">";
+		return s+"}";
 	}
 	static inline Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
 		const auto len = args.size();

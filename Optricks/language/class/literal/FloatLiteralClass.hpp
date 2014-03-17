@@ -11,13 +11,19 @@
 #include "../builtin/RealClass.hpp"
 
 class FloatLiteralClass: public RealClass{
-protected:
+public:
 	FloatLiteralClass(bool b):
 		RealClass("floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,llvm::IntegerType::get(getGlobalContext(), 1)){
+
+		/*LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
+	*/
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
-public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		switch(toCast->classType){
 		case CLASS_COMPLEX:{
@@ -75,10 +81,7 @@ public:
 		id.compilerError("Cannot convert float-literal to llvm type");
 		exit(1);
 	}
-	static FloatLiteralClass* get() {
-		static FloatLiteralClass* fc = new FloatLiteralClass(true);
-		return fc;
-	}
 };
 
+const FloatLiteralClass floatLiteralClass(true);
 #endif /* FLOATLITERALCLASS_HPP_ */

@@ -16,26 +16,26 @@ public:
 	/**
 	 * If type is null, then this can be any long/integer type
 	 */
-	const MathConstantClass* mathType;
+	const MathConstantClass mathType;
 	//IntLiteral(const mpz_t& val, IntClass* cp=NULL):Literal(R_INT),value(val),intType(cp){ assert(val);}
-	MathConstantLiteral(MathConstantClass* mt, String toAdd):Literal(R_MATH),
+	MathConstantLiteral(MathConstant mt, String toAdd):Literal(R_MATH),
 			mathType(mt){
 		if(toAdd.length()>0) LANG_M->addVariable(PositionID(0,0,"#math"),toAdd,this);
+		assert(mathType.mathType==mt);
 	}
 	const AbstractClass* getReturnType() const override final{
-		return mathType;
+		return & mathType;
 	}
 	Value* getValue(RData& r, PositionID id) const override final{
-		id.compilerError("Cannot get value of math literal");
-		exit(1);
+		return UndefValue::get(mathType.type);
 	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		if(mathType==right) return this;
+		if(&mathType==right) return this;
 		switch(right->classType){
 		case CLASS_FLOAT:{
 			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
-			switch(mathType->mathType){
+			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
 				case MATH_E: cfp = fc->getE(id); break;
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
@@ -49,10 +49,10 @@ public:
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
-			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType->getName()+"' to '"+cc->getName()+"'");
+			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType.getName()+"' to '"+cc->getName()+"'");
 			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
-			switch(mathType->mathType){
+			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
 				case MATH_E: cfp = fc->getE(id); break;
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
@@ -68,16 +68,18 @@ public:
 			return new ConstantData(ConstantVector::get(llvm::SmallVector<Constant*,2>(ar)),cc);
 		}
 		default:
-			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());
+			id.error("Math literal '"+mathType.getName()+"' cannot be cast to "+right->getName());
 			exit(1);
 		}
 	}
-	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+		if(right==&mathType)
+			return UndefValue::get(mathType.type);
 		switch(right->classType){
 		case CLASS_FLOAT:{
 			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
-			switch(mathType->mathType){
+			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
 				case MATH_E: cfp = fc->getE(id); break;
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
@@ -87,16 +89,14 @@ public:
 				case MATH_P_INF: cfp = fc->getInfinity(); break;
 				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
-			cfp->dump();
-			cerr << endl << flush;
 			return cfp;
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
-			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType->getName()+"' to '"+cc->getName()+"'");
+			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType.getName()+"' to '"+cc->getName()+"'");
 			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
-			switch(mathType->mathType){
+			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
 				case MATH_E: cfp = fc->getE(id); break;
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
@@ -112,15 +112,15 @@ public:
 			return ConstantVector::get(llvm::SmallVector<Constant*,2>(ar));
 		}
 		default:
-			id.error("Math literal '"+mathType->getName()+"' cannot be cast to "+right->getName());
+			id.error("Math literal '"+mathType.getName()+"' cannot be cast to "+right->getName());
 			exit(1);
 		}
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
-		return mathType->hasCast(a);
+		return mathType.hasCast(a);
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
-		return mathType->compare(a,b);
+		return mathType.compare(a,b);
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Math literal cannot act as function");
@@ -135,14 +135,14 @@ public:
 		exit(1);
 	}
 };
-const MathConstantLiteral MY_PI(MathConstantClass::get(MATH_PI),"Pi");
-const MathConstantLiteral MY_E(MathConstantClass::get(MATH_E),"E");
-const MathConstantLiteral MY_EULER_MASC(MathConstantClass::get(MATH_EULER_MASC),"EulerGamma");
-const MathConstantLiteral MY_LN2(MathConstantClass::get(MATH_LN2),"Log2");
-const MathConstantLiteral MY_CATALAN(MathConstantClass::get(MATH_CATALAN),"Catalan");
-const MathConstantLiteral MY_NAN(MathConstantClass::get(MATH_NAN),"Nan");
-const MathConstantLiteral MY_P_INF(MathConstantClass::get(MATH_P_INF),"Inf");
-const MathConstantLiteral MY_N_INF(MathConstantClass::get(MATH_N_INF),"");
+const MathConstantLiteral MY_PI(MATH_PI,"Pi");
+const MathConstantLiteral MY_E(MATH_E,"E");
+const MathConstantLiteral MY_EULER_MASC(MATH_EULER_MASC,"EulerGamma");
+const MathConstantLiteral MY_LN2(MATH_LN2,"Log2");
+const MathConstantLiteral MY_CATALAN(MATH_CATALAN,"Catalan");
+const MathConstantLiteral MY_NAN(MATH_NAN,"Nan");
+const MathConstantLiteral MY_P_INF(MATH_P_INF,"Inf");
+const MathConstantLiteral MY_N_INF(MATH_N_INF,"");
 
 
 #endif /* MATHCONSTANTLITERAL_HPP_ */

@@ -44,7 +44,7 @@ class ForLoop : public ErrorStatement{
 			BasicBlock *incBlock;
 			BasicBlock *afterBlock;
 
-			Value *Cond1 = condition->evaluate(r)->castToV(r,boolClass,filePos);
+			Value *Cond1 = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			//BasicBlock* StartBB = r.builder.GetInsertBlock();
 			if(ConstantInt* c = dyn_cast<ConstantInt>(Cond1)){
 				if(c->isOne()){
@@ -76,7 +76,7 @@ class ForLoop : public ErrorStatement{
 
 			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
-			Value *EndCond = condition->evaluate(r)->castToV(r,boolClass,filePos);
+			Value *EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			if(!r.hadBreak()){
 				if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
 					if(c->isOne()) r.builder.CreateBr(loopBlock);

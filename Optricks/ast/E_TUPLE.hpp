@@ -67,7 +67,7 @@ class E_TUPLE : public Statement{
 				vec.push_back(tmp);
 				if(tmp->classType!=CLASS_CLASS) break;
 			}
-			if(i==values.size()) return classClass;
+			if(i==values.size()) return &classClass;
 			else{
 				for(; i<values.size(); i++){
 					auto tmp = values[i]->getReturnType();
@@ -97,7 +97,7 @@ class E_NAMED_TUPLE : public ErrorStatement{
 			return T_NAMED_TUPLE;
 		};
 		const AbstractClass* getReturnType() const override final{
-			return classClass;
+			return &classClass;
 		}
 
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{

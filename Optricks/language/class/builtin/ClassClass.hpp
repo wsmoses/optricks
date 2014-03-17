@@ -55,10 +55,10 @@ public:
 	}
 };
 
-ClassClass* classClass = new ClassClass(true);
+const ClassClass classClass(true);
 
 const AbstractClass* AbstractClass::getReturnType() const{
-	return classClass;
+	return &classClass;
 }
 
 #endif /* CLASSCLASS_HPP_ */

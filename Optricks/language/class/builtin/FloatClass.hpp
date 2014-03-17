@@ -8,7 +8,7 @@
 #ifndef FLOATCLASS_HPP_
 #define FLOATCLASS_HPP_
 #include "RealClass.hpp"
-
+#include "BoolClass.hpp"
 #define FLOATCLASS_C_
 class FloatClass: public RealClass{
 public:
@@ -52,6 +52,12 @@ public:
 
 
 #undef SINGLE_FUNC_DECLR
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				auto V = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateFCmpUNO(V,V),&boolClass);}), PositionID(0,0,"#float"));
 }
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
@@ -172,7 +178,7 @@ public:
 		mpz_get_str(temp, 10, value);
 		return ConstantFP::get(type,String(temp));
 	}
-	inline Constant* getValue(PositionID id, mpfr_t const value) const{
+	inline Constant* getValue(PositionID id, const mpfr_t& value) const{
 		if(mpfr_regular_p(value)){
 
 		    char *s = NULL;
@@ -184,7 +190,6 @@ public:
 
 				mpfr_free_str(s);
 			} else id.compilerError("Error creating string for float to llvm conversion");
-
 			return ConstantFP::get(getGlobalContext(),APFloat(getSemantics(),out));
 		}
 		else if(mpfr_nan_p(value)) return getNaN();
@@ -206,13 +211,13 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
 };
 
-FloatClass* float16Class = new FloatClass("float16", FloatClass::HalfTy);
-FloatClass* float32Class = new FloatClass("float32", FloatClass::FloatTy);
-FloatClass* float64Class = new FloatClass("float64", FloatClass::DoubleTy);
-FloatClass* float80Class = new FloatClass("float80", FloatClass::X86_FP80Ty);
-FloatClass* float128Class = new FloatClass("float128", FloatClass::FP128Ty);
+const FloatClass float16Class("float16", FloatClass::HalfTy);
+const FloatClass float32Class("float32", FloatClass::FloatTy);
+const FloatClass float64Class("float64", FloatClass::DoubleTy);
+const FloatClass float80Class("float80", FloatClass::X86_FP80Ty);
+const FloatClass float128Class("float128", FloatClass::FP128Ty);
 
 
-FloatClass* floatClass = new FloatClass("float", FloatClass::FloatTy);
-FloatClass* doubleClass = new FloatClass("double", FloatClass::DoubleTy);
+const FloatClass floatClass("float", FloatClass::FloatTy);
+const FloatClass doubleClass("double", FloatClass::DoubleTy);
 #endif /* FLOATCLASS_HPP_ */

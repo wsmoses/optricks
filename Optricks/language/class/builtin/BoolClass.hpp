@@ -44,11 +44,11 @@ public:
 		else
 			return (b->classType==CLASS_BOOL)?(1):(0);*/
 	}
-	inline Constant* getValue(PositionID id, bool value){
+	inline static Constant* getValue(bool value){
 		if(value)
-			return ConstantInt::getTrue(type);
+			return ConstantInt::getTrue(BOOLTYPE);
 		else
-			return ConstantInt::getFalse(type);
+			return ConstantInt::getFalse(BOOLTYPE);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_BOOL;
@@ -65,6 +65,6 @@ public:
 	}
 };
 
-BoolClass* boolClass = new BoolClass(true);
+const BoolClass boolClass(true);
 
 #endif /* BOOLCLASS_HPP_ */

@@ -50,9 +50,6 @@ def int min(int a,int b){
 
 //auto hi="hello"
 //def void print(string s='c'){}
-double NaN = 0./0.;
-double PI = 3.141592653589793;
-double  E = 2.718281828459045;
 /*def complex.complex(double a=0, double b=0){
   this.real = a
   this.imag = b

@@ -30,7 +30,7 @@ void Scopable::addClass(PositionID id, AbstractClass* c){
 		case SCOPE_FUNC:
 			return f.first->funcs[f.second->second.pos]->getReturnType();
 		case SCOPE_CLASS:
-			return classClass;//classClass
+			return &classClass;//classClass
 		default:
 			id.error(name+" found at current scope, but was not static -- needed static variable/class");
 			exit(1);
@@ -43,7 +43,7 @@ const AbstractClass* Resolvable::getReturnType() const{
 		case SCOPE_FUNC:
 			return d.first->funcs[d.second->second.pos]->getReturnType();
 		case SCOPE_CLASS:
-			return classClass;
+			return &classClass;
 		case SCOPE_VAR:
 			return d.first->vars[d.second->second.pos]->getReturnType();
 		default:

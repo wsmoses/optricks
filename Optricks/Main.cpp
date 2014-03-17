@@ -61,27 +61,6 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			std::cout << endl << flush;
 			F->eraseFromParent();
 			return;
-		} else if(dat->type==R_MATH){
-			switch(((const MathConstantLiteral*)dat)->mathType->mathType){
-			case MATH_PI:
-				std::cout << "Pi" << endl << flush; break;
-			case MATH_E:
-				std::cout << "E" << endl << flush; break;
-			case MATH_EULER_MASC:
-				std::cout << "EulerGamma" << endl << flush; break;
-			case MATH_LN2:
-				std::cout << "Log2" << endl << flush; break;
-			case MATH_CATALAN:
-				std::cout << "Catalan" << endl << flush; break;
-			case MATH_NAN:
-				std::cout << "Nan" << endl << flush; break;
-			case MATH_P_INF:
-				std::cout << "Inf" << endl << flush; break;
-			case MATH_N_INF:
-				std::cout << "-Inf" << endl << flush; break;
-			}
-			F->eraseFromParent();
-			return;
 		}
 	}
 //	Value* v = dat.getValue(lexer.rdata);
@@ -107,20 +86,20 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		FP();
 		std::cout << flush;
 	}
-	else if(retType==doubleClass){
+	else if(retType==&doubleClass){
 		double (*FP)() = (double (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << t << endl << flush;
-	} else if(retType==intClass){
-		int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
-		int64_t t = FP();
+	} else if(retType==&intClass){
+		int32_t (*FP)() = (int32_t (*)())(intptr_t)FPtr;
+		int32_t t = FP();
 		std::cout << t << endl << flush;
-	} else if(retType==byteClass){
+	} else if(retType==&byteClass){
 		uint8_t (*FP)() = (uint8_t (*)())(intptr_t)FPtr;
 		uint8_t t = FP();
 		printf("%d\n",t);
 		fflush(stdout);
-	} else if(retType==boolClass){
+	} else if(retType->classType==CLASS_BOOL){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << (t?"true\n":"false\n") << flush;
@@ -144,7 +123,29 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		auto t = FP();
 		String temp(t.data, t.length);
 		std::cout << temp << endl << flush;
-	} */
+	} */ else if(retType->classType==CLASS_MATHLITERAL){
+		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
+		switch(((const MathConstantClass*)retType)->mathType){
+		case MATH_PI:
+			std::cout << "Pi" << endl << flush; break;
+		case MATH_E:
+			std::cout << "E" << endl << flush; break;
+		case MATH_EULER_MASC:
+			std::cout << "EulerGamma" << endl << flush; break;
+		case MATH_LN2:
+			std::cout << "Log2" << endl << flush; break;
+		case MATH_CATALAN:
+			std::cout << "Catalan" << endl << flush; break;
+		case MATH_NAN:
+			std::cout << "Nan" << endl << flush; break;
+		case MATH_P_INF:
+			std::cout << "Inf" << endl << flush; break;
+		case MATH_N_INF:
+			std::cout << "-Inf" << endl << flush; break;
+		}
+		F->eraseFromParent();
+		return;
+	}
 	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		auto t = FP();

@@ -63,7 +63,7 @@ public:
 			illegalLocal(id,s);
 			exit(1);
 		}
-		if(len==0 && inner!=nullptr) return intClass;
+		if(len==0 && inner!=nullptr) return &intClass;
 		else return IntLiteralClass::get(len);
 	}
 	bool hasLocalData(String s) const override final{
@@ -77,7 +77,7 @@ public:
 		if(len==0 && inner!=nullptr){
 			assert(instance->type==R_LOC);
 			auto f = ((LocationData*)instance)->getMyLocation()->getPointer(r,id);
-			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), intClass);
+			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), &intClass);
 		} else return new IntLiteral(len);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{

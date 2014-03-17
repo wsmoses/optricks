@@ -49,7 +49,7 @@ class ClassFunction : public E_FUNCTION{
 			if(returnType==nullptr){
 				std::vector<const AbstractClass*> yields;
 				body->collectReturns(yields,returnType);
-				if(yields.size()==0) returnType = voidClass;
+				if(yields.size()==0) returnType = &voidClass;
 				else {
 					for(auto& a: yields) assert(a->classType!=CLASS_AUTO);
 					returnType = getMin(yields,filePos);

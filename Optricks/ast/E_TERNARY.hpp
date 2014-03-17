@@ -57,7 +57,7 @@ class TernaryOperator : public ErrorStatement{
 			return tog;
 		}
 		const Data* evaluate(RData& r) const override{
-			Value* cond = condition->evaluate(r)->castToV(r,boolClass,filePos);
+			Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
 				if(c->isOne()){
 					return then->evaluate(r)->toValue(r,filePos);

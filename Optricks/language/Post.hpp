@@ -15,6 +15,7 @@
 #include "./class/builtin/FunctionClassP.hpp"
 #include "./class/builtin/TupleClassP.hpp"
 #include "./class/builtin/ComplexClassP.hpp"
+#include "./class/builtin/CPointerClass.hpp"
 #include "./class/builtin/ArrayClassP.hpp"
 #include "./class/UserClassP.hpp"
 #include "./data/literal/BoolLiteralP.hpp"

@@ -65,7 +65,7 @@ public:
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
 			body->collectReturns(yields,returnType);
-			if(yields.size()==0) returnType = voidClass;
+			if(yields.size()==0) returnType = &voidClass;
 			else {
 				returnType = getMin(yields,filePos);
 				if(returnType->classType==CLASS_AUTO)

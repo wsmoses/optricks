@@ -450,7 +450,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		std::list<SingleFunction*>::iterator best=choices.begin();
 		std::list<SingleFunction*>::iterator current=choices.begin();
 		++current;
-		for(; current!=choices.end();){
+		for(; current!=best;){
 			//less means better
 			auto c=args[i]->compare((*best)->proto->declarations[i].declarationType, (*current)->proto->declarations[i].declarationType);
 			if(c==0){
@@ -464,6 +464,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				best = current;
 				++current;
 			}
+			if(current == choices.end()) current = choices.begin();
 		}
 	}
 	if(choices.size()==1) return choices.front();
@@ -538,7 +539,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		std::list<SingleFunction*>::iterator best=choices.begin();
 		std::list<SingleFunction*>::iterator current=choices.begin();
 		++current;
-		for(; current!=choices.end();){
+		for(; current!=best;){
 			//less means better
 			auto c=args[i]->compareValue(
 					(*best)->proto->declarations[i].declarationType,
@@ -554,6 +555,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				best = current;
 				++current;
 			}
+			if(current == choices.end()) current = choices.begin();
 		}
 	}
 	if(choices.size()==1) return choices.front();

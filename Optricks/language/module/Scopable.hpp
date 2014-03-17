@@ -64,6 +64,7 @@ public:
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
 			id.error("Cannot find "+s+" in current scope");
+			write(cerr);
 			exit(1);
 		} else return tmp;
 	}
@@ -71,6 +72,7 @@ public:
 		auto tmp = find2(id,s);
 		if(tmp.first==NULL){
 			id.error("Cannot find "+s+" in current scope");
+			write(cerr);
 			exit(1);
 		} else return tmp;
 	}

@@ -13,6 +13,12 @@ public:
 	IntClass(String nam, unsigned len):
 		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
 		LANG_M->addClass(PositionID(0,0,"#int"),this);
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						assert(args.size()==1);
+						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
+
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
@@ -115,14 +121,14 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
 };
 
-IntClass* byteClass = new IntClass("byte", 8);
-IntClass* shortClass = new IntClass("short", 16);
-IntClass* intClass = new IntClass("int", 32);
-IntClass* longClass = new IntClass("long", 64);
+const IntClass byteClass("byte", 8);
+const IntClass shortClass("short", 16);
+const IntClass intClass("int", 32);
+const IntClass longClass("long", 64);
 
-IntClass* c_intClass = new IntClass("c_int", 8*sizeof(int));
-IntClass* c_longClass = new IntClass("c_long", 8*sizeof(long));
-IntClass* c_longlongClass = new IntClass("c_longlong", 8*sizeof(long long));
-IntClass* c_size_tClass = new IntClass("c_size_t", 8*sizeof(size_t));
+const IntClass c_intClass("c_int", 8*sizeof(int));
+const IntClass c_longClass("c_long", 8*sizeof(long));
+const IntClass c_longlongClass("c_longlong", 8*sizeof(long long));
+const IntClass c_size_tClass("c_size_t", 8*sizeof(size_t));
 
 #endif /* INTCLASS_HPP_ */

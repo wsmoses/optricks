@@ -55,7 +55,7 @@ class IfStatement : public ErrorStatement{
 			exit(1);
 		}
 		const Data* evaluate(RData& r) const override{
-			Value* cond = condition->evaluate(r)->castToV(r,boolClass,filePos);
+			Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
 				if(c->isOne()){
 					then->evaluate(r);

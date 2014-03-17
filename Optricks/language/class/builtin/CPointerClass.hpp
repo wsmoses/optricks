@@ -53,6 +53,6 @@ public:
 	}
 };
 
-CPointerClass* c_pointerClass = new CPointerClass(true);
+const CPointerClass c_pointerClass(true);
 
 #endif /* CPOINTERCLASS_HPP_ */

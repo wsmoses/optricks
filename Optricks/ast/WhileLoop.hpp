@@ -46,7 +46,7 @@ class WhileLoop : public ErrorStatement{
 			BasicBlock *incBlock = r.CreateBlock("inc");
 			auto br = r.builder.CreateBr(incBlock);
 			r.builder.SetInsertPoint(incBlock);
-			Value* v = condition->evalCastV(r,boolClass,filePos);
+			Value* v = condition->evalCastV(r,&boolClass,filePos);
 			if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
 				if(c->isOne()){
 					//is always true

@@ -84,8 +84,8 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 		const MathConstantClass* mlc = (const MathConstantClass*)cc;
 		if(operation=="+") return mlc;
 		if(operation=="-"){
-			if(mlc->mathType==MATH_P_INF) return MathConstantClass::get(MATH_N_INF);
-			if(mlc->mathType==MATH_N_INF) return MathConstantClass::get(MATH_P_INF);
+			if(mlc->mathType==MATH_P_INF) return & MY_N_INF.mathType;
+			if(mlc->mathType==MATH_N_INF) return & MY_P_INF.mathType;
 			if(mlc->mathType==MATH_NAN) return mlc;
 		}
 		if(false) return cc;

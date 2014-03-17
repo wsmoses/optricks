@@ -25,7 +25,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 			filePos.error("Cannot have binary operation between vector and non-vector type");
 		}
-		if(operation=="==" || operation=="!=") return boolClass;
+		if(operation=="==" || operation=="!=") return &boolClass;
 		filePos.compilerError("Vector binops not implemented");
 		exit(1);
 		//return VectorClass::get(getBinopReturnType(filePos, vc->inner, operation), vc->classType);
@@ -41,7 +41,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 					|| operation=="**" || operation=="&" || operation=="|"
 							|| operation=="<<" || operation==">>" || operation==">>>") return max;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -52,7 +52,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 					|| operation=="**" || operation=="&" || operation=="|"
 							|| operation=="<<" || operation==">>" || operation==">>>") return cc;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -62,7 +62,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return dd;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -79,7 +79,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return dd;
-			else if(operation=="==" || operation=="!=") return boolClass;
+			else if(operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -110,7 +110,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 					|| operation=="**" || operation=="&" || operation=="|"
 							|| operation=="<<" || operation==">>" || operation==">>>") return R;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -125,7 +125,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				exit(1);
 			}
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -135,7 +135,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return dd;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -144,7 +144,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		case CLASS_COMPLEX:{
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return dd;
-			else if(operation=="==" || operation=="!=") return boolClass;
+			else if(operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -155,7 +155,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			exit(1);
 		}
 		case CLASS_MATHLITERAL:{
-			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return boolClass;
+			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
 			else if(operation=="*" && cc==IntLiteralClass::get(0)){
 				return cc;
 			} else if(operation=="*" && cc==IntLiteralClass::get(1)){
@@ -184,7 +184,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return max;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -197,7 +197,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return cc;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -214,7 +214,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return comp;
-			else if(operation=="==" || operation=="!=") return boolClass;
+			else if(operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -234,7 +234,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return dd;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -244,7 +244,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return cc;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -261,7 +261,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return comp;
-			else if(operation=="==" || operation=="!=") return boolClass;
+			else if(operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -282,13 +282,14 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return dd;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return boolClass;
+					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
 			}
 		}
 		case CLASS_MATHLITERAL:{
+			if(operation=="==" || operation=="!=") return &boolClass;
 			if(dd==cc){
 				if(operation=="-") return IntLiteralClass::get(0);
 				else if(operation=="/") return IntLiteralClass::get(1);
@@ -304,7 +305,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**") return comp;
-			else if(operation=="==" || operation=="!=") return boolClass;
+			else if(operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -330,14 +331,14 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_STR:
 	case CLASS_CHAR:{
-		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return boolClass;
+		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return &boolClass;
 		filePos.compilerError("todo -- string binops");
 		exit(1);
 	}
 	case CLASS_CPOINTER:
 	case CLASS_NULL:{
 		if((dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)
-			&& (operation=="==" || operation=="!=")) return boolClass;
+			&& (operation=="==" || operation=="!=")) return &boolClass;
 		else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
@@ -372,7 +373,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				}
 			}
 		}
-		return boolClass;
+		return &boolClass;
 	}
 	case CLASS_CLASS:
 	case CLASS_FUNC:{
@@ -381,7 +382,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
 		}
-		return boolClass;
+		return &boolClass;
 	}
 	case CLASS_ARRAY:{
 		if(!(operation=="==" || operation=="!=") ||
@@ -395,7 +396,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
 		}
-		return boolClass;
+		return &boolClass;
 	}
 	case CLASS_GEN:
 	case CLASS_SET:
@@ -461,12 +462,12 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="<<") return new ConstantData(r.builder.CreateShl(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation==">>") return new ConstantData(r.builder.CreateAShr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation==">>>") return new ConstantData(r.builder.CreateLShr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
-			else if(operation==">") return new ConstantData(r.builder.CreateICmpSGT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation==">=") return new ConstantData(r.builder.CreateICmpSGE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="<") return new ConstantData(r.builder.CreateICmpSLT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="<=") return new ConstantData(r.builder.CreateICmpSLE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
+			else if(operation==">") return new ConstantData(r.builder.CreateICmpSGT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation==">=") return new ConstantData(r.builder.CreateICmpSGE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="<") return new ConstantData(r.builder.CreateICmpSLT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="<=") return new ConstantData(r.builder.CreateICmpSLE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
 			else if(operation=="**"){
 				filePos.compilerError("Todo -- integer pow");
 				exit(1);
@@ -551,7 +552,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			exit(1);
 		}
 		case CLASS_MATHLITERAL:{
-			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return boolClass;
+			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
 			else if(operation=="*" && cc==IntLiteralClass::get(0)){
 				return value;
 			} else if(operation=="*" && cc==IntLiteralClass::get(1)){
@@ -582,12 +583,12 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="*") return new ConstantData(r.builder.CreateFMul(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="/") return new ConstantData(r.builder.CreateFDiv(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="%") return new ConstantData(r.builder.CreateFRem(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
-			else if(operation==">") return new ConstantData(r.builder.CreateFCmpOGT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation==">=") return new ConstantData(r.builder.CreateFCmpOGE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="<") return new ConstantData(r.builder.CreateFCmpOLT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="<=") return new ConstantData(r.builder.CreateFCmpOLE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="==") return new ConstantData(r.builder.CreateFCmpOEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
-			else if(operation=="!=") return new ConstantData(r.builder.CreateFCmpONE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), boolClass);
+			else if(operation==">") return new ConstantData(r.builder.CreateFCmpOGT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation==">=") return new ConstantData(r.builder.CreateFCmpOGE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="<") return new ConstantData(r.builder.CreateFCmpOLT(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="<=") return new ConstantData(r.builder.CreateFCmpOLE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="==") return new ConstantData(r.builder.CreateFCmpOEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
+			else if(operation=="!=") return new ConstantData(r.builder.CreateFCmpONE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
 			else if(operation=="**"){
 				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,max->type));
 				return new ConstantData(r.builder.CreateCall2(IN, value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
@@ -599,9 +600,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		case CLASS_INT:
 		case CLASS_INTLITERAL:{
-			if(operation=="**" && dd->hasCast(intClass)){
+			if(operation=="**" && dd->hasCast(&intClass)){
 				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,cc->type));
-				return new ConstantData(r.builder.CreateCall2(IN, value->getValue(r, filePos), ev->evaluate(r)->castToV(r, intClass, filePos)), cc);
+				return new ConstantData(r.builder.CreateCall2(IN, value->getValue(r, filePos), ev->evaluate(r)->castToV(r, &intClass, filePos)), cc);
 			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
 		}
 		case CLASS_MATHLITERAL:
@@ -679,6 +680,11 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			return getBinop(r, filePos, value->castTo(r, dd, filePos), ev, operation);
 		}
 		case CLASS_MATHLITERAL:{
+			if(operation=="=="){
+				return new ConstantData(BoolClass::getValue(cc==dd), &boolClass);
+			} else if(operation=="!="){
+				return new ConstantData(BoolClass::getValue(cc!=dd), &boolClass);
+			}
 			if(dd==cc){
 				if(operation=="-") return new IntLiteral(IntLiteralClass::get(0));
 				else if(operation=="/") return new IntLiteral(IntLiteralClass::get(1));
@@ -773,13 +779,13 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		else if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(value->getValue(r, filePos), ev->evaluate(r)->getValue(r, filePos)), cc);
 		else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(value->getValue(r, filePos), ev->evaluate(r)->getValue(r, filePos)), cc);
 		else if(operation=="||"){
-			Value* Start = value->castToV(r, boolClass, filePos);
+			Value* Start = value->castToV(r, &boolClass, filePos);
 
 			BasicBlock* StartBB = r.builder.GetInsertBlock();
 			BasicBlock *ElseBB;
 			BasicBlock *MergeBB;
 			if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
-				if(!c->isOne()) return ev->evaluate(r)->castTo(r,boolClass,filePos);
+				if(!c->isOne()) return ev->evaluate(r)->castTo(r,&boolClass,filePos);
 				else return new BoolLiteral(true);
 			}
 			else{
@@ -789,7 +795,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 			StartBB = r.builder.GetInsertBlock();
 			r.builder.SetInsertPoint(ElseBB);
-			Value* fin = ev->evaluate(r)->castToV(r,boolClass,filePos);
+			Value* fin = ev->evaluate(r)->castToV(r,&boolClass,filePos);
 			//TODO can allow check if right is constant
 			r.builder.CreateBr(MergeBB);
 			ElseBB = r.builder.GetInsertBlock();
@@ -798,15 +804,15 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			PHINode *PN = r.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 			PN->addIncoming(Start, StartBB);
 			PN->addIncoming(fin, ElseBB);
-			return new ConstantData(PN, boolClass);
+			return new ConstantData(PN, &boolClass);
 		}
 		else if(operation=="&&"){
-			Value* Start = value->castToV(r, boolClass, filePos);
+			Value* Start = value->castToV(r, &boolClass, filePos);
 			BasicBlock* StartBB = r.builder.GetInsertBlock();
 			BasicBlock *ElseBB;
 			BasicBlock *MergeBB;
 			if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
-				if(c->isOne()) return ev->evaluate(r)->castTo(r,boolClass,filePos);
+				if(c->isOne()) return ev->evaluate(r)->castTo(r,&boolClass,filePos);
 				else return new BoolLiteral(false);
 			}
 			else{
@@ -815,7 +821,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.CreateCondBr(Start, ElseBB, MergeBB);
 			}
 			r.builder.SetInsertPoint(ElseBB);
-			Value* fin = ev->evaluate(r)->castToV(r,boolClass,filePos);
+			Value* fin = ev->evaluate(r)->castToV(r,&boolClass,filePos);
 			//TODO can allow check if right is constant
 			r.builder.CreateBr(MergeBB);
 			ElseBB = r.builder.GetInsertBlock();
@@ -824,7 +830,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			PHINode *PN = r.builder.CreatePHI(BOOLTYPE, 2,"iftmp");
 			PN->addIncoming(Start, StartBB);
 			PN->addIncoming(fin, ElseBB);
-			return new ConstantData(PN, boolClass);
+			return new ConstantData(PN, &boolClass);
 		}
 		else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -833,7 +839,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	}
 	case CLASS_STR:
 	case CLASS_CHAR:{
-		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return boolClass;
+		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return &boolClass;
 		filePos.compilerError("todo -- string binops");
 		exit(1);
 	}
@@ -843,8 +849,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			auto T = ev->evalV(r, filePos);
 			assert(dyn_cast<PointerType>(T->getType()));
 			auto NU = ConstantPointerNull::get((llvm::PointerType*) T->getType());
-			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), boolClass);
-			else return new ConstantData(r.builder.CreateICmpNE(T,NU), boolClass);
+			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
+			else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 		}
 		else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -867,8 +873,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
 		}
-		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), boolClass);
-		else return new ConstantData(r.builder.CreateICmpNE(T,NU), boolClass);
+		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
+		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 	}
 	case CLASS_RATIONAL:{
 		filePos.compilerError("Todo -- implement rationals");
@@ -898,9 +904,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			auto a1 = cc->getLocalData(r, filePos, (nt1)?(nt1->innerNames[i]):("_"+str(i)),value);
 			auto a2 = dd->getLocalData(r, filePos, (nt2)?(nt2->innerNames[i]):("_"+str(i)),d);
 			auto M = getBinop(r, filePos, a1, a2, operation);
-			V = r.builder.CreateAnd(V,M->castToV(r, boolClass, filePos));
+			V = r.builder.CreateAnd(V,M->castToV(r, &boolClass, filePos));
 		}
-		return new ConstantData(V, boolClass);
+		return new ConstantData(V, &boolClass);
 	}
 	case CLASS_CLASS:
 	case CLASS_FUNC:{
@@ -924,8 +930,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
 		}
-		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), boolClass);
-		else return new ConstantData(r.builder.CreateICmpNE(T,NU), boolClass);
+		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
+		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 	}
 	case CLASS_ARRAY:{
 		if(!(operation=="==" || operation=="!=") ||
@@ -950,8 +956,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
 		}
-		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), boolClass);
-		else return new ConstantData(r.builder.CreateICmpNE(T,NU), boolClass);
+		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
+		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 	}
 	case CLASS_GEN:
 	case CLASS_SET:

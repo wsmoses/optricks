@@ -24,7 +24,7 @@ public:
 			vec.push_back(tmp);
 			if(tmp->classType!=CLASS_CLASS) break;
 		}
-		if(i==inner.size()) return classClass;
+		if(i==inner.size()) return &classClass;
 		else{
 			for(; i<inner.size(); i++){
 				auto tmp = inner[i]->getReturnType();

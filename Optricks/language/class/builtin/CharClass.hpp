@@ -63,7 +63,7 @@ public:
 	}
 };
 
-CharClass* charClass = new CharClass(true);
+const CharClass charClass(true);
 
 
 

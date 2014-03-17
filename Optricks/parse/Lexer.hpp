@@ -987,7 +987,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 			case '\'':
 			case '"':{
 				String s = f->readString(data.endWith);
-				Statement* str = (s.length()==1)?((Statement*) new ConstantData(CharClass::getValue(s[0]), charClass))
+				Statement* str = (s.length()==1)?((Statement*) new ConstantData(CharClass::getValue(s[0]), &charClass))
 						: ((Statement* )new StringLiteral(s));
 				trim(data);
 				semi  = false;

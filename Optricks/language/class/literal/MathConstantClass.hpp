@@ -32,13 +32,19 @@ protected:
 			return "-InfClass";
 		}
 	}
-	MathConstantClass(MathConstant mc):
-		AbstractClass(nullptr,fromC(mc),nullptr,LITERAL_LAYOUT,CLASS_MATHLITERAL,true,BOOLTYPE){
-		///register methods such as print / tostring / tofile / etc
-		//check to ensure that you can pass mpz_t like that instead of using _init
-	}
 public:
 	MathConstant mathType;
+	MathConstantClass(MathConstant mc):
+		AbstractClass(nullptr,fromC(mc),nullptr,PRIMITIVE_LAYOUT,CLASS_MATHLITERAL,true,BOOLTYPE)
+		,mathType(mc){
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+						[this](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				return new ConstantData(BoolClass::getValue(this->mathType==MATH_NAN),&boolClass);}), PositionID(0,0,"#float"));
+
+		///register methods such as print / tostring / tofile / etc
+	}
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		if(toCast==this) return true;
 		switch(toCast->classType){
@@ -73,21 +79,15 @@ public:
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		//todo allow complex/floats as well
 		assert(hasCast(a));
 		assert(hasCast(b));
 		if(a==this) return (b==this)?0:-1;
 		else if(b==this) return 1;
 		if(a->classType==CLASS_FLOAT) return (b->classType==CLASS_FLOAT)?0:-1;
 		else if(b->classType==CLASS_FLOAT) return 1;
-		return 0;
-	}
-	static MathConstantClass* get(MathConstant mc) {
-		static std::map<MathConstant,MathConstantClass> m;
-		auto find = m.find(mc);
-		if(find!=m.end()) return & (find->second);
-		auto tmp = m.insert(std::pair<MathConstant, MathConstantClass>(mc, MathConstantClass(mc)));
-		return & tmp.first->second;
+		assert(a->classType==CLASS_COMPLEX);
+		assert(b->classType==CLASS_COMPLEX);
+		return compare(((const ComplexClass*)a)->innerClass,((const ComplexClass*)b)->innerClass);
 	}
 };
 

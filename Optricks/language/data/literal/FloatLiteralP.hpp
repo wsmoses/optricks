@@ -14,7 +14,7 @@
 
 //TODO separate "constant" floats from float literals
 const AbstractClass* FloatLiteral::getReturnType() const{
-	return FloatLiteralClass::get();
+	return &floatLiteralClass;
 }
 ConstantFP* FloatLiteral::getValue(RData& r, PositionID id) const{
 	id.error("Cannot getValue of class without type");
