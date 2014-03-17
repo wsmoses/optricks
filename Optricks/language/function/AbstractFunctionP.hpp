@@ -444,6 +444,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			t+=a->proto->toString()+"\n";
 		}
 		id.error(t);
+		exit(1);
 	}
 	for(unsigned int i=0; i<args.size() && choices.size()>1; i++){
 		std::list<SingleFunction*>::iterator best=choices.begin();
@@ -531,6 +532,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			t+=a->proto->toString()+"\n";
 		}
 		id.error(t);
+		exit(1);
 	}
 	for(unsigned int i=0; i<args.size() && choices.size()>1; i++){
 		std::list<SingleFunction*>::iterator best=choices.begin();

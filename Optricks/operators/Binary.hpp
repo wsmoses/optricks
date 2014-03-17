@@ -915,6 +915,10 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(dyn_cast<PointerType>(T->getType()));
 			NU = ConstantPointerNull::get((llvm::PointerType*) T->getType());
 		} else if(dd->classType==cc->classType || dd->classType==CLASS_CPOINTER || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT){
+			if(dd->classType==CLASS_FUNC && dd!=cc){
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
 			NU = ev->evaluate(r)->castToV(r, cc, filePos);
 		} else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");

@@ -13,6 +13,7 @@ class CPointerClass: public AbstractClass{
 public:
 	inline CPointerClass(bool b):
 		AbstractClass(nullptr,"c_pointer", NULL,PRIMITIVE_LAYOUT,CLASS_CPOINTER,true,C_POINTERTYPE){
+		LANG_M->addClass(PositionID(0,0,"#cpointer"),this);
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
