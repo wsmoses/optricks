@@ -169,7 +169,6 @@ class Lexer{
 				//				getRData().lmod->print(raw_stream, 0);
 			} else {
 				assert(getRData().exec);
-				assert(getRData().exec->isCompilingLazily() || true);
 				void *FPtr = getRData().exec->getPointerToFunction(F);
 				void (*FP)() = (void (*)())(intptr_t)FPtr;
 				FP();

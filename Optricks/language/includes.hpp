@@ -59,6 +59,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
 #include "llvm/IR/Verifier.h"
 #else

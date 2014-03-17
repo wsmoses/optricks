@@ -85,21 +85,59 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 		std::cout << flush;
+	}else if(retType->classType==CLASS_FLOAT){
+		auto w = ((const FloatClass*)retType)->getWidth();
+		if(w==8*sizeof(float)){
+			float (*FP)() = (float (*)())(intptr_t)FPtr;
+			float t = FP();
+			std::cout << t << endl << flush;
+		} else if(w==8*sizeof(double)){
+			double (*FP)() = (double (*)())(intptr_t)FPtr;
+			double t = FP();
+			std::cout << t << endl << flush;
+		} else if(w==8*sizeof(long double)){
+			long double (*FP)() = (long double (*)())(intptr_t)FPtr;
+			long double t = FP();
+			std::cout << t << endl << flush;
+		}
+		else {
+			((void* (*)())(intptr_t)FPtr)();
+			cerr << "Unknown print function for type " << retType->getName() << " with width " << ((const FloatClass*)retType)->getWidth() << " " << (8*sizeof(long double)) << endl << flush;
+		}
 	}
-	else if(retType==&doubleClass){
-		double (*FP)() = (double (*)())(intptr_t)FPtr;
-		auto t = FP();
-		std::cout << t << endl << flush;
-	} else if(retType==&intClass){
-		int32_t (*FP)() = (int32_t (*)())(intptr_t)FPtr;
-		int32_t t = FP();
-		std::cout << t << endl << flush;
-	} else if(retType==&byteClass){
-		uint8_t (*FP)() = (uint8_t (*)())(intptr_t)FPtr;
-		uint8_t t = FP();
-		printf("%d\n",t);
-		fflush(stdout);
-	} else if(retType->classType==CLASS_BOOL){
+	else if(retType->classType==CLASS_INT){
+		switch(((const IntClass*)retType)->getWidth()){
+		case 8:{
+			int8_t (*FP)() = (int8_t (*)())(intptr_t)FPtr;
+			int8_t t = FP();
+			std::cout << t << endl << flush;
+			break;
+		}
+		case 16:{
+			int16_t (*FP)() = (int16_t (*)())(intptr_t)FPtr;
+			int16_t t = FP();
+			std::cout << t << endl << flush;
+			break;
+		}
+		case 32:{
+			int32_t (*FP)() = (int32_t (*)())(intptr_t)FPtr;
+			int32_t t = FP();
+			std::cout << t << endl << flush;
+			break;
+		}
+		case 64:{
+			int64_t (*FP)() = (int64_t (*)())(intptr_t)FPtr;
+			int64_t t = FP();
+			std::cout << t << endl << flush;
+			break;
+		}
+		default:{
+			((void* (*)())(intptr_t)FPtr)();
+			cerr << "Unknown print function for type " << retType->getName() << endl << flush;
+		}
+		}
+	}
+	else if(retType->classType==CLASS_BOOL){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << (t?"true\n":"false\n") << flush;
@@ -143,8 +181,6 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		case MATH_N_INF:
 			std::cout << "-Inf" << endl << flush; break;
 		}
-		F->eraseFromParent();
-		return;
 	}
 	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;

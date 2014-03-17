@@ -27,18 +27,7 @@ public:
 
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
-		BasicBlock *BB = ra.CreateBlockD("entry", F);
-		ra.builder.SetInsertPoint(BB);
-
-		unsigned Idx = 0;
-
-		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
-				++AI, ++Idx) {
-			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
-			declaration[Idx]->variable->getMetadata().setObject(
-					(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))
-					->toLocation(ra));
-		}
+		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 		auto tmp = ra.functionReturn;
 		ra.functionReturn = nullptr;
 
@@ -70,8 +59,13 @@ public:
 			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 			Type* cl = ac->type;
-			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
+			assert(cl);
 			args.push_back(cl);
+		}
+		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))->toLocation(a)
+			);
 		}
 		const AbstractClass* returnType = body->getReturnType();
 
@@ -80,11 +74,22 @@ public:
 		}
 		assert(returnType);
 		llvm::Type* r = returnType->type;
+		assert(r);
 		FunctionType *FT = FunctionType::get(r, args, false);
 		String nam = "!lambda";
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto("lambda", ad, returnType), F);
-		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
+
+		BasicBlock *BB = a.CreateBlockD("entry", F);
+		a.builder.SetInsertPoint(BB);
+
+		unsigned Idx = 0;
+		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
+			((Value*)AI)->setName(Twine(ad[Idx].declarationVariable));
+			((LocationData*)declaration[Idx]->variable->getMetadata().getObject())->value->setValue(((Value*)AI),a);
+		}
+
+		if(Parent) a.builder.SetInsertPoint( Parent );
 		body->registerFunctionPrototype(a);
 	}
 };
