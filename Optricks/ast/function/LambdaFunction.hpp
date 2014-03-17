@@ -58,9 +58,10 @@ public:
 			const AbstractClass* ac = b->getClass(filePos);
 			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
+			assert(ac);
 			Type* cl = ac->type;
 			assert(cl);
-			args.push_back(cl);
+			args[i] = cl;
 		}
 		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
 			declaration[Idx]->variable->getMetadata().setObject(
