@@ -564,8 +564,22 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto s = mpz_sgn(tmp2);
 				if(s<0) ret = & ZERO_LITERAL;
 				else if(s==0) ret = & ONE_LITERAL;
+				else if(mpz_cmp_ui(tmp1, 1)==0 || mpz_cmp_ui(tmp1,0)==0) ret = value;
+				else if(mpz_cmp_si(tmp1,-1)==0){
+					if(mpz_even_p(tmp2)==0){
+						//is odd
+						ret = value;
+					} else{
+						// is even
+						ret = & ONE_LITERAL;
+					}
+				}
 				else {
-					mpz_powm(tmp3, tmp1, tmp2, ONE_LITERAL.value);
+					if(mpz_cmp_ui(tmp2, UINT_MAX)<=0){
+						mpz_pow_ui(tmp3, tmp1, mpz_get_ui(tmp2));
+					} else{
+						filePos.compilerError("Result of integer exponentiation cannot fit in memory (perhaps use floating-point instead)");
+					}
 					ret = new IntLiteral(tmp3);
 				}
 			} else {
@@ -640,7 +654,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		case CLASS_INT:
 		case CLASS_INTLITERAL:{
 			if(operation=="**" && dd->hasCast(&intClass)){
-				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::pow, SmallVector<Type*,1>(1,cc->type));
+				auto IN = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::powi, SmallVector<Type*,1>(1,cc->type));
 				return new ConstantData(r.builder.CreateCall2(IN, value->getValue(r, filePos), ev->evaluate(r)->castToV(r, &intClass, filePos)), cc);
 			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
 		}

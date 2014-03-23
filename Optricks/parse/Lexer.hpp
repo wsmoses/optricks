@@ -857,7 +857,7 @@ class Lexer{
 			Statement* fixed;
 
 			if(tmp=="!") {
-				return new E_POSTOP(pos(), "!", exp);
+				return new E_UOP(pos(), "!", exp, UOP_POST);
 			}
 			//TODO implement generics
 			/*
@@ -875,18 +875,18 @@ class Lexer{
 				fixed = new E_SET(pos(), exp, post);
 			}
 			else if(tmp=="++" || tmp=="--"){
-				fixed = new E_POSTOP(pos(), tmp, exp);
+				fixed = new E_UOP(pos(), tmp, exp, UOP_POST);
 			}
 			else if(tmp.size()>=2 && tmp[tmp.size()-1]=='=' && !(tmp[tmp.size()-2]=='=' || tmp[tmp.size()-2]=='!' || (tmp.size()==2 && (tmp[0]=='<' || tmp[0]=='>')))){
 				tmp = tmp.substr(0,tmp.size()-1);
 				Statement* post = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
-				fixed = new E_SET(pos(), exp, new E_BINOP(pos(), exp, post, tmp));
+				fixed = new E_SET(pos(), exp, E_BINOP::createBinop(pos(), exp, post, tmp));
 			}
 			else{
 				Statement* post = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
 				if(post->getToken()==T_VOID)
-					fixed = new E_POSTOP(pos(), tmp, exp);
-				else fixed = (new E_BINOP(pos(), exp, post,tmp))->fixOrderOfOperations();
+					fixed = new E_UOP(pos(), tmp, exp, UOP_POST);
+				else fixed = E_BINOP::createBinop(pos(), exp, post,tmp);
 			}
 			f->trim(data.endWith);
 			bool semi  = false;
@@ -1101,7 +1101,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 					while(in<String>(PRE_OPERATORS, temp+String(1,f->peek()))){
 						temp+=String(1,f->read());
 					}
-					Statement* toReturn = new E_PREOP(pos(), temp,getNextStatement(data.getLoc(PARSE_EXPR)));
+					Statement* toReturn = new E_UOP(pos(), temp,getNextStatement(data.getLoc(PARSE_EXPR)), UOP_PRE);
 					trim(data);
 					semi  = false;
 					if(!f->done && f->peek()==';'){ semi = true; }

@@ -676,7 +676,7 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 	if(stack.size()==1 && stack[0]!=NULL){
 		Statement* temp = stack[0];
 		stack.clear();
-		return new E_BINOP(f->pos(), toIndex,temp,"[]");
+		return E_BINOP::createBinop(f->pos(), toIndex,temp,"[]");
 	}
 	else{
 		//TODO allow for a[::,2] or a[:,:]

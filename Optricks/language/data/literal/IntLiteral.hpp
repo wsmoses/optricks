@@ -42,7 +42,7 @@ public:
 	IntLiteral(const mpz_t& val):Literal(R_INT){
 		mpz_init_set(value, val);
 	}
-	IntLiteral(const char* str, unsigned base):Literal(R_INT){
+	IntLiteral(const char* str, unsigned base=10):Literal(R_INT){
 		mpz_init_set_str(value, str,base);
 	}
 	const AbstractClass* getReturnType() const override final{
@@ -139,6 +139,7 @@ public:
 };
 IntLiteral ZERO_LITERAL((signed long int)0);
 IntLiteral ONE_LITERAL((signed long int)1);
+IntLiteral LARGE_LITERAL("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",16);
 /*
  * class IntLiteral:public Literal{
 private:

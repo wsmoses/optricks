@@ -11,13 +11,19 @@
 #include "../language/statement/Statement.hpp"
 #include "../operators/Unary.hpp"
 #include "../language/class/builtin/ReferenceClass.hpp"
+
+enum UOP_TYPE{
+	UOP_PRE,
+	UOP_POST
+};
 class E_UOP : public ErrorStatement{
 public:
 	Statement *value;
 	String operation;
+	UOP_TYPE pre;
 	virtual ~E_UOP(){};
-	explicit E_UOP(PositionID id, String o, Statement* a): ErrorStatement(id),
-			value(a), operation(o)
+	explicit E_UOP(PositionID id, String o, Statement* a, UOP_TYPE p): ErrorStatement(id),
+			value(a), operation(o), pre(p)
 	{};
 	const Token getToken() const override final{ return T_UOP; }
 	void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
@@ -38,28 +44,17 @@ public:
 		FunctionClass* fc = (FunctionClass*)t;
 		return fc->returnType;
 	}
-};
-class E_PREOP : public E_UOP{
-public:
-	E_PREOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
 	const AbstractClass* getReturnType() const override{
-		return getPreopReturnType(filePos, value->getReturnType(), operation);
+		if(pre==UOP_PRE)
+			return getPreopReturnType(filePos, value->getReturnType(), operation);
+		else
+			return getPostopReturnType(filePos, value->getReturnType(), operation);
 	}
 	const Data* evaluate(RData& r) const override final {
-		return getPreop(r, filePos, operation, value->evaluate(r));
+		if(pre==UOP_PRE)
+			return getPreop(r, filePos, operation, value->evaluate(r));
+		else
+			return getPostop(r, filePos, operation, value->evaluate(r));
 	}
 };
-
-
-class E_POSTOP : public E_UOP{
-public:
-	E_POSTOP(PositionID id, String o, Statement* a):E_UOP(id,o,a){};
-	const AbstractClass* getReturnType() const override{
-		return getPostopReturnType(filePos, value->getReturnType(), operation);
-	}
-	const Data* evaluate(RData& r) const override final {
-		return getPostop(r, filePos, operation, value->evaluate(r));
-	}
-};
-
 #endif /* E_BINOP_HPP_ */
