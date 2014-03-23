@@ -53,9 +53,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	const Data* dat = n->evaluate(getRData());
 		if(dat->type==R_INT){
 			IntLiteral* i = (IntLiteral*)dat;
-			char temp[mpz_sizeinbase (i->value, 10) + 2];
-			auto tmp =  mpz_get_str(temp, 10, i->value);
-			std::cout << tmp << endl << flush;
+			i->toStream(std::cout);
+			std::cout << endl << flush;
 			F->eraseFromParent();
 			return;
 		} else if(dat->type==R_FLOAT){
@@ -65,24 +64,12 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			F->eraseFromParent();
 			return;
 		} else if(dat->type==R_IMAG){
-			ImaginaryLiteral* il = (ImaginaryLiteral*)dat;
-			assert(il->imag->type==R_INT || il->imag->type==R_FLOAT);
-			if(il->imag->type==R_INT){
-				IntLiteral* i = (IntLiteral*)il->imag;
-				char temp[mpz_sizeinbase (i->value, 10) + 2];
-				auto tmp =  mpz_get_str(temp, 10, i->value);
-				std::cout << tmp << "j"<< endl << flush;
-				F->eraseFromParent();
-				return;
-			} else if(il->imag->type==R_FLOAT){
-				FloatLiteral* i = (FloatLiteral*)dat;
-				i->toStream(std::cout);
-				std::cout << "j" << endl << flush;
-				F->eraseFromParent();
-				return;
-			}
+			ImaginaryLiteral* i = (ImaginaryLiteral*)dat;
+			i->toStream(std::cout);
+			std::cout << endl << flush;
+			F->eraseFromParent();
+			return;
 		}
-	cerr << str(dat->getToken()) << " " << str(dat->type) << endl << flush;
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
 		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));

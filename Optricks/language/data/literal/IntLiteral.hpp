@@ -124,16 +124,21 @@ public:
 	}
 	static inline String str(const mpz_t& value){
 		char temp[mpz_sizeinbase (value, 10) + 2];
-		auto tmp =  mpz_get_str(temp, 10, value);
-		String s(tmp);
+		mpz_get_str(temp, 10, value);
+		String s(temp);
 		return s;
+	}
+	inline void toStream(ostream& s) const {
+		char temp[mpz_sizeinbase (value, 10) + 2];
+		mpz_get_str(temp, 10, value);
+		s << temp;
 	}
 	inline String toString() const{
 		return str(value);
 	}
 };
 IntLiteral ZERO_LITERAL((signed long int)0);
-IntLiteral ONE_LITERAL((signed long int)0);
+IntLiteral ONE_LITERAL((signed long int)1);
 /*
  * class IntLiteral:public Literal{
 private:
