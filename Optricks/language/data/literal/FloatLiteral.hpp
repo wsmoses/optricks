@@ -33,10 +33,20 @@ public:
 		Literal(R_FLOAT),value(){
 		mpfr_init(value);
 		mpfr_set_z(value, val, MPFR_RNDN);
-		cerr << "fl ";
-		toStream(cerr);
-		cerr << endl << flush;
 	}
+	inline FloatLiteral(bool toAdd, String n) : Literal(R_FLOAT), value(){
+		mpfr_init(value);
+		if(n=="Nan" || n=="nan")
+			mpfr_set_nan(value);
+		else if(n=="inf" || n=="Inf"){
+			mpfr_set_inf(value, 1);
+		} else{
+			assert(n=="-inf"||n=="-Inf");
+			mpfr_set_inf(value, 1);
+		}
+		LANG_M->addVariable(PositionID(0,0,"#floatLiteral"),n,this);
+	}
+	//todo make nan / inf floatliterals
 	const AbstractClass* getReturnType() const override final;
 	ConstantFP* getValue(RData& r, PositionID id) const override final;
 
@@ -62,14 +72,10 @@ public:
 	}
 	void toStream(ostream& s) const {
 		if(mpfr_regular_p(value)){
-			//hard part
-			assert(0);
-
-		    char *st = NULL;
-		    std::string out;
-
+		    char *st = nullptr;
 			if(!(mpfr_asprintf(&st,"%.RNE",value) < 0))
 			{
+				assert(st);
 				s << st;
 				mpfr_free_str(st);
 			} else assert(0);
@@ -89,8 +95,9 @@ public:
 	}
 };
 
-
-
+const FloatLiteral MY_NAN  (true,"nan");
+const FloatLiteral MY_P_INF(true,"inf");
+const FloatLiteral MY_N_INF(false,"-inf");
 
 
 #endif /* FLOATLITERAL_HPP_ */

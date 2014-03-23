@@ -64,7 +64,7 @@ public:
 			exit(1);
 		}
 		if(len==0 && inner!=nullptr) return &intClass;
-		else return IntLiteralClass::get(len);
+		else return & intLiteralClass;
 	}
 	bool hasLocalData(String s) const override final{
 		return s=="length";

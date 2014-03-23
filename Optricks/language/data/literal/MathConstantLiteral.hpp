@@ -41,9 +41,6 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
-				case MATH_NAN: cfp = fc->getNaN(); break;
-				case MATH_P_INF: cfp = fc->getInfinity(); break;
-				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
 			return new ConstantData(cfp, fc);
 		}
@@ -58,9 +55,6 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
-				case MATH_NAN: cfp = fc->getNaN(); break;
-				case MATH_P_INF: cfp = fc->getInfinity(); break;
-				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
 			SmallVector<Constant*,2> ar(2);
 			ar[0] = cfp;
@@ -85,9 +79,6 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
-				case MATH_NAN: cfp = fc->getNaN(); break;
-				case MATH_P_INF: cfp = fc->getInfinity(); break;
-				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
 			return cfp;
 		}
@@ -102,9 +93,6 @@ public:
 				case MATH_EULER_MASC: cfp = fc->getEulerMasc(id); break;
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
-				case MATH_NAN: cfp = fc->getNaN(); break;
-				case MATH_P_INF: cfp = fc->getInfinity(); break;
-				case MATH_N_INF: cfp = fc->getInfinity(true); break;
 			}
 			SmallVector<Constant*,2> ar(2);
 			ar[0] = cfp;
@@ -140,9 +128,6 @@ const MathConstantLiteral MY_E(MATH_E,"E");
 const MathConstantLiteral MY_EULER_MASC(MATH_EULER_MASC,"EulerGamma");
 const MathConstantLiteral MY_LN2(MATH_LN2,"Log2");
 const MathConstantLiteral MY_CATALAN(MATH_CATALAN,"Catalan");
-const MathConstantLiteral MY_NAN(MATH_NAN,"Nan");
-const MathConstantLiteral MY_P_INF(MATH_P_INF,"Inf");
-const MathConstantLiteral MY_N_INF(MATH_N_INF,"");
 
 
 #endif /* MATHCONSTANTLITERAL_HPP_ */

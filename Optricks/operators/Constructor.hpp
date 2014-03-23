@@ -29,6 +29,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_MATHLITERAL:
 	case CLASS_FLOATLITERAL:
 	case CLASS_INTLITERAL:
+	case CLASS_RATIONAL:
 	case CLASS_VECTOR:{
 		filePos.error("Could not find constructor in class '"+getName()+"'");
 		exit(1);
@@ -37,12 +38,12 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		if(args.size()!=1 ) filePos.error("Could not find valid constructor in bool");
 		const Data* d = args[0]->evaluate(r);
 		auto V = d->getReturnType();
+		const IntClass* T = (const IntClass*)this;
 		if(V->classType==CLASS_STR){
 			filePos.compilerError("Strings not implemented");
 			exit(1);
 		} else if(V->classType==CLASS_INT){
 			Value* M = d->getValue(r, filePos);
-			const IntClass* T = (const IntClass*)this;
 			const IntClass* I = (const IntClass*)V;
 			auto Im = I->getWidth();
 			auto Tm = T->getWidth();
@@ -53,9 +54,29 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				return new ConstantData(r.builder.CreateTrunc(M, type), this);
 			}
 		} else if(V->classType==CLASS_INTLITERAL){
-			const IntClass* T = (const IntClass*)this;
-			const IntLiteralClass* I = (const IntLiteralClass*)V;
-			return new ConstantData(T->getValue(filePos, I->value),this);
+			const IntLiteral* IL = (const IntLiteral*)d;
+			return new ConstantData(T->getValue(filePos, IL->value),this);
+		} else if(V->classType==CLASS_FLOAT){
+			Value* M = d->getValue(r, filePos);
+			return new ConstantData(r.builder.CreateFPToSI(M, type), this);
+		} else if(V->classType==CLASS_FLOATLITERAL){
+			auto tmp = ((const FloatLiteral*)d)->value;
+			const Data* ret;
+			if(mpfr_nan_p(tmp)){
+				ret = new ConstantData(T->getZero(filePos), this);
+			} else if(mpfr_inf_p(tmp)){
+				if(mpfr_signbit(tmp))
+					ret = new ConstantData(T->getMinValue(), this);
+				else
+					ret = new ConstantData(T->getMaxValue(), this);
+			}
+			else{
+				mpz_t out;
+				mpz_init(out);
+				ret = new ConstantData(T->getValue(filePos, out), this);
+				mpz_clear(out);
+			}
+			return ret;
 		}
 		else{
 			filePos.error("Could not find valid constructor in bool");

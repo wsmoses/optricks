@@ -34,7 +34,11 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION) type=VOIDTYPE;
 	else type = retType->type;
 	assert(type!=NULL);
-	if(n->getToken()!=T_DECLARATION && retType->classType == CLASS_COMPLEX){
+	if(n->getToken()!=T_DECLARATION && retType->classType == CLASS_COMPLEX &&
+		(	((const ComplexClass*)retType)->innerClass->classType!=CLASS_INTLITERAL
+			&& ((const ComplexClass*)retType)->innerClass->classType!=CLASS_FLOATLITERAL
+			)
+			){
 		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "printc",PositionID(0,0,"#main"))), {n});
 		n->registerClasses();
 		n->registerFunctionPrototype(getRData());
@@ -47,11 +51,10 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(getRData());
-	if(dat->getToken()==T_LITERAL){
 		if(dat->type==R_INT){
 			IntLiteral* i = (IntLiteral*)dat;
-			char temp[mpz_sizeinbase (i->intType->value, 10) + 2];
-			auto tmp =  mpz_get_str(temp, 10, i->intType->value);
+			char temp[mpz_sizeinbase (i->value, 10) + 2];
+			auto tmp =  mpz_get_str(temp, 10, i->value);
 			std::cout << tmp << endl << flush;
 			F->eraseFromParent();
 			return;
@@ -61,8 +64,25 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			std::cout << endl << flush;
 			F->eraseFromParent();
 			return;
+		} else if(dat->type==R_IMAG){
+			ImaginaryLiteral* il = (ImaginaryLiteral*)dat;
+			assert(il->imag->type==R_INT || il->imag->type==R_FLOAT);
+			if(il->imag->type==R_INT){
+				IntLiteral* i = (IntLiteral*)il->imag;
+				char temp[mpz_sizeinbase (i->value, 10) + 2];
+				auto tmp =  mpz_get_str(temp, 10, i->value);
+				std::cout << tmp << "j"<< endl << flush;
+				F->eraseFromParent();
+				return;
+			} else if(il->imag->type==R_FLOAT){
+				FloatLiteral* i = (FloatLiteral*)dat;
+				i->toStream(std::cout);
+				std::cout << "j" << endl << flush;
+				F->eraseFromParent();
+				return;
+			}
 		}
-	}
+	cerr << str(dat->getToken()) << " " << str(dat->type) << endl << flush;
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
 		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
@@ -87,7 +107,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 		std::cout << flush;
-	}else if(retType->classType==CLASS_FLOAT){
+	} else if(retType->classType==CLASS_FLOAT){
 		auto w = ((const FloatClass*)retType)->getWidth();
 		if(w==8*sizeof(float)){
 			float (*FP)() = (float (*)())(intptr_t)FPtr;
@@ -112,7 +132,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		case 8:{
 			int8_t (*FP)() = (int8_t (*)())(intptr_t)FPtr;
 			int8_t t = FP();
-			std::cout << t << endl << flush;
+			std::cout << (int32_t)t << endl << flush;
 			break;
 		}
 		case 16:{
@@ -176,12 +196,6 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			std::cout << "Log2" << endl << flush; break;
 		case MATH_CATALAN:
 			std::cout << "Catalan" << endl << flush; break;
-		case MATH_NAN:
-			std::cout << "Nan" << endl << flush; break;
-		case MATH_P_INF:
-			std::cout << "Inf" << endl << flush; break;
-		case MATH_N_INF:
-			std::cout << "-Inf" << endl << flush; break;
 		}
 	}
 	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){

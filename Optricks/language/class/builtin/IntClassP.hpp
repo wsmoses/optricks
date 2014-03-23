@@ -12,7 +12,7 @@
 #include "../../RData.hpp"
 
 inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
-	if(toCast->layout!=LITERAL_LAYOUT) id.error("Cannot cast integer type to "+toCast->getName());
+	if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast integer type to "+toCast->getName());
 	switch(toCast->classType){
 	case CLASS_INT:{
 		IntClass* nex = (IntClass*)toCast;

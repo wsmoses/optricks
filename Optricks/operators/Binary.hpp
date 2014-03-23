@@ -38,7 +38,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				max = (const IntClass*)dd;
 			}
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
-					|| operation=="**" || operation=="&" || operation=="|"
+					|| operation=="**" || operation=="&" || operation=="|" || operation=="^"
 							|| operation=="<<" || operation==">>" || operation==">>>") return max;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
 					|| operation=="==" || operation=="!=") return &boolClass;
@@ -49,10 +49,8 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		}
 		case CLASS_INTLITERAL:{
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
-					|| operation=="**" || operation=="&" || operation=="|"
+					|| operation=="**" || operation=="&" || operation=="|" || operation=="^"
 							|| operation=="<<" || operation==">>" || operation==">>>") return cc;
-			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -86,8 +84,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 		}
 		case CLASS_FLOATLITERAL:{
-			filePos.error("Floating literal class cannot combine with integer types directly -- cast to floating-point type first");
-			exit(1);
+			return dd;
 		}
 		case CLASS_MATHLITERAL:{
 			filePos.error("Math literal class cannot combine with integer types directly -- cast to floating-point type first");
@@ -101,13 +98,11 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		break;
 	}
 	case CLASS_INTLITERAL:{
-		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
 		switch(dd->classType){
 		case CLASS_INT:{
 			const IntClass* R = (const IntClass*)dd;
-			if(!R->hasFit(ilc->value)) filePos.error("Cannot fit integer literal "+ilc->getName()+" in integer type "+R->getName());
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
-					|| operation=="**" || operation=="&" || operation=="|"
+					|| operation=="**" || operation=="&" || operation=="|" || operation=="^"
 							|| operation=="<<" || operation==">>" || operation==">>>") return R;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
 					|| operation=="==" || operation=="!=") return &boolClass;
@@ -118,11 +113,9 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		}
 		case CLASS_INTLITERAL:{
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
-					|| operation=="**" || operation=="&" || operation=="|"
+					|| operation=="**" || operation=="&" || operation=="|" || operation=="^"
 							|| operation=="<<" || operation==">>" || operation==">>>"){
-				//todo
-				filePos.compilerError("Must have correct integer literal calculation");
-				exit(1);
+				return &intLiteralClass;
 			}
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
 					|| operation=="==" || operation=="!=") return &boolClass;
@@ -151,18 +144,12 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 		}
 		case CLASS_FLOATLITERAL:{
-			filePos.error("Floating literal class cannot combine with integer types directly -- cast to floating-point type first");
-			exit(1);
+			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
+			else return &floatLiteralClass;
 		}
 		case CLASS_MATHLITERAL:{
 			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
-			else if(operation=="*" && cc==IntLiteralClass::get(0)){
-				return cc;
-			} else if(operation=="*" && cc==IntLiteralClass::get(1)){
-				return dd;
-			} else if(operation=="+" && cc==IntLiteralClass::get(0)){
-				return dd;
-			} else {
+			else {
 				filePos.error("Math literal class cannot combine with integer types directly -- cast to floating-point type first");
 				exit(1);
 			}
@@ -291,8 +278,8 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		case CLASS_MATHLITERAL:{
 			if(operation=="==" || operation=="!=") return &boolClass;
 			if(dd==cc){
-				if(operation=="-") return IntLiteralClass::get(0);
-				else if(operation=="/") return IntLiteralClass::get(1);
+				if(operation=="-") return & intLiteralClass /* 0 */;
+				else if(operation=="/") return &intLiteralClass /* 1 */;
 			}
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
@@ -457,8 +444,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="*") return new ConstantData(r.builder.CreateMul(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="/") return new ConstantData(r.builder.CreateSDiv(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="%") return new ConstantData(r.builder.CreateSRem(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
-			else if(operation=="&") return new ConstantData(r.builder.CreateAnd(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="|")	return new ConstantData(r.builder.CreateOr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
+			else if(operation=="^")	return new ConstantData(r.builder.CreateXor(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="<<") return new ConstantData(r.builder.CreateShl(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation==">>") return new ConstantData(r.builder.CreateAShr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation==">>>") return new ConstantData(r.builder.CreateLShr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
@@ -513,31 +500,80 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		break;
 	}
 	case CLASS_INTLITERAL:{
-		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
+		const IntLiteral* il = (const IntLiteral*)value;
 		switch(dd->classType){
 		case CLASS_INT:{
 			const IntClass* R = (const IntClass*)dd;
-			if(!R->hasFit(ilc->value)) filePos.error("Cannot fit integer literal "+ilc->getName()+" in integer type "+R->getName());
+			if(!R->hasFit(il->value)) filePos.warning("Cannot fit integer literal "+il->toString()+" in integer type "+R->getName());
 			return getBinop(r, filePos, value->castTo(r, R, filePos), ev, operation);
 		}
 		case CLASS_INTLITERAL:{
-			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
-					|| operation=="**" || operation=="&" || operation=="|"
-							|| operation=="<<" || operation==">>" || operation==">>>"){
-				//todo
-				filePos.compilerError("Must have correct integer literal calculation");
-				exit(1);
-			}
-			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
-					|| operation=="==" || operation=="!="){
-				//todo
-				filePos.compilerError("Intliteral comp not complete");
-				exit(1);
-			}
-			else {
+			assert(value->type==R_INT);
+			auto tmp = ev->evaluate(r);
+			assert(tmp->type==R_INT);
+			const auto tmp1 = ((const IntLiteral*) value)->value;
+			mpz_t tmp3;
+			mpz_init(tmp3);
+			const auto tmp2 = ((const IntLiteral*) tmp)->value;
+			const Data* ret;
+			if(operation=="=="){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)==0), &boolClass);
+			} else if(operation=="!="){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)!=0), &boolClass);
+			} else if(operation=="<="){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)<=0), &boolClass);
+			} else if(operation=="<"){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)< 0), &boolClass);
+			} else if(operation==">="){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)>=0), &boolClass);
+			} else if(operation==">"){
+				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)> 0), &boolClass);
+			} else if(operation=="+"){
+				mpz_add(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="-"){
+				mpz_sub(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="*"){
+				mpz_mul(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="/"){
+				//todo should round towards zero
+				if(mpz_sgn(tmp2)==0)
+					filePos.error("Divide by integer 0");
+				mpz_div(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="%"){
+				if(mpz_sgn(tmp2)==0)
+					filePos.error("Divide by integer 0");
+				mpz_mod(tmp3, tmp1, tmp2);
+				filePos.warning("Literal modolo gives different results from integer modulo");
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="&"){
+				mpz_and(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="|"){
+				mpz_ior(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="^"){
+				mpz_xor(tmp3, tmp1, tmp2);
+				ret = new IntLiteral(tmp3);
+			} else if(operation=="<<" || operation==">>" || operation==">>>"){
+				filePos.compilerError("TODO -- bitshifts");
+			} else if(operation=="**"){
+				auto s = mpz_sgn(tmp2);
+				if(s<0) ret = & ZERO_LITERAL;
+				else if(s==0) ret = & ONE_LITERAL;
+				else {
+					mpz_powm(tmp3, tmp1, tmp2, ONE_LITERAL.value);
+					ret = new IntLiteral(tmp3);
+				}
+			} else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
 			}
+			mpz_clear(tmp3);
+			return ret;
 		}
 		case CLASS_FLOAT:
 		case CLASS_COMPLEX:{
@@ -548,17 +584,20 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			return getBinop(r, filePos, value->castTo(r, dd, filePos), ev, operation);
 		}
 		case CLASS_FLOATLITERAL:{
-			filePos.error("Floating literal class cannot combine with integer types directly -- cast to floating-point type first");
-			exit(1);
+			const auto& it1 = ((const IntLiteral*) value)->value;
+			FloatLiteral fl(it1);
+			auto tmp =  getBinop(r, filePos, &fl, ev, operation);
+			return tmp;
 		}
 		case CLASS_MATHLITERAL:{
-			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
-			else if(operation=="*" && cc==IntLiteralClass::get(0)){
-				return value;
-			} else if(operation=="*" && cc==IntLiteralClass::get(1)){
-				return ev->evaluate(r);
-			} else if(operation=="+" && cc==IntLiteralClass::get(0)){
-				return ev->evaluate(r);
+			if(operation=="=="){
+				return new ConstantData(BoolClass::getValue(false), &boolClass);
+			} else if(operation=="!="){
+				return new ConstantData(BoolClass::getValue(true), &boolClass);
+			} else if(operation==">=" || operation=="<=" || operation=="<" || operation==">"){
+				//todo
+				filePos.compilerError("todo -- implement operations for math");
+				return &boolClass;
 			} else {
 				filePos.error("Math literal class cannot combine with integer types directly -- cast to floating-point type first");
 				exit(1);
@@ -636,16 +675,53 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(value->type==R_FLOAT);
 			auto tmp = ev->evaluate(r);
 			assert(tmp->type==R_FLOAT);
-			mpfr_t M;
-			mpfr_init_set(M, ((const FloatLiteral*)value)->value, MPFR_RNDN);
-			mpfr_add(M, M, ((const FloatLiteral*)tmp)->value, MPFR_RNDN);
-			return new FloatLiteral(M);
+			const auto tmp1 = ((const FloatLiteral*) value)->value;
+			mpfr_t tmp3;
+			mpfr_init(tmp3);
+			const auto tmp2 = ((const FloatLiteral*) tmp)->value;
+			const Data* ret;
+			if(operation=="=="){
+				ret = new ConstantData(BoolClass::getValue(mpfr_equal_p(tmp1, tmp2)), &boolClass);
+			} else if(operation=="!="){
+				ret = new ConstantData(BoolClass::getValue(!mpfr_equal_p(tmp1, tmp2) && !mpfr_unordered_p(tmp1,tmp2)), &boolClass);
+			} else if(operation=="<="){
+				ret = new ConstantData(BoolClass::getValue(mpfr_lessequal_p(tmp1, tmp2)), &boolClass);
+			} else if(operation=="<"){
+				ret = new ConstantData(BoolClass::getValue(mpfr_less_p(tmp1, tmp2)), &boolClass);
+			} else if(operation==">="){
+				ret = new ConstantData(BoolClass::getValue(mpfr_greaterequal_p(tmp1, tmp2)), &boolClass);
+			} else if(operation==">"){
+				ret = new ConstantData(BoolClass::getValue(mpfr_greater_p(tmp1, tmp2)), &boolClass);
+			} else if(operation=="+"){
+				mpfr_add(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			} else if(operation=="-"){
+				mpfr_sub(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			} else if(operation=="*"){
+				mpfr_mul(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			} else if(operation=="/"){
+				mpfr_div(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			} else if(operation=="%"){
+				mpfr_remainder(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			} else if(operation=="**"){
+				mpfr_pow(tmp3, tmp1, tmp2, MPFR_RNDN);
+				ret = new FloatLiteral(tmp3);
+			}
+			mpfr_clear(tmp3);
+			return ret;
 		}
 		case CLASS_FLOAT:{
 			return getBinop(r, filePos, value->castTo(r, dd, filePos), ev, operation);
 		}
 		case CLASS_INTLITERAL:{
-			return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
+			const auto& it1 = ((const IntLiteral*) ev->evaluate(r))->value;
+			FloatLiteral fl(it1);
+			auto tmp =  getBinop(r, filePos, value, &fl, operation);
+			return tmp;
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* comp = (const ComplexClass*)dd;
@@ -686,8 +762,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				return new ConstantData(BoolClass::getValue(cc!=dd), &boolClass);
 			}
 			if(dd==cc){
-				if(operation=="-") return new IntLiteral(IntLiteralClass::get(0));
-				else if(operation=="/") return new IntLiteral(IntLiteralClass::get(1));
+				if(operation=="-") return & ZERO_LITERAL;
+				else if(operation=="/") return & ONE_LITERAL;
 			}
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);

@@ -24,12 +24,6 @@ protected:
 			return "Log2Class";
 		case MATH_CATALAN:
 			return "CatalanClass";
-		case MATH_NAN:
-			return "NanClass";
-		case MATH_P_INF:
-			return "InfClass";
-		case MATH_N_INF:
-			return "-InfClass";
 		}
 	}
 public:
@@ -37,11 +31,11 @@ public:
 	MathConstantClass(MathConstant mc):
 		AbstractClass(nullptr,fromC(mc),nullptr,PRIMITIVE_LAYOUT,CLASS_MATHLITERAL,true,BOOLTYPE)
 		,mathType(mc){
-		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
-				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-						[this](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
-				assert(args.size()==1);
-				return new ConstantData(BoolClass::getValue(this->mathType==MATH_NAN),&boolClass);}), PositionID(0,0,"#float"));
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(new BuiltinInlineFunction(
+				new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		assert(args.size()==1);
+		return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
 
 		///register methods such as print / tostring / tofile / etc
 	}

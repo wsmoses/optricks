@@ -62,11 +62,11 @@ public:
 		if(mpz_sgn(value)<0){
 			auto t_width=mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
-			if(t_width > r_width) id.error("Cannot fit negative integer literal needing "+str(t_width)+" bits in signed type of size "+str(r_width)+" bits");
+			if(t_width > r_width) id.warning("Cannot fit negative integer literal needing "+str(t_width)+" bits in signed type of size "+str(r_width)+" bits");
 		} else {
 			auto t_width = mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
-			if(t_width > r_width) id.error("Cannot fit positive integer literal needing "+str(t_width)+" bits in integral type of size "+str(r_width)+" bits");
+			if(t_width > r_width) id.warning("Cannot fit positive integer literal needing "+str(t_width)+" bits in integral type of size "+str(r_width)+" bits");
 			//TODO force APInt to be right width/sign for value
 		}
 	}

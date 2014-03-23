@@ -34,20 +34,7 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_INTLITERAL:{
 		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
-		if(operation=="+") return cc;
-		else if(operation=="-"){
-			mpz_t v;
-			mpz_init(v);
-			mpz_neg(v, ilc->value);
-			return IntLiteralClass::get(v);
-		}
-		else if(operation=="~"){
-			mpz_t v;
-			mpz_init(v);
-			mpz_add_ui(v, ilc->value, 1);
-			mpz_neg(v, v);//todo check this
-			return IntLiteralClass::get(v);
-		}
+		if(operation=="+" || operation=="-" || operation=="~") return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
@@ -83,11 +70,6 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	case CLASS_MATHLITERAL:{
 		const MathConstantClass* mlc = (const MathConstantClass*)cc;
 		if(operation=="+") return mlc;
-		if(operation=="-"){
-			if(mlc->mathType==MATH_P_INF) return & MY_N_INF.mathType;
-			if(mlc->mathType==MATH_N_INF) return & MY_P_INF.mathType;
-			if(mlc->mathType==MATH_NAN) return mlc;
-		}
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
@@ -172,22 +154,22 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 	}
 	case CLASS_INTLITERAL:{
-		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
+		const IntLiteral* il = (const IntLiteral*)value;
 		if(operation=="+") return value;
 		else if(operation=="-"){
 			mpz_t v;
 			mpz_init(v);
-			mpz_neg(v, ilc->value);
-			auto R = new IntLiteral(IntLiteralClass::get(v));
+			mpz_neg(v, il->value);
+			auto R = new IntLiteral(v);
 			mpz_clear(v);
 			return R;
 		}
 		else if(operation=="~"){
 			mpz_t v;
 			mpz_init(v);
-			mpz_add_ui(v, ilc->value, 1);
+			mpz_add_ui(v, il->value, 1);
 			mpz_neg(v, v);//todo check this
-			auto R = new IntLiteral(IntLiteralClass::get(v));
+			auto R = new IntLiteral(v);
 			mpz_clear(v);
 			return R;
 		}
@@ -284,11 +266,6 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	case CLASS_MATHLITERAL:{
 		const MathConstantClass* mlc = (const MathConstantClass*)cc;
 		if(operation=="+") return value;
-		if(operation=="-"){
-			if(mlc->mathType==MATH_P_INF) return & MY_N_INF;
-			if(mlc->mathType==MATH_N_INF) return & MY_P_INF;
-			if(mlc->mathType==MATH_NAN) return value;
-		}
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");

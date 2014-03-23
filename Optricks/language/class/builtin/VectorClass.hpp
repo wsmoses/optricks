@@ -58,7 +58,7 @@ public:
 			illegalLocal(id,s);
 			exit(1);
 		}
-		else return IntLiteralClass::get(len);
+		else return & intLiteralClass;
 	}
 	bool hasLocalData(String s) const override final{
 		return s=="length";

@@ -18,6 +18,10 @@ struct ComplexStruct{
 		double real, complex;
 };
 
+void o_exit (int s) {
+	mpfr_free_cache();
+	exit(s);
+}
 void getDir(String pos, String& dir, String& file){
 	size_t p = pos.find_last_of('/');
 	if(p==pos.npos) p = pos.find_last_of('\\');

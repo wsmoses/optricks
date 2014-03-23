@@ -1,3 +1,4 @@
+/*
 def char den(int d):
 	if    d > 999	return '*';
 	elif  d > 200	return '+';
@@ -19,3 +20,7 @@ for im in range(-1.25,1.25,.04){
 	out << '\n';
 }
 out.close();
+*/
+extern void puts(char c);
+auto tmp = (extern char _Z6myTestc(char c));
+print(tmp('d'));

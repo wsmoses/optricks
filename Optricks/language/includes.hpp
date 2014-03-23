@@ -36,7 +36,7 @@
 #include <unordered_map>
 #include <array>
 #include <unordered_set>
-
+//#include <dlfcn.h>
 #include <unistd.h>
 
 #include <limits.h> /* PATH_MAX */
@@ -324,10 +324,7 @@ enum MathConstant{
 	MATH_EULER_MASC,
 	MATH_E,
 	MATH_LN2,
-	MATH_CATALAN,
-	MATH_NAN,
-	MATH_P_INF,
-	MATH_N_INF
+	MATH_CATALAN
 };
 template<typename N> inline N check(const N& a){
 	assert(a);

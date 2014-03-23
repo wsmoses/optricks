@@ -19,26 +19,16 @@
 	};
 class IntLiteralClass: public RealClass{
 public:
-	static inline String str(const mpz_t& value){
-		char temp[mpz_sizeinbase (value, 10) + 2];
-		auto tmp =  mpz_get_str(temp, 10, value);
-		//void (*freefunc)(void*,size_t);
-		String s(tmp);
-		//mp_get_memory_functions(nullptr, nullptr, &freefunc);
-		//freefunc(tmp, strlen(tmp)+1);
-		return "intliteral{"+s+"}";
-	}
-	mutable mpz_t value;
-private:
-	IntLiteralClass(const mpz_t& val):
-		RealClass(str(val),LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
-		,value(val){
-		/*LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+	IntLiteralClass(bool b):
+		RealClass("intLiteral",LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
+		{
+		/*
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()==1);
 						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
-	*/
+		*/
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
@@ -54,11 +44,7 @@ public:
 			return true;
 		}
 		case CLASS_INTLITERAL: return toCast==this;
-		case CLASS_INT: {
-			//if(!inner) return true;
-			IntClass* ic = (IntClass*)toCast;
-			return ic->hasFit(value);
-		}
+		case CLASS_INT: return true;
 		case CLASS_RATIONAL:
 		default:
 			return false;
@@ -116,36 +102,8 @@ public:
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}
-	static IntLiteralClass* get(const mpz_t& l) {
-		static std::map<const mpz_t, IntLiteralClass*, mpzCompare> mmap;
-		auto find = mmap.find(l);
-		if(find==mmap.end()){
-			mpz_t mt;
-			mpz_init_set(mt,l);
-			return mmap.insert(std::pair<const mpz_t, IntLiteralClass*>(mt,new IntLiteralClass(mt))).first->second;
-		}
-		else return find->second;
-	}
-	static inline IntLiteralClass* get(const char* str, unsigned base) {
-		mpz_t value;
-		mpz_init_set_str(value,str,base);
-		auto tmp = get(value);
-		mpz_clear(value);//should check
-		return tmp;
-	}
-	static inline IntLiteralClass* get(signed long int val) {
-		mpz_t value;
-		mpz_init_set_si(value,val);
-		auto tmp = get(value);
-		mpz_clear(value);//should check
-		return tmp;
-	}
-	virtual ~IntLiteralClass() override{
-		cerr << "killing " << getName() << endl << flush;
-		mpz_clear(value);
-	}
-
 };
 
+const IntLiteralClass intLiteralClass(true);
 
 #endif /* INTLITERALCLASS_HPP_ */
