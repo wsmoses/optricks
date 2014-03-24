@@ -63,6 +63,7 @@ public:
 			if(s[p]<'0' || s[p]>'9') return false;
 			i*=10;
 			i+= (s[p]-'0');
+			p++;
 		}while(p<s.length());
 		if(i>=innerTypes.size()) return false;
 		return true;
@@ -78,6 +79,7 @@ public:
 			if(s[p]<'0' || s[p]>'9') illegalLocal(id,s);
 			i*=10;
 			i+= (s[p]-'0');
+			p++;
 		}while(p<s.length());
 		if(i>=innerTypes.size()){
 			illegalLocal(id,s);

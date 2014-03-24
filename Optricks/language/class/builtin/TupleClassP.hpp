@@ -11,6 +11,7 @@
 #include "../../data/TupleData.hpp"
 #include "./NamedTupleClass.hpp"
 #include "../../RData.hpp"
+#include "../../data/LocationData.hpp"
 
 inline Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 		switch(toCast->classType){
@@ -66,6 +67,7 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 		if(s[p]<'0' || s[p]>'9') illegalLocal(id,s);
 		i*=10;
 		i+= (s[p]-'0');
+		p++;
 	}while(p<s.length());
 	if(i>=innerTypes.size()){
 		illegalLocal(id,s);
@@ -78,12 +80,13 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 	}
 	assert(instance->getReturnType()==this);
 	if(instance->type==R_LOC){
-		//TODO location
-		id.compilerError("Tuple TODO:// allow getting tuple class data from location");
-		exit(1);
+		auto LD = ((const LocationData*)instance)->value;
+		if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
+		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 	} else{
 		assert(instance->type==R_CONST);
 		Value* v = ((ConstantData*)instance)->value;
+		if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);
 		return new ConstantData(r.builder.CreateExtractValue(v,i),innerTypes[i]);
 	}
 }

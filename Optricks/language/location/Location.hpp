@@ -15,6 +15,8 @@ class Location{
 		virtual Value* getValue(RData& r, PositionID id)=0;
 		virtual void setValue(Value* v, RData& r)=0;
 		virtual Value* getPointer(RData& r,PositionID id) =0;
+		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
+		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
 };
 
 class StandardLocation : public Location{
@@ -27,6 +29,12 @@ class StandardLocation : public Location{
 		void setValue(Value* v, RData& r) override final;
 		Value* getPointer(RData& r,PositionID id) override final{
 			return position;
+		}
+		Location* getInner(RData& r, PositionID id, unsigned idx) override final{
+			return new StandardLocation(r.builder.CreateConstGEP1_32(position, idx));
+		}
+		Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2) override final{
+			return new StandardLocation(r.builder.CreateConstGEP2_32(position, idx1, idx2));
 		}
 };
 
@@ -41,6 +49,12 @@ public:
 	void setValue(Value* v, RData& r) override final;
 	Value* getPointer(RData& r,PositionID id) override final{
 		return position;
+	}
+	Location* getInner(RData& r, PositionID id, unsigned idx) override final{
+		return new StandardLocation(r.builder.CreateConstGEP1_32(position, idx));
+	}
+	Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2) override final{
+		return new StandardLocation(r.builder.CreateConstGEP2_32(position, idx1, idx2));
 	}
 };
 

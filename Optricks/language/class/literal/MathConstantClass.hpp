@@ -42,6 +42,7 @@ public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		if(toCast==this) return true;
 		switch(toCast->classType){
+		case CLASS_FLOATLITERAL: return true;
 		case CLASS_COMPLEX:{
 			return hasCast(((const ComplexClass*)toCast)->innerClass);
 		}

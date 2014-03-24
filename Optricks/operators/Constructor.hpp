@@ -60,7 +60,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			Value* M = d->getValue(r, filePos);
 			return new ConstantData(r.builder.CreateFPToSI(M, type), this);
 		} else if(V->classType==CLASS_FLOATLITERAL){
-			auto tmp = ((const FloatLiteral*)d)->value;
+			const auto& tmp = ((const FloatLiteral*)d)->value;
 			const Data* ret;
 			if(mpfr_nan_p(tmp)){
 				ret = new ConstantData(T->getZero(filePos), this);
@@ -73,6 +73,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			else{
 				mpz_t out;
 				mpz_init(out);
+				mpfr_get_z(out, tmp, MPFR_RNDZ);
 				ret = new ConstantData(T->getValue(filePos, out), this);
 				mpz_clear(out);
 			}
@@ -85,6 +86,11 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	}
 	case CLASS_COMPLEX:
 	case CLASS_FLOAT:{
+		if(args.size()==1){
+			const Data* d = args[0]->evaluate(r);
+			if(d->hasCastValue(this))
+				return d->castTo(r, this, filePos);
+		}
 		filePos.compilerError("Floating and complex constructors not done yet");
 		exit(1);
 	}

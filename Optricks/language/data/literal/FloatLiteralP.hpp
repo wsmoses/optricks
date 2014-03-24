@@ -49,29 +49,10 @@ Constant* FloatLiteral::castToV(RData& r, const AbstractClass* const right, cons
 }
 
 bool FloatLiteral::hasCastValue(const AbstractClass* const a) const{
-		return a->classType==CLASS_FLOAT || (a->classType==CLASS_COMPLEX && ((ComplexClass*)a)->innerClass->classType==CLASS_FLOAT) ;
-	}
+	return floatLiteralClass.hasCast(a);
+}
 
 int FloatLiteral::compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_FLOAT || a->classType==CLASS_FLOATLITERAL || a->classType==CLASS_COMPLEX);
-	assert(b->classType==CLASS_FLOAT || b->classType==CLASS_FLOATLITERAL || b->classType==CLASS_COMPLEX);
-	if(a->classType==b->classType){
-		if(a->classType==CLASS_COMPLEX){
-			ComplexClass* ca = (ComplexClass*)a;
-			ComplexClass* cb = (ComplexClass*)b;
-			assert(ca->innerClass->classType==CLASS_FLOAT);
-			assert(cb->innerClass->classType==CLASS_FLOAT);
-			return 0;
-		} else{
-			return 0;
-		}
-	} else if(a->classType==CLASS_FLOATLITERAL){
-		return -1;
-	} else if(a->classType==CLASS_FLOAT){
-		return (b->classType==CLASS_FLOATLITERAL)?(1):(-1);
-	} else{
-		assert(b->classType==CLASS_COMPLEX);
-		return 1;
-	}
+	return floatLiteralClass.compare(a,b);
 }
 #endif /* FLOATLITERAL_CPP_ */

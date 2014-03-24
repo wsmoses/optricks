@@ -149,7 +149,6 @@ public:
 		mpfr_init2(ze,getWidth());
 		mpfr_set_ui(ze,1,MPFR_RNDN);
 		mpfr_exp(e,ze,MPFR_RNDN);
-		mpfr_const_pi(e, MPFR_RNDN);
 		auto tmp = getValue(id,e);
 		mpfr_clear(e);
 		return tmp;

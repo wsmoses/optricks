@@ -54,6 +54,14 @@ class E_TUPLE : public Statement{
 				a->registerFunctionPrototype(r);
 			}
 		};
+
+		AbstractClass* getSelfClass(PositionID id) override final{
+			std::vector<const AbstractClass*> vec;
+			for(unsigned int i = 0; i<values.size(); i++){
+				vec.push_back(values[i]->getSelfClass(id));
+			}
+			return TupleClass::get(vec);
+		}
 		void buildFunction(RData& r) const override final{
 			for(auto& a:values){
 				a->buildFunction(r);
@@ -85,7 +93,7 @@ class E_NAMED_TUPLE : public ErrorStatement{
 		const std::vector<String> names;
 		virtual ~E_NAMED_TUPLE(){};
 		E_NAMED_TUPLE(PositionID id, const std::vector<Statement*>& a,const std::vector<String>& b) :
-			ErrorStatement(id),values(a){
+			ErrorStatement(id),values(a),names(b){
 			assert(a.size()==b.size());
 			for(unsigned i=0; i<a.size(); i++){
 				assert(b[i].length()>0);
@@ -114,8 +122,10 @@ class E_NAMED_TUPLE : public ErrorStatement{
 		AbstractClass* getSelfClass(PositionID id) override final{
 			std::vector<const AbstractClass*> vec;
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec.push_back(values[i]->getSelfClass(filePos));
+				vec.push_back(values[i]->getSelfClass(id));
 			}
+			assert(values.size()==vec.size());
+			assert(vec.size()==names.size());
 			return NamedTupleClass::get(vec,names);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{

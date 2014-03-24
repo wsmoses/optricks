@@ -11,6 +11,7 @@
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
 #include "../language/evaluatable/CastEval.hpp"
+#include "../language/data/literal/MathConstantLiteral.hpp"
 #include "../language/class/ClassLib.hpp"
 inline const AbstractClass* getBinopReturnType(PositionID filePos, const AbstractClass* cc, const AbstractClass* dd, const String operation){
 	if(operation=="+"){
@@ -143,16 +144,10 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				exit(1);
 			}
 		}
+		case CLASS_MATHLITERAL:
 		case CLASS_FLOATLITERAL:{
-			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
+			if(operation=="<" || operation==">" || operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
 			else return &floatLiteralClass;
-		}
-		case CLASS_MATHLITERAL:{
-			if(operation=="==" || operation=="!=" || operation==">=" || operation=="<=") return &boolClass;
-			else {
-				filePos.error("Math literal class cannot combine with integer types directly -- cast to floating-point type first");
-				exit(1);
-			}
 		}
 		default:{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -227,6 +222,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 				exit(1);
 			}
 		}
+		case CLASS_MATHLITERAL:
 		case CLASS_INTLITERAL:{
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return cc;
@@ -255,7 +251,6 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			}
 		}
 		case CLASS_INT:
-		case CLASS_MATHLITERAL:
 		default:{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
@@ -268,6 +263,17 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		case CLASS_FLOAT:{
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" ) return dd;
+			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
+					|| operation=="==" || operation=="!=") return &boolClass;
+			else {
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
+		}
+		case CLASS_FLOATLITERAL:
+		case CLASS_INTLITERAL:{
+			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
+					|| operation=="**" ) return &floatLiteralClass;
 			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
 					|| operation=="==" || operation=="!=") return &boolClass;
 			else {
@@ -511,82 +517,82 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(value->type==R_INT);
 			auto tmp = ev->evaluate(r);
 			assert(tmp->type==R_INT);
-			const auto tmp1 = ((const IntLiteral*) value)->value;
-			mpz_t tmp3;
-			mpz_init(tmp3);
-			const auto tmp2 = ((const IntLiteral*) tmp)->value;
-			const Data* ret;
+			const auto& tmp1 = ((const IntLiteral*) value)->value;
+			const auto& tmp2 = ((const IntLiteral*) tmp)->value;
 			if(operation=="=="){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)==0), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)==0), &boolClass);
 			} else if(operation=="!="){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)!=0), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)!=0), &boolClass);
 			} else if(operation=="<="){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)<=0), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)<=0), &boolClass);
 			} else if(operation=="<"){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)< 0), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)< 0), &boolClass);
 			} else if(operation==">="){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)>=0), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)>=0), &boolClass);
 			} else if(operation==">"){
-				ret = new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)> 0), &boolClass);
-			} else if(operation=="+"){
-				mpz_add(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)> 0), &boolClass);
+			}
+			auto ret = new IntLiteral(0,0,0);
+			if(operation=="+"){
+				mpz_add(ret->value, tmp1, tmp2);
 			} else if(operation=="-"){
-				mpz_sub(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_sub(ret->value, tmp1, tmp2);
 			} else if(operation=="*"){
-				mpz_mul(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_mul(ret->value, tmp1, tmp2);
 			} else if(operation=="/"){
 				//todo should round towards zero
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
-				mpz_div(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_div(ret->value, tmp1, tmp2);
 			} else if(operation=="%"){
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
-				mpz_mod(tmp3, tmp1, tmp2);
+				mpz_mod(ret->value, tmp1, tmp2);
 				filePos.warning("Literal modolo gives different results from integer modulo");
-				ret = new IntLiteral(tmp3);
 			} else if(operation=="&"){
-				mpz_and(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_and(ret->value, tmp1, tmp2);
 			} else if(operation=="|"){
-				mpz_ior(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_ior(ret->value, tmp1, tmp2);
 			} else if(operation=="^"){
-				mpz_xor(tmp3, tmp1, tmp2);
-				ret = new IntLiteral(tmp3);
+				mpz_xor(ret->value, tmp1, tmp2);
 			} else if(operation=="<<" || operation==">>" || operation==">>>"){
 				filePos.compilerError("TODO -- bitshifts");
 			} else if(operation=="**"){
 				auto s = mpz_sgn(tmp2);
-				if(s<0) ret = & ZERO_LITERAL;
-				else if(s==0) ret = & ONE_LITERAL;
-				else if(mpz_cmp_ui(tmp1, 1)==0 || mpz_cmp_ui(tmp1,0)==0) ret = value;
+				if(s<0){
+					delete ret;
+					return & ZERO_LITERAL;
+				}
+				else if(s==0){
+					delete ret;
+					return & ONE_LITERAL;
+				}
+				else if(mpz_cmp_ui(tmp1, 1)==0 || mpz_cmp_ui(tmp1,0)==0){
+					delete ret;
+					return value;
+				}
 				else if(mpz_cmp_si(tmp1,-1)==0){
 					if(mpz_even_p(tmp2)==0){
 						//is odd
-						ret = value;
+						delete ret;
+						return value;
 					} else{
 						// is even
-						ret = & ONE_LITERAL;
+						delete ret;
+						return & ONE_LITERAL;
 					}
 				}
 				else {
 					if(mpz_cmp_ui(tmp2, UINT_MAX)<=0){
-						mpz_pow_ui(tmp3, tmp1, mpz_get_ui(tmp2));
+						mpz_pow_ui(ret->value, tmp1, mpz_get_ui(tmp2));
 					} else{
 						filePos.compilerError("Result of integer exponentiation cannot fit in memory (perhaps use floating-point instead)");
 					}
-					ret = new IntLiteral(tmp3);
 				}
 			} else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
 			}
-			mpz_clear(tmp3);
 			return ret;
 		}
 		case CLASS_FLOAT:
@@ -604,18 +610,24 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			return tmp;
 		}
 		case CLASS_MATHLITERAL:{
-			if(operation=="=="){
-				return new ConstantData(BoolClass::getValue(false), &boolClass);
-			} else if(operation=="!="){
-				return new ConstantData(BoolClass::getValue(true), &boolClass);
-			} else if(operation==">=" || operation=="<=" || operation=="<" || operation==">"){
-				//todo
-				filePos.compilerError("todo -- implement operations for math");
-				return &boolClass;
-			} else {
-				filePos.error("Math literal class cannot combine with integer types directly -- cast to floating-point type first");
-				exit(1);
+			const auto& it1 = ((const IntLiteral*) value)->value;
+			FloatLiteral f1(it1);
+			FloatLiteral f2(0,0,0);
+			switch(((const MathConstantLiteral*) ev->evaluate(r))->mathType.mathType){
+				case MATH_PI: mpfr_const_pi(f2.value, MPFR_RNDN); break;
+				case MATH_E:{
+					mpfr_t ONE;
+					mpfr_init(ONE);
+					mpfr_set_ui(ONE, 1,MPFR_RNDN);
+					mpfr_exp(f2.value, ONE,MPFR_RNDN);
+					break;
+				}
+				case MATH_EULER_MASC: mpfr_const_euler(f2.value, MPFR_RNDN); break;
+				case MATH_LN2: mpfr_const_log2(f2.value, MPFR_RNDN); break;
+				case MATH_CATALAN: mpfr_const_catalan(f2.value, MPFR_RNDN); break;
 			}
+			auto tmp = getBinop(r, filePos, &f1, &f2, operation);
+			return tmp;
 		}
 		default:{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -689,43 +701,35 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(value->type==R_FLOAT);
 			auto tmp = ev->evaluate(r);
 			assert(tmp->type==R_FLOAT);
-			const auto tmp1 = ((const FloatLiteral*) value)->value;
-			mpfr_t tmp3;
-			mpfr_init(tmp3);
-			const auto tmp2 = ((const FloatLiteral*) tmp)->value;
-			const Data* ret;
+			const auto& tmp1 = ((const FloatLiteral*) value)->value;
+			const auto& tmp2 = ((const FloatLiteral*) tmp)->value;
 			if(operation=="=="){
-				ret = new ConstantData(BoolClass::getValue(mpfr_equal_p(tmp1, tmp2)), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpfr_equal_p(tmp1, tmp2)), &boolClass);
 			} else if(operation=="!="){
-				ret = new ConstantData(BoolClass::getValue(!mpfr_equal_p(tmp1, tmp2) && !mpfr_unordered_p(tmp1,tmp2)), &boolClass);
+				return new ConstantData(BoolClass::getValue(!mpfr_equal_p(tmp1, tmp2) && !mpfr_unordered_p(tmp1,tmp2)), &boolClass);
 			} else if(operation=="<="){
-				ret = new ConstantData(BoolClass::getValue(mpfr_lessequal_p(tmp1, tmp2)), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpfr_lessequal_p(tmp1, tmp2)), &boolClass);
 			} else if(operation=="<"){
-				ret = new ConstantData(BoolClass::getValue(mpfr_less_p(tmp1, tmp2)), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpfr_less_p(tmp1, tmp2)), &boolClass);
 			} else if(operation==">="){
-				ret = new ConstantData(BoolClass::getValue(mpfr_greaterequal_p(tmp1, tmp2)), &boolClass);
+				return new ConstantData(BoolClass::getValue(mpfr_greaterequal_p(tmp1, tmp2)), &boolClass);
 			} else if(operation==">"){
-				ret = new ConstantData(BoolClass::getValue(mpfr_greater_p(tmp1, tmp2)), &boolClass);
-			} else if(operation=="+"){
-				mpfr_add(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
-			} else if(operation=="-"){
-				mpfr_sub(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
-			} else if(operation=="*"){
-				mpfr_mul(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
-			} else if(operation=="/"){
-				mpfr_div(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
-			} else if(operation=="%"){
-				mpfr_remainder(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
-			} else if(operation=="**"){
-				mpfr_pow(tmp3, tmp1, tmp2, MPFR_RNDN);
-				ret = new FloatLiteral(tmp3);
+				return new ConstantData(BoolClass::getValue(mpfr_greater_p(tmp1, tmp2)), &boolClass);
 			}
-			mpfr_clear(tmp3);
+			auto ret = new FloatLiteral(0,0,0);
+			if(operation=="+"){
+				mpfr_add(ret->value, tmp1, tmp2, MPFR_RNDN);
+			} else if(operation=="-"){
+				mpfr_sub(ret->value, tmp1, tmp2, MPFR_RNDN);
+			} else if(operation=="*"){
+				mpfr_mul(ret->value, tmp1, tmp2, MPFR_RNDN);
+			} else if(operation=="/"){
+				mpfr_div(ret->value, tmp1, tmp2, MPFR_RNDN);
+			} else if(operation=="%"){
+				mpfr_remainder(ret->value, tmp1, tmp2, MPFR_RNDN);
+			} else if(operation=="**"){
+				mpfr_pow(ret->value, tmp1, tmp2, MPFR_RNDN);
+			}
 			return ret;
 		}
 		case CLASS_FLOAT:{
@@ -755,8 +759,25 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 			}
 		}
+		case CLASS_MATHLITERAL:{
+			FloatLiteral f2(0,0,0);
+			switch(((const MathConstantLiteral*) ev->evaluate(r))->mathType.mathType){
+				case MATH_PI: mpfr_const_pi(f2.value, MPFR_RNDN); break;
+				case MATH_E:{
+					mpfr_t ONE;
+					mpfr_init(ONE);
+					mpfr_set_ui(ONE, 1,MPFR_RNDN);
+					mpfr_exp(f2.value, ONE,MPFR_RNDN);
+					break;
+				}
+				case MATH_EULER_MASC: mpfr_const_euler(f2.value, MPFR_RNDN); break;
+				case MATH_LN2: mpfr_const_log2(f2.value, MPFR_RNDN); break;
+				case MATH_CATALAN: mpfr_const_catalan(f2.value, MPFR_RNDN); break;
+			}
+			auto tmp = getBinop(r, filePos, value, &f2, operation);
+			return tmp;
+		}
 		case CLASS_INT:
-		case CLASS_MATHLITERAL:
 		default:{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 			exit(1);
@@ -768,6 +789,25 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		switch(dd->classType){
 		case CLASS_FLOAT:{
 			return getBinop(r, filePos, value->castTo(r, dd, filePos), ev, operation);
+		}
+		case CLASS_INTLITERAL:
+		case CLASS_FLOATLITERAL:{
+			FloatLiteral f2(0,0,0);
+			switch(((const MathConstantLiteral*) value)->mathType.mathType){
+				case MATH_PI: mpfr_const_pi(f2.value, MPFR_RNDN); break;
+				case MATH_E:{
+					mpfr_t ONE;
+					mpfr_init(ONE);
+					mpfr_set_ui(ONE, 1,MPFR_RNDN);
+					mpfr_exp(f2.value, ONE,MPFR_RNDN);
+					break;
+				}
+				case MATH_EULER_MASC: mpfr_const_euler(f2.value, MPFR_RNDN); break;
+				case MATH_LN2: mpfr_const_log2(f2.value, MPFR_RNDN); break;
+				case MATH_CATALAN: mpfr_const_catalan(f2.value, MPFR_RNDN); break;
+			}
+			auto tmp = getBinop(r, filePos, &f2, ev,operation);
+			return tmp;
 		}
 		case CLASS_MATHLITERAL:{
 			if(operation=="=="){

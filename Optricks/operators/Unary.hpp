@@ -157,20 +157,14 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		const IntLiteral* il = (const IntLiteral*)value;
 		if(operation=="+") return value;
 		else if(operation=="-"){
-			mpz_t v;
-			mpz_init(v);
-			mpz_neg(v, il->value);
-			auto R = new IntLiteral(v);
-			mpz_clear(v);
+			auto R = new IntLiteral(0,0,0);
+			mpz_neg(R->value, il->value);
 			return R;
 		}
 		else if(operation=="~"){
-			mpz_t v;
-			mpz_init(v);
-			mpz_add_ui(v, il->value, 1);
-			mpz_neg(v, v);//todo check this
-			auto R = new IntLiteral(v);
-			mpz_clear(v);
+			auto R = new IntLiteral(0,0,0);
+			mpz_add_ui(R->value, il->value, 1);
+			mpz_neg(R->value, R->value);//todo check this
 			return R;
 		}
 		else{
@@ -182,11 +176,8 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		if(operation=="+") return value;
 		else if(operation=="-"){
 			const FloatLiteral* fl = (const FloatLiteral*)value;
-			mpfr_t v;
-			mpfr_init(v);
-			mpfr_neg(v, fl->value, MPFR_RNDN);
-			auto R = new FloatLiteral(v);
-			mpfr_clear(v);
+			auto R = new FloatLiteral(0,0,0);
+			mpfr_neg(R->value, fl->value, MPFR_RNDN);
 			return R;
 		}
 		else{

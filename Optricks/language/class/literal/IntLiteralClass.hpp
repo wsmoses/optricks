@@ -22,13 +22,13 @@ public:
 	IntLiteralClass(bool b):
 		RealClass("intLiteral",LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
 		{
-		/*
+
 		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()==1);
 						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
-		*/
+
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}

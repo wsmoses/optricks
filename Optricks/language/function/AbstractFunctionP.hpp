@@ -140,7 +140,7 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, const Evaluat
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return tt;
 	} else {
-		return new ConstantData(val->evaluate(r)->castToV(r, t, id),t);
+		return val->evaluate(r)->castTo(r, t, id)->toValue(r, id);
 	}
 }
 Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
@@ -326,7 +326,7 @@ Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const right, P
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this
 		FunctionClass* fc = (FunctionClass*)right;
-		return getBestFit(id, fc->argumentTypes)->myFunc;
+		return getBestFit(id, fc->argumentTypes)->getSingleFunc();
 	}
 	case CLASS_CPOINTER:
 		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
@@ -343,22 +343,22 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 	auto args = ((FunctionClass*)a)->argumentTypes;
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->proto->declarations.size()>=args.size()){
+		if(a->getSingleProto()->declarations.size()>=args.size()){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(args[i]->classType==CLASS_VOID){
-					if(a->proto->declarations[i].defaultValue==nullptr){
+					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
 						break;
 					}
-				} else if(!args[i]->hasCast(a->proto->declarations[i].declarationType)){
+				} else if(!args[i]->hasCast(a->getSingleProto()->declarations[i].declarationType)){
 					valid=false;
 					break;
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->proto->declarations.size(); i++)
-				if(a->proto->declarations[i].defaultValue==nullptr){
+			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++)
+				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
 				}
@@ -373,7 +373,7 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 		++current;
 		for(; current!=choices.end();){
 			//less means better
-			auto c=args[i]->compare((*best)->proto->declarations[i].declarationType, (*current)->proto->declarations[i].declarationType);
+			auto c=args[i]->compare((*best)->getSingleProto()->declarations[i].declarationType, (*current)->getSingleProto()->declarations[i].declarationType);
 			if(c==0){
 				++current;
 			} else if(c<0){
@@ -395,8 +395,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
-			for(unsigned i=0; i<a->proto->declarations.size(); i++){
-				if(args[i]!=a->proto->declarations[i].declarationType){
+			for(unsigned i=0; i<a->getSingleProto()->declarations.size(); i++){
+				if(args[i]!=a->getSingleProto()->declarations[i].declarationType){
 					perfect=false;
 					break;
 				}
@@ -408,28 +408,28 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->proto->declarations.size()>=args.size()){
+		if(a->getSingleProto()->declarations.size()>=args.size()){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(args[i]->classType==CLASS_VOID){
-					if(a->proto->declarations[i].defaultValue==nullptr){
+					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->proto->declarations[i].defaultValue->hasCastValue(a->proto->declarations[i].declarationType)){
+					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
 						valid = false;
 						break;
 					}
-				} else if(!args[i]->hasCast(a->proto->declarations[i].declarationType)){
+				} else if(!args[i]->hasCast(a->getSingleProto()->declarations[i].declarationType)){
 					valid=false;
 					break;
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->proto->declarations.size(); i++) {
-				if(a->proto->declarations[i].defaultValue==nullptr){
+			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++) {
+				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->proto->declarations[i].defaultValue->hasCastValue(a->proto->declarations[i].declarationType)){
+				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
 					valid=false;
 					break;
 				}
@@ -441,7 +441,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	if(choices.size()==0){
 		String t = "No matching function for "+toClassArgString(myName, args)+" options are:\n";
 		for(SingleFunction* const & a:innerFuncs){
-			t+=a->proto->toString()+"\n";
+			t+=a->getSingleProto()->toString()+"\n";
 		}
 		id.error(t);
 		exit(1);
@@ -452,7 +452,9 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		++current;
 		for(; current!=best;){
 			//less means better
-			auto c=args[i]->compare((*best)->proto->declarations[i].declarationType, (*current)->proto->declarations[i].declarationType);
+			//cerr << "C1 " << i << endl << flush;
+
+			auto c=args[i]->compare((*best)->getSingleProto()->declarations[i].declarationType, (*current)->getSingleProto()->declarations[i].declarationType);
 			if(c==0){
 				++current;
 			} else if(c<0){
@@ -467,11 +469,12 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			if(current == choices.end()) current = choices.begin();
 		}
 	}
+	//cerr << "C1-B " << endl << flush;
 	if(choices.size()==1) return choices.front();
 	else{
 		String t = "Ambiguous function for "+toClassArgString(myName, args)+" options are:\n";
 		for(auto& b: choices){
-			t+=b->proto->toString()+"\n";
+			t+=b->getSingleProto()->toString()+"\n";
 		}
 		id.error(t);
 		exit(1);
@@ -482,8 +485,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
-			for(unsigned i=0; i<a->proto->declarations.size(); i++){
-				if(args[i]->getReturnType()!=a->proto->declarations[i].declarationType){
+			for(unsigned i=0; i<a->getSingleProto()->declarations.size(); i++){
+				if(args[i]->getReturnType()!=a->getSingleProto()->declarations[i].declarationType){
 					perfect=false;
 					break;
 				}
@@ -495,30 +498,30 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->proto->declarations.size()>=args.size()){
+		if(a->getSingleProto()->declarations.size()>=args.size()){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				const AbstractClass* const at = args[i]->getReturnType();
 				assert(at);
 				if(at->classType==CLASS_VOID){
-					if(a->proto->declarations[i].defaultValue==nullptr){
+					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->proto->declarations[i].defaultValue->hasCastValue(a->proto->declarations[i].declarationType)){
+					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
 						valid = false;
 						break;
 					}
-				} else if(!args[i]->hasCastValue(a->proto->declarations[i].declarationType)){
+				} else if(!args[i]->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
 					valid=false;
 					break;
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->proto->declarations.size(); i++){
-				if(a->proto->declarations[i].defaultValue==nullptr){
+			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++){
+				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->proto->declarations[i].defaultValue->hasCastValue(a->proto->declarations[i].declarationType)){
+				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
 					valid=false;
 					break;
 				}
@@ -530,7 +533,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	if(choices.size()==0){
 		String t = "No matching function for "+toClassArgString(myName, args)+" options are:\n";
 		for(SingleFunction* const & a:innerFuncs){
-			t+=a->proto->toString()+"\n";
+			t+=a->getSingleProto()->toString()+"\n";
 		}
 		id.error(t);
 		exit(1);
@@ -542,8 +545,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		for(; current!=best;){
 			//less means better
 			auto c=args[i]->compareValue(
-					(*best)->proto->declarations[i].declarationType,
-					(*current)->proto->declarations[i].declarationType);
+					(*best)->getSingleProto()->declarations[i].declarationType,
+					(*current)->getSingleProto()->declarations[i].declarationType);
 			if(c==0){
 				++current;
 			} else if(c<0){
@@ -562,7 +565,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	else{
 		String t = "Ambiguous function for "+toClassArgString(myName, args)+" options are:\n";
 		for(auto& b: choices){
-			t+=b->proto->toString()+"\n";
+			t+=b->getSingleProto()->toString()+"\n";
 		}
 		id.error(t);
 		exit(1);

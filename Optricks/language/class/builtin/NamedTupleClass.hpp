@@ -8,6 +8,8 @@
 #ifndef NAMEDTUPLECLASS_HPP_
 #define NAMEDTUPLECLASS_HPP_
 #include "./TupleClass.hpp"
+#include "../../data/LocationData.hpp"
+
 
 class NamedTupleClass: public TupleClass{
 public:
@@ -82,12 +84,13 @@ public:
 				}
 				assert(instance->getReturnType()==this);
 				if(instance->type==R_LOC){
-					//TODO location
-					id.compilerError("NTuple TODO:// allow getting named tuple class data from location");
-					exit(1);
+					auto LD = ((const LocationData*)instance)->value;
+					if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
+					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 				} else{
 					assert(instance->type==R_CONST);
 					Value* v = ((ConstantData*)instance)->value;
+					if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);
 					return new ConstantData(r.builder.CreateExtractValue(v,i),innerTypes[i]);
 				}
 			}
@@ -128,6 +131,7 @@ public:
 		else return (b==this)?(1):(0);
 	}
 	static NamedTupleClass* get(const std::vector<const AbstractClass*>& args,const std::vector<String>& b) {
+		assert(args.size()==b.size());
 		static Mapper<const AbstractClass*,Mapper<String, NamedTupleClass*>> map;
 		NamedTupleClass*& fc = map.get(args).get(b);
 		if(fc==nullptr) fc = new NamedTupleClass(args,b);

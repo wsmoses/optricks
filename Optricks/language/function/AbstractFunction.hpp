@@ -47,7 +47,7 @@ public:
 
 #define SINGLEFUNC_C_
 class SingleFunction: public AbstractFunction{
-	friend OverloadedFunction;
+	//friend OverloadedFunction;
 protected:
 	FunctionProto* const proto;
 	llvm::Function* const myFunc;
@@ -56,11 +56,12 @@ public:
 		return proto;
 	}
 	inline llvm::Function* getSingleFunc() const{
+		assert(myFunc);
 		return myFunc;
 	}
 	SingleFunction(FunctionProto* const fp, llvm::Function* const f):AbstractFunction(),proto(fp), myFunc(f){
 		assert(fp);
-		assert(f);
+		if(f)
 		assert(f->getReturnType());
 	};
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
@@ -109,10 +110,10 @@ private:
 public:
 	static inline llvm::Function* getF(FunctionProto* fp);
 	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp);
-	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,const Data* (*tmp)(RData&,PositionID,const std::vector<const Evaluatable*>&)):
+	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 		SingleFunction(fp,f),inlined(tmp){}
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
-		return inlined(r,id,args);
+		return inlined(r,id,validatePrototype(r,id,args));
 	}
 };
 
@@ -131,13 +132,13 @@ public:
 	inline void add(SingleFunction* t, PositionID id){
 		assert(t);
 		if(set(t,id)){
-			id.error("Error overwriting function "+t->proto->toString());
+			id.error("Error overwriting function "+t->getSingleProto()->toString());
 		}
 	}
 	inline bool set(SingleFunction* t, PositionID id){
 		assert(t);
 		for(unsigned int i = 0; i<innerFuncs.size(); i++){
-			if(innerFuncs[i]->proto->equals(t->proto, id)){
+			if(innerFuncs[i]->getSingleProto()->equals(t->getSingleProto(), id)){
 				innerFuncs[i] = t;
 				return true;
 			}
@@ -153,13 +154,13 @@ public:
 		else return 0;//todo allow large compare value
 	}
 	const AbstractClass* getReturnType() const override final{
-		if(innerFuncs.size()==1) return (AbstractClass*) innerFuncs[0]->proto->getFunctionClass();
+		if(innerFuncs.size()==1) return (AbstractClass*) innerFuncs[0]->getSingleProto()->getFunctionClass();
 		PositionID(0,0,"#overload").compilerError("Cannot deduce return-type of overloaded function "+myName);
 		exit(1);
 	}
 
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
-		return getBestFit(id,args)->proto->returnType;
+		return getBestFit(id,args)->getSingleProto()->returnType;
 	}
 	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args) const;
 	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args) const;
@@ -167,14 +168,14 @@ public:
 		return getBestFit(id,args)->callFunction(r,id,args);
 	}
 	llvm::Function* getValue(RData& r, PositionID id) const override final{
-		if(innerFuncs.size()==1) return innerFuncs[0]->myFunc;
+		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();
 		else{
 			id.error("Could not get single unique function in overloaded function");
 			exit(1);
 		}
 	}
 	virtual FunctionProto* getFunctionProto(PositionID id) const override final{
-		if(innerFuncs.size()==1) return innerFuncs[0]->proto;
+		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleProto();
 		else{
 			id.error("Could not get single unique prototype in overloaded function");
 			exit(1);

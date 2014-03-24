@@ -29,6 +29,9 @@ public:
 			Literal(R_FLOAT),value(){
 			mpfr_init_set_ld(value,d,MPFR_RNDN);
 	}
+	FloatLiteral(int a ,int b, int c):Literal(R_FLOAT),value(){
+		mpfr_init(value);
+	}
 	FloatLiteral(const mpz_t& val):
 		Literal(R_FLOAT),value(){
 		mpfr_init(value);

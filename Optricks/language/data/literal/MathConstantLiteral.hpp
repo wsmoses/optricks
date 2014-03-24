@@ -44,6 +44,23 @@ public:
 			}
 			return new ConstantData(cfp, fc);
 		}
+		case CLASS_FLOATLITERAL:{
+			auto F = new FloatLiteral(0,0,0);
+			switch(mathType.mathType){
+				case MATH_PI: mpfr_const_pi(F->value, MPFR_RNDN); break;
+				case MATH_E:{
+					mpfr_t ONE;
+					mpfr_init(ONE);
+					mpfr_set_ui(ONE, 1,MPFR_RNDN);
+					mpfr_exp(F->value, ONE,MPFR_RNDN);
+					break;
+				}
+				case MATH_EULER_MASC: mpfr_const_euler(F->value, MPFR_RNDN); break;
+				case MATH_LN2: mpfr_const_log2(F->value, MPFR_RNDN); break;
+				case MATH_CATALAN: mpfr_const_catalan(F->value, MPFR_RNDN); break;
+			}
+			return F;
+		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
 			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType.getName()+"' to '"+cc->getName()+"'");
