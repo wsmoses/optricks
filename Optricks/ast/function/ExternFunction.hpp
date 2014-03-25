@@ -48,7 +48,7 @@ public:
 		llvm::Type* r = returnType->type;
 		FunctionType *FT = FunctionType::get(r, args, false);
 		String nam = self->getShortName();
-		llvm::Function *F = a.CreateFunctionD(nam,FT, EXTERN_FUNC);
+		llvm::Function *F = a.getExtern(nam, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);
 		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 		else if(nam=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 		else if(nam=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));

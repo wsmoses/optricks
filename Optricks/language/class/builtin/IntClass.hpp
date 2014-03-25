@@ -10,17 +10,7 @@
 #include "RealClass.hpp"
 class IntClass: public RealClass{
 public:
-	IntClass(String nam, unsigned len):
-		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
-		LANG_M->addClass(PositionID(0,0,"#int"),this);
-		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
-						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
-						assert(args.size()==1);
-						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
-
-	}
-
+	IntClass(String nam, unsigned len);
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);
 		exit(1);

@@ -81,6 +81,10 @@ struct RData{
 			Function* f = Function::Create(FT,L,Twine(name),lmod);
 			return f;
 		}
+		inline Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false);
+		inline Function* getExtern(String name, FunctionType* FT){
+			return (Function*) lmod->getOrInsertFunction(StringRef(name), FT);
+		}
 		void FinalizeFunctionD(Function* f,bool debug=false){
 			BasicBlock* Parent = builder.GetInsertBlock();
 			if(Parent) builder.SetInsertPoint(Parent);
@@ -126,6 +130,10 @@ struct RData{
 			fpm.run(*f);
 			flocs.erase(f);
 			pred.erase(f);
+			if(debug){
+				f->dump();
+				cerr << endl << flush;
+			}
 		}
 		void DeleteBlock(BasicBlock* b){
 

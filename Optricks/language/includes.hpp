@@ -183,6 +183,7 @@ class E_FUNC_CALL;
 inline ConstantInt* getInt32(int32_t val){
 	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),(int64_t)val);
 }
+
 template<typename T> inline void toStringStream(ostream& o, T s)
 {
     o << s;
@@ -246,6 +247,7 @@ enum ClassType{
 	CLASS_INT, // int classes and literals
 		CLASS_INTLITERAL,
 	CLASS_STR, // string classes and literals
+	CLASS_STRLITERAL,
 	CLASS_CHAR, // char classes and literals
 	CLASS_COMPLEX,
 	CLASS_RATIONAL,

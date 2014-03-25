@@ -11,6 +11,19 @@
 #include "RData.hpp"
 #include "./class/AbstractClass.hpp"
 #include "./data/VoidData.hpp"
+
+		inline Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs ){
+			llvm::SmallVector<Type*,0> args(A.size());
+			for(unsigned i = 0; i<A.size(); i++){
+				assert(A[i]);
+				assert(A[i]->type);
+				args[i] = A[i]->type;
+			}
+			assert(R);
+			assert(R->type);
+			FunctionType *FT = FunctionType::get(R->type, args, varArgs);
+			return getExtern(name, FT);
+		}
 BasicBlock* RData::getBlock(String name, JumpType jump, BasicBlock* bb, const Data* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume){
 	if(name==""){
 		if(jump==RETURN || jump==YIELD){

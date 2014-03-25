@@ -8,6 +8,8 @@
 #ifndef STRINGLITERAL_HPP_
 #define STRINGLITERAL_HPP_
 #include "Literal.hpp"
+#include "../../class/builtin/CharClass.hpp"
+#include "../../class/literal/StringLiteralClass.hpp"
 //TODO
 class StringLiteral: public Literal{
 public:
@@ -15,20 +17,20 @@ public:
 	StringLiteral(const String val):Literal(R_STR),value(val){}
 	//TODO
 	const AbstractClass* getReturnType() const override final{
-		PositionID(0,0,"#stringLiteral").compilerError("stringLiteral not implemented yet");
-		exit(1);
+		if(value.length()==1) return &charClass;
+		else return &stringLiteralClass;
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("String literal cannot act as function");
 		exit(1);
 	}
 	bool hasCastValue(const AbstractClass* const a) const{
-		if(a->classType==CLASS_STR) return true;
-		else return a->classType==CLASS_CHAR && value.length()==1;
+		if(value.length()==1) return charClass.hasCast(a);
+		else return stringLiteralClass.hasCast(a);
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-		PositionID(0,0,"#string").compilerError("StringLiteral not complete");
-		exit(1);
+		if(value.length()==1) return charClass.compare(a,b);
+		else return stringLiteralClass.compare(a,b);
 	}
 	Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
 		id.error("String literal cannot be used as function");
@@ -40,16 +42,22 @@ public:
 	}
 	//TODO
 	Constant* getValue(RData& r, PositionID id) const override final{
+		if(value.length()==1) return CharClass::getValue(value[0]);
 		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}
 	//TODO allow cast to string, char, c_string (c_char ?)
-	const StringLiteral* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		if(value.size()==1 && right->classType==CLASS_CHAR)
+			return new ConstantData(CharClass::getValue(value[0]), &charClass);
+		if(right==&stringLiteralClass) return this;
 		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}
 	//TODO
 	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+		if(value.size()==1 && right->classType==CLASS_CHAR)
+			return CharClass::getValue(value[0]);
 		id.compilerError("String literal not implemented yet");
 		exit(1);
 	}

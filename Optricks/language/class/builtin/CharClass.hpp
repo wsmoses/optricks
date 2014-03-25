@@ -10,11 +10,32 @@
 
 #include "../AbstractClass.hpp"
 #include "./LazyClass.hpp"
+#include "./VoidClass.hpp"
 class CharClass: public AbstractClass{
 public:
 	inline CharClass(bool b):
 		AbstractClass(nullptr,"char", nullptr,PRIMITIVE_LAYOUT,CLASS_CHAR,true,CHARTYPE){
 		LANG_M->addClass(PositionID(0,0,"#char"),this);
+		assert(c_intClass.getWidth()>=getWidth());
+		LANG_M->addFunction(PositionID(0,0,"#char"),"print")->add(
+			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const auto value = r.builder.CreateZExtOrTrunc(args[0]->evalV(r, id), c_intClass.type);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+			r.builder.CreateCall(CU, value);
+			return VOID_DATA;}), PositionID(0,0,"#char"));
+		LANG_M->addFunction(PositionID(0,0,"#char"),"println")->add(
+			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const auto value = r.builder.CreateZExtOrTrunc(args[0]->evalV(r, id), c_intClass.type);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+			r.builder.CreateCall(CU, value);
+			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
+			return VOID_DATA;}), PositionID(0,0,"#char"));
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		illegalLocal(id,s);

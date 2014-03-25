@@ -8,9 +8,27 @@
 #define INTCLASSP_HPP_
 #include "IntClass.hpp"
 #include "FloatClass.hpp"
+#include "CharClass.hpp"
 #include "ComplexClass.hpp"
 #include "../../RData.hpp"
 
+
+	IntClass::IntClass(String nam, unsigned len):
+		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
+		LANG_M->addClass(PositionID(0,0,"#int"),this);
+		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
+								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						assert(args.size()==1);
+						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
+		LANG_M->addFunction(PositionID(0,0,"#int"),"ord")->add(
+				new BuiltinInlineFunction(new FunctionProto("ord",{AbstractDeclaration(this)},&charClass),
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				return new ConstantData(r.builder.CreateSExtOrTrunc(args[0]->evalV(r, id), charClass.type),&charClass);}), PositionID(0,0,"#float")
+			);
+
+	}
 inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 	if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast integer type to "+toCast->getName());
 	switch(toCast->classType){

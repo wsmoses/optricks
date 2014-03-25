@@ -17,6 +17,8 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	if(operation=="+"){
 		if(cc->classType==CLASS_STR) return cc;
 		if(dd->classType==CLASS_STR) return dd;
+		//if(cc->classType==CLASS_STRLITERAL || dd->classType==CLASS_STRLITERAL)
+		//	return &stringClass;
 	}
 	switch(cc->classType){
 	case CLASS_VECTOR:{
@@ -33,6 +35,14 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_INT:{
 		switch(dd->classType){
+		/*case CLASS_STR:
+		case CLASS_STRLITERAL:{
+			if(operation=="*") return &stringClass;
+			else {
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
+		}*/
 		case CLASS_INT:{
 			const IntClass* max = (const IntClass*)cc;
 			if(max->getWidth()<=((const IntClass*)dd)->getWidth()){
@@ -100,6 +110,14 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_INTLITERAL:{
 		switch(dd->classType){
+		case CLASS_STR:
+		case CLASS_STRLITERAL:{
+			if(operation=="*") return dd;
+			else {
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
+		}
 		case CLASS_INT:{
 			const IntClass* R = (const IntClass*)dd;
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
@@ -426,6 +444,15 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 	}
 	switch(cc->classType){
+	case CLASS_STRLITERAL:{
+		if(operation=="+"){
+			//const auto S = getUnary(r, filePos, dd, ":str");
+
+		} else if(operation=="*"){
+
+		}
+		filePos.compilerError("TODO _STRING LITERAL");
+	}
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
 		if(dd->classType!=CLASS_VECTOR){
