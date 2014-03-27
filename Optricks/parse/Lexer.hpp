@@ -501,11 +501,11 @@ class Lexer{
 			//TODO implement do loop naming
 		}
 		Statement* getLambdaFunction(ParseData data, bool read=false){
-			if(!read && f->getNextName(data.endWith)!="do") f->error("Could not find 'do' for do-while-loop");
+			if(!read && f->getNextName(data.endWith)!="lambda") f->error("Could not find 'lambda' in lambda function");
 			if(f->trim(EOF)) f->error("Uncompleted lambda function");
 			OModule* module = new OModule(data.mod);
 			std::vector<Declaration*> arguments;
-			if(!f->done) arguments = parseArguments(ParseData(data.endWith, module, true,PARSE_LOCAL),':');
+			if(!f->done) arguments = parseArguments(ParseData(EOF, module, true,PARSE_LOCAL),':');
 			if(f->trim(EOF)) f->error("Lambda Function without body");
 			if(!f->done && f->peek()==':'){
 				f->read();

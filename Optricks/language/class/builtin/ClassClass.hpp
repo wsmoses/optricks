@@ -13,6 +13,7 @@ class ClassClass: public AbstractClass{
 public:
 	inline ClassClass(bool b):
 		AbstractClass(nullptr,"Class", nullptr,PRIMITIVE_LAYOUT,CLASS_CLASS,true,CLASSTYPE){
+
 	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);

@@ -55,9 +55,13 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	auto tmp=fp->declarations.size();
 	llvm::SmallVector<Type*,0> ar(tmp);
-	for(unsigned i=0; i<tmp; i++)
+	for(unsigned i=0; i<tmp; i++){
 		ar[i] = fp->declarations[i].declarationType->type;
-	llvm::FunctionType* FT = FunctionType::get(fp->returnType->type, ar, false);
+		assert(ar[i]);
+	}
+	llvm::Type* const T = (fp->returnType == &charClass)?CHARTYPE:fp->returnType->type;
+	assert(T);
+	llvm::FunctionType* FT = FunctionType::get(T, ar, false);
 	return getRData().CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args){

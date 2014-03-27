@@ -12,7 +12,9 @@
 class LLVMData: public Data{
 public:
 	const AbstractClass* const type;
-	inline LLVMData(DataType tp, const AbstractClass* const r):Data(tp),type(r){};
+	inline LLVMData(DataType tp, const AbstractClass* const r):Data(tp),type(r){
+		assert(r->classType!=CLASS_REF);
+	};
 //	virtual Location* getLocation() const=0;
 	virtual const LocationData* toLocation(RData& r) const=0;
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final;

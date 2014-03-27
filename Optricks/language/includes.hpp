@@ -269,7 +269,7 @@ enum ClassType{
 enum DataType{
 	R_VOID,
 	R_CONST,
-	R_BOOL,
+	R_REF,
 	R_LOC,
 	R_FUNCMAP,
 	R_FUNC,
@@ -296,7 +296,7 @@ template<> String str<DataType>(DataType d){
 	switch(d){
 	case R_VOID: return "R_VOID";
 	case R_MATH: return "R_MATH";
-	case R_BOOL: return "R_BOOL";
+	case R_REF: return "R_REF";
 	case R_SLICE: return "R_SLICE";
 	case R_CONST: return "R_CONST"; // constant variable
 	case R_LOC: return "R_LOC";

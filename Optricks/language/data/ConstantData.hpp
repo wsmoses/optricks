@@ -24,4 +24,6 @@ public:
 	Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 };
 
+ConstantData BOOL_TRUE(ConstantInt::get(BOOLTYPE, true), &boolClass);
+ConstantData BOOL_FALSE(ConstantInt::get(BOOLTYPE, false), &boolClass);
 #endif /* CONSTANTDATA_HPP_ */

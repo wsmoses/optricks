@@ -46,8 +46,24 @@
 			}
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
 			return VOID_DATA;}), PositionID(0,0,"#int"));
+		LANG_M->addFunction(PositionID(0,0,"#int"),"chr")->add(
+			new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
+			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
+			long int L;
+			if(!mpz_fits_slong_p(value)){
+				id.warning("Integer literal is too large for character");
+				L = 0;}
+			else
+					L = mpz_get_si(value);
+			if(L < 0 || L >= 1L << CHARTYPE->getIntegerBitWidth()){
+				id.warning("Integer literal is too large for character");
+				L = 0;
+			}
+			return new ConstantData(CharClass::getValue(L),&charClass);}), PositionID(0,0,"#float")
+		);
 		///register methods such as print / tostring / tofile / etc
-		//check to ensure that you can pass mpz_t like that instead of using _init
 	}
 
 

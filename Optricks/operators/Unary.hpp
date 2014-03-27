@@ -10,6 +10,7 @@
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
 #include "../language/data/literal/MathConstantLiteral.hpp"
+#include "../language/data/ReferenceData.hpp"
 inline const AbstractClass* getPreopReturnType(PositionID filePos, const AbstractClass* cc, const String operation){
 	if(operation=="&"){
 		if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
@@ -116,7 +117,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		else{
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for reference");
 			const LocationData* ld = (const LocationData*)value;
-			return new ConstantData(ld->value->getPointer(r, filePos), ReferenceClass::get(cc));
+			return new ReferenceData(ld, ReferenceClass::get(cc));
 		}
 	}
 	switch(cc->classType){

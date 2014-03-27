@@ -52,6 +52,8 @@ public:
 					filePos.error("Cannot have void declaration");
 					exit(1);
 				}
+				if(returnType->classType==CLASS_REF)
+					returnType = ((const ReferenceClass*)returnType)->innerType;
 				return returnType;
 			} else {
 				filePos.error("Cannot have auto declaration without default value");
@@ -98,20 +100,14 @@ public:
 	const Data* evaluate(RData& r) const final override{
 		getReturnType();
 		assert(returnType);
-		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
-				(value->evaluate(r)->castToV(r, returnType, filePos));
-		if(tmp){
-			if(tmp->getType()!=returnType->type){
-				cerr << returnType->getName() << endl << flush;
-				returnType->type->dump();
-				cerr << endl << flush;
-				tmp->getType()->dump();
-				cerr << endl << flush;
-				tmp->dump();
-				cerr << endl << flush;
-				cerr << endl << flush;
-			}
+		const Data* D = (value==NULL || value->getToken()==T_VOID)?NULL:value->evaluate(r);
+		if(D->getReturnType()->classType==CLASS_REF){
+			const ReferenceData* R = (const ReferenceData*)D;
+			variable->getMetadata().setObject(R->value);
+			return R->value;
 		}
+		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
+				(D->castToV(r, returnType, filePos));
 		assert(!tmp || tmp->getType()==returnType->type);
 		LocationData* ld;
 		if(global){

@@ -9,6 +9,7 @@
 #define CONSTANTDATAP_HPP_
 #include "ConstantData.hpp"
 #include "../class/AbstractClass.hpp"
+#include "../class/builtin/CharClass.hpp"
 #include "LocationData.hpp"
 
 LocationData* ConstantData::toLocation(RData& r) const{
@@ -24,7 +25,7 @@ ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVM
 	//assert(cp->classType!=CLASS_FUNC);
 	//assert(cp->classType!=CLASS_GEN);
 	assert(cp->layout!=LITERAL_LAYOUT);
-	assert(val->getType()==cp->type);
+	assert((cp==&charClass &&   val->getType()==CHARTYPE) || val->getType()==cp->type);
 }
 
 
