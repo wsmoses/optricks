@@ -10,8 +10,8 @@
 #include "./Data.hpp"
 class ReferenceData:public Data{
 public:
-	LocationData* const value;
-	ReferenceData(Location* const val):
+	const LocationData* const value;
+	ReferenceData(const LocationData* const val):
 		Data(R_REF),value(val){
 		assert(val);
 	}
@@ -51,7 +51,7 @@ public:
 		PositionID(0,0,"#ref").compilerError("Cannot set value of reference");
 		exit(1);
 	}
-	inline const ConstantData* toValue(RData& r,PositionID id) const override final{
+	inline const ReferenceData* toValue(RData& r,PositionID id) const override final{
 		return this;
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{

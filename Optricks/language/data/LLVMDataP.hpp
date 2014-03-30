@@ -12,6 +12,9 @@
 #include "../class/builtin/FunctionClass.hpp"
 
 
+	LLVMData::LLVMData(DataType tp, const AbstractClass* const r):Data(tp),type(r){
+		assert(r->classType!=CLASS_REF);
+	};
 	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;

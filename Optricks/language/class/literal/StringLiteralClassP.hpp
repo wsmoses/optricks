@@ -12,7 +12,7 @@
 #include "./StringLiteralClass.hpp"
 #include "../../data/literal/StringLiteral.hpp"
 	StringLiteralClass::StringLiteralClass(bool b):
-		AbstractClass(nullptr,"stringLiteral",nullptr, LITERAL_LAYOUT,CLASS_STRLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
+		AbstractClass(nullptr,"stringLiteral",nullptr, LITERAL_LAYOUT,CLASS_STRLITERAL,true,llvm::IntegerType::get(getGlobalContext(), 1))
 		{
 
 		LANG_M->addFunction(PositionID(0,0,"#stringL"),"print")->add(

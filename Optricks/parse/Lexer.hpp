@@ -36,7 +36,6 @@
 #include "../ast/function/ClassFunction.hpp"
 #include "../ast/function/LambdaFunction.hpp"
 #include "../ast/function/ConstructorFunction.hpp"
-#include "../language/data/literal/BoolLiteral.hpp"
 #include "../language/data/literal/StringLiteral.hpp"
 #include "../language/class/builtin/CharClass.hpp"
 
@@ -200,8 +199,12 @@ class Lexer{
 		}
 		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
 			trim(data);
-			auto declarationType = getNextType(data.getEndWith(EOF),true);
+			Statement* declarationType = getNextType(data.getEndWith(EOF),true);
 			trim(EOF);
+			if(f->peek()=='&'){
+				f->read();
+				declarationType = new E_UOP(pos(), "&",declarationType, UOP_POST);
+			}
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
 				varName = ((E_VAR*)(declarationType))->pointer.name;
@@ -432,7 +435,7 @@ class Lexer{
 				f->trim(EOF);
 				Statement* cond = VOID_STATEMENT;
 				if(f->peek()!=';') cond = getNextStatement(ParseData(EOF, module, true, PARSE_EXPR));
-				if(cond->getToken()==T_VOID) cond = new BoolLiteral(true);
+				if(cond->getToken()==T_VOID) cond = ConstantData::getTrue();
 				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 				f->trim(EOF);
 				Statement* inc = VOID_STATEMENT;
@@ -920,7 +923,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 			return new ImportStatement(pos(),tI);
 		}
 		else if (temp=="true" || temp=="false"){
-			Statement* te = new BoolLiteral(temp=="true");
+			Statement* te = (temp=="true")? ConstantData::getTrue() : ConstantData::getFalse();
 			trim(data);
 			semi  = false;
 			if(!f->done && f->peek()==';'){ semi = true; }

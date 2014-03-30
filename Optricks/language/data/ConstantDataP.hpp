@@ -10,6 +10,7 @@
 #include "ConstantData.hpp"
 #include "../class/AbstractClass.hpp"
 #include "../class/builtin/CharClass.hpp"
+#include "../class/builtin/BoolClass.hpp"
 #include "LocationData.hpp"
 
 LocationData* ConstantData::toLocation(RData& r) const{
@@ -20,6 +21,14 @@ LocationData* ConstantData::toLocation(RData& r) const{
 	return LD;
 }
 
+ConstantData* ConstantData::getTrue(){
+	static ConstantData BOOL_TRUE(ConstantInt::get(BOOLTYPE, true), &boolClass);
+	return &BOOL_TRUE;
+}
+ConstantData* ConstantData::getFalse(){
+	static ConstantData BOOL_FALSE(ConstantInt::get(BOOLTYPE, false), &boolClass);
+	return &BOOL_FALSE;
+}
 ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVMData(R_CONST, cp),value(val){
 	assert(val); assert(cp); assert(cp->classType!=CLASS_CLASS);
 	//assert(cp->classType!=CLASS_FUNC);

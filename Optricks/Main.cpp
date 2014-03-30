@@ -69,6 +69,17 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			std::cout << endl << flush;
 			F->eraseFromParent();
 			return;
+		} else if(dat->type==R_STR){
+			StringLiteral* i = (StringLiteral*)dat;\
+			std::cout << "'";
+			for(const auto & a:i->value){
+				if(a==0) std::cout << "\\0";
+				else if(a=='\'') std::cout << "\\'";
+				else std::cout << a;
+			}
+			std::cout << "'" << endl << flush;
+			return;
+
 		}
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)

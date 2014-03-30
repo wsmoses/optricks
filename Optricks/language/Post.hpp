@@ -20,7 +20,6 @@
 #include "./class/UserClassP.hpp"
 #include "./class/literal/IntLiteralClassP.hpp"
 #include "./class/literal/StringLiteralClassP.hpp"
-#include "./data/literal/BoolLiteralP.hpp"
 #include "./data/ConstantDataP.hpp"
 #include "./data/LocationDataP.hpp"
 #include "./data/LLVMDataP.hpp"

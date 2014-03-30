@@ -117,7 +117,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		else{
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for reference");
 			const LocationData* ld = (const LocationData*)value;
-			return new ReferenceData(ld, ReferenceClass::get(cc));
+			return new ReferenceData(ld);
 		}
 	}
 	switch(cc->classType){
@@ -312,6 +312,9 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 			exit(1);
 		}
 	}
+	case CLASS_CLASS:{
+		if(operation=="&") return &classClass;
+	}
 	case CLASS_BOOL:
 	case CLASS_INTLITERAL:
 	case CLASS_FLOATLITERAL:
@@ -328,8 +331,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	case CLASS_STR:
 	case CLASS_CHAR:
 	case CLASS_AUTO:
-	case CLASS_SET:
-	case CLASS_CLASS:{
+	case CLASS_SET:{
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
@@ -427,6 +429,11 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			exit(1);
 		}
 	}
+	case CLASS_CLASS:{
+		if(operation=="&"){
+			return ReferenceClass::get(value->getMyClass(r, filePos));
+		}
+	}
 	case CLASS_BOOL:
 	case CLASS_INTLITERAL:
 	case CLASS_FLOATLITERAL:
@@ -443,7 +450,6 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_CHAR:
 	case CLASS_AUTO:
 	case CLASS_SET:
-	case CLASS_CLASS:
 	case CLASS_MATHLITERAL:{
 		if(false) return cc;
 		else{

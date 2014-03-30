@@ -943,7 +943,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			BasicBlock *MergeBB;
 			if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
 				if(!c->isOne()) return ev->evaluate(r)->castTo(r,&boolClass,filePos);
-				else return new BoolLiteral(true);
+				else return ConstantData::getTrue();
 			}
 			else{
 				ElseBB = r.CreateBlock("else",StartBB);
@@ -970,7 +970,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			BasicBlock *MergeBB;
 			if(ConstantInt* c = dyn_cast<ConstantInt>(Start)){
 				if(c->isOne()) return ev->evaluate(r)->castTo(r,&boolClass,filePos);
-				else return new BoolLiteral(false);
+				else return ConstantData::getFalse();
 			}
 			else{
 				ElseBB = r.CreateBlock("else",StartBB);
