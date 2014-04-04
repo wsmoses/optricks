@@ -236,7 +236,6 @@ template<> String str<LayoutType>(LayoutType d){
 }
 
 enum ClassType{
-	CLASS_AUTO,
 	CLASS_FUNC,
 	CLASS_CPOINTER,
 	CLASS_GEN,

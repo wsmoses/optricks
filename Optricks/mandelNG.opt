@@ -1,0 +1,27 @@
+def char printdensity(int d){
+	if    d > 999	return '*';
+	elif  d > 200	return '+';
+	elif  d > 020	return '.';
+	else         	return ' ';
+}
+
+def abs2(complex c)
+	return c.real*c.real+c.imag*c.imag
+
+double angle=0;
+def int mand(complex z0){
+	complex z = z0
+	for(int iter=0; iter<1000; iter+=1)
+		if( abs2(z) > 4 ) return iter
+		else z = z*z + complex(cos(angle),sin(angle))
+	return 1000
+}
+while(true){
+angle+=.1;
+print('\033[0;0H');
+for(double im=-1.25; im<1.25; im+=.04){
+	for(double re=-1.8,re<1.8,re+=.02)
+		print(printdensity(mand(complex(re,im))));
+	println('');
+}
+}

@@ -28,12 +28,14 @@ public:
 	E_VAR* variable;
 	Statement* value;
 	bool global;
+	mutable const LocationData* finished;
 	Declaration(PositionID id, Statement* v, E_VAR* loc, bool glob, Statement* e) : ErrorStatement(id){
 		classV = v;
 		returnType=nullptr;
 		variable = loc;
 		value = e;
 		global = glob;
+		finished=nullptr;
 	}
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
@@ -63,7 +65,6 @@ public:
 		}
 		returnType = classV->getSelfClass(filePos);
 		assert(returnType);
-		assert(returnType->classType!=CLASS_AUTO);
 		if(returnType->classType==CLASS_VOID){
 			filePos.error("Cannot have void declaration");
 			exit(1);
@@ -97,14 +98,51 @@ public:
 		if(variable) variable->buildFunction(r);
 		if(value) value->buildFunction(r);
 	};
+	const Data* fastEvaluate(RData& r){
+		if(finished){
+			if(value){
+				Location* aloc = finished->getMyLocation();
+				Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
+				aloc->setValue(nex,r);
+			}
+			return finished;
+		}
+		getReturnType();
+		assert(returnType);
+		const AbstractClass* C = (value==NULL || value->getToken()==T_VOID)?NULL:value->getReturnType();
+		if(C && C->getReturnType()->classType==CLASS_REF){
+			filePos.error("Cannot find references early");
+		}
+		LocationData* ld;
+		if(global){
+			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
+			GlobalVariable* GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
+			((Value*)GV)->setName(Twine(variable->getFullName()));
+			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
+		}
+		else{
+			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
+			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
+					TheFunction->getEntryBlock().begin());
+			Type* t = returnType->type;
+			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable->pointer.name));
+			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
+				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),returnType));
+			} else
+				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,nullptr,nullptr),returnType));
+		}
+		//todo check lazy for globals
+		return finished=ld;
+	}
 	const Data* evaluate(RData& r) const final override{
+		if(finished) return finished;
 		getReturnType();
 		assert(returnType);
 		const Data* D = (value==NULL || value->getToken()==T_VOID)?NULL:value->evaluate(r);
-		if(D->getReturnType()->classType==CLASS_REF){
+		if(D && D->getReturnType()->classType==CLASS_REF){
 			const ReferenceData* R = (const ReferenceData*)D;
 			variable->getMetadata().setObject(R->value);
-			return R->value;
+			return finished=R->value;
 		}
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
 				(D->castToV(r, returnType, filePos));
@@ -134,7 +172,7 @@ public:
 				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
-		return ld;
+		return finished=ld;
 	}
 };
 

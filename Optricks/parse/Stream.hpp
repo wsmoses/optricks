@@ -15,6 +15,7 @@
 #include "../language/data/literal/SliceLiteral.hpp"
 
 #include "../ast/E_BINOP.hpp"
+#include "../ast/E_UOP.hpp"
 
 #define START "optricks> "
 #define CONT  "--------> "
@@ -669,8 +670,9 @@ public:
 
 Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stack){
 	if(stack.size()==0){
+		return new E_UOP(f->pos(), "[]",toIndex, UOP_POST);
 		//TODO HANDLE APPEND OPERATORS
-		f->error("Append operators not implemented yet",true);
+		//f->error("Append operators not implemented yet",true);
 		//return toIndex;
 	}
 	if(stack.size()==1 && stack[0]!=NULL){

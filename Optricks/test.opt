@@ -1,3 +1,21 @@
+class primitive MyInt{
+    int inner; 
+    def MyInt(int a){
+        this.inner = a;
+    }
+}
+def print(MyInt i){
+    println(i.inner);
+}
+MyInt i1 = MyInt(3);
+MyInt i2 = i1;
+print(i1); // prints 3
+print(i2); // prints 3
+i2.inner = 4;
+print(i1); // prints 3
+print(i2); // prints 4
+
+/*
 (int:x,int:y) pos = (4,5);
 (int:x,int:y) pos2 = (4,5);
 (int:x,int:y) pos3 = pos+pos2;
@@ -6,3 +24,4 @@ def operator+((int:x,int:y) a, (int:x,int:y) b){
 }
 print(pos3.x);
 print(pos3.y);
+*/

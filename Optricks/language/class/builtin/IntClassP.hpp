@@ -12,6 +12,11 @@
 #include "ComplexClass.hpp"
 #include "../../RData.hpp"
 
+/*
+Value* getCharFromDigit(RData& r, PositionID id, Value* V){
+	assert(dyn_cast<IntegerType>(V->getType()));
+	Value*
+}*/
 
 	IntClass::IntClass(String nam, unsigned len):
 		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
@@ -27,7 +32,46 @@
 				assert(args.size()==1);
 				return new ConstantData(r.builder.CreateSExtOrTrunc(args[0]->evalV(r, id), CHARTYPE),&charClass);}), PositionID(0,0,"#float")
 			);
+		/*
+		LANG_M->addFunction(PositionID(0,0,"#int"),"print")->add(
+			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			Value* V = args[0]->evalV(r,id);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+			if(auto C = dyn_cast<ConstantInt>(V)){
+				String S = C->getValue().toString(10,true);
+				auto F = S.length();
+				for(unsigned i = 0; i<F; i++){
+					r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type,S[i],false));
+				}
+				return VOID_DATA;
+			}
 
+			char temp[mpz_sizeinbase (value, 10) + 2];
+			mpz_get_str(temp, 10, value);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+			for(const char* T = temp; *T !='\0'; ++T){
+				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
+			}
+			return VOID_DATA;}), PositionID(0,0,"#int"));
+		LANG_M->addFunction(PositionID(0,0,"#int"),"println")->add(
+			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
+			char temp[mpz_sizeinbase (value, 10) + 2];
+			mpz_get_str(temp, 10, value);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+			for(const char* T = temp; *T !='\0'; ++T){
+				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
+			}
+			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
+			return VOID_DATA;}), PositionID(0,0,"#int"));
+		*/
 	}
 inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
 	if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast integer type to "+toCast->getName());

@@ -40,9 +40,13 @@ class ClassFunction : public E_FUNCTION{
 			for(unsigned i=0; i<declaration.size(); i++){
 				const auto& b = declaration[i];
 				const AbstractClass* ac = b->getClass(filePos);
-				if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 				args[i+(staticF)?0:1] = ac->type;
+			}
+			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
+				declaration[Idx]->variable->getMetadata().setObject(
+					(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+				);
 			}
 			const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
@@ -51,10 +55,7 @@ class ClassFunction : public E_FUNCTION{
 				body->collectReturns(yields,returnType);
 				if(yields.size()==0) returnType = &voidClass;
 				else {
-					for(auto& a: yields) assert(a->classType!=CLASS_AUTO);
 					returnType = getMin(yields,filePos);
-					if(returnType->classType==CLASS_AUTO)
-						filePos.compilerError("Cannot deduce return type of function "+upperClass->getName()+"."+name);
 				}
 			}
 			assert(returnType);

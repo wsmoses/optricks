@@ -29,7 +29,6 @@ class E_SET: public ErrorStatement{
 			auto rt = variable->getReturnType();
 			assert(rt);
 			assert(rt->classType!=CLASS_VOID);
-			assert(rt->classType!=CLASS_AUTO);
 			return rt;
 		}
 
@@ -48,7 +47,7 @@ class E_SET: public ErrorStatement{
 		const Data* evaluate(RData& r) const final override{
 			auto to = variable->evaluate(r);
 			if(to->type!=R_LOC){
-				error("Cannot set a non-variable");
+				error("Cannot set a non-variable "+str(to->type));
 				exit(1);
 			}
 			Location* aloc = ((LocationData*)to)->getMyLocation();

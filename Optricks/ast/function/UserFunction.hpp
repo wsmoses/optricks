@@ -54,22 +54,24 @@ public:
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
-			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 			Type* cl = ac->type;
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args[i] = cl;
 		}
+		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+			);
+		}
 		const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
-			body->collectReturns(yields,returnType);
+			body->collectReturns(yields,nullptr);
 			if(yields.size()==0) returnType = &voidClass;
 			else {
 				returnType = getMin(yields,filePos);
-				if(returnType->classType==CLASS_AUTO)
-					filePos.compilerError("Cannot deduce return type of function "+self->getFullName());
 			}
 		}
 		assert(returnType);

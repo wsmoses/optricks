@@ -46,6 +46,9 @@ public:
 		exit(1);
 	}
 
+	ConstantInt* getOne() const {
+		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
+	}
 	bool hasLocalData(String s) const override final{
 		return false;
 	}

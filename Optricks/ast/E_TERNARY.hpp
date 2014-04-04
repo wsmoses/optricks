@@ -44,7 +44,7 @@ class TernaryOperator : public ErrorStatement{
 			const AbstractClass* const g = then->getFunctionReturnType(id,args);
 			const AbstractClass* const b = finalElse->getFunctionReturnType(id,args);
 			const AbstractClass* tog = getMin(g, b, filePos);
-			if(tog==NULL || tog->classType==CLASS_AUTO) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
+			if(tog==NULL) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
 			assert(tog);
 			return tog;
 		}
@@ -52,7 +52,7 @@ class TernaryOperator : public ErrorStatement{
 			const AbstractClass* const g = then->getReturnType();
 			const AbstractClass* const b = finalElse->getReturnType();
 			const AbstractClass* tog = getMin(g, b,filePos);
-			if(tog==NULL || tog->classType==CLASS_AUTO) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
+			if(tog==NULL) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
 			assert(tog);
 			return tog;
 		}

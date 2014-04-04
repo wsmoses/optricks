@@ -21,8 +21,8 @@ class E_RETURN : public ErrorStatement{
 			return T_RETURN;
 		};
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe){
-			const AbstractClass* const n = (inner)?((const AbstractClass*) &voidClass):(inner->getReturnType());
-			if(!toBe || toBe->classType==CLASS_AUTO) vals.push_back(n);
+			const AbstractClass* const n = (inner==nullptr)?((const AbstractClass*) &voidClass):(inner->getReturnType());
+			if(!toBe) vals.push_back(n);
 			else if(!n->hasCast(toBe)) error("Could not cast type "+n->getName() +" to "+toBe->getName());
 		}
 		void registerClasses() const override final{

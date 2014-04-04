@@ -56,7 +56,6 @@ public:
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
-			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 			assert(ac);
 			Type* cl = ac->type;
@@ -69,10 +68,6 @@ public:
 			);
 		}
 		const AbstractClass* returnType = body->getReturnType();
-
-		if(returnType->classType==CLASS_AUTO){
-			filePos.compilerError("Cannot deduce return type of lambda function");
-		}
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		assert(r);

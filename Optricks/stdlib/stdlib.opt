@@ -146,9 +146,9 @@ def complex exp(complex c){
 	complex z = cos(c.imag) + sin(c.imag)*1j;
 	return exp(c.real)*z
 }
-def complex cos(complex z){
+/*def complex cos(complex z){
 	return .5*(exp(1j*z)+exp(-1j*z));
-}
+}*/
 /*
 def int operator ** (int a, int b){
 	return pow(a, b);

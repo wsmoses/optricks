@@ -81,7 +81,7 @@ public:
 			UserClass* uc = (UserClass*)superClass;
 			if(!uc->final) id.compilerError("Superclass is not finalized");
 			start = uc->start+uc->localVars.size();
-		}
+		} else start = 0;
 		StructType* structType = (layout==POINTER_LAYOUT)?(
 			(StructType*)(((PointerType*)type)->getArrayElementType())):
 		((StructType*)type);
@@ -93,10 +93,10 @@ public:
 			const auto at=tmp->localVars.size();
 			if(at >0){
 			for(unsigned int i=at-1; ; i--){
-				assert(counter>0);
+				assert(counter>=0);
 				types[counter] = tmp->localVars[i]->type;
-				counter--;
 				if(i==0) break;
+				counter--;
 			}
 			}
 			tmp = (UserClass*) tmp->superClass;
@@ -159,8 +159,7 @@ public:
 						assert(instance->type==R_LOC || instance->type==R_CONST);
 						assert(instance->getReturnType()==this);
 						if(instance->type==R_LOC){
-							//TODO location
-							id.compilerError("TODO:// allow getting class data from location");
+							return new LocationData(((const LocationData*)instance)->value->getInner(r, id, 0, start), tmp->localVars[fd->second]);
 						} else{
 							assert(instance->type==R_CONST);
 							Value* v = ((ConstantData*)instance)->value;

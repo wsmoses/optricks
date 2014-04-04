@@ -35,18 +35,14 @@ public:
 		BasicBlock *BB = ra.CreateBlockD("entry", F);
 		ra.builder.SetInsertPoint(BB);
 
-		unsigned Idx = 0;
-
-		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size();
-				++AI, ++Idx) {
-			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
-			declaration[Idx]->variable->getMetadata().setObject(
-					new LocationData(new LazyLocation(ra, AI),myFunction->getSingleProto()->declarations[Idx].declarationType));
-		}
 		auto uc = myFunction->getSingleProto()->returnType;
 		assert(uc->classType==CLASS_USER);
+		auto UC = (const UserClass*)uc;
+		if(uc->layout==PRIMITIVE_LAYOUT)
+			_this.setObject((new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc))->toLocation(ra));
+		else
+			_this.setObject(new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc));
 
-		_this.setObject(new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc));
 		auto tmp = ra.functionReturn;
 		ra.functionReturn = nullptr;
 		body->evaluate(ra);
@@ -71,11 +67,15 @@ public:
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
-			if(ac->classType==CLASS_AUTO) error("Cannot have auto-class in function declaration");
 			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 			Type* cl = ac->type;
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args[i] = cl;
+		}
+		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+			);
 		}
 		const AbstractClass* returnType = self->getSelfClass(filePos);
 		assert(returnType);
@@ -86,6 +86,15 @@ public:
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto(returnType->getName(), ad, returnType), F);
 		((const UserClass*)returnType)->constructors.add((SingleFunction*)myFunction, filePos);
+
+		unsigned Idx = 0;
+		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
+			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
+			declaration[Idx]->variable->getMetadata().setObject(
+				(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))->toLocation(a)
+			);
+		}
+
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 		body->registerFunctionPrototype(a);
 	}

@@ -23,7 +23,6 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_MAP:
 	case CLASS_STR:
 	case CLASS_CHAR:
-	case CLASS_AUTO:
 	case CLASS_SET:
 	case CLASS_CLASS:
 	case CLASS_MATHLITERAL:
@@ -103,7 +102,19 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			exit(1);
 		}
 	}
-	case CLASS_COMPLEX:
+	case CLASS_COMPLEX:{
+		if(args.size()==2){
+			if(((const ComplexClass*)this)->innerClass->classType==CLASS_INT ||
+					((const ComplexClass*)this)->innerClass->classType==CLASS_FLOAT){
+				Value* V = UndefValue::get(this->type);
+				V = r.builder.CreateInsertElement(V,
+						args[0]->evaluate(r)->castToV(r, ((const ComplexClass*)this)->innerClass, filePos), getInt32(0));
+				V = r.builder.CreateInsertElement(V,
+								args[1]->evaluate(r)->castToV(r, ((const ComplexClass*)this)->innerClass, filePos), getInt32(1));
+				return new ConstantData(V, this);
+			}
+		}
+	}
 	case CLASS_FLOAT:{
 		if(args.size()==1){
 			const Data* d = args[0]->evaluate(r);

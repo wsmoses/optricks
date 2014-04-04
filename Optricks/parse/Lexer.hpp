@@ -37,6 +37,7 @@
 #include "../ast/function/LambdaFunction.hpp"
 #include "../ast/function/ConstructorFunction.hpp"
 #include "../language/data/literal/StringLiteral.hpp"
+#include "../language/data/DeclarationData.hpp"
 #include "../language/class/builtin/CharClass.hpp"
 
 enum ParseLoc{
@@ -203,7 +204,16 @@ class Lexer{
 			trim(EOF);
 			if(f->peek()=='&'){
 				f->read();
+				trim(EOF);
 				declarationType = new E_UOP(pos(), "&",declarationType, UOP_POST);
+			} else if(f->peek()=='['){
+				auto tmp = f->getMarker();
+				f->read();
+				trim(EOF);
+				if(f->peek()==']'){
+					trim(EOF);
+					declarationType = new E_UOP(pos(), "[]", declarationType, UOP_POST);
+				} else f->undoMarker(tmp);
 			}
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
@@ -216,9 +226,10 @@ class Lexer{
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			data.mod->addVariable(pos(), varName,VOID_DATA);
 			E_VAR* variable = new E_VAR(Resolvable(data.mod, varName, pos()));
-			return new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
+			auto RT=new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
+			data.mod->addVariable(pos(), varName,new DeclarationData(RT));
+			return RT;
 		}
 		Statement* getNextStatement(char endWith,bool global){
 			return getNextStatement(ParseData(endWith,myMod,true,global?PARSE_GLOBAL:PARSE_LOCAL));
@@ -948,7 +959,8 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else{
 			auto start = f->getMarker();
 			trim(data);
-			if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() && isStartName(f->peek()) ){
+			if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() &&
+					( isStartName(f->peek()) || f->peek()=='&' || f->peek()=='[')){
 				f->undoMarker(undoRead);
 				return getNextDeclaration(data);
 			} else {
