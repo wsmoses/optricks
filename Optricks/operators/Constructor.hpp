@@ -42,7 +42,26 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		if(V->classType==CLASS_STR){
 			filePos.compilerError("Strings not implemented");
 			exit(1);
-		} else if(V->classType==CLASS_INT){
+		} else if(V->classType==CLASS_CHAR){
+			auto M = d->getValue(r,filePos);
+			if(auto D = dyn_cast<ConstantInt>(M)){
+				if(D->getValue().ult('0') || D->getValue().ugt('9')){
+					filePos.error("Character cannot be parsed as integer");
+				}
+				return new ConstantData(T->getValue(filePos,(D->getLimitedValue()-'0')), this);
+			}
+			filePos.compilerError("char parsing not implemented");
+			exit(1);
+		}else if(V->classType==CLASS_STRLITERAL){
+			auto M = ((const StringLiteral*)d)->value;
+			//todo int parsing
+			mpz_t Z;
+			mpz_init_set_str(Z,M.c_str(),10);
+			auto tmp = new ConstantData(T->getValue(filePos, Z), this);
+			mpz_clear(Z);
+			return tmp;
+		}
+		else if(V->classType==CLASS_INT){
 			Value* M = d->getValue(r, filePos);
 			const IntClass* I = (const IntClass*)V;
 			auto Im = I->getWidth();
@@ -80,7 +99,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			return ret;
 		}
 		else{
-			filePos.error("Could not find valid constructor in bool");
+			filePos.error("Could not find valid constructor in int");
 			exit(1);
 		}
 	}

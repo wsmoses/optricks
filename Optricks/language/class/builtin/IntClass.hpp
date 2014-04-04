@@ -48,6 +48,14 @@ public:
 			return true;
 		}
 	}
+	inline void checkFit(PositionID id, int64_t const value) const{
+		if(value<0){
+			if((-value) >> getWidth() > 0) id.warning("Cannot fit negative integer literal in signed type");
+		} else {
+			if((-value) >> getWidth() > 0) id.warning("Cannot fit positive integer literal in integral type");
+			//TODO force APInt to be right width/sign for value
+		}
+	}
 	inline void checkFit(PositionID id, mpz_t const value) const{
 		if(mpz_sgn(value)<0){
 			auto t_width=mpz_sizeinbase(value,2)+1;
@@ -80,6 +88,11 @@ public:
 	}
 	inline ConstantInt* getLowBitsSet( unsigned hiBit) const {
 		return ConstantInt::get(getGlobalContext(), APInt::getLowBitsSet(getWidth(),hiBit));
+	}
+	inline ConstantInt* getValue(PositionID id, const int64_t value) const{
+		checkFit(id,value);
+		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),value);
+		return ret;
 	}
 	inline ConstantInt* getValue(PositionID id, const mpz_t& value) const override final{
 		checkFit(id,value);
