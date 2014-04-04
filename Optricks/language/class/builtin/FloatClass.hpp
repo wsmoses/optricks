@@ -48,7 +48,7 @@ public:
 		SINGLE_FUNC_DECLR("rint",rint)
 
 		SINGLE_FUNC_DECLR("nearbyint",nearbyint)
-		SINGLE_FUNC_DECLR("round",round)
+		//SINGLE_FUNC_DECLR("round",round)
 
 
 #undef SINGLE_FUNC_DECLR

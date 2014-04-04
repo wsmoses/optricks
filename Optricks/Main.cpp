@@ -122,7 +122,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		}
 		else {
 			((void* (*)())(intptr_t)FPtr)();
-			cerr << "Unknown print function for type " << retType->getName() << " with width " << ((const FloatClass*)retType)->getWidth() << " " << (8*sizeof(long double)) << endl << flush;
+			cerr << "Unknown print function for type " << retType->getName() << " with width " << ((const FloatClass*)retType)->getWidth() << " " << (8*sizeof(long double))  << endl << flush;
 		}
 	}
 	else if(retType->classType==CLASS_INT){
@@ -153,7 +153,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		}
 		default:{
 			((void* (*)())(intptr_t)FPtr)();
-			cerr << "Unknown print function for type " << retType->getName() << endl << flush;
+			cerr << "Unknown print function for type " << retType->getName() << " " << str(dat->type) << endl << flush;
 		}
 		}
 	}
@@ -202,7 +202,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		std::cout << retType->getName() << "<" << t << ">" << endl << flush;
 	} else{
 		((void* (*)())(intptr_t)FPtr)();
-		cerr << "Unknown print function for type " << retType->getName() << endl << flush;
+		cerr << "Unknown print function for type " << retType->getName() << " " << str(dat->type) << endl << flush;
 	}
 	F->eraseFromParent();
 }

@@ -73,6 +73,32 @@ public:
 	virtual ~FloatLiteral(){
 		mpfr_clear(value);
 	}
+
+	String toString() const {
+		if(mpfr_regular_p(value)){
+		    char *st = nullptr;
+			if(!(mpfr_asprintf(&st,"%.RNE",value) < 0))
+			{
+				assert(st);
+				String s(st);
+				mpfr_free_str(st);
+				return s;
+			} else assert(0);
+			return "";
+		}
+		else if(mpfr_nan_p(value)){
+			return "nan";
+		}
+		else if(mpfr_inf_p(value)){
+			auto sb=mpfr_signbit(value);
+			if(sb) return "-inf";
+			else return "inf";
+		} else{
+			auto sb=mpfr_signbit(value);
+			if(sb) return "-0.";
+			else return "0.";
+		}
+	}
 	void toStream(ostream& s) const {
 		if(mpfr_regular_p(value)){
 		    char *st = nullptr;

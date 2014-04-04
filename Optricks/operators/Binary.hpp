@@ -13,14 +13,28 @@
 #include "../language/evaluatable/CastEval.hpp"
 #include "../language/data/literal/MathConstantLiteral.hpp"
 #include "../language/class/ClassLib.hpp"
+#include "./Unary.hpp"
 inline const AbstractClass* getBinopReturnType(PositionID filePos, const AbstractClass* cc, const AbstractClass* dd, const String operation){
 	if(operation=="+"){
 		if(cc->classType==CLASS_STR) return cc;
 		if(dd->classType==CLASS_STR) return dd;
+
+		if(cc->classType==CLASS_STRLITERAL || cc->classType==CLASS_CHAR
+			|| dd->classType==CLASS_STRLITERAL || dd->classType==CLASS_CHAR){
+			return &stringLiteralClass;
+		}
 		//if(cc->classType==CLASS_STRLITERAL || dd->classType==CLASS_STRLITERAL)
 		//	return &stringClass;
 	}
 	switch(cc->classType){
+	case CLASS_STRLITERAL:{
+		if(dd->classType==CLASS_CHAR || dd->classType==CLASS_STRLITERAL || dd->classType==CLASS_INTLITERAL
+				|| dd->classType==CLASS_FLOATLITERAL || dd->classType==CLASS_MATHLITERAL)
+			return cc;
+		//else return &stringClass;
+		filePos.compilerError("String binops not implemented");
+		exit(1);
+	}
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
 		if(dd->classType!=CLASS_VECTOR){
@@ -342,7 +356,9 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_STR:
 	case CLASS_CHAR:{
-		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return &boolClass;
+		if(operation=="==" || operation=="!=") return &boolClass;
+		if(operation=="+" || operation=="*") return &stringLiteralClass;
+		//todo allow for string
 		filePos.compilerError("todo -- string binops");
 		exit(1);
 	}
@@ -442,16 +458,45 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		if(dd->classType==CLASS_STR){
 			filePos.error("Todo -- string binop 2");
 		}
+		if(cc->classType==CLASS_STRLITERAL || cc->classType==CLASS_CHAR
+			|| dd->classType==CLASS_STRLITERAL || dd->classType==CLASS_CHAR){
+			auto S = getPreop(r, filePos, ":str",value);
+			auto T = getPreop(r, filePos, ":str",ev->evaluate(r));
+			if(S->type==R_STR && T->type==R_STR){
+				return new StringLiteral(((const StringLiteral*)S)->value+((const StringLiteral*)T)->value);
+			}
+		}
 	}
 	switch(cc->classType){
 	case CLASS_STRLITERAL:{
+		const StringLiteral* S = (const StringLiteral*)value;
 		if(operation=="+"){
-			//const auto S = getUnary(r, filePos, dd, ":str");
-
+			const auto T = getPreop(r, filePos, ":str",ev->evaluate(r));
+			if(T->type==R_STR){
+				return new StringLiteral(S->value+ ((const StringLiteral*)T)->value);
+			}
+			dd = T->getReturnType();
 		} else if(operation=="*"){
-
+			const Data* D = ev->evaluate(r);
+			if(D->type==R_INT){
+				const auto IL = (const IntLiteral*)D;
+				if(mpz_sgn(IL->value)<0){
+					filePos.error("Cannot multiply string by negative integer");
+					exit(1);
+				} else if(mpz_cmp_ui(IL->value, UINT_MAX)>0){
+					filePos.error("Cannot multiply string by integer -- too large "+
+							IL->toString());
+					exit(1);
+				}
+				auto E = mpz_get_ui(IL->value)*S->value.size();
+				String s(E,' ');
+				for(unsigned i = 0; i<E; i++)
+					s[i] = S->value[i % S->value.size()];
+				return new StringLiteral(s);
+			}
 		}
 		filePos.compilerError("TODO _STRING LITERAL");
+		exit(0);
 	}
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
@@ -996,9 +1041,44 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	}
 	case CLASS_STR:
 	case CLASS_CHAR:{
-		if(dd->classType==CLASS_STR || dd->classType==CLASS_CHAR) return &boolClass;
-		filePos.compilerError("todo -- string binops");
-		exit(1);
+		auto C = value->getValue(r,filePos);
+		switch(dd->classType){
+		case CLASS_CHAR:
+			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation=="+"){
+				auto D = ev->evalV(r, filePos);
+				if(auto CC = dyn_cast<ConstantInt>(C)){
+					if(auto DD = dyn_cast<ConstantInt>(D)){
+						return new StringLiteral(String(1,(char) CC->getLimitedValue())+String(1,(char) DD->getLimitedValue()));
+					}
+				}
+			}
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			exit(1);
+			break;
+		case CLASS_INT:
+		case CLASS_INTLITERAL:
+			if(operation=="*"){
+				if(auto CC = dyn_cast<ConstantInt>(C)){
+					if(auto DD = dyn_cast<ConstantInt>(ev->evaluate(r)->castToV(r,&longClass,filePos))){
+						return new StringLiteral(String(DD->getLimitedValue(),(char) CC->getLimitedValue()));
+					}
+				}
+			}
+		default:
+			if(operation=="+"){
+				if(auto CC = dyn_cast<ConstantInt>(C)){
+					auto S = getPreop(r, filePos,":str",ev->evaluate(r));
+					if(S->type==R_STR){
+						return new StringLiteral(String(1, (char) CC->getLimitedValue())+((const StringLiteral*)S)->value);
+					}
+				}
+			}
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			exit(1);
+		}
+		break;
 	}
 	case CLASS_NULL:{
 		if((dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)

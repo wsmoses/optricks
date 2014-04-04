@@ -29,6 +29,15 @@ public:
 	Value* getValue(RData& r, PositionID id) const override final{
 		return UndefValue::get(mathType.type);
 	}
+	String toString() const{
+		switch(mathType.mathType){
+			case MATH_PI: return "Pi";
+			case MATH_E: return "E";
+			case MATH_EULER_MASC: return "EulerGamma";
+			case MATH_LN2: return "Log2";
+			case MATH_CATALAN: return "Catalan";
+		}
+	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(&mathType==right) return this;
 		switch(right->classType){

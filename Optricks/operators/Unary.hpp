@@ -35,14 +35,22 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_INTLITERAL:{
 		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
-		if(operation=="+" || operation=="-" || operation=="~") return cc;
+
+		if(operation==":str"){
+			return &stringLiteralClass;
+		}
+		else if(operation=="+" || operation=="-" || operation=="~") return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}
 	case CLASS_FLOATLITERAL:{
-		if(operation=="+") return cc;
+
+		if(operation==":str"){
+			return &stringLiteralClass;
+		}
+		else if(operation=="+") return cc;
 		else if(operation=="-") return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
@@ -70,8 +78,29 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_MATHLITERAL:{
 		const MathConstantClass* mlc = (const MathConstantClass*)cc;
-		if(operation=="+") return mlc;
+		if(operation==":str"){
+			return &stringLiteralClass;
+		}
+		else if(operation=="+") return mlc;
 		if(false) return cc;
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
+	case CLASS_STRLITERAL:{
+		if(operation==":str"){
+			return &stringLiteralClass;
+		}
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
+	case CLASS_CHAR:{
+		if(operation==":str"){
+			return &stringLiteralClass;
+		}
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
@@ -87,7 +116,6 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	case CLASS_NULL:
 	case CLASS_MAP:
 	case CLASS_STR:
-	case CLASS_CHAR:
 	case CLASS_AUTO:
 	case CLASS_SET:
 	case CLASS_CLASS:{
@@ -156,7 +184,10 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	}
 	case CLASS_INTLITERAL:{
 		const IntLiteral* il = (const IntLiteral*)value;
-		if(operation=="+") return value;
+		if(operation==":str"){
+			return new StringLiteral(il->toString());
+		}
+		else if(operation=="+") return value;
 		else if(operation=="-"){
 			auto R = new IntLiteral(0,0,0);
 			mpz_neg(R->value, il->value);
@@ -174,7 +205,10 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 	}
 	case CLASS_FLOATLITERAL:{
-		if(operation=="+") return value;
+		if(operation==":str"){
+			return new StringLiteral(((const FloatLiteral*)value)->toString());
+		}
+		else if(operation=="+") return value;
 		else if(operation=="-"){
 			const FloatLiteral* fl = (const FloatLiteral*)value;
 			auto R = new FloatLiteral(0,0,0);
@@ -257,12 +291,34 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	}
 	case CLASS_MATHLITERAL:{
 		const MathConstantClass* mlc = (const MathConstantClass*)cc;
-		if(operation=="+") return value;
+		if(operation==":str"){
+			return new StringLiteral(((const MathConstantLiteral*)value)->toString());
+		}
+		else if(operation=="+") return value;
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
+	}
+	case CLASS_STRLITERAL:{
+		if(operation==":str"){
+			return value;
+		}
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
+	case CLASS_CHAR:{
+		if(operation==":str"){
+			if(auto CC = dyn_cast<ConstantInt>(value->getValue(r, filePos))){
+				return new StringLiteral(String(1,(char) CC->getLimitedValue()));
+			}
+		}
+
+		filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+		exit(1);
 	}
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
@@ -274,7 +330,6 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	case CLASS_NULL:
 	case CLASS_MAP:
 	case CLASS_STR:
-	case CLASS_CHAR:
 	case CLASS_AUTO:
 	case CLASS_SET:
 	case CLASS_CLASS:{
