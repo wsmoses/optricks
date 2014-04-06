@@ -18,7 +18,7 @@ def int mand(complex z0){
 }
 while(true){
 angle+=.1;
-print('\033[0;0H');
+print(chr(22)+'[2J');
 for(double im=-1.25; im<1.25; im+=.04){
 	for(double re=-1.8,re<1.8,re+=.02)
 		print(printdensity(mand(complex(re,im))));

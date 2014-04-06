@@ -253,7 +253,6 @@ int main(int argc, char** argv){
 	bool interactive = false;
 	bool forceInt = false;
 	bool debug = false;
-	bool forceGlobal = false;
 	for(int i = 1; i<argc; ++i){
 		String s = String(argv[i]);
 		if(startsWithEq(s, "--debug")){
@@ -265,9 +264,6 @@ int main(int argc, char** argv){
 		else if(startsWithEq(s, "--inter")){
 			forceInt = true;
 			interactive = testFor(s,"--inter");
-		}
-		else if(startsWithEq(s, "--global")){
-			forceGlobal = testFor(s,"--global");
 		}
 		else if(startsWithEq(s, "--interactive")){
 			forceInt = true;
@@ -375,10 +371,10 @@ int main(int argc, char** argv){
 			cerr << "Commands not supported yet!" << endl << flush;
 			exit(1);
 		}
-		lexer.execFiles(forceGlobal,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
+		lexer.execFiles(true,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
 	}
 	else{
-		lexer.execFiles(true,files, outStream,debug,0,forceGlobal);
+		lexer.execFiles(true,files, outStream,debug,0);
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;

@@ -99,14 +99,7 @@ public:
 		if(value) value->buildFunction(r);
 	};
 	const Data* fastEvaluate(RData& r){
-		if(finished){
-			if(value){
-				Location* aloc = finished->getMyLocation();
-				Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
-				aloc->setValue(nex,r);
-			}
-			return finished;
-		}
+		if(finished) return finished;
 		getReturnType();
 		assert(returnType);
 		const AbstractClass* C = (value==NULL || value->getToken()==T_VOID)?NULL:value->getReturnType();
@@ -117,6 +110,7 @@ public:
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			GlobalVariable* GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
+			cerr << "created quickly GV" << endl << flush;
 			((Value*)GV)->setName(Twine(variable->getFullName()));
 			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
 		}
@@ -135,7 +129,14 @@ public:
 		return finished=ld;
 	}
 	const Data* evaluate(RData& r) const final override{
-		if(finished) return finished;
+		if(finished){
+			if(value){
+				Location* aloc = finished->getMyLocation();
+				Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
+				aloc->setValue(nex,r);
+			}
+			return finished;
+		}
 		getReturnType();
 		assert(returnType);
 		const Data* D = (value==NULL || value->getToken()==T_VOID)?NULL:value->evaluate(r);

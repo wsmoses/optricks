@@ -1,9 +1,11 @@
 
-def char printdensity(int d){
-	if    d > 999	return '*';
-	elif  d > 200	return '+';
-	elif  d > 020	return '.';
-	else         	return ' ';
+def void d(int d){
+int m;
+	if    d > 999	m = 47;
+	elif  d > 020	m = 46;
+	elif  d > 005	m = 44;
+	else         	m = 40;
+	printf(chr(27)+"[%dm ",m)
 }
 
 def abs2(complex c)
@@ -21,17 +23,15 @@ extern void fflush(c_size_t t);
 double angle =0;
 print(chr(27)+"[31m");
 while(true){
-print(chr(27)+'[2J');
-fflush(0);
-angle+=.1;
+angle+=.05;
 for(double im=-1.25; im<1.25; im+=.04){
 	for(double re=-1.8,re<1.8,re+=.02){
-		print(printdensity(mand(angle,complex(re,im))));
-fflush(0);
-}	println('');
+		d(mand(angle,complex(re,im)));
+}	print('\n');
 }
-print("hi ");
+printf("hi %f\n",angle);
 fflush(0);
+print(chr(27)+'['+int(2.5/.04+2)+'A');
 //print(angle);
-(extern int usleep(int s))(50000);
+//(extern int usleep(int s))(50000);
 }

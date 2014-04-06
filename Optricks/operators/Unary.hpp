@@ -23,6 +23,7 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 		return VectorClass::get(getPreopReturnType(filePos, vc->inner, operation), vc->len);
 	}
 	case CLASS_INT:{
+		if(operation==":str") return &stringLiteralClass;
 		if(operation=="+") return cc;
 		else if(operation=="-") return cc;
 		else if(operation=="~") return cc;
@@ -155,6 +156,12 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		return VectorClass::get(getPreopReturnType(filePos, vc->inner, operation), vc->len);
 	}
 	case CLASS_INT:{
+		if(operation==":str"){
+			Value* V = value->getValue(r, filePos);
+			if(auto C = dyn_cast<ConstantInt>(V)){
+				return new StringLiteral(C->getValue().toString(10,true));
+			}
+		}
 		if(operation=="+") return value->toValue(r, filePos);
 		else if(operation=="-"){
 			return new ConstantData(r.builder.CreateNeg(value->getValue(r, filePos)), cc);
