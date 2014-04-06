@@ -1,0 +1,14 @@
+class random{
+
+	static def int rand_interval(int min, int max){
+		assert(max>min);
+		const range = max-min;
+		const buckets = RAND_MAX/range;
+		const limit = buckets*range;
+		do{
+			r = rand();
+		}while(r>=limit);
+		return min+ r/buckets;
+	}
+
+}

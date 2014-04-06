@@ -203,3 +203,4 @@ def double double.print(bool newline=true){
 	return this;
 }*/
 // */
+import "random.opt"
