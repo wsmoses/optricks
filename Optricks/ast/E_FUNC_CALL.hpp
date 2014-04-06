@@ -48,7 +48,6 @@ class E_FUNC_CALL : public ErrorStatement{
 		const Data* evaluate(RData& a) const override{
 			const Data* tC = toCall->evaluate(a);
 			assert(tC);
-			assert(tC->type);
 			return tC->callFunction(a,filePos,vals);
 		}
 };

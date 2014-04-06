@@ -1,3 +1,3 @@
 #/bin/bash
-./Optricks.exe mandle.opt -o - -ir | llc | as -S -o t.s
-./Optricks.exe mandle.opt -o - -ir | llc | as; gcc a.out test.o
+#./Optricks.exe mandle.opt -o - -ir | llc | as -S -o t.s
+./Optricks.exe $1 -o - -ir | llc | as; gcc a.out test.o

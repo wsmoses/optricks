@@ -743,7 +743,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		case CLASS_MATHLITERAL:
 		case CLASS_FLOATLITERAL:{
-			return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
+			CastEval CE(ev,cc,filePos);
+			return getBinop(r, filePos, value, &CE, operation);
 		}
 		case CLASS_COMPLEX:{
 			const ComplexClass* comp = (const ComplexClass*)dd;
