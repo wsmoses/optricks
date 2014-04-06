@@ -93,7 +93,9 @@ class ClassFunction : public E_FUNCTION{
 						myLoc = new LazyLocation(a,AI,a.builder.GetInsertBlock(),NULL);
 					}
 					thisPointer.setObject(new LocationData(myLoc, upperClass));
-				} else thisPointer.setObject(new ConstantData(AI, upperClass));
+				} else{
+					thisPointer.setObject(new ConstantData(AI, upperClass));
+				}
 				++AI;
 				++Idx;
 			}

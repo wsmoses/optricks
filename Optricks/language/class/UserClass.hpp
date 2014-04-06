@@ -94,13 +94,20 @@ public:
 			if(at >0){
 			for(unsigned int i=at-1; ; i--){
 				assert(counter>=0);
+				assert(counter<types.size());
 				types[counter] = tmp->localVars[i]->type;
-				if(i==0) break;
 				counter--;
+				if(i==0) break;
 			}
 			}
 			tmp = (UserClass*) tmp->superClass;
 		}while(tmp);
+		assert(counter==-1);
+		for(unsigned i=0; i<types.size();i++){
+			assert(types[i]);
+			//types[i]->dump();
+			//cerr << endl << flush;
+		}
 		structType->setBody(types,false);
 	}
 	void addLocalVariable(PositionID id, String s, const AbstractClass* const ac){
@@ -159,11 +166,22 @@ public:
 						assert(instance->type==R_LOC || instance->type==R_CONST);
 						assert(instance->getReturnType()==this);
 						if(instance->type==R_LOC){
-							return new LocationData(((const LocationData*)instance)->value->getInner(r, id, 0, start), tmp->localVars[fd->second]);
+							Location* ld;
+							if(layout==PRIMITIVE_LAYOUT)
+								ld = ((const LocationData*)instance)->value->getInner(r, id, 0, start);
+							else{
+								ld = new StandardLocation(r.builder.CreateConstGEP2_32(
+										((const LocationData*)instance)->value->getValue(r,id),0,start));
+							}
+							return new LocationData(ld, tmp->localVars[fd->second]);
 						} else{
 							assert(instance->type==R_CONST);
 							Value* v = ((ConstantData*)instance)->value;
-							return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
+							if(layout==PRIMITIVE_LAYOUT)
+								return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
+							else{
+								return new LocationData(new StandardLocation(r.builder.CreateConstGEP2_32(v, 0, start)), tmp->localVars[fd->second]);
+							}
 						}
 					}
 					tmp = (UserClass*)(tmp->superClass);
