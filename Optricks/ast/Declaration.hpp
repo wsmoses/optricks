@@ -171,7 +171,7 @@ public:
 				variable->getMetadata().setObject(finished=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
-		return finished=ld;
+		return finished;
 	}
 };
 
