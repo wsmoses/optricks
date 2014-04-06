@@ -1,20 +1,15 @@
-class MyInt{
-    int inner; 
-    def MyInt(int a){
-        this.inner = a;
-    }
-}
-def print(MyInt i){
-    printf("%d\n",i.inner);
-}
-MyInt i1 = MyInt(3);
-MyInt i2 = i1;
-print(i1); // prints 3
-print(i2); // prints 3
-i2.inner = 4;
-print(i1); // prints 3
-print(i2); // prints 4
-
+class primitive_pointer File{
+    def File(c_string s, c_string t='r'){
+    this = (extern File fopen(c_string a, c_string b))(s,t);
+    };
+    def void flush(){
+        (extern void fflush(File a))(this);
+    };
+    def void close(){
+        this.flush();
+        (extern c_int fclose(File a))(this);
+    };
+};
 /*
 (int:x,int:y) pos = (4,5);
 (int:x,int:y) pos2 = (4,5);

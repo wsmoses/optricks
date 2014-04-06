@@ -40,8 +40,9 @@ Value* UserClass::generateData(RData& r, PositionID id) const{
 		assert(r.lmod);
 		uint64_t s = DataLayout(r.lmod).getTypeAllocSize(tmp);
 		IntegerType* ic = llvm::IntegerType::get(getGlobalContext(), 8*sizeof(size_t));
-		Value* v = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+		auto v = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
 				tmp, ConstantInt::get(ic, s));
+		r.builder.Insert(v);
 		return v;
 	}
 }
