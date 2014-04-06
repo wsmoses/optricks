@@ -1051,7 +1051,6 @@ Statement* Lexer::getNextStatement(ParseData data){
 					}
 					if(open=='(' && !forceAr && values.size()==1){
 						Statement* temp = values[0];
-						//delete arr;
 						if((te = f->read())!=close) f->error("Cannot end inline paren with "+
 								String(1,te)+" instead of "+String(1,close)
 						);

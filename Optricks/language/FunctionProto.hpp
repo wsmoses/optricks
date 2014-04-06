@@ -17,8 +17,9 @@ class FunctionProto{
 		const String name;
 		const std::vector<AbstractDeclaration> declarations;
 		const AbstractClass* const returnType;
-		FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r):name(n),declarations(a), returnType(r){}
-		FunctionProto(String n, const AbstractClass* r=NULL):name(n),declarations(), returnType(r){}
+		bool varArg;
+		inline FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va=false):name(n),declarations(a), returnType(r),varArg(va){}
+		inline FunctionProto(String n, const AbstractClass* r=NULL,bool va=false):name(n),declarations(), returnType(r),varArg(va){}
 		const AbstractClass* getGeneratorType();
 		FunctionClass* getFunctionClass() const;
 		/*

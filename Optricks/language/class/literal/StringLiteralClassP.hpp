@@ -38,6 +38,25 @@
 			}
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
 			return VOID_DATA;}), PositionID(0,0,"#int"));
+		LANG_M->addFunction(PositionID(0,0,"#str"),"printf")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("printf",{AbstractDeclaration(this)},&intClass,true),
+				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()>=1);
+				//TODO custom formatting for printf (and checks for literals / correct format / etc)
+				const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
+				llvm::SmallVector<Type*,1> t_args(1);
+				t_args[0] = CSTRINGTYPE;
+				auto CU = r.getExtern("printf", FunctionType::get(c_intClass.type, t_args,true));
+				llvm::SmallVector<Value*,1> m_args(args.size());
+				m_args[0] = r.getConstantCString(value);
+				for(unsigned i=1; i<args.size(); i++){
+					m_args[i] = args[i]->evalV(r, id);
+				}
+				Value* V = r.builder.CreateCall(CU, m_args);
+				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
+				return new ConstantData(V, &intClass);
+			}), PositionID(0,0,"#int"));
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}

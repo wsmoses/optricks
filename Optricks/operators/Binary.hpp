@@ -603,68 +603,80 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			} else if(operation==">"){
 				return new ConstantData(BoolClass::getValue(mpz_cmp(tmp1, tmp2)> 0), &boolClass);
 			}
-			auto ret = new IntLiteral(0,0,0);
 			if(operation=="+"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_add(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="-"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_sub(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="*"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_mul(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="/"){
 				//todo should round towards zero
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
+				auto ret = new IntLiteral(0,0,0);
 				mpz_div(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="%"){
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
+				auto ret = new IntLiteral(0,0,0);
 				mpz_mod(ret->value, tmp1, tmp2);
+				return ret;
 				filePos.warning("Literal modolo gives different results from integer modulo");
 			} else if(operation=="&"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_and(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="|"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_ior(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="^"){
+				auto ret = new IntLiteral(0,0,0);
 				mpz_xor(ret->value, tmp1, tmp2);
+				return ret;
 			} else if(operation=="<<" || operation==">>" || operation==">>>"){
 				filePos.compilerError("TODO -- bitshifts");
 			} else if(operation=="**"){
 				auto s = mpz_sgn(tmp2);
 				if(s<0){
-					delete ret;
 					return & ZERO_LITERAL;
 				}
 				else if(s==0){
-					delete ret;
 					return & ONE_LITERAL;
 				}
 				else if(mpz_cmp_ui(tmp1, 1)==0 || mpz_cmp_ui(tmp1,0)==0){
-					delete ret;
 					return value;
 				}
 				else if(mpz_cmp_si(tmp1,-1)==0){
 					if(mpz_even_p(tmp2)==0){
 						//is odd
-						delete ret;
 						return value;
 					} else{
 						// is even
-						delete ret;
 						return & ONE_LITERAL;
 					}
 				}
 				else {
 					if(mpz_cmp_ui(tmp2, UINT_MAX)<=0){
+						auto ret = new IntLiteral(0,0,0);
 						mpz_pow_ui(ret->value, tmp1, mpz_get_ui(tmp2));
+						return ret;
 					} else{
 						filePos.compilerError("Result of integer exponentiation cannot fit in memory (perhaps use floating-point instead)");
+						exit(1);
 					}
 				}
 			} else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
 			}
-			return ret;
 		}
 		case CLASS_FLOAT:
 		case CLASS_COMPLEX:{

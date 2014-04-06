@@ -85,6 +85,16 @@ struct RData{
 		inline Function* getExtern(String name, FunctionType* FT){
 			return (Function*) lmod->getOrInsertFunction(StringRef(name), FT);
 		}
+		inline Value* getConstantCString(String name){
+			static std::map<String,Value*> M;
+			auto find = M.find(name);
+			if(find!=M.end()) return find->second;
+			else{
+				Value* const V = builder.CreateGlobalStringPtr(StringRef(name));
+				M.insert(std::pair<String,Value*>(name,V));
+				return V;
+			}
+		}
 		void FinalizeFunctionD(Function* f,bool debug=false){
 			BasicBlock* Parent = builder.GetInsertBlock();
 			if(Parent) builder.SetInsertPoint(Parent);

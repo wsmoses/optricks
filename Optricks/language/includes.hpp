@@ -205,6 +205,7 @@ const auto VOIDTYPE = Type::getVoidTy(getGlobalContext());
 const auto BOOLTYPE = IntegerType::get(getGlobalContext(),1);
 const auto CHARTYPE = IntegerType::get(getGlobalContext(),8);
 const auto CLASSTYPE = IntegerType::get(getGlobalContext(),8*sizeof(void*));
+const auto CSTRINGTYPE = PointerType::getUnqual(CHARTYPE);
 #ifdef NULL
 #undef NULL
 #endif

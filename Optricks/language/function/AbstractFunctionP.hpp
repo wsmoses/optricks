@@ -89,9 +89,9 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const {
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
-	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
 	std::vector<const Evaluatable*> arg2;
-	for(unsigned int i = 0; i<as; i++){
+	const auto ts = (as<=ds)?as:ds;
+	for(unsigned int i = 0; i<ts; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
 		if(t->classType==CLASS_LAZY) id.error("Cannot use lazy arguments on regular function");
@@ -108,15 +108,24 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,Posit
 			arg2.push_back(deLazy(r,id,args[i],t));
 		assert(arg2.back());
 	}
-	for(unsigned int i = as; i<ds; i++){
-		if(proto->declarations[i].defaultValue==nullptr){
-			id.error("No default argument available for argument "+str(i+1));
-			exit(1);
+	if(as>ds){
+		if(!proto->varArg)
+			id.error("Gave too many arguments to function "+proto->toString());
+		else
+			for(unsigned int i=ts; i<as; i++)
+				arg2.push_back(args[i]->evaluate(r)->toValue(r,id));
+		return arg2;
+	} else{
+		for(unsigned int i = as; i<ds; i++){
+			if(proto->declarations[i].defaultValue==nullptr){
+				id.error("No default argument available for argument "+str(i+1));
+				exit(1);
+			}
+			const AbstractClass* const t = proto->declarations[i].declarationType;
+			arg2.push_back(deLazy(r,id,proto->declarations[i].defaultValue,t));
 		}
-		const AbstractClass* const t = proto->declarations[i].declarationType;
-		arg2.push_back(deLazy(r,id,proto->declarations[i].defaultValue,t));
+		return arg2;
 	}
-	return arg2;
 }
 const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
@@ -191,14 +200,11 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const 
 	}
 }
 llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
-	auto as = args.size();
+	const auto as = args.size();
 	const auto ds = proto->declarations.size();
-	if(as>ds){
-		id.error("Gave too many arguments to function "+proto->toString());
-		as = ds;
-	}
-	llvm::SmallVector<Value*,0> temp(ds);
-	for(unsigned int i = 0; i<as; i++){
+	const auto ts = (as<=ds)?as:ds;
+	llvm::SmallVector<Value*,0> temp((ds>=as)?ds:as);
+	for(unsigned int i = 0; i<ts; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
 		if(at->classType==CLASS_VOID){
@@ -214,17 +220,27 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 		assert(temp[i]);
 		assert(temp[i]->getType());
 	}
-	for(unsigned int i = as; i<ds; i++){
-		if(proto->declarations[i].defaultValue==nullptr){
-			id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
-			exit(1);
+
+	if(as>ds){
+		if(!proto->varArg)
+			id.error("Gave too many arguments to function "+proto->toString());
+		else
+			for(unsigned int i=ts; i<as; i++)
+				temp[i] = args[i]->evaluate(r)->getValue(r,id);
+		return temp;
+	} else{
+		for(unsigned int i = as; i<ds; i++){
+			if(proto->declarations[i].defaultValue==nullptr){
+				id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
+				exit(1);
+			}
+			const AbstractClass* const t = proto->declarations[i].declarationType;
+			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
+			assert(temp[i]);
+			assert(temp[i]->getType());
 		}
-		const AbstractClass* const t = proto->declarations[i].declarationType;
-		temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
-		assert(temp[i]);
-		assert(temp[i]->getType());
+		return temp;
 	}
-	return temp;
 }
 Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const{
 	const auto as = args.size();
@@ -412,9 +428,10 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->getSingleProto()->declarations.size()>=args.size()){
+		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
+				if(i>=a->getSingleProto()->declarations.size()) continue;
 				if(args[i]->classType==CLASS_VOID){
 					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
@@ -457,7 +474,11 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		for(; current!=best;){
 			//less means better
 			//cerr << "C1 " << i << endl << flush;
-
+			if(i>=(*best)->getSingleProto()->declarations.size() ||
+					i>=(*current)->getSingleProto()->declarations.size()){
+				++current;
+				continue;
+			}
 			auto c=args[i]->compare((*best)->getSingleProto()->declarations[i].declarationType, (*current)->getSingleProto()->declarations[i].declarationType);
 			if(c==0){
 				++current;
@@ -502,11 +523,12 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->getSingleProto()->declarations.size()>=args.size()){
+		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				const AbstractClass* const at = args[i]->getReturnType();
 				assert(at);
+				if(i>=a->getSingleProto()->declarations.size()) continue;
 				if(at->classType==CLASS_VOID){
 					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
@@ -548,6 +570,11 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		++current;
 		for(; current!=best;){
 			//less means better
+			if(i>=(*best)->getSingleProto()->declarations.size() ||
+					i>=(*current)->getSingleProto()->declarations.size()){
+				++current;
+				continue;
+			}
 			auto c=args[i]->compareValue(
 					(*best)->getSingleProto()->declarations[i].declarationType,
 					(*current)->getSingleProto()->declarations[i].declarationType);

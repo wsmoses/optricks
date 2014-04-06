@@ -48,6 +48,7 @@ std::pair<bool,std::pair<unsigned int, unsigned int>> FunctionProto::match(Funct
 }*/
 
 bool FunctionProto::equals(const FunctionProto* f, PositionID id) const{
+	if(varArg!=f->varArg) return false;
 	if(declarations.size()!=f->declarations.size()) return false;
 	for(unsigned int i = 0; i<declarations.size(); ++i){
 		const AbstractClass* class1 = declarations[i].declarationType;
@@ -67,6 +68,7 @@ String FunctionProto::toString() const{
 		} else t+=",";
 		t+=a.declarationType->getName();
 	}
+	if(varArg) t+=",...";
 	return t+")";
 }
 
