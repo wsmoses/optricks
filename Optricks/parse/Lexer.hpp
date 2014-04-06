@@ -528,12 +528,12 @@ class Lexer{
 			Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL));
 			return new LambdaFunction(pos(), arguments, methodBody);
 		}
-		Statement* getFunction(ParseData data, String temp="", AbstractClass* outer=nullptr){
+		E_FUNCTION* getFunction(ParseData data, String temp="", AbstractClass* outer=nullptr,bool stat=false){
 			if(temp=="") temp = f->getNextName(EOF);
 			trim(EOF);
 			if (temp == "def" || temp=="gen" || temp=="inl"){
 				auto mark = f->getMarker();
-				bool staticF = false;
+				bool staticF = stat;
 				if(f->getNextName(EOF)=="static"){
 					staticF = true;
 					trim(EOF);
@@ -584,7 +584,7 @@ class Lexer{
 					trim(data);
 				}
 				bool paren;
-				Statement* func;
+				E_FUNCTION* func;
 				if(methodName.size()<=1 && outer==nullptr){
 					if(staticF){
 						pos().error("Cannot preface non-class function with keyword static");
@@ -640,10 +640,10 @@ class Lexer{
 					}
 				}
 				trim(data);
-				bool semi  = false;
-				if(!f->done && f->peek()==';'){ semi = true; }
-				trim(data);
-				if(data.operatorCheck && !semi) return operatorCheck(data, func);
+				//bool semi  = false;
+				//if(!f->done && f->peek()==';'){ semi = true; }
+				//trim(data);
+				//if(data.operatorCheck && !semi) return operatorCheck(data, func);
 				return func;
 			}
 			else if (temp == "extern"){
@@ -679,7 +679,7 @@ class Lexer{
 			}
 
 		}
-		Statement* getClass(ParseData data, bool read=false,OClass* outer=nullptr,bool stat/*ic*/=true){
+		OClass* getClass(ParseData data, bool read=false,OClass* outer=nullptr,bool stat/*ic*/=true){
 			if(!read && f->getNextName(data.endWith)!="class") f->error("Could not find 'class' for class declaration");
 			String name = getNextName(EOF);//TODO -- allow generic class definition
 			LayoutType primitive;
@@ -732,17 +732,17 @@ class Lexer{
 				ParseData nd(EOF, classMod, true, (stat)?data.loc:PARSE_LOCAL);
 				if(temp=="class"){
 					if(stat!=true) pos().error("Optricks does not currently support non-static classes");
-					Statement* uClass = getClass(nd, true, selfClass, stat);
+					auto uClass = getClass(nd, true, selfClass, stat);
 					selfClass->under.push_back(uClass);
 				} else if(temp=="def" || temp=="gen" || temp=="inl"){
-					Statement* func = getFunction(nd, temp,proto);//TODO allow methods to be static
+					Statement* func = getFunction(nd, temp,proto,stat);//TODO allow methods to be static
 					selfClass->under.push_back(func);
 				} else if(temp=="extern"){
 					pos().error("Optricks does not allow the use of external functions in the definition classes!");
 				} else{
 					f->undoMarker(mark);
 					Declaration* dec = getNextDeclaration(nd);
-					selfClass->data.push_back(dec);
+					selfClass->data.push_back(std::pair<bool,Declaration*>(stat,dec));
 				}
 				f->trim(EOF);
 				while(f->peek()==';'){

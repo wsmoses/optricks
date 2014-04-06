@@ -40,8 +40,10 @@ class ClassFunction : public E_FUNCTION{
 			for(unsigned i=0; i<declaration.size(); i++){
 				const auto& b = declaration[i];
 				const AbstractClass* ac = b->getClass(filePos);
+				assert(ac);
 				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
 				args[i+(staticF)?0:1] = ac->type;
+				assert(ac->type);
 			}
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
 				declaration[Idx]->variable->getMetadata().setObject(
@@ -60,6 +62,7 @@ class ClassFunction : public E_FUNCTION{
 			}
 			assert(returnType);
 			llvm::Type* r = returnType->type;
+			assert(r);
 			FunctionType *FT = FunctionType::get(r, args, false);
 			String nam = "!"+upperClass->getName()+"."+name;
 			llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);

@@ -14,8 +14,8 @@ class OClass: public ErrorStatement
 	public:
 		UserClass* proto;
 		OClass* outer;
-		std::vector<Statement*> under;
-		std::vector<Declaration*> data;
+		std::vector<Statement* > under;
+		std::vector<std::pair<bool,Declaration*> > data;/*true if static*/
 		mutable bool buildF,eval,registerF,registerC;
 		OClass(PositionID id, UserClass* p, OClass* out):ErrorStatement(id),
 				proto(p), outer(out), under(), data(){
@@ -55,7 +55,7 @@ class OClass: public ErrorStatement
 				if(outer){
 					proto->addLocalVariable(filePos, "#outside", outer->proto);
 				}
-				for(Statement* const& a:under){
+				for(const auto& a:under){
 					a->registerClasses();
 				}
 
@@ -63,8 +63,14 @@ class OClass: public ErrorStatement
 					if(data.size()>0) error("Cannot have data inside class with data layout of primitive_pointer");
 				}
 				else{
-					for(Declaration* const& d:data){
-						proto->addLocalVariable(filePos,d->variable->pointer.name, d->getClass(filePos));
+					for(const auto& d:data){
+						if(d.first){
+							//static
+							filePos.compilerError("TODO -- static vars");
+							exit(1);
+						} else {
+							proto->addLocalVariable(filePos,d.second->variable->pointer.name, d.second->getClass(filePos));
+						}
 					}
 					//TODO allow default in constructor
 				}
