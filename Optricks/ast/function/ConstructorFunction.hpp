@@ -38,9 +38,9 @@ public:
 		assert(uc->classType==CLASS_USER);
 		auto UC = (const UserClass*)uc;
 		if(uc->layout==PRIMITIVE_LAYOUT)
-			_this.setObject((new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc))->toLocation(ra));
+			_this.setObject((new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra));
 		else
-			_this.setObject(new ConstantData( ((const UserClass*)uc)->generateData(ra, filePos), uc));
+			_this.setObject(new ConstantData( UC->generateData(ra, filePos), uc));
 
 		auto tmp = ra.functionReturn;
 		ra.functionReturn = nullptr;
