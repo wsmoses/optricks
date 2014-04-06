@@ -32,8 +32,7 @@ public:
 
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
-		BasicBlock *BB = ra.CreateBlockD("entry", F);
-		ra.builder.SetInsertPoint(BB);
+		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 
 		auto uc = myFunction->getSingleProto()->returnType;
 		assert(uc->classType==CLASS_USER);
@@ -86,7 +85,8 @@ public:
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto(returnType->getName(), ad, returnType), F);
 		((const UserClass*)returnType)->constructors.add((SingleFunction*)myFunction, filePos);
-
+		BasicBlock *BB = a.CreateBlockD("entry", F);
+		a.builder.SetInsertPoint(BB);
 		unsigned Idx = 0;
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
 			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));

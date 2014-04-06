@@ -1,11 +1,11 @@
-class primitive MyInt{
+class MyInt{
     int inner; 
     def MyInt(int a){
         this.inner = a;
     }
 }
 def print(MyInt i){
-    println(i.inner);
+    printf("%d\n",i.inner);
 }
 MyInt i1 = MyInt(3);
 MyInt i2 = i1;
