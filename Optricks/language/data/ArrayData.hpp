@@ -72,20 +72,25 @@ public:
 					r.builder.CreateConstGEP1_32(v, i));
 		}
 		assert(dyn_cast<PointerType>(tc->type));
-		auto tmp=((PointerType*)tc->type)->getElementType();
+		auto tmp=(StructType*)(((PointerType*)tc->type)->getElementType());
 		s = DataLayout(r.lmod).getTypeAllocSize(tmp);
 		Instruction* p = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
 						tmp, ConstantInt::get(ic, s));
 		r.builder.Insert(p);
-
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)intClass.type, 0),
-				r.builder.CreateConstGEP1_32(p, 0));
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)intClass.type, inner.size()),
-				r.builder.CreateConstGEP1_32(p, 1));
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)intClass.type, inner.size()),
-				r.builder.CreateConstGEP1_32(p, 2));
-		r.builder.CreateStore(v,
-				r.builder.CreateConstGEP1_32(p, 3));
+		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(0)), 0),
+				r.builder.CreateConstGEP2_32(p, 0,0));
+		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(1)), inner.size()),
+				r.builder.CreateConstGEP2_32(p, 0,1));
+		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(2)), inner.size()),
+				r.builder.CreateConstGEP2_32(p, 0,2));
+		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
+		G->getType()->dump();
+				cerr << endl << flush;
+		tmp->getElementType(3)->dump();
+				cerr << endl << flush;
+		v->getType()->dump();
+				cerr << endl << flush;
+		r.builder.CreateStore(v,G);
 		return v;
 	}
 	bool hasCastValue(const AbstractClass* const a) const override {
