@@ -76,7 +76,9 @@ public:
 		getReturnType();
 		if(returnType->classType==CLASS_FUNC){
 			return ((FunctionClass*)returnType)->returnType;
-		}  else if(returnType->classType==CLASS_CLASS){
+		}  else if(returnType->classType==CLASS_LAZY){
+			return ((LazyClass*)returnType)->innerType;
+		} else if(returnType->classType==CLASS_CLASS){
 			return returnType;
 		}	else {
 			id.error("Class '"+returnType->getName()+"' cannot be used as function");

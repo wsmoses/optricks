@@ -432,27 +432,38 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(i>=a->getSingleProto()->declarations.size()) continue;
+				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
 				if(args[i]->classType==CLASS_VOID){
 					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
+					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+						if(dt->classType!=CLASS_LAZY
+							|| !a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType)){
+							valid = false;
+							break;
+						}
+					}
+				} else if(!args[i]->hasCast(dt)){
+					if(dt->classType!=CLASS_LAZY
+						|| !args[i]->hasCast(((LazyClass*) dt)->innerType)){
 						valid = false;
 						break;
 					}
-				} else if(!args[i]->hasCast(a->getSingleProto()->declarations[i].declarationType)){
-					valid=false;
-					break;
 				}
 			}
 			if(!valid) continue;
 			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++) {
+				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
 				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
-					valid=false;
-					break;
+				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+					if(dt->classType!=CLASS_LAZY
+						|| !a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType)){
+						valid = false;
+						break;
+					}
 				}
 			}
 			if(!valid) continue;
@@ -479,7 +490,11 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				++current;
 				continue;
 			}
-			auto c=args[i]->compare((*best)->getSingleProto()->declarations[i].declarationType, (*current)->getSingleProto()->declarations[i].declarationType);
+			auto c1 = (*best)->getSingleProto()->declarations[i].declarationType;
+			if(c1->classType==CLASS_LAZY) c1 = ((LazyClass*)c1)->innerType;
+			auto c2 = (*current)->getSingleProto()->declarations[i].declarationType;
+			if(c2->classType==CLASS_LAZY) c2 = ((LazyClass*)c2)->innerType;
+			auto c=args[i]->compare(c1,c2);
 			if(c==0){
 				++current;
 			} else if(c<0){
@@ -529,27 +544,38 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				const AbstractClass* const at = args[i]->getReturnType();
 				assert(at);
 				if(i>=a->getSingleProto()->declarations.size()) continue;
+				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
 				if(at->classType==CLASS_VOID){
 					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
+					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+						if(dt->classType!=CLASS_LAZY
+							|| !a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType)){
+							valid = false;
+							break;
+						}
+					}
+				} else if(!args[i]->hasCastValue(dt)){
+					if(dt->classType!=CLASS_LAZY
+						|| !args[i]->hasCastValue(((LazyClass*) dt)->innerType)){
 						valid = false;
 						break;
 					}
-				} else if(!args[i]->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
-					valid=false;
-					break;
 				}
 			}
 			if(!valid) continue;
 			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++){
+				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
 				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(a->getSingleProto()->declarations[i].declarationType)){
-					valid=false;
-					break;
+				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+					if(dt->classType!=CLASS_LAZY
+						|| !a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType)){
+						valid = false;
+						break;
+					}
 				}
 			}
 			if(!valid) continue;
@@ -575,9 +601,11 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				++current;
 				continue;
 			}
-			auto c=args[i]->compareValue(
-					(*best)->getSingleProto()->declarations[i].declarationType,
-					(*current)->getSingleProto()->declarations[i].declarationType);
+			auto c1 = (*best)->getSingleProto()->declarations[i].declarationType;
+			if(c1->classType==CLASS_LAZY) c1 = ((LazyClass*)c1)->innerType;
+			auto c2 = (*current)->getSingleProto()->declarations[i].declarationType;
+			if(c2->classType==CLASS_LAZY) c2 = ((LazyClass*)c2)->innerType;
+			auto c=args[i]->compareValue(c1,c2);
 			if(c==0){
 				++current;
 			} else if(c<0){

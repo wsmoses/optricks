@@ -61,7 +61,11 @@ public:
 
 	String getName() const{
 		if(myScope==nullptr) return name;
-		else return myScope->getScopeName() + "." + name;
+		else{
+			auto s = myScope->getScopeName();
+			if(s.length()==0) return name;
+			return s + "." + name;
+		}
 	}
 	inline void illegalCast(PositionID id, const AbstractClass* const right) const{
 		id.error("Cannot cast class '"+getName()+"' to '"+right->getName()+"'");

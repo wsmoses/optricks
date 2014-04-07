@@ -57,6 +57,7 @@ public:
 		if(!surroundingScope) return name;
 		else{
 			String s = surroundingScope->getScopeName();
+			if(s.length()==0) return name;
 			return  s + "." + name;
 		}
 	}

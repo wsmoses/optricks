@@ -48,11 +48,17 @@ public:
 		exit(1);
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-		const AbstractClass* t = getReturnType();
-		if(t->classType!=CLASS_FUNC)
-			id.error("Class '"+t->getName()+"' cannot be used as function");
-		FunctionClass* fc = (FunctionClass*)t;
-		return fc->returnType;
+		const AbstractClass* ac = getReturnType();
+		if(ac->classType==CLASS_FUNC){
+			return ((FunctionClass*)ac)->returnType;
+		} else if(ac->classType==CLASS_LAZY){
+			return ((LazyClass*)ac)->innerType;
+		} else if(ac->classType==CLASS_CLASS){
+			return ac;
+		}	else {
+			id.error("Class '"+ac->getName()+"' cannot be used as function");
+			exit(1);
+		}
 	}
 	const AbstractClass* getReturnType() const override{
 		if(pre==UOP_PRE)

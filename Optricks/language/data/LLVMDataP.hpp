@@ -18,7 +18,9 @@
 	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;
-			}  else if(type->classType==CLASS_CLASS){
+			}  else if(type->classType==CLASS_LAZY){
+				return ((LazyClass*)type)->innerType;
+			} else if(type->classType==CLASS_CLASS){
 				return type;
 			}	else {
 				id.error("Class '"+type->getName()+"' cannot be used as function");
@@ -43,6 +45,9 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
 		if(fp.returnType->classType==CLASS_VOID) return VOID_DATA;
 		else return new ConstantData(V,fp.returnType);
+	} else if(type->classType==CLASS_LAZY){
+		Value* F = getValue(r,id);
+		return new ConstantData(r.builder.CreateCall(F), ((LazyClass*)type)->innerType);
 	}
 	else if(type->classType==CLASS_CLASS){
 		Value* v = getValue(r,id);

@@ -19,7 +19,9 @@ class E_FUNC_CALL : public ErrorStatement{
 			auto type=getReturnType();
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;
-			}  else if(type->classType==CLASS_CLASS){
+			}  else if(type->classType==CLASS_LAZY){
+				return ((LazyClass*)type)->innerType;
+			} else if(type->classType==CLASS_CLASS){
 				return type;
 			}	else {
 				id.error("Class '"+type->getName()+"' cannot be used as function");
