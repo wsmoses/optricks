@@ -83,7 +83,7 @@ public:
 	static const Evaluatable* deLazy(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
 	static const Evaluatable* deLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
-	static Value* fixLazy(RData& r, PositionID id, Evaluatable* val, const AbstractClass* const t) ;
+	static Value* fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) ;
 	static llvm::SmallVector<Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
 	Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const;
 };

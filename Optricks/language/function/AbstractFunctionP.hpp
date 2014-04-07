@@ -158,14 +158,16 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, const Evaluat
 }
 Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
+		BasicBlock *Parent = r.builder.GetInsertBlock();
 		const LazyClass* const lc = (const LazyClass*)t;
 		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
 		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
-		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
 		r.builder.CreateRet(val->castToV(r, lc->innerType, id));
 		if(Parent!=NULL) r.builder.SetInsertPoint(Parent);
+		r.lmod->dump();
+		cerr << endl << flush;
 		return F;
 	} else if(t->classType==CLASS_REF){
 		if(val->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
@@ -177,12 +179,12 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 		return val->castToV(r, t, id);
 	}
 }
-Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const AbstractClass* const t) {
+Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
+		BasicBlock *Parent = r.builder.GetInsertBlock();
 		const LazyClass* lc = (const LazyClass*)t;
 		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
 		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
-		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
 		r.builder.CreateRet(val->evaluate(r)->castToV(r, lc->innerType, id));
@@ -215,7 +217,7 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue, t);
 		}
 		else{
-			temp[i] = fixLazy(r, id, args[i]->evaluate(r), t);
+			temp[i] = fixLazy(r, id, args[i], t);
 		}
 		assert(temp[i]);
 		assert(temp[i]->getType());
@@ -235,7 +237,7 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 				exit(1);
 			}
 			const AbstractClass* const t = proto->declarations[i].declarationType;
-			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t);
+			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue, t);
 			assert(temp[i]);
 			assert(temp[i]->getType());
 		}
@@ -258,7 +260,7 @@ Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std:
 			temp = fixLazy(r, id, proto->declarations[i].defaultValue, t);
 		}
 		else{
-			temp = fixLazy(r, id, args[i]->evaluate(r), t);
+			temp = fixLazy(r, id, args[i], t);
 		}
 		V = r.builder.CreateInsertValue(V, temp, i);
 		assert(V != NULL);
@@ -269,7 +271,7 @@ Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std:
 			exit(1);
 		}
 		const AbstractClass* const t = proto->declarations[i].declarationType;
-		V = r.builder.CreateInsertValue(V, fixLazy(r, id, proto->declarations[i].defaultValue->evaluate(r), t), i);
+		V = r.builder.CreateInsertValue(V, fixLazy(r, id, proto->declarations[i].defaultValue, t), i);
 	}
 	return V;
 }
