@@ -46,6 +46,7 @@ class OClass: public ErrorStatement
 			if(!eval){
 				eval = true;
 				for(Statement* const& a: under) a->evaluate(r);
+				for(const auto& a: data) if(a.first) a.second->evaluate(r);
 			}
 			return proto;
 		}
@@ -64,12 +65,8 @@ class OClass: public ErrorStatement
 				}
 				else{
 					for(const auto& d:data){
-						if(d.first){
-							//static
-							filePos.compilerError("TODO -- static vars");
-							exit(1);
-						} else {
-							proto->addLocalVariable(filePos,d.second->variable->pointer.name, d.second->getClass(filePos));
+						if(!d.first) {
+							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(filePos));
 						}
 					}
 					//TODO allow default in constructor

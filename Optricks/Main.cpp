@@ -93,6 +93,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	//cerr << endl << flush;
 	void *FPtr = getRData().exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
+	assert((dat->type==R_VOID && retType->classType==CLASS_VOID) || retType == dat->getReturnType());
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		std::cout << retType->getName() << "(" << FP() << ")" << endl << flush;
@@ -252,7 +253,7 @@ int main(int argc, char** argv){
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
 		if(!getRData().enableAsserts) return VOID_DATA;
-		const Data* D = args[0]->evaluate(r);
+		const Data* D = args[0]->evaluate(r)->callFunction(r,id,{});
 		assert(D->getReturnType()->classType==CLASS_BOOL);
 		Value* V = D->getValue(r, id);
 		if(auto C = dyn_cast<ConstantInt>(V)){

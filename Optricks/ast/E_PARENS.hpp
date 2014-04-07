@@ -34,7 +34,7 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		return inner->getReturnType();
 	}
-	AbstractClass* getSelfClass(PositionID id) override final{ return inner->getSelfClass(id); }
+	const AbstractClass* getSelfClass(PositionID id) override final{ return inner->getSelfClass(id); }
 };
 
 

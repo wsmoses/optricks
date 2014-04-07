@@ -56,14 +56,14 @@ public:
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
-			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
+			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			assert(ac);
 			Type* cl = ac->type;
 			assert(cl);
 			args[i] = cl;
 		}
 		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
-			declaration[Idx]->variable->getMetadata().setObject(
+			declaration[Idx]->variable.getMetadata().setObject(
 				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
 			);
 		}
@@ -82,7 +82,7 @@ public:
 		unsigned Idx = 0;
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
 			((Value*)AI)->setName(Twine(ad[Idx].declarationVariable));
-			declaration[Idx]->variable->getMetadata().setObject(
+			declaration[Idx]->variable.getMetadata().setObject(
 			(new ConstantData((Value*)AI,ad[Idx].declarationType))->toLocation(a)
 			);
 		}

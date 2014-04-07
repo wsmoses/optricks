@@ -28,7 +28,7 @@ public:
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		const AbstractClass* cla= left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			return left->getSelfClass(filePos);
+			return left->getSelfClass(filePos)->staticVariables.getFunctionReturnType(id,right,args);
 		} else {
 
 			if(cla->hasLocalData(right)){
@@ -72,8 +72,8 @@ public:
 	void buildFunction(RData& r) const override final{
 		left->buildFunction(r);
 	};
-	AbstractClass* getSelfClass(PositionID id) override final{
-		AbstractClass* t = left->getSelfClass(id);
+	const AbstractClass* getSelfClass(PositionID id) override final{
+		auto t = left->getSelfClass(id);
 		return t->staticVariables.getClass(id,right);
 	}
 	const AbstractClass* getReturnType() const override final{

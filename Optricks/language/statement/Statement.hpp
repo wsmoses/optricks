@@ -42,7 +42,7 @@ class Statement : public Evaluatable{
 		/**
 		 * Gets the class which this expression represents (assuming this is a class-type object or reference)
 		 */
-		virtual AbstractClass* getSelfClass(PositionID id){
+		virtual const AbstractClass* getSelfClass(PositionID id){
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
 			return evaluate(r).getMyClass(r);
 		}*/
@@ -106,7 +106,7 @@ class VariableReference : public Statement{
 		 * Gets the name of the variable
 		 */
 //		virtual String getFullName() =0;
-		virtual String getShortName()=0;
+		virtual String getShortName() const=0;
 };
 
 

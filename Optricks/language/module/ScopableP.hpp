@@ -14,6 +14,20 @@
 #include "../FunctionProto.hpp"
 #include "../data/LocationData.hpp"
 #include "../class/builtin/ClassClass.hpp"
+
+const AbstractClass* Scopable::getClass(PositionID id, const String name) const{
+		auto f = find(id,name);
+		if(f.first==nullptr) return &voidClass;
+		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
+		return f.first->classes[f.second->second.pos];
+	}
+
+const Data* Scopable::getVariable(PositionID id, const String name) const{
+	auto f = find(id,name);
+	if(f.first==nullptr) return VOID_DATA;
+	if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
+	return f.first->vars[f.second->second.pos];
+}
 void Scopable::addClass(PositionID id, AbstractClass* c){
 	if(existsHere(c->name)) id.error("Cannot define class "+c->name+" -- identifier already used at this scope");
 	mapping.insert(std::pair<String,SCOPE_POS>(c->name,SCOPE_POS(SCOPE_CLASS,classes.size())));
@@ -23,6 +37,7 @@ void Scopable::addClass(PositionID id, AbstractClass* c){
 
 	const AbstractClass* Scopable::getReturnClass(PositionID id, const String name) const{
 		auto f = find(id,name);
+		if(f.first==nullptr) return &voidClass;
 		switch(f.second->second.type){
 		case SCOPE_VAR:{
 			return f.first->vars[f.second->second.pos]->getReturnType();
@@ -39,6 +54,7 @@ void Scopable::addClass(PositionID id, AbstractClass* c){
 
 const AbstractClass* Resolvable::getReturnType() const{
 	auto d = module->find(filePos,name);
+	if(d.first==nullptr) return &voidClass;
 	switch(d.second->second.type){
 		case SCOPE_FUNC:
 			return d.first->funcs[d.second->second.pos]->getReturnType();
@@ -53,6 +69,7 @@ const AbstractClass* Resolvable::getReturnType() const{
 }
 const Data* Resolvable::getObject() const{
 	auto d = module->find(filePos,name);
+	if(d.first==nullptr) return VOID_DATA;
 	switch(d.second->second.type){
 		case SCOPE_FUNC:
 			return d.first->funcs[d.second->second.pos];
@@ -67,6 +84,7 @@ const Data* Resolvable::getObject() const{
 }
 void Resolvable::setObject(const Data* da) const{
 	auto d = module->find(filePos,name);
+	if(d.first==nullptr) return;
 	switch(d.second->second.type){
 		case SCOPE_VAR:
 			d.first->vars[d.second->second.pos] = da;
@@ -96,6 +114,7 @@ void Resolvable::setObject(const Data* da) const{
 }*/
 const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const{
 	auto f = find(id,name);
+	if(f.first==nullptr) return &voidClass;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
 			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
@@ -113,6 +132,7 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 
 inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const{
 	auto f = find(id,name);
+	if(f.first==nullptr) return std::pair<const Data*,SCOPE_TYPE>(VOID_DATA,f.second->second.type);
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
 			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
@@ -131,6 +151,7 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 
 const Data* Scopable::get(PositionID id, const String name) const{
 		auto f = find(id,name);
+		if(f.first==nullptr) return VOID_DATA;
 		switch(f.second->second.type){
 		case SCOPE_VAR:
 			return f.first->vars[f.second->second.pos];
@@ -161,6 +182,7 @@ const Data* Scopable::get(PositionID id, const String name) const{
 	}
 	inline void Resolvable::setValue(RData& r, Data* d2) const{
 		auto d = module->find(filePos,name);
+		if(d.first==nullptr) return;
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
 				const Data* dat= d.first->vars[d.second->second.pos];
@@ -175,6 +197,7 @@ const Data* Scopable::get(PositionID id, const String name) const{
 	}
 	inline void Resolvable::setValue(RData& r,Value* v) const{
 		auto d = module->find(filePos,name);
+		if(d.first==nullptr) return;
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
 				const Data* dat= d.first->vars[d.second->second.pos];
@@ -191,7 +214,7 @@ const Data* Scopable::get(PositionID id, const String name) const{
 	inline void Resolvable::addFunction(SingleFunction* d) const{
 		module->addFunction(filePos,name)->add(d, filePos);
 	}
-	inline AbstractClass* Resolvable::getClass() const{
+	inline const AbstractClass* Resolvable::getClass() const{
 		return module->getClass(filePos, name);
 	}
 	inline void Resolvable::setFunction(SingleFunction* d) const{

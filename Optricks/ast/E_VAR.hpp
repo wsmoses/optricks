@@ -12,20 +12,20 @@
 
 class E_VAR : public VariableReference {
 	public:
-		const Resolvable pointer;
+		Resolvable pointer;
 		virtual ~E_VAR(){};
 		E_VAR(const Resolvable& a) : VariableReference(),pointer(a){};
 //		E_VAR(PositionID id, Resolvable& a) : VariableReference(id),pointer(a){};
-		String getFullName() {
+		String getFullName() const {
 			return pointer.module->getScopeName()+"."+pointer.name;
 		}
-		String getShortName() override final{
+		String getShortName() const override final{
 			return pointer.name;
 		}
 		const Token getToken() const override{
 			return T_VAR;
 		}
-		Resolvable getMetadata()
+		const Resolvable getMetadata() const
 		//final override
 		{
 			return pointer;
@@ -54,7 +54,7 @@ class E_VAR : public VariableReference {
 			return pointer.getFunctionReturnType(args);
 		}
 
-		AbstractClass* getSelfClass(PositionID id) override final{
+		const AbstractClass* getSelfClass(PositionID id) override final{
 			return pointer.getClass();
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{

@@ -198,7 +198,7 @@ class Lexer{
 			//else pointer = &data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull());
 			//return new E_VAR(pos(), late?(Resolvable(data.mod, getNextName(data.endWith), pos())):());
 		}
-		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false){
+		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false,bool enableScope=true){
 			trim(data);
 			Statement* declarationType = getNextType(data.getEndWith(EOF),true);
 			trim(EOF);
@@ -230,8 +230,8 @@ class Lexer{
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
 			}
-			E_VAR* variable = new E_VAR(Resolvable(data.mod, varName, pos()));
-			auto RT=new Declaration(pos(), declarationType, variable, global || (data.loc==PARSE_GLOBAL), value);
+			auto RT=new Declaration(pos(), declarationType, E_VAR(Resolvable(data.mod, varName, pos())), global || (data.loc==PARSE_GLOBAL), value);
+			if(enableScope)
 			data.mod->addVariable(pos(), varName,new DeclarationData(RT));
 			return RT;
 		}
@@ -248,9 +248,9 @@ class Lexer{
 					return args;
 				}
 				Declaration* d = getNextDeclaration(data.getEndWith(EOF),false,true);
-				for(auto& a:args){
-					if(d->variable->pointer.name == a->variable->pointer.name){
-						f->error("Cannot have duplicate argument name: "+a->variable->pointer.name, true);
+				for(const Declaration*const& a:args){
+					if(d->variable.pointer.name == a->variable.pointer.name){
+						f->error("Cannot have duplicate argument name: "+a->variable.pointer.name, true);
 					}
 				}
 				args.push_back(d);
@@ -745,7 +745,10 @@ class Lexer{
 					pos().error("Optricks does not allow the use of external functions in the definition classes!");
 				} else{
 					f->undoMarker(mark);
-					Declaration* dec = getNextDeclaration(nd);
+					Declaration* dec = getNextDeclaration(nd,stat,true,false);
+					dec->variable.pointer.module = &(proto->staticVariables);
+					proto->staticVariables.addVariable(pos(), dec->variable.pointer.name,new DeclarationData(dec));
+
 					selfClass->data.push_back(std::pair<bool,Declaration*>(stat,dec));
 				}
 				f->trim(EOF);

@@ -37,7 +37,7 @@ public:
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
-			ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
+			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			Type* cl = ac->type;
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args[i] = cl;

@@ -25,17 +25,12 @@ public:
 			exit(1);
 		}
 	}
-	E_VAR* variable;
+	E_VAR variable;
 	Statement* value;
 	bool global;
 	mutable const LocationData* finished;
-	Declaration(PositionID id, Statement* v, E_VAR* loc, bool glob, Statement* e) : ErrorStatement(id){
-		classV = v;
-		returnType=nullptr;
-		variable = loc;
-		value = e;
-		global = glob;
-		finished=nullptr;
+	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) : ErrorStatement(id),
+	classV(v),returnType(nullptr),variable(loc),value(e),global(glob),finished(nullptr){
 	}
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
@@ -87,17 +82,17 @@ public:
 	}
 	void registerClasses() const override final{
 		if(classV) classV->registerClasses();
-		if(variable) variable->registerClasses();
+		variable.registerClasses();
 		if(value) value->registerClasses();
 	}
 	void registerFunctionPrototype(RData& r) const override final{
 		if(classV) classV->registerFunctionPrototype(r);
-		if(variable) variable->registerFunctionPrototype(r);
+		variable.registerFunctionPrototype(r);
 		if(value) value->registerFunctionPrototype(r);
 	};
 	void buildFunction(RData& r) const override final{
 		if(classV) classV->buildFunction(r);
-		if(variable) variable->buildFunction(r);
+		variable.buildFunction(r);
 		if(value) value->buildFunction(r);
 	};
 	const Data* fastEvaluate(RData& r){
@@ -112,20 +107,19 @@ public:
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			GlobalVariable* GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
-			cerr << "created quickly GV" << endl << flush;
-			((Value*)GV)->setName(Twine(variable->getFullName()));
-			variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
+			((Value*)GV)->setName(Twine(variable.getFullName()));
+			variable.getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
 			Type* t = returnType->type;
-			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable->pointer.name));
+			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
 			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
-				variable->getMetadata().setObject(ld=new LocationData(new StandardLocation(al),returnType));
+				variable.getMetadata().setObject(ld=new LocationData(new StandardLocation(al),returnType));
 			} else
-				variable->getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,nullptr,nullptr),returnType));
+				variable.getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
 		return finished=ld;
@@ -144,7 +138,7 @@ public:
 		const Data* D = (value==NULL || value->getToken()==T_VOID)?NULL:value->evaluate(r);
 		if(D && D->getReturnType()->classType==CLASS_REF){
 			const ReferenceData* R = (const ReferenceData*)D;
-			variable->getMetadata().setObject(R->value);
+			variable.getMetadata().setObject(R->value);
 			return finished=R->value;
 		}
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
@@ -158,20 +152,20 @@ public:
 				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
-			((Value*)GV)->setName(Twine(variable->getFullName()));
-			variable->getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
+			((Value*)GV)->setName(Twine(variable.getFullName()));
+			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
 			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 					TheFunction->getEntryBlock().begin());
 			Type* t = returnType->type;
-			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable->pointer.name));
+			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
 			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
 				if(tmp!=NULL) r.builder.CreateStore(tmp,al);
-				variable->getMetadata().setObject(finished=new LocationData(new StandardLocation(al),returnType));
+				variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(al),returnType));
 			} else
-				variable->getMetadata().setObject(finished=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
+				variable.getMetadata().setObject(finished=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
 		return finished;

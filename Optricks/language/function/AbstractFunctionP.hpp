@@ -94,9 +94,7 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,Posit
 	for(unsigned int i = 0; i<ts; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		const AbstractClass* const at = args[i]->getReturnType();
-		if(t->classType==CLASS_LAZY) id.error("Cannot use lazy arguments on regular function");
-
-		else if(at->classType==CLASS_VOID){
+		if(at->classType==CLASS_VOID){
 			if(proto->declarations[i].defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
 				exit(1);

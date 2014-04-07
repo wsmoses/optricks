@@ -38,7 +38,7 @@ public:
 		value->buildFunction(r);
 	};
 	AbstractClass* getSelfClass(PositionID id) override final{
-		AbstractClass* t = value->getSelfClass(id);
+		auto t = value->getSelfClass(id);
 		if(pre==UOP_POST){
 			if(operation=="[]") return ArrayClass::get(t,0);
 			if(operation=="&") return ReferenceClass::get(t);

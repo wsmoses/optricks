@@ -28,7 +28,7 @@ class ClassFunction : public E_FUNCTION{
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			llvm::SmallVector<Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 			std::vector<AbstractDeclaration> ad;
-			AbstractClass* upperClass = surroundingClass->getSelfClass(filePos);
+			auto upperClass = surroundingClass->getSelfClass(filePos);
 			if(!staticF){
 				const AbstractClass* tA;
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT))
@@ -41,12 +41,12 @@ class ClassFunction : public E_FUNCTION{
 				const auto& b = declaration[i];
 				const AbstractClass* ac = b->getClass(filePos);
 				assert(ac);
-				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
+				ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 				args[i+(staticF?0:1)] = ac->type;
 				assert(ac->type);
 			}
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
-				declaration[Idx]->variable->getMetadata().setObject(
+				declaration[Idx]->variable.getMetadata().setObject(
 					(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
 				);
 			}
@@ -104,7 +104,7 @@ class ClassFunction : public E_FUNCTION{
 			}
 			for (;Idx != F->arg_size(); ++AI, ++Idx) {
 				((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
-				declaration[Idx]->variable->getMetadata().setObject(
+				declaration[Idx]->variable.getMetadata().setObject(
 					(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))->toLocation(a)
 				);
 			}

@@ -1,11 +1,15 @@
-/*
-class random{
 
+class primitive random{
+	static int RAND_MAX=4;
 	static def int rand_interval(int min, int max){
 		assert(max>min);
-		const range = max-min;
-		const buckets = RAND_MAX/range;
-		const limit = buckets*range;
+//		const range = max-min;
+//		const buckets = RAND_MAX/range;
+//		const limit = buckets*range;
+		auto range = max-min;
+		auto buckets = 1000/range;
+		auto limit = buckets*range;
+		int r;
 		do{
 			r = rand();
 		}while(r>=limit);
@@ -13,23 +17,4 @@ class random{
 	}
 
 }
-*/
-def int printr(int i){
-	println("before: printr");
-	return i;
-}
 
-def void lazy(int% i){
-	println("before: lazy");
-	printf("%d\n", i());
-	println("after: lazy");
-}
-def void notLazy(int i){
-	println("before: lazy");
-	printf("%d\n", i);
-	println("after: lazy");
-}
-println("With lazy-----");
-lazy(printr(5));
-println("Without lazy-----");
-notLazy(printr(5));
