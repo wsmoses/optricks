@@ -75,8 +75,8 @@ private:
 public:
 	const bool interactive;
 private:
-	std::vector<char> cache;
-	std::vector<std::vector<char> > readChars;
+	std::vector<int> cache;
+	std::vector<std::vector<int> > readChars;
 	unsigned int curCount;
     void * operator new   (size_t)=delete;
     void * operator new[] (size_t)=delete;
@@ -120,7 +120,7 @@ public:
 		}
 		f = fileV;
 		fileName = file;
-		readChars.push_back(std::vector<char>());
+		readChars.push_back(std::vector<int>());
 	}
 
 	char last(){
@@ -168,9 +168,9 @@ public:
 	void undoMarker(unsigned int a){
 		while(curCount>a) write();
 	}
-	char read(){
+	int read(){
 		if(done) error("Already done reading file");
-		char c;
+		int c;
 		if(cache.size()==0){
 			if(readChar(f,&c)){
 				error("Error reading from file",true);
@@ -185,14 +185,14 @@ public:
 		}
 		if(c=='\r') return read();
 		if(c=='\n'){
-			readChars.push_back(std::vector<char>());
+			readChars.push_back(std::vector<int>());
 		} else readChars.back().push_back(c);
 		curCount++;
 		return c;
 	}
-	char peek(){
+	int peek(){
 		if(cache.size()>0) return cache.back();
-		char c;
+		int c;
 		if(readChar(f,&c)){
 			error("Error peeking from file",true);
 		}
@@ -258,7 +258,11 @@ public:
 		int escape = 0;
 		bool doneV = false;
 		do{
-			char front = read();
+			auto front = read();
+			if(front==EOF){
+				pos().error("Unclosed string literal");
+				exit(1);
+			}
 			if(escape == 0)
 				switch(front){
 				case '"':

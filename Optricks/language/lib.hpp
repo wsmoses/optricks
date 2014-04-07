@@ -137,20 +137,20 @@ bool peekByte(FILE* f, byte* a){
 	return ungetc(*a,f)==EOF;
 }
 
-bool writeChar(FILE* f, char a){
+bool writeChar(FILE* f, int a){
 	return fputc(a,f)==EOF;
 }
 
-bool readChar(FILE* f, char *a){
+bool readChar(FILE* f, int *a){
 	*a = fgetc(f);
 	return false;
 }
 
-bool returnChar(FILE* f, char a){
+bool returnChar(FILE* f, int a){
 	return ungetc(a,f)==EOF;
 }
 
-bool peekChar(FILE* f, char* a){
+bool peekChar(FILE* f, int* a){
 	*a = fgetc(f);
 	return ungetc(*a,f)==EOF;
 }
