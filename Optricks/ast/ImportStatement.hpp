@@ -22,8 +22,7 @@ class ImportStatement:public ErrorStatement{
 			exit(1);
 		}
 		const AbstractClass* getReturnType() const override final{
-			filePos.compilerError("Cannot checkTypes of IMPORT");
-			exit(1);
+			return &voidClass;
 		}
 		//bool hasCastValue(AbstractClass* a){
 		//	return false;

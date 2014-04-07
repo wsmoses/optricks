@@ -48,6 +48,7 @@ public:
 	}
 	//TODO allow cast to string, char, c_string (c_char ?)
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		if(value.size()==1 && right->classType==CLASS_CHAR)
 			return new ConstantData(CharClass::getValue(value[0]), &charClass);
 		if(right==&stringLiteralClass) return this;

@@ -96,6 +96,7 @@ public:
 	}
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		switch(toCast->classType){
+		case CLASS_VOID: return true;
 		case CLASS_COMPLEX:{
 			ComplexClass* ic = (ComplexClass*)toCast;
 			return hasCast(ic->innerClass);
@@ -122,6 +123,7 @@ public:
 		exit(1);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		return hasCast(toCast);
 	}
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
@@ -131,8 +133,11 @@ public:
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		//todo allow complex/floats as well
-		assert(a->classType==CLASS_FLOAT || a==this );
-		assert(b->classType==CLASS_FLOAT || b==this);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		if(a==this){
 			if(b==this) return 0;
 			else return -1;

@@ -33,8 +33,7 @@ public:
 	//	return false;
 	//}
 	const AbstractClass* getReturnType() const override final{
-		error("Cannot getREturnType of Do-while");
-		exit(1);
+		return &voidClass;
 	}
 	const Token getToken() const override {
 		return T_DOWHILE;

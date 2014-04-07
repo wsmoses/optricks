@@ -20,12 +20,16 @@ public:
 		exit(1);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
+		if(a->classType==CLASS_VOID) return true;
 		return a->classType==CLASS_REF && value->type->noopCast(
 				((const ReferenceClass*)a)->innerType);
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(hasCastValue(a));
 		assert(hasCastValue(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		const ReferenceClass* ra = (const ReferenceClass*)a;
 		const ReferenceClass* rb = (const ReferenceClass*)b;
 		return value->type->compare(ra, rb);
@@ -55,6 +59,7 @@ public:
 		return this;
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		if(value->type->noopCast(right)) return this;
 		id.compilerError("Cannot cast reference");
 		exit(1);

@@ -53,6 +53,7 @@ public:
 			if(tc->len==0) return true;
 			return tc->len==len;
 		}
+		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -75,9 +76,8 @@ public:
 			exit(1);
 		}
 		if(len==0 && inner!=nullptr){
-			assert(instance->type==R_LOC);
-			auto f = ((LocationData*)instance)->getMyLocation()->getPointer(r,id);
-			return new ConstantData(r.builder.CreateConstGEP2_32(f, 0, 1), &intClass);
+			Value* V = instance->getValue(r,id);
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)), &intClass);
 		} else return new IntLiteral(len);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
@@ -89,6 +89,7 @@ public:
 			if(tc->len==0) return true;
 			return tc->len==len;
 		}
+		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -96,10 +97,11 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_ARRAY);
-		assert(b->classType==CLASS_ARRAY);
 		assert(hasCast(a));
 		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		ArrayClass* fa = (ArrayClass*)a;
 		ArrayClass* fb = (ArrayClass*)b;
 		auto NEX = inner->compare(fa->inner, fb->inner);

@@ -33,15 +33,15 @@ class E_FUNC_CALL : public ErrorStatement{
 		};
 		void registerClasses() const override final{
 			toCall->registerClasses();
-			for(auto &a : vals) ((const Statement*)a)->registerClasses();
+			for(auto &a : vals) if(a) ((const Statement*)a)->registerClasses();
 		}
 		void registerFunctionPrototype(RData& r) const override final{
 			toCall->registerFunctionPrototype(r);
-			for(auto &a : vals) ((const Statement*)a)->registerFunctionPrototype(r);
+			for(auto &a : vals) if(a) ((const Statement*)a)->registerFunctionPrototype(r);
 		}
 		void buildFunction(RData& r) const override final{
 			toCall->buildFunction(r);
-			for(auto &a : vals) ((const Statement*)a)->buildFunction(r);
+			for(auto &a : vals) if(a) ((const Statement*)a)->buildFunction(r);
 		}
 		const AbstractClass* getReturnType() const override{
 			return toCall->getFunctionReturnType(filePos,vals);

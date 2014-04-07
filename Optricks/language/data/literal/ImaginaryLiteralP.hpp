@@ -26,6 +26,7 @@ ConstantVector* ImaginaryLiteral::getValue(RData& r, PositionID id) const{
 }
 
 const Data* ImaginaryLiteral::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+	if(right->classType==CLASS_VOID) return &VOID_DATA;
 	if(right->classType!=CLASS_COMPLEX){
 		id.error("Cannot promote complex literal to non-complex type "+right->getName());
 		exit(1);
@@ -86,14 +87,18 @@ Value* ImaginaryLiteral::castToV(RData& r, const AbstractClass* const right, con
 }
 
 bool ImaginaryLiteral::hasCastValue(const AbstractClass* const a) const{
+	if(a->classType==CLASS_VOID) return true;
 	if(a->classType!=CLASS_COMPLEX) return false;
 	const ComplexClass* cc = (const ComplexClass*)a;
 	return imag->hasCastValue(cc->innerClass);
 }
 
 int ImaginaryLiteral::compareValue(const AbstractClass* const a, const AbstractClass* const b) const{
-	assert(a->classType==CLASS_COMPLEX);
-	assert(b->classType==CLASS_COMPLEX);
+	assert(hasCastValue(a));
+	assert(hasCastValue(b));
+	if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+	else if(a->classType==CLASS_VOID) return 1;
+	else if(b->classType==CLASS_VOID) return -1;
 	const ComplexClass* ca = (const ComplexClass*)a;
 	const ComplexClass* cb = (const ComplexClass*)a;
 	return imag->compareValue(ca->innerClass, cb->innerClass);

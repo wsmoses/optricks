@@ -32,6 +32,25 @@ ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVM
 	//assert(cp->classType!=CLASS_FUNC);
 	//assert(cp->classType!=CLASS_GEN);
 	assert(cp->layout!=LITERAL_LAYOUT);
+#ifndef NDEBUG
+	if(cp==&charClass){
+		if(val->getType()!=CHARTYPE){
+			cerr << "Mismatched types: char ";
+			val->getType()->dump();
+			cerr << endl << flush;
+		}
+		assert(cp==&charClass &&   val->getType()==CHARTYPE);
+	} else{
+		if(val->getType()!=cp->type){
+			cerr << "Mismatched types: "<< cp->getName()<< "|";
+			cp->type->dump();
+			cerr << " " << flush;
+			val->getType()->dump();
+			cerr << endl << flush;
+		}
+		assert(val->getType()==cp->type);
+	}
+#endif
 	assert((cp==&charClass &&   val->getType()==CHARTYPE) || val->getType()==cp->type);
 }
 
@@ -47,6 +66,7 @@ Value* ConstantData::castToV(RData& r, const AbstractClass* const right, const P
 
 
 const Data* ConstantData::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+	if(right->classType==CLASS_VOID) return &VOID_DATA;
 	if(type == right) return this;
 	/*if(right->noopCast())
 		if((type->layout==POINTER_LAYOUT && right->layout==POINTER_LAYOUT) || (type->layout==PRIMITIVEPOINTER_LAYOUT && right->layout==PRIMITIVEPOINTER_LAYOUT)){

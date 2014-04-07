@@ -110,6 +110,9 @@ int IntClass::compare(const AbstractClass* const a, const AbstractClass* const b
 	assert(hasCast(a));
 	assert(hasCast(b));
 
+	if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+	else if(a->classType==CLASS_VOID) return 1;
+	else if(b->classType==CLASS_VOID) return -1;
 
 	if(a==this) return (b==this)?0:-1;
 	else if(b==this) return 1;

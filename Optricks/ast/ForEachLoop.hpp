@@ -43,8 +43,7 @@ class ForEachLoop : public ErrorStatement{
 			exit(1);
 		}
 		const AbstractClass* getReturnType() const override{
-			error("Cannot getReturnType of FOR-EACH");
-			exit(1);
+			return &voidClass;
 		}
 		E_GEN* setUp(RData& ra) const{
 			filePos.compilerError("For-each loops not implemented");

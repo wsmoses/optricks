@@ -126,7 +126,7 @@ public:
 		// - a ** b == - (a**b) NOT (-a)**b
 		// AND
 		// a**b**c == a**(b**c) NOT (a**b)**c
-		if(operation=="[]") return new E_BINOP(id, L, R, operation);
+		if(operation=="[]" || operation=="[]=") return new E_BINOP(id, L, R, operation);
 		if(operation=="**"){
 			if(R->getToken()==T_BINOP){
 				E_BINOP* RB = (E_BINOP*)R;
@@ -216,7 +216,7 @@ public:
 		return (new E_BINOP(id, L, R, operation))->fixOrderOfOperations();
 	}
 	Statement* fixOrderOfOperations(){
-		if(operation=="[]") return this;
+		if(operation=="[]"|| operation=="[]=") return this;
 		Statement* tl = left;
 		Statement* tr = right;
 		E_BINOP* self = this;

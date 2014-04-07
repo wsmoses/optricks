@@ -60,23 +60,21 @@ public:
 		return ((IntegerType*)type)->getBitWidth();
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final{
-		assert(a->classType==CLASS_BOOL);
-		assert(b->classType==CLASS_BOOL);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		return 0;
-		/*
-		if(a->classType==CLASS_BOOL)
-			return (b->classType==CLASS_BOOL)?(0):(-1);
-		else
-			return (b->classType==CLASS_BOOL)?(1):(0);*/
 	}
 	inline static Constant* getValue(char value){
 		return ConstantInt::get(CHARTYPE, value);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_CHAR;
+		return toCast->classType==CLASS_CHAR || toCast->classType==CLASS_VOID;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_CHAR;
+		return toCast->classType==CLASS_CHAR || toCast->classType==CLASS_VOID;
 	}
 	/**
 	 * Will error with id if this.hasCast(toCast)==false

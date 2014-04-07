@@ -27,7 +27,8 @@ public:
 		}
 		return ArrayClass::get(A, inner.size());
 	}
-	inline const ConstantData* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	inline Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		return new ConstantData(castToV(r, right, id), right);
 	}
 	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
@@ -84,16 +85,11 @@ public:
 		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(2)), inner.size()),
 				r.builder.CreateConstGEP2_32(p, 0,2));
 		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
-		G->getType()->dump();
-				cerr << endl << flush;
-		tmp->getElementType(3)->dump();
-				cerr << endl << flush;
-		v->getType()->dump();
-				cerr << endl << flush;
 		r.builder.CreateStore(v,G);
-		return v;
+		return p;
 	}
 	bool hasCastValue(const AbstractClass* const a) const override {
+		if(a->classType==CLASS_VOID) return true;
 		if(a->classType!=CLASS_ARRAY) return false;
 		ArrayClass* tc = (ArrayClass*)a;
 		if(tc->len!=0 && tc->len!=inner.size()) return false;
@@ -105,6 +101,9 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override {
 		assert(hasCastValue(a));
 		assert(hasCastValue(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		ArrayClass* fa = (ArrayClass*)a;
 		ArrayClass* fb = (ArrayClass*)b;
 		bool aBetter = false;

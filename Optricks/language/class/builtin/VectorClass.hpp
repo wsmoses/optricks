@@ -36,12 +36,14 @@ protected:
 		AbstractClass(nullptr,str(a,le),nullptr,PRIMITIVE_LAYOUT,CLASS_ARRAY,true,getVectorType(a,le)),inner(a),len(le){
 		assert(a->classType!=CLASS_LAZY);
 		assert(a->classType!=CLASS_REF);
+		assert(a->classType!=CLASS_VOID);
 		assert(le>0);
 		///register methods such as print / tostring / tofile / etc
 	}
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		switch(toCast->classType){
+		case CLASS_VOID: return true;
 		case CLASS_VECTOR: {
 			//if(!inner) return true;
 			const VectorClass* tc = (const VectorClass*)toCast;
@@ -72,6 +74,7 @@ public:
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		switch(toCast->classType){
+		case CLASS_VOID: return true;
 		case CLASS_VECTOR: {
 			const VectorClass* tc = (const VectorClass*)toCast;
 			if(!inner->hasCast(tc->inner)) return false;
@@ -87,10 +90,11 @@ public:
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_VECTOR);
-		assert(b->classType==CLASS_VECTOR);
 		assert(hasCast(a));
 		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		const VectorClass* fa = (const VectorClass*)a;
 		const VectorClass* fb = (const VectorClass*)b;
 		return inner->compare(fa->inner, fb->inner);

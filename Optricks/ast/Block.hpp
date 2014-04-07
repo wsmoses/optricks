@@ -38,8 +38,7 @@ class Block : public ErrorStatement{
 			exit(1);
 		}
 		const AbstractClass* getReturnType() const{
-			error("Cannot getReturnType of Block");
-			return nullptr;
+			return &voidClass;
 		}
 		Token const getToken() const override{
 			return T_BLOCK;

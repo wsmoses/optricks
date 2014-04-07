@@ -47,7 +47,10 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		else return new ConstantData(V,fp.returnType);
 	} else if(type->classType==CLASS_LAZY){
 		Value* F = getValue(r,id);
-		return new ConstantData(r.builder.CreateCall(F), ((LazyClass*)type)->innerType);
+		Value* V = r.builder.CreateCall(F);
+		auto RT = ((LazyClass*)type)->innerType;
+		if(RT->classType==CLASS_VOID) return &VOID_DATA;
+		else return new ConstantData(V,RT);
 	}
 	else if(type->classType==CLASS_CLASS){
 		Value* v = getValue(r,id);

@@ -32,6 +32,7 @@ public:
 	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		switch(right->classType){
+		case CLASS_VOID: return &VOID_DATA;
 		case CLASS_INTLITERAL: return this;
 		case CLASS_FLOATLITERAL:{
 			return new FloatLiteral(value);

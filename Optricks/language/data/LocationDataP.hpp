@@ -20,7 +20,8 @@ inline Value* LocationData::castToV(RData& r, const AbstractClass* const right, 
 	}
 
 
-	inline const ConstantData* LocationData::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+	inline const Data* LocationData::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
+		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		/*if(right->noopCast())
 		if((type->layout==POINTER_LAYOUT && right->layout==POINTER_LAYOUT) || (type->layout==PRIMITIVEPOINTER_LAYOUT && right->layout==PRIMITIVEPOINTER_LAYOUT)){
 			if(type->hasSuper(right)) return new ConstantData(value, right);

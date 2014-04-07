@@ -38,7 +38,7 @@ protected:
 	}
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
-		return toCast == this;
+		return toCast == this || toCast->classType==CLASS_VOID;
 	}
 
 	bool hasLocalData(String s) const override {
@@ -72,16 +72,20 @@ public:
 		}
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast == this;
+		return toCast == this || toCast->classType==CLASS_VOID;
 	}
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+		if(toCast->classType==CLASS_VOID) return &VOID_DATA;
 		if(toCast!=this) id.error("Cannot cast between generator objects");
 		return valueToCast;
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a==this);
-		assert(b==this);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		return 0;
 	}
 };

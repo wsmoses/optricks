@@ -26,6 +26,7 @@ protected:
 	}
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_LAZY) return false;
 		else return innerType->hasCast(((LazyClass*)toCast)->innerType);
 	}
@@ -48,19 +49,25 @@ public:
 		exit(1);
 	}*/
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_LAZY) return false;
 		LazyClass* tc = (LazyClass*)toCast;
 		return innerType->hasCast(tc->innerType);
 	}
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+		if(toCast==this) return valueToCast;
 		///todo
 		id.compilerError("todo cast of lazy");
 		exit(1);
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_LAZY);
-		assert(b->classType==CLASS_LAZY);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
+
 		LazyClass* la = (LazyClass*)a;
 		LazyClass* lb = (LazyClass*)b;
 		return innerType->compare(la,lb);

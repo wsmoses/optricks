@@ -200,7 +200,7 @@ public:
 		}
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_FLOAT && type==toCast->type;
+		return (toCast->classType==CLASS_FLOAT && type==toCast->type)|| toCast->classType==CLASS_VOID;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override;
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final;

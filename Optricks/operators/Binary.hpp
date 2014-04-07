@@ -421,6 +421,11 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			assert(T);
 			return T;
 		}
+		if(operation=="[]="){
+			auto T = ((const ArrayClass*)cc)->inner;
+			assert(T);
+			return T;
+		}
 		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 		exit(1);
 	}
@@ -1205,6 +1210,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		if(operation=="[]"){
 			Value* V;
+			ArrayClass* AC = (ArrayClass*) cc;
 			if(dd->classType==CLASS_INT) V =
 					r.builder.CreateSExtOrTrunc(ev->evalV(r, filePos),intClass.type);
 			else{
@@ -1217,7 +1223,17 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				if(auto C = dyn_cast<ConstantInt>(V)){
 					return D->inner[C->getValue().getLimitedValue()];
 				}
+			} else {
+				Value* A = value->getValue(r,filePos);
+				Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
+				I = r.builder.CreateGEP(I, V);
+				return new LocationData(new StandardLocation(I), AC->inner);
 			}
+		} else if(operation=="[]="){
+			ArrayClass* AC = (ArrayClass*) cc;
+			Value* V = ev->evaluate(r)->castToV(r, AC->inner, filePos);
+			filePos.compilerError("Array resizing to be determined");
+			exit(1);
 		}
 		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 		exit(1);

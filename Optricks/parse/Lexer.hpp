@@ -804,10 +804,18 @@ class Lexer{
 				Statement* nex = getIndex(f, exp, stack);
 				f->trim(data.endWith);
 				auto mark = f->getMarker();
-				if(f->read()=='=' && f->peek()!='='){
-					//TODO ternary operator #[#] = #
-					pos().compilerError("TODO ternary operator #[#] = #");
-					exit(1);
+				if(f->peek()=='=' && (f->read()||true) && f->peek()!='='){
+					Statement* op2 = getNextStatement(data);
+					if(nex->getToken()==T_UOP){
+						//append operator
+						E_UOP* u = (E_UOP*)nex;
+						nex = E_BINOP::createBinop(pos(), u->value, op2, "[]=");
+						delete u;
+					} else {
+						//TODO ternary operator #[#] = #
+						pos().warning("TODO ternary operator #[#] = #");
+						nex = new E_SET(pos(), nex,op2);
+					}
 				} else f->undoMarker(mark);
 				bool semi  = false;
 				if(!f->done && f->peek()==';'){ semi = true; }
@@ -825,12 +833,14 @@ class Lexer{
 					auto IN = ((E_PARENS*)e)->inner;
 					delete e;
 					ret = new E_FUNC_CALL(pos(), exp, std::vector<const Evaluatable*>(1,
-							IN));
+							(IN->getToken()==T_VOID)?nullptr:IN));
 				}
 				else{
 					auto V = ((E_TUPLE*)e)->values;
 					std::vector<const Evaluatable*> E;
-					for(auto& a: V) E.push_back(a);
+					for(auto& a: V)
+						if(a->getToken()==T_VOID) E.push_back(nullptr);
+						else E.push_back(a);
 					delete e;
 					ret = new E_FUNC_CALL(pos(), exp, E);
 				}

@@ -51,8 +51,7 @@ class IfStatement : public ErrorStatement{
 			if(finalElse) finalElse->buildFunction(r);
 		}
 		const AbstractClass* getReturnType() const override{
-			error("Cannot getREturnType of IF");
-			exit(1);
+			return &voidClass;
 		}
 		const Data* evaluate(RData& r) const override{
 			Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);

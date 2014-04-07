@@ -33,7 +33,8 @@ public:
 			return TupleClass::get(vec);
 		}
 	}
-	inline const ConstantData* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
@@ -85,6 +86,7 @@ public:
 		return v;
 	}
 	bool hasCastValue(const AbstractClass* const a) const override {
+		if(a->classType==CLASS_VOID) return true;
 		if(a->classType!=CLASS_TUPLE && a->classType!=CLASS_NAMED_TUPLE) return false;
 		TupleClass* tc = (TupleClass*)a;
 		if(tc->innerTypes.size()!=inner.size()) return false;
@@ -94,8 +96,11 @@ public:
 		return true;
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override {
-		assert(a->classType==CLASS_TUPLE || a->classType==CLASS_NAMED_TUPLE);
-		assert(b->classType==CLASS_TUPLE || b->classType==CLASS_NAMED_TUPLE);
+		assert(hasCastValue(a));
+		assert(hasCastValue(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		TupleClass* fa = (TupleClass*)a;
 		TupleClass* fb = (TupleClass*)b;
 		assert(fa->innerTypes.size() == inner.size());

@@ -107,7 +107,18 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 
 	//TODO introduce new error literal
 	if(dat->type==R_VOID) retType = &voidClass;
-	assert((dat->type==R_VOID && retType->classType==CLASS_VOID) || retType == dat->getReturnType());
+
+#ifndef NDEBUG
+	if(dat->type==R_VOID){
+		if(retType->classType!=CLASS_VOID)
+			cerr << "Mismatched types: void " << retType->getName() << endl << flush;
+		assert(retType->classType==CLASS_VOID);
+	} else{
+		if(retType != dat->getReturnType())
+			cerr << "Mismatched types: "<< dat->getReturnType()->getName()<< " " << retType->getName() << endl << flush;
+		assert(retType == dat->getReturnType());
+	}
+#endif
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		std::cout << retType->getName() << "(" << FP() << ")" << endl << flush;
@@ -402,7 +413,7 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 		{
-				//"./stdlib/stdlib.opt"
+				"./stdlib/stdlib.opt"
 				};
 	InitializeNativeTarget();
 	InitializeAllTargets();
@@ -429,7 +440,7 @@ int main(int argc, char** argv){
 		Stream st(file, true);
 		lexer.f = &st;
 		std::cout << START << flush;
-		st.force("int[] a\n");
+		//st.force("int[] a\n");
 		/*
 		st.force("4/2*3/4\n");
 		st.force("extern double cos(double a); cos(3.14159)\n");

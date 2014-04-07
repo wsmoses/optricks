@@ -34,7 +34,7 @@ public:
 	inline const LocationData* toLocation(RData& r) const override final{
 		return this;
 	}
-	inline const ConstantData* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
+	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 };
 

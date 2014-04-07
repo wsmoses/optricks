@@ -21,6 +21,7 @@ bool FloatClass::hasCast(const AbstractClass* const toCast) const {
 		case CLASS_RATIONAL:
 			assert(0);
 			return false;
+		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -28,6 +29,10 @@ bool FloatClass::hasCast(const AbstractClass* const toCast) const {
 int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const b) const{
 	assert(hasCast(a));
 	assert(hasCast(b));
+	if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+	else if(a->classType==CLASS_VOID) return 1;
+	else if(b->classType==CLASS_VOID) return -1;
+
 	if(a->classType==b->classType){
 		if(a->classType==CLASS_COMPLEX){
 			ComplexClass* ca = (ComplexClass*)a;

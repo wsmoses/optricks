@@ -74,13 +74,7 @@ public:
 		id.error("Cannot find local variable '"+s+"' in class '"+getName()+"'");
 	}
 	const Token getToken() const override{ return T_ABSTRACTCLASS; };
-	const AbstractClass* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		if(right->classType==CLASS_CLASS) return this;
-		else{
-			illegalCast(id, right);
-			return this;
-		}
-	}
+	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	AbstractClass* getSelfClass(PositionID id) override final{
 		return this;
 	}
@@ -89,15 +83,13 @@ public:
 		return ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
-		return a->classType==CLASS_CLASS;
+		return a->classType==CLASS_CLASS || a->classType==CLASS_VOID;
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(a);
 		assert(b);
 		assert(hasCast(a));
 		assert(hasCast(b));
-		assert(a->classType==CLASS_CLASS);
-		assert(b->classType==CLASS_CLASS);
 		return 0;
 	}
 	Constant* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final{

@@ -41,6 +41,7 @@ public:
 		case CLASS_FUNC: {
 			return noopCast(toCast);
 		}
+		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -50,6 +51,7 @@ public:
 		return std::pair<AbstractClass*,unsigned int>(this,0);
 	}*/
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_FUNC) return false;
 		const FunctionClass* const fc = (FunctionClass*)toCast;
 		if(!returnType->noopCast(fc->returnType)) return false;
@@ -65,8 +67,11 @@ public:
 	 */
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_FUNC || a->classType==CLASS_CPOINTER);
-		assert(b->classType==CLASS_FUNC || b->classType==CLASS_CPOINTER);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		if(a->classType==CLASS_CPOINTER)
 			return (b->classType==CLASS_CPOINTER)?(0):(1);
 		else if(b->classType==CLASS_CPOINTER)

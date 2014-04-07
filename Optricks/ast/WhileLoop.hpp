@@ -35,8 +35,7 @@ class WhileLoop : public ErrorStatement{
 		//	return false;
 		//}
 		const AbstractClass* getReturnType() const override final{
-			error("Cannot getREturnType of While");
-			exit(1);
+			return &voidClass;
 		}
 		const Token getToken() const override {
 			return T_WHILE;

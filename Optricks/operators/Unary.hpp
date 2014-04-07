@@ -384,7 +384,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 		if(operation=="++") return cc;
 		else if(operation=="--") return cc;
 		else{
-			filePos.error("Could not find unary ost-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}
@@ -410,7 +410,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	case CLASS_SET:{
 		if(false) return cc;
 		else{
-			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}
@@ -439,7 +439,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_INT:{
 		if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
 			Value* toR = L->getValue(r, filePos);
 			Value* toS = r.builder.CreateAdd(toR, ic->getOne(filePos));
@@ -448,7 +448,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
 			Value* toR = L->getValue(r, filePos);
 			Value* toS = r.builder.CreateSub(toR, ic->getOne(filePos));
@@ -456,7 +456,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			return new ConstantData(toS, cc);
 		}
 		else{
-			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}
@@ -476,7 +476,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			//todo setstruct for location info
 		}
 		else{
-			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 		break;
@@ -484,7 +484,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_FLOAT:{
 		if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
 			Value* toR = L->getValue(r, filePos);
 			Value* toS = r.builder.CreateFAdd(toR, ic->getOne(filePos));
@@ -493,7 +493,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
 			Value* toR = L->getValue(r, filePos);
 			Value* toS = r.builder.CreateFSub(toR, ic->getOne(filePos));
@@ -501,7 +501,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			return new ConstantData(toS, cc);
 		}
 		else{
-			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}
@@ -523,7 +523,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			return new ConstantData(toS, cc);
 		}
 		else{
-			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
 			exit(1);
 		}
 	}

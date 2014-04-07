@@ -33,7 +33,7 @@ public:
 		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_INT && type==toCast->type;
+		return (toCast->classType==CLASS_INT && type==toCast->type)|| toCast->classType==CLASS_VOID;
 	}
 	inline bool hasFit(mpz_t const value) const{
 		if(mpz_sgn(value)<0){
@@ -111,6 +111,7 @@ public:
 		case CLASS_FLOAT:
 		case CLASS_RATIONAL:
 		case CLASS_COMPLEX:
+		case CLASS_VOID:
 			return true;
 		default:
 			return false;

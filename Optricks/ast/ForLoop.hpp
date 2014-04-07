@@ -24,8 +24,7 @@ class ForLoop : public ErrorStatement{
 			name = n;
 		}
 		const AbstractClass* getReturnType() const override final{
-			error("Cannot getReturnType of FOR");
-			exit(1);
+			return &voidClass;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 			toLoop->collectReturns(vals,toBe);

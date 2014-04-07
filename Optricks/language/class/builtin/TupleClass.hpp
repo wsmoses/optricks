@@ -50,6 +50,7 @@ public:
 			}
 			return true;
 		}
+		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -109,6 +110,7 @@ public:
 		return std::pair<AbstractClass*,unsigned int>(innerTypes[i],i);
 	}*/
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_TUPLE && toCast->classType!=CLASS_NAMED_TUPLE) return false;
 		TupleClass* tc = (TupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) return false;
@@ -120,10 +122,12 @@ public:
 	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_TUPLE || a->classType==CLASS_NAMED_TUPLE);
-		assert(b->classType==CLASS_TUPLE || b->classType==CLASS_NAMED_TUPLE);
 		assert(hasCast(a));
 		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
+
 		TupleClass* fa = (TupleClass*)a;
 		TupleClass* fb = (TupleClass*)b;
 		assert(fa->innerTypes.size() == innerTypes.size());

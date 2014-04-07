@@ -23,6 +23,7 @@ ConstantFP* FloatLiteral::getValue(RData& r, PositionID id) const{
 const Data* FloatLiteral::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
 	if(right->classType==CLASS_FLOATLITERAL) return this;
 	switch(right->classType){
+	case CLASS_VOID: return &VOID_DATA;
 		case CLASS_FLOAT:{
 			return new ConstantData(((const FloatClass*)right)->getValue(id,value), right);
 		}

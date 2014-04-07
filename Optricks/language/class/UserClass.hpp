@@ -18,10 +18,12 @@ private:
 	std::map<String,unsigned int> localMap;
 	std::map<String,UnaryFunction> preop;
 	std::map<String,UnaryFunction> postop;
+public:
+	mutable OverloadedFunction constructors;
+private:
 	unsigned int start;
 	bool final;
 public:
-	mutable OverloadedFunction constructors;
 	friend AbstractClass;
 	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false);
 	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
@@ -214,11 +216,12 @@ public:
 		return std::pair<AbstractClass*,unsigned int>(this,0);
 	}*/
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return this==toCast;
+		return this==toCast || toCast->classType==CLASS_VOID;
 		//todo decide if it is no-op class to
 //		return toCast->classType==CLASS_BOOL;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_USER) return false;
 		if(this==toCast) return true;
 		if(layout==PRIMITIVE_LAYOUT || toCast->layout==PRIMITIVE_LAYOUT) return false;
@@ -251,8 +254,11 @@ public:
 		exit(1);
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_USER);
-		assert(b->classType==CLASS_USER);
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 
 		const UserClass* tmp = this;
 		do{

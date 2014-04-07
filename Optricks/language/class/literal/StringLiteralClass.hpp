@@ -19,6 +19,7 @@ public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		if(toCast==this) return true;
 		switch(toCast->classType){
+		case CLASS_VOID: return true;
 		case CLASS_STR:{
 			PositionID(0,0,"#string").compilerError("Todo -- implement string");
 			exit(1);
@@ -32,6 +33,9 @@ public:
 		//todo allow complex/floats as well
 		assert(hasCast(a));
 		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		if(a==this) return (b==this)?0:-1;
 		else if(b==this) return 1;
 		if(a->classType==CLASS_STR) return (b->classType==CLASS_STR)?0:-1;
@@ -54,6 +58,7 @@ public:
 	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override;
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		return hasCast(toCast);
 	}
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{

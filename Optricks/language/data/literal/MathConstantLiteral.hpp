@@ -41,6 +41,7 @@ public:
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(&mathType==right) return this;
 		switch(right->classType){
+		case CLASS_VOID: return &VOID_DATA;
 		case CLASS_FLOAT:{
 			Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);

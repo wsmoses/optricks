@@ -49,6 +49,7 @@ private:
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const override{
 		switch(toCast->classType){
+		case CLASS_VOID: return true;
 		case CLASS_NAMED_TUPLE:{
 			NamedTupleClass* tc = (NamedTupleClass*)toCast;
 			if(tc->innerTypes.size()!=innerTypes.size()) return false;
@@ -98,6 +99,7 @@ public:
 		exit(1);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->classType!=CLASS_NAMED_TUPLE) return false;
 		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) return false;
@@ -122,10 +124,11 @@ public:
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		assert(a->classType==CLASS_NAMED_TUPLE);
-		assert(b->classType==CLASS_NAMED_TUPLE);
 		assert(hasCast(a));
 		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
 		if(a==this)
 			return (b==this)?(0):(-1);
 		else return (b==this)?(1):(0);
