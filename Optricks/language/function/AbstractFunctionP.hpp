@@ -159,7 +159,7 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, const Evaluat
 Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
 		const LazyClass* const lc = (const LazyClass*)t;
-		FunctionType *FT = (llvm::FunctionType*)(lc->type);
+		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
 		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
 		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
@@ -180,7 +180,7 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 Value* SingleFunction::fixLazy(RData& r, PositionID id, Evaluatable* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
 		const LazyClass* lc = (const LazyClass*)t;
-		FunctionType *FT = (llvm::FunctionType*)(lc->type);
+		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
 		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
 		BasicBlock *Parent = r.builder.GetInsertBlock();
 		BasicBlock *BB = r.CreateBlockD("entry", F);
