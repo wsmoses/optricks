@@ -106,13 +106,15 @@ private:
 		inline Value* getFastValue(RData& r, std::map<BasicBlock*,Value*>::iterator found,bool set=false){
 			if(found->second==NULL){
 				if(set) r.builder.SetInsertPoint(found->first);
-				LoadInst* v = new LoadInst(position/*,name*/);
+				auto v = r.builder.CreateLoad(position);
+				/*
+				LoadInst* v = new LoadInst(position);
 				if(Instruction* in = dyn_cast<Instruction>(position)){
 					BasicBlock* b = in->getParent();
 					if(b==found->first) v->insertAfter(in);
 					else v->insertBefore(found->first->getFirstNonPHI());
 				}
-				else v->insertBefore(found->first->getFirstNonPHI());
+				else v->insertBefore(found->first->getFirstNonPHI());*/
 				found->second = v;
 				return v;
 			} else return found->second;

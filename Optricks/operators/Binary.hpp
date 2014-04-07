@@ -12,6 +12,7 @@
 #include "../language/class/builtin/VectorClass.hpp"
 #include "../language/evaluatable/CastEval.hpp"
 #include "../language/data/literal/MathConstantLiteral.hpp"
+#include "../language/data/ArrayData.hpp"
 #include "../language/class/ClassLib.hpp"
 #include "./Unary.hpp"
 inline const AbstractClass* getBinopReturnType(PositionID filePos, const AbstractClass* cc, const AbstractClass* dd, const String operation){
@@ -412,18 +413,16 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		return &boolClass;
 	}
 	case CLASS_ARRAY:{
-		if(!(operation=="==" || operation=="!=") ||
-				!(dd->classType==CLASS_ARRAY || dd->classType==CLASS_NULL || dd->classType==CLASS_CPOINTER)){
-			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
-			exit(1);
+		if(operation=="==" || operation=="!="){
+			return &boolClass;
 		}
-		const ArrayClass* a1 = (const ArrayClass*)cc;
-		const ArrayClass* a2 = (const ArrayClass*)dd;
-		if(a1->len!=a2->len || a1->inner!=a2->inner){
-			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
-			exit(1);
+		if(operation=="[]" && (dd->classType==CLASS_INT || dd->classType==CLASS_INTLITERAL)){
+			auto T = ((const ArrayClass*)cc)->inner;
+			assert(T);
+			return T;
 		}
-		return &boolClass;
+		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+		exit(1);
 	}
 	case CLASS_GEN:
 	case CLASS_SET:
@@ -521,6 +520,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="*") return new ConstantData(r.builder.CreateMul(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="/") return new ConstantData(r.builder.CreateSDiv(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="%") return new ConstantData(r.builder.CreateSRem(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
+			else if(operation=="&")	return new ConstantData(r.builder.CreateAnd(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="|")	return new ConstantData(r.builder.CreateOr(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="^")	return new ConstantData(r.builder.CreateXor(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
 			else if(operation=="<<") return new ConstantData(r.builder.CreateShl(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), max);
@@ -1183,30 +1183,44 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 	}
 	case CLASS_ARRAY:{
-		if(!(operation=="==" || operation=="!=") ||
-				!(dd->classType==cc->classType|| dd->classType==CLASS_NULL || dd->classType==CLASS_CPOINTER)){
-			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
-			exit(1);
+
+		if(operation=="==" || operation=="!="){
+			if(!(dd->classType==cc->classType|| dd->classType==CLASS_NULL || dd->classType==CLASS_CPOINTER)){
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
+			auto T = value->getValue(r, filePos);
+			Value* NU;
+			if(dd->classType==CLASS_NULL){
+				assert(dyn_cast<PointerType>(T->getType()));
+				NU = ConstantPointerNull::get((llvm::PointerType*) T->getType());
+			} else if(dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT){
+				NU = ev->evaluate(r)->castToV(r, cc, filePos);
+			} else{
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				exit(1);
+			}
+			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
+			else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 		}
-		const ArrayClass* a1 = (const ArrayClass*)cc;
-		const ArrayClass* a2 = (const ArrayClass*)dd;
-		if(a1->len!=a2->len || a1->inner!=a2->inner){
-			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
-			exit(1);
+		if(operation=="[]"){
+			Value* V;
+			if(dd->classType==CLASS_INT) V =
+					r.builder.CreateSExtOrTrunc(ev->evalV(r, filePos),intClass.type);
+			else{
+				assert(dd->classType==CLASS_INTLITERAL);
+				V = ev->evaluate(r)->castToV(r, &intClass, filePos);
+			}
+			//todo
+			if(value->type==R_ARRAY){
+				ArrayData* D = (ArrayData*)value;
+				if(auto C = dyn_cast<ConstantInt>(V)){
+					return D->inner[C->getValue().getLimitedValue()];
+				}
+			}
 		}
-		auto T = value->getValue(r, filePos);
-		Value* NU;
-		if(dd->classType==CLASS_NULL){
-			assert(dyn_cast<PointerType>(T->getType()));
-			NU = ConstantPointerNull::get((llvm::PointerType*) T->getType());
-		} else if(dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT){
-			NU = ev->evaluate(r)->castToV(r, cc, filePos);
-		} else{
-			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
-			exit(1);
-		}
-		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
-		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
+		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+		exit(1);
 	}
 	case CLASS_GEN:
 	case CLASS_SET:

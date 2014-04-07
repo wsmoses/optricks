@@ -202,23 +202,6 @@ class Lexer{
 			trim(data);
 			Statement* declarationType = getNextType(data.getEndWith(EOF),true);
 			trim(EOF);
-			if(f->peek()=='&'){
-				f->read();
-				trim(EOF);
-				declarationType = new E_UOP(pos(), "&",declarationType, UOP_POST);
-			} else if(f->peek()=='%'){
-				f->read();
-				trim(EOF);
-				declarationType = new E_UOP(pos(), "%",declarationType, UOP_POST);
-			} else if(f->peek()=='['){
-				auto tmp = f->getMarker();
-				f->read();
-				trim(EOF);
-				if(f->peek()==']'){
-					trim(EOF);
-					declarationType = new E_UOP(pos(), "[]", declarationType, UOP_POST);
-				} else f->undoMarker(tmp);
-			}
 			String varName;
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
 				varName = ((E_VAR*)(declarationType))->pointer.name;
@@ -378,6 +361,30 @@ class Lexer{
 					}
 				}
 			}while(true);
+			while(true){
+				if(f->peek()=='&'){
+					f->read();
+					currentType = new E_UOP(pos(), "&", currentType,UOP_POST);
+					f->trim(data.endWith);
+					break;
+				} else if(f->peek()=='%'){
+					f->read();
+					currentType = new E_UOP(pos(), "%", currentType,UOP_POST);
+					f->trim(data.endWith);
+					break;
+				} else if(f->peek()!='[') break;
+				auto mark = f->getMarker();
+				f->read();
+				f->trim(EOF);
+				if(f->peek()==']'){
+					f->read();
+					currentType = new E_UOP(pos(), "[]", currentType,UOP_POST);
+					f->trim(data.endWith);
+				} else{
+					f->undoMarker(mark);
+					break;
+				}
+			}
 			return currentType;
 		}
 		Statement* getNextStatement(ParseData parse);
@@ -966,11 +973,36 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else{
 			auto start = f->getMarker();
 			trim(data);
-			if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() &&
-					( isStartName(f->peek()) || f->peek()=='&' || f->peek()=='[')){
-				f->undoMarker(undoRead);
-				return getNextDeclaration(data);
-			} else {
+			if(data.allowsDec() && (!f->interactive || f->last()!='\n')){
+				if(isStartName(f->peek()) ){
+					f->undoMarker(undoRead);
+					return getNextDeclaration(data);
+				}
+				if(start==f->getMarker()){
+					auto fp = f->peek();
+					if(fp=='&' || fp=='%'){
+						f->read();
+						trim(data);
+						if((!f->interactive || f->last()!='\n') && isStartName(f->peek())){
+							f->undoMarker(undoRead);
+							return getNextDeclaration(data);
+						}
+					} else if(fp=='['){
+						f->read();
+						f->trim(EOF);
+						//TODO allow int[4]
+						if(f->peek()==']'){
+							f->read();
+							trim(data);
+							if((!f->interactive || f->last()!='\n') && isStartName(f->peek())){
+								f->undoMarker(undoRead);
+								return getNextDeclaration(data);
+							}
+						}
+					}
+				}
+			}
+
 				f->undoMarker(undoRead);
 				E_VAR* nextVar = getNextVariable(data,true);
 				if(!nextVar) pos().error("Cannot use 'auto' as variable");
@@ -980,7 +1012,6 @@ Statement* Lexer::getNextStatement(ParseData data){
 				if(data.operatorCheck && !semi)
 					return operatorCheck(data, nextVar);
 				else return nextVar;
-			}
 		}
 	}
 	else{

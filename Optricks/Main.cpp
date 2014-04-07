@@ -70,7 +70,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			F->eraseFromParent();
 			return;
 		} else if(dat->type==R_STR){
-			StringLiteral* i = (StringLiteral*)dat;\
+			StringLiteral* i = (StringLiteral*)dat;
 			std::cout << "'";
 			for(const auto & a:i->value){
 				if(a==0) std::cout << "\\0";
@@ -79,8 +79,19 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			}
 			std::cout << "'" << endl << flush;
 			return;
-
-		}
+		} /*else if(dat->type==R_ARRAY){
+			ArrayData* i = (ArrayData*)dat;
+			std::cout << "[";
+			bool first = true;
+			for(const auto & a:i->inner){
+				if(first) first = false;
+				else std::cout << ", ";
+				else if(a=='\'') std::cout << "\\'";
+				else std::cout << a;
+			}
+			std::cout << "'" << endl << flush;
+			return;
+		}*/
 //	Value* v = dat.getValue(lexer.rdata);
 	if( type!=VOIDTYPE)
 		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
@@ -93,6 +104,9 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	//cerr << endl << flush;
 	void *FPtr = getRData().exec->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
+
+	//TODO introduce new error literal
+	if(dat->type==R_VOID) retType = &voidClass;
 	assert((dat->type==R_VOID && retType->classType==CLASS_VOID) || retType == dat->getReturnType());
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
@@ -388,9 +402,8 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 		{
-				"./stdlib/stdlib.opt"
+				//"./stdlib/stdlib.opt"
 				};
-
 	InitializeNativeTarget();
 	InitializeAllTargets();
 	String erS;
@@ -416,6 +429,7 @@ int main(int argc, char** argv){
 		Stream st(file, true);
 		lexer.f = &st;
 		std::cout << START << flush;
+		st.force("int[] a\n");
 		/*
 		st.force("4/2*3/4\n");
 		st.force("extern double cos(double a); cos(3.14159)\n");

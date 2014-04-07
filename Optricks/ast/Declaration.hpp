@@ -17,9 +17,12 @@ class Declaration: public ErrorStatement{
 private:
 	Statement* classV;
 	mutable const AbstractClass* returnType;
+	mutable unsigned isReference;
 public:
 	const AbstractClass* getClass(PositionID id) const{
-		if(classV) return classV->getSelfClass(id);
+		if(classV){
+			return classV->getSelfClass(id);
+		}
 		else{
 			id.error("Cannot use auto declaration");
 			exit(1);
@@ -30,7 +33,7 @@ public:
 	bool global;
 	mutable const LocationData* finished;
 	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) : ErrorStatement(id),
-	classV(v),returnType(nullptr),variable(loc),value(e),global(glob),finished(nullptr){
+	classV(v),returnType(nullptr),variable(loc),value(e),global(glob),finished(nullptr),isReference(2){
 	}
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
@@ -49,8 +52,10 @@ public:
 					filePos.error("Cannot have void declaration");
 					exit(1);
 				}
-				if(returnType->classType==CLASS_REF)
+				if(returnType->classType==CLASS_REF){
 					returnType = ((const ReferenceClass*)returnType)->innerType;
+					isReference = 1;
+				} else isReference = 0;
 				return returnType;
 			} else {
 				filePos.error("Cannot have auto declaration without default value");
@@ -59,6 +64,10 @@ public:
 			}
 		}
 		returnType = classV->getSelfClass(filePos);
+		if(returnType->classType==CLASS_REF){
+			returnType = ((ReferenceClass*)returnType)->innerType;
+			isReference = 1;
+		} else isReference = 0;
 		assert(returnType);
 		if(returnType->classType==CLASS_VOID){
 			filePos.error("Cannot have void declaration");
@@ -100,7 +109,7 @@ public:
 		getReturnType();
 		assert(returnType);
 		const AbstractClass* C = (value==NULL || value->getToken()==T_VOID)?NULL:value->getReturnType();
-		if(C && C->getReturnType()->classType==CLASS_REF){
+		if(isReference == 1){
 			filePos.error("Cannot find references early");
 		}
 		if(global){
@@ -132,7 +141,16 @@ public:
 		getReturnType();
 		assert(returnType);
 		const Data* D = (value==NULL || value->getToken()==T_VOID)?NULL:value->evaluate(r);
-		if(D && D->getReturnType()->classType==CLASS_REF){
+		if(isReference==1){
+			if(!D){
+				filePos.error("Cannot declare reference without value");
+				return &VOID_DATA;
+			}
+			auto RT = D->getReturnType();
+			if(D && RT->classType==CLASS_REF){
+				filePos.error("Cannot create reference of non-reference type "+RT->getName());
+				return &VOID_DATA;
+			}
 			const ReferenceData* R = (const ReferenceData*)D;
 			variable.getMetadata().setObject(R->value);
 			return finished=R->value;

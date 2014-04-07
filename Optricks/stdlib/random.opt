@@ -21,3 +21,36 @@ class primitive random{
 def inc(int& a){
 	a++;
 }
+def void lazy(int% i){
+       println("before: lazy");
+       printf("%d\n", i());
+       println("after: lazy");
+}
+def test(){
+	int a = 3;
+	printf("%d\n",a);
+	lazy(a++);
+	printf("%d\n",a);
+}
+def test2(){
+	int a = 3;
+	printf("%d\n",a);
+	lazy(a);
+	printf("%d\n",a);
+}
+def printr(int a){
+	printf("%d\n", a);
+}
+def test3(){
+	int a = 3;
+	printf("%d\n",a);
+	printr(a++);
+	printf("%d\n",a);
+}
+
+def test4(){
+	int a = 3;
+	printr(a);
+	inc(&a);
+	printr(a);
+}

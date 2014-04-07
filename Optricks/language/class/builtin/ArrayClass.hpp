@@ -28,9 +28,9 @@ public:
 			return at;
 		} else {
 			llvm::SmallVector<Type*,4> ar(4);
-			ar[0] = /* Counts (for garbage collection) */ IntegerType::get(getGlobalContext(),32);
-			ar[1] = /* Length of array */ IntegerType::get(getGlobalContext(),64);
-			ar[2] = /* Amount of memory allocated */ IntegerType::get(getGlobalContext(),64);
+			ar[0] = /* Counts (for garbage collection) */ intClass.type;
+			ar[1] = /* Length of array */ intClass.type;
+			ar[2] = /* Amount of memory allocated */ intClass.type;
 			ar[3] = /* Actual data */ PointerType::getUnqual(d->type);
 			return PointerType::getUnqual(StructType::create(ar,StringRef(str(d,l)),false));
 		}

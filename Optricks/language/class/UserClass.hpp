@@ -112,7 +112,18 @@ public:
 	}
 	void addLocalVariable(PositionID id, String s, const AbstractClass* const ac){
 		assert(ac);
-		if(ac->layout==LITERAL_LAYOUT) id.error("Cannot create local variable inside of class literal");
+		if(ac->layout==LITERAL_LAYOUT){
+			id.error("Cannot store literal data as class variable");
+			return;
+		}
+		if(ac->classType==CLASS_REF){
+			id.error("Cannot store reference as class variable");
+			return;
+		}
+		if(ac->classType==CLASS_LAZY){
+			id.error("Cannot store lazy data as class variable");
+			return;
+		}
 		auto tmp=this;
 		do{
 			if(tmp->localMap.find(s)!=tmp->localMap.end()){

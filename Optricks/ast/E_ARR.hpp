@@ -9,6 +9,7 @@
 #define E_ARR_HPP_
 #include "../language/statement/Statement.hpp"
 #include "../language/class/builtin/ArrayClass.hpp"
+#include "../language/data/ArrayData.hpp"
 class E_ARR : public ErrorStatement{
 	public:
 		std::vector<Statement*> values;
@@ -23,16 +24,10 @@ class E_ARR : public ErrorStatement{
 			exit(1);
 		}
 		const Data* evaluate(RData& a) const override {
-			//TODO
-			filePos.compilerError("E_ARR not implemented");
-			/*
-			oarray* n = new oarray();
-			for(Statement* a: values){
-				n->data.push_back(a->evaluate(a));
-			}
-			return n;*/
-			exit(1);
-//			return DATA::getConstant(NULL,sliceClass);
+			std::vector<const Data*> V(values.size());
+			for(unsigned i=0; i<values.size(); i++)
+				V[i] = values[i]->evaluate(a)->toValue(a, filePos);
+			return new ArrayData(V,filePos);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
@@ -54,8 +49,7 @@ class E_ARR : public ErrorStatement{
 		};
 		const AbstractClass* getReturnType() const override{
 			if(values.size()==0){
-				//todo
-				filePos.compilerError("Literal array of unknown length");
+				return ArrayClass::get(nullptr,0);
 			}
 			std::vector<const AbstractClass*> vc;
 			for(auto& a: values) vc.push_back(a->getReturnType());
