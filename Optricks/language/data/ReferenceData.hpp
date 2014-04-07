@@ -55,12 +55,13 @@ public:
 		return this;
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		if(right->classType==CLASS_REF && ((const ReferenceClass*)right)->innerType==value->type) return this;
+		if(value->type->noopCast(right)) return this;
 		id.compilerError("Cannot cast reference");
 		exit(1);
 	}
 	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		id.compilerError("Cannot cast reference V");
+		if(right->classType==CLASS_REF && value->type->noopCast(((ReferenceClass*)right)->innerType)) return value->value->getPointer(r, id);
+		id.compilerError("Cannot cast reference V "+value->type->getName()+" to "+right->getName());
 		exit(1);
 	}
 };

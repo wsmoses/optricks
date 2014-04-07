@@ -60,9 +60,16 @@ public:
 			args[i] = cl;
 		}
 		for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
-			declaration[Idx]->variable.getMetadata().setObject(
-				(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
-			);
+			if(ad[Idx].declarationType->classType==CLASS_REF){
+				auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
+				declaration[Idx]->variable.getMetadata().setObject(
+					(new ConstantData(UndefValue::get(ic->type),ic))
+				);
+			} else{
+				declaration[Idx]->variable.getMetadata().setObject(
+					(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+				);
+			}
 		}
 		const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
 
@@ -88,9 +95,15 @@ public:
 		unsigned Idx = 0;
 		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
 			((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
-			declaration[Idx]->variable.getMetadata().setObject(
-				(new ConstantData(AI,myFunction->getSingleProto()->declarations[Idx].declarationType))->toLocation(a)
-			);
+			if(ad[Idx].declarationType->classType==CLASS_REF){
+				declaration[Idx]->variable.getMetadata().setObject(
+					new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
+				);
+			} else {
+				declaration[Idx]->variable.getMetadata().setObject(
+					(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a)
+				);
+			}
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );

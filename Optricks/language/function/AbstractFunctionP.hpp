@@ -129,13 +129,13 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, Data* val, co
 	if(t->classType==CLASS_LAZY){
 		if(t==val->getReturnType()) return val;
 		else return new CastEval(val,t,id);
-	} else if(t->classType==CLASS_REF){
+	} /*else if(t->classType==CLASS_REF){
 		if(val->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
 		const ReferenceClass* rc = (const ReferenceClass*)t;
 		auto tmp = val->getReturnType();
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return val;
-	} else {
+	} */else {
 		return val->castTo(r, t, id);
 	}
 }
@@ -143,14 +143,14 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, const Evaluat
 	if(t->classType==CLASS_LAZY){
 		if(t==val->getReturnType()) return val;
 		else return new CastEval(val,t,id);
-	} else if(t->classType==CLASS_REF){
+	} /*else if(t->classType==CLASS_REF){
 		const Data* tt = val->evaluate(r);
 		if(tt->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
 		const ReferenceClass* rc = (const ReferenceClass*)t;
 		auto tmp = tt->getReturnType();
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return tt;
-	} else {
+	} */else {
 		return val->evaluate(r)->castTo(r, t, id)->toValue(r, id);
 	}
 }
@@ -167,13 +167,13 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 		r.lmod->dump();
 		cerr << endl << flush;
 		return F;
-	} else if(t->classType==CLASS_REF){
+	} /*else if(t->classType==CLASS_REF){
 		if(val->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
 		const ReferenceClass* rc = (const ReferenceClass*)t;
 		auto tmp = val->getReturnType();
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return ((LocationData*)val)->value->getPointer(r, id);
-	} else {
+	} */else {
 		return val->castToV(r, t, id);
 	}
 }
@@ -188,14 +188,14 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, 
 		r.builder.CreateRet(val->evaluate(r)->castToV(r, lc->innerType, id));
 		if(Parent!=NULL) r.builder.SetInsertPoint(Parent);
 		return F;
-	} else if(t->classType==CLASS_REF){
+	} /*else if(t->classType==CLASS_REF){
 		const Data* tt = val->evaluate(r);
 		if(tt->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
 		const ReferenceClass* rc = (const ReferenceClass*)t;
 		auto tmp = tt->getReturnType();
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return ((LocationData*)tt)->value->getPointer(r, id);
-	} else {
+	} */else {
 		return val->evaluate(r)->castToV(r, t, id);
 	}
 }
