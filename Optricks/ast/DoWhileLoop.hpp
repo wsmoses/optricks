@@ -68,7 +68,7 @@ public:
 			}
 		}
 		r.builder.SetInsertPoint(afterBlock);
-		return VOID_DATA;
+		return &VOID_DATA;
 	}
 	void registerClasses() const override final{
 		condition->registerClasses();

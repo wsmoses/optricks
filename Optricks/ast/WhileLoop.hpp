@@ -63,13 +63,13 @@ class WhileLoop : public ErrorStatement{
 
 					r.builder.CreateBr(incBlock);
 					r.builder.SetInsertPoint(afterBlock);
-					return VOID_DATA;
+					return &VOID_DATA;
 				} else {
 					//is always false
 					br->removeFromParent();
 					r.builder.SetInsertPoint(prev);
 					r.DeleteBlock(incBlock);
-					return VOID_DATA;
+					return &VOID_DATA;
 				}
 			}
 			BasicBlock *loopBlock = r.CreateBlock("loop");
@@ -88,7 +88,7 @@ class WhileLoop : public ErrorStatement{
 			if(!r.hadBreak())
 				r.builder.CreateBr(incBlock);
 			r.builder.SetInsertPoint(afterBlock);
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		void registerClasses() const override final{
 			condition->registerClasses();

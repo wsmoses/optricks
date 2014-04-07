@@ -19,7 +19,7 @@ public:
 	virtual ~ImaginaryLiteral(){};
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use complex literal as function");
-		return VOID_DATA;
+		return &VOID_DATA;
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
 		id.error("Complex literal cannot act as function");

@@ -43,7 +43,7 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		}
 		FunctionProto fp("",v,fc->returnType);
 		Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
-		if(fp.returnType->classType==CLASS_VOID) return VOID_DATA;
+		if(fp.returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else return new ConstantData(V,fp.returnType);
 	} else if(type->classType==CLASS_LAZY){
 		Value* F = getValue(r,id);

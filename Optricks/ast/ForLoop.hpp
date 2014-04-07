@@ -53,7 +53,7 @@ class ForLoop : public ErrorStatement{
 					r.builder.CreateBr(loopBlock);
 				}
 				else{
-					return VOID_DATA;
+					return &VOID_DATA;
 				}
 			} else{
 				loopBlock = r.CreateBlock("loop");
@@ -87,7 +87,7 @@ class ForLoop : public ErrorStatement{
 			}
 
 			r.builder.SetInsertPoint(afterBlock);
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		void registerClasses() const override final{
 			condition->registerClasses();

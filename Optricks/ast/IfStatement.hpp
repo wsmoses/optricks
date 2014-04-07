@@ -62,7 +62,7 @@ class IfStatement : public ErrorStatement{
 				} else if(finalElse){
 					finalElse->evaluate(r);
 				}
-				return VOID_DATA;
+				return &VOID_DATA;
 			}
 			BasicBlock* StartBB = r.builder.GetInsertBlock();
 			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
@@ -110,7 +110,7 @@ class IfStatement : public ErrorStatement{
 				r.DeleteBlock(MergeBB);
 			}
 			//r.guarenteedReturn = ret;
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 };
 

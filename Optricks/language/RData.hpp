@@ -72,36 +72,6 @@ struct RData{
 			if(s!=p) p->moveBefore(s);
 			return p;
 		}
-		/*Value *CreateConstGEP3_32(Value *Ptr, unsigned Idx0, unsigned Idx1,unsigned Idx2,
-				const Twine &Name = "") {
-			SmallVector<Value*,3> I(3);
-			I[0]=ConstantInt::get(Type::getInt32Ty(getGlobalContext()), Idx0);
-			I[1]=ConstantInt::get(Type::getInt32Ty(getGlobalContext()), Idx1);
-			I[2]=ConstantInt::get(Type::getInt32Ty(getGlobalContext()), Idx2);
-			builder.GetInsertBlock()->getParent()->dump();
-			cerr << endl << flush;
-			Ptr->dump();
-			Ptr->getType()->dump();
-			cerr << " <- mytype" << endl << flush;
-			auto T = GetElementPtrInst::getIndexedType(Ptr->getType(),
-					ArrayRef<uint64_t>(std::vector<uint64_t>({Idx0})));
-			if(T) T->dump();
-			else cerr << "null";
-			cerr << endl << flush;
-			T = GetElementPtrInst::getIndexedType(Ptr->getType(),
-					ArrayRef<uint64_t>(std::vector<uint64_t>({Idx0,Idx1})));
-			if(T) T->dump();
-			else cerr << "null";
-			cerr << endl << flush;
-			T = GetElementPtrInst::getIndexedType(Ptr->getType(),
-					ArrayRef<uint64_t>(std::vector<uint64_t>({Idx0,Idx1,Idx2})));
-			if(T) T->dump();
-			else cerr << "null";
-			cerr << endl << flush;
-			cerr << " " << Idx0 << "," << Idx1<< "," << Idx2<< " of " << endl << flush;
-
-			return builder.CreateGEP(Ptr,I,Name);
-		}*/
 		inline BasicBlock* CreateBlockD(String name,Function* F){
 			BasicBlock* b = BasicBlock::Create(lmod->getContext(),Twine(name), F);
 			return b;
@@ -139,7 +109,6 @@ struct RData{
 			if(b->getInstList().size()==0) return false;
 			return b->getInstList().back().isTerminator();
 		}
-		//bool guarenteedReturn;
 		void recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator toFix);
 		void addJump(Jumpable* j){
 			jumps.push_back(j);
@@ -156,24 +125,7 @@ struct RData{
 			pred.insert(std::pair<Function*,std::map<BasicBlock*,BasicBlock*> >(f,std::map<BasicBlock*,BasicBlock*>()));
 			return f;
 		}
-		void FinalizeFunction(Function* f,bool debug=false){
-			BasicBlock* Parent = builder.GetInsertBlock();
-			if(Parent) builder.SetInsertPoint(Parent);
-			if(debug){
-				f->dump();
-				cerr << endl << flush;
-			}
-
-
-
-			fpm.run(*f);
-			flocs.erase(f);
-			pred.erase(f);
-			if(debug){
-				f->dump();
-				cerr << endl << flush;
-			}
-		}
+		void FinalizeFunction(Function* f,bool debug=false);
 		void DeleteBlock(BasicBlock* b){
 
 			b->removeFromParent();

@@ -161,7 +161,7 @@ class ForEachLoop : public ErrorStatement{
 			}
 			ra.builder.SetInsertPoint(END);
 
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 			toLoop->collectReturns(vals, toBe);

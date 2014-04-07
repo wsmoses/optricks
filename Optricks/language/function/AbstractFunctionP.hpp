@@ -17,7 +17,7 @@
 		assert(myFunc);
 		assert(myFunc->getReturnType());
 		Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
-		if(proto->returnType->classType==CLASS_VOID) return VOID_DATA;
+		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else{
 			return new ConstantData(cal,proto->returnType);
 		}

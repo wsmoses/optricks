@@ -31,7 +31,7 @@ class Block : public ErrorStatement{
 				if(r.hadBreak()) error("Already had guaranteed return");
 				a->evaluate(r);
 			}
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Block cannot act as function");

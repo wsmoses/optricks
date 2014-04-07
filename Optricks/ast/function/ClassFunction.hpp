@@ -95,13 +95,7 @@ class ClassFunction : public E_FUNCTION{
 
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT)){
 					assert(dyn_cast<PointerType>(AI->getType()));
-					Type* t = ((PointerType*)(((Value*)AI)->getType()))->getElementType();
-					Location* myLoc;
-					if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
-						myLoc = new StandardLocation(AI);
-					} else {
-						myLoc = new LazyLocation(a,AI,a.builder.GetInsertBlock(),NULL);
-					}
+					Location* myLoc = getLazy(a,(Value*)AI,a.builder.GetInsertBlock(),nullptr);
 					thisPointer.setObject(new LocationData(myLoc, upperClass));
 				} else{
 					thisPointer.setObject(new ConstantData(AI, upperClass));

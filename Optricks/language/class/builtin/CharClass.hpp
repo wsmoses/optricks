@@ -25,7 +25,7 @@ public:
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, value);
-			return VOID_DATA;}), PositionID(0,0,"#char"));
+			return &VOID_DATA;}), PositionID(0,0,"#char"));
 		LANG_M->addFunction(PositionID(0,0,"#char"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
@@ -35,7 +35,7 @@ public:
 			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, value);
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
-			return VOID_DATA;}), PositionID(0,0,"#char"));
+			return &VOID_DATA;}), PositionID(0,0,"#char"));
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		illegalLocal(id,s);

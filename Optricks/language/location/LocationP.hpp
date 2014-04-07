@@ -23,7 +23,8 @@ void StandardLocation:: setValue(Value* v, RData& r){
 	r.builder.CreateStore(v, position);
 }
 
-LazyLocation::LazyLocation(RData& r,Value* p, BasicBlock* b,Value* d,bool u)
+/*
+LazyLocation::LazyLocation(void*,RData& r,Value* p, BasicBlock* b,Value* d,bool u)
 	:position(p){
 	assert(position);
 	assert(position->getType()->isPointerTy());
@@ -45,6 +46,6 @@ void LazyLocation:: setValue(Value* v, RData& r){
 	assert(position);
 	assert(position->getType()->isPointerTy());
 	r.builder.CreateStore(v, position);
-}
+}*/
 
 #endif /* LOCATIONP_HPP_ */

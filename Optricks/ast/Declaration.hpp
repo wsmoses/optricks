@@ -103,12 +103,11 @@ public:
 		if(C && C->getReturnType()->classType==CLASS_REF){
 			filePos.error("Cannot find references early");
 		}
-		LocationData* ld;
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			GlobalVariable* GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
 			((Value*)GV)->setName(Twine(variable.getFullName()));
-			variable.getMetadata().setObject(ld=new LocationData(new StandardLocation(GV),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
 			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
@@ -116,13 +115,10 @@ public:
 					TheFunction->getEntryBlock().begin());
 			Type* t = returnType->type;
 			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
-			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
-				variable.getMetadata().setObject(ld=new LocationData(new StandardLocation(al),returnType));
-			} else
-				variable.getMetadata().setObject(ld=new LocationData(new LazyLocation(r,al,nullptr,nullptr),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
-		return finished=ld;
+		return finished;
 	}
 	const Data* evaluate(RData& r) const final override{
 		if(finished){
@@ -161,11 +157,7 @@ public:
 					TheFunction->getEntryBlock().begin());
 			Type* t = returnType->type;
 			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
-			if(t->isAggregateType() || t->isArrayTy() || t->isVectorTy() || t->isStructTy()){
-				if(tmp!=NULL) r.builder.CreateStore(tmp,al);
-				variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(al),returnType));
-			} else
-				variable.getMetadata().setObject(finished=new LocationData(new LazyLocation(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
 		return finished;

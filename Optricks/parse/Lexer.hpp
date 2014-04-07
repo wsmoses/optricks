@@ -480,7 +480,7 @@ class Lexer{
 					f->trim(EOF);
 				}
 				OModule* nmod = new OModule(data.mod);
-				nmod->addVariable(pos(), iterName,VOID_DATA);
+				nmod->addVariable(pos(), iterName,&VOID_DATA);
 				E_VAR* variable = new E_VAR( Resolvable(nmod,iterName,pos()));
 				Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 				//return new ForEachLoop(new E_VAR(module->addPointer(iterName,nullptr,nullptr,nullptr,nullptr,nullptr)),iterable,blocks,"");
@@ -626,7 +626,7 @@ class Lexer{
 							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
 						}
 					}
-					module->addVariable(pos(),"this",VOID_DATA);
+					module->addVariable(pos(),"this",&VOID_DATA);
 					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
 					PositionID tmp = pos();
 					if((outer!=nullptr)?(methodName.back().first == outer->name):(methodName.back().first==methodName[methodName.size()-2].first)){

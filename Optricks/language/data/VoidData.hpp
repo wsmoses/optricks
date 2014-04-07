@@ -57,7 +57,7 @@ public:
 	}
 };
 
-VoidData* VOID_DATA = new VoidData(0);
+VoidData VOID_DATA(0);
 
 
 

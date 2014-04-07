@@ -19,6 +19,9 @@ shared:
 release: 
 	g++ -std=c++11 Main.cpp -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -fno-rtti -lopengl32 -lglu32 -lglut
 
+release-win: 
+	g++ -std=c++11 Main.cpp -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -fno-rtti -lmpfr -lgmp -limagehlp -lm
+
 release-32: 
 	g++ -std=c++11 Main.cpp -o Optricks-32 `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -m32
 

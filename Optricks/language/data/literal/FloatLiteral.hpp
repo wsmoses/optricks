@@ -55,7 +55,7 @@ public:
 
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use floating-point literal as function");
-		return VOID_DATA;
+		return &VOID_DATA;
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		id.error("Floating-point literal cannot act as function");

@@ -31,7 +31,7 @@
 				for(const char* T = temp; *T !='\0'; ++T){
 					r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
 				}
-				return VOID_DATA;}), PositionID(0,0,"#int"));
+				return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M->addFunction(PositionID(0,0,"#intL"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
@@ -45,7 +45,7 @@
 				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
 			}
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
-			return VOID_DATA;}), PositionID(0,0,"#int"));
+			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M->addFunction(PositionID(0,0,"#int"),"chr")->add(
 			new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{

@@ -252,7 +252,7 @@ int main(int argc, char** argv){
 				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
-		if(!getRData().enableAsserts) return VOID_DATA;
+		if(!getRData().enableAsserts) return &VOID_DATA;
 		const Data* D = args[0]->evaluate(r)->callFunction(r,id,{});
 		assert(D->getReturnType()->classType==CLASS_BOOL);
 		Value* V = D->getValue(r, id);
@@ -260,7 +260,7 @@ int main(int argc, char** argv){
 			if(C->getValue().isStrictlyPositive()){
 				id.error("Assertion failed");
 			}
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		BasicBlock* StartBB = r.builder.GetInsertBlock();
 		BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
@@ -278,7 +278,7 @@ int main(int argc, char** argv){
 		r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, 1,false));
 		r.builder.CreateUnreachable();
 		r.builder.SetInsertPoint(MergeBB);
-		return VOID_DATA;
+		return &VOID_DATA;
 	}), PositionID(0,0,"#int"));
 	String file = "";
 	String command = "";

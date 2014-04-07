@@ -36,7 +36,7 @@ class E_RETURN : public ErrorStatement{
 			if(inner!=NULL) inner->buildFunction(r);
 		}
 		const Data* evaluate(RData& r) const override {
-			const Data* t = (inner && inner->getToken()!=T_VOID)?(inner->evaluate(r)):(VOID_DATA);
+			const Data* t = (inner && inner->getToken()!=T_VOID)?(inner->evaluate(r)):(&VOID_DATA);
 			if(jump==YIELD){
 				BasicBlock *RESUME = r.CreateBlock("postReturn",r.builder.GetInsertBlock());
 				//BasicBlock* toBreak =
@@ -60,7 +60,7 @@ class E_RETURN : public ErrorStatement{
 				BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),NULL));
 				if(toBreak!=NULL) r.builder.CreateBr(toBreak);
 			}
-			return VOID_DATA;
+			return &VOID_DATA;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 			id.error("Return statement cannot act as function");

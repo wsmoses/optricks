@@ -46,7 +46,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 				for(unsigned i = 0; i<F; i++){
 					r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type,S[i],false));
 				}
-				return VOID_DATA;
+				return &VOID_DATA;
 			}
 
 			char temp[mpz_sizeinbase (value, 10) + 2];
@@ -56,7 +56,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 			for(const char* T = temp; *T !='\0'; ++T){
 				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
 			}
-			return VOID_DATA;}), PositionID(0,0,"#int"));
+			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M->addFunction(PositionID(0,0,"#int"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
@@ -70,7 +70,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
 			}
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
-			return VOID_DATA;}), PositionID(0,0,"#int"));
+			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		*/
 	}
 inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
