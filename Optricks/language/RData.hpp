@@ -45,14 +45,14 @@ struct RData{
 		std::map<Function*,std::vector<LazyLocation*> > flocs;
 		std::map<Function*,std::map<BasicBlock*,BasicBlock*> > pred;
 	public:
-
+		bool enableAsserts;
 		Module* lmod;
 		IRBuilder<> builder;
 		FunctionPassManager fpm;
 		PassManager mpm;
 		ExecutionEngine* exec;
 		const AbstractClass* functionReturn;
-		RData(): lmod(new Module("main",getGlobalContext())),
+		RData(): enableAsserts(false),lmod(new Module("main",getGlobalContext())),
 				builder(getGlobalContext())
 		,fpm(lmod),mpm(),functionReturn(nullptr){
 			lmod->setDataLayout("p:64:64:64");

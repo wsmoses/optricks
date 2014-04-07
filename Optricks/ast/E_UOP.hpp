@@ -37,6 +37,16 @@ public:
 	void buildFunction(RData& r) const override final{
 		value->buildFunction(r);
 	};
+	AbstractClass* getSelfClass(PositionID id) override final{
+		AbstractClass* t = value->getSelfClass(id);
+		if(pre==UOP_POST){
+			if(operation=="[]") return ArrayClass::get(t,0);
+			if(operation=="&") return ReferenceClass::get(t);
+			if(operation=="%") return LazyClass::get(t);
+		}
+		id.compilerError("Cannot getSelfClass of OUOP "+operation);
+		exit(1);
+	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
 		const AbstractClass* t = getReturnType();
 		if(t->classType!=CLASS_FUNC)

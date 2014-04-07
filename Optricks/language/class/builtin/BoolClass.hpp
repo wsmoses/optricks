@@ -8,6 +8,7 @@
 #ifndef BOOLCLASS_HPP_
 #define BOOLCLASS_HPP_
 #include "../AbstractClass.hpp"
+#include "./VoidClass.hpp"
 #include "./LazyClass.hpp"
 class BoolClass: public AbstractClass{
 public:

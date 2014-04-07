@@ -206,6 +206,10 @@ class Lexer{
 				f->read();
 				trim(EOF);
 				declarationType = new E_UOP(pos(), "&",declarationType, UOP_POST);
+			} else if(f->peek()=='%'){
+				f->read();
+				trim(EOF);
+				declarationType = new E_UOP(pos(), "%",declarationType, UOP_POST);
 			} else if(f->peek()=='['){
 				auto tmp = f->getMarker();
 				f->read();

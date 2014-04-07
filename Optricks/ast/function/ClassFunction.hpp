@@ -24,7 +24,7 @@ class ClassFunction : public E_FUNCTION{
 			E_FUNCTION(id, dec),staticF(st),thisPointer(tPointer),name(nam),surroundingClass(a),returnV(b),body(r),built(false){
 		}
 		void registerFunctionPrototype(RData& a) const override final{
-
+			if(myFunction) return;
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			llvm::SmallVector<Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 			std::vector<AbstractDeclaration> ad;
@@ -42,7 +42,7 @@ class ClassFunction : public E_FUNCTION{
 				const AbstractClass* ac = b->getClass(filePos);
 				assert(ac);
 				ad.push_back(AbstractDeclaration(ac, b->variable->pointer.name, b->value));
-				args[i+(staticF)?0:1] = ac->type;
+				args[i+(staticF?0:1)] = ac->type;
 				assert(ac->type);
 			}
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {

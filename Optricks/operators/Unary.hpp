@@ -390,6 +390,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	}
 	case CLASS_CLASS:{
 		if(operation=="&") return &classClass;
+		if(operation=="%") return &classClass;
 		if(operation=="[]") return &classClass;
 	}
 	case CLASS_BOOL:
@@ -529,6 +530,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_CLASS:{
 		if(operation=="&"){
 			return ReferenceClass::get(value->getMyClass(r, filePos));
+		} else if(operation=="%"){
+			return LazyClass::get(value->getMyClass(r, filePos));
 		} else if(operation=="[]"){
 			return ArrayClass::get(value->getMyClass(r, filePos),0);
 		}

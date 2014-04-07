@@ -246,6 +246,39 @@ bool testFor(String toTest, String testing){
 	}
 }
 int main(int argc, char** argv){
+	LANG_M->addFunction(PositionID(0,0,"#str"),"assert")->add(
+		new BuiltinInlineFunction(
+				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
+		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		assert(args.size()==1);
+		if(!getRData().enableAsserts) return VOID_DATA;
+		const Data* D = args[0]->evaluate(r);
+		assert(D->getReturnType()->classType==CLASS_BOOL);
+		Value* V = D->getValue(r, id);
+		if(auto C = dyn_cast<ConstantInt>(V)){
+			if(C->getValue().isStrictlyPositive()){
+				id.error("Assertion failed");
+			}
+			return VOID_DATA;
+		}
+		BasicBlock* StartBB = r.builder.GetInsertBlock();
+		BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
+		BasicBlock *MergeBB = r.CreateBlock("ifcont",StartBB);
+		r.builder.CreateCondBr(V, ThenBB, MergeBB);
+
+		r.builder.SetInsertPoint(ThenBB);
+		std::stringstream ss;
+		ss << "Assertion failed at " << id.fileName << " on line " << id.lineN << " character " << id.charN << "\n";
+		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+		for(const auto& a: ss.str()){
+			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, a,false));
+		}
+		CU = r.getExtern("putchar", &voidClass, {&c_intClass});
+		r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, 1,false));
+		r.builder.CreateUnreachable();
+		r.builder.SetInsertPoint(MergeBB);
+		return VOID_DATA;
+	}), PositionID(0,0,"#int"));
 	String file = "";
 	String command = "";
 	String output = "";
@@ -264,6 +297,9 @@ int main(int argc, char** argv){
 		else if(startsWithEq(s, "--inter")){
 			forceInt = true;
 			interactive = testFor(s,"--inter");
+		}
+		else if(startsWithEq(s, "--assert")){
+			getRData().enableAsserts = testFor(s,"--assert");
 		}
 		else if(startsWithEq(s, "--interactive")){
 			forceInt = true;

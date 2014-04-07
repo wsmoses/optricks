@@ -1,3 +1,4 @@
+/*
 class random{
 
 	static def int rand_interval(int min, int max){
@@ -12,3 +13,16 @@ class random{
 	}
 
 }
+*/
+def int printr(int i){
+	println("before: printr");
+	return i;
+}
+
+def void lazy(int% i){
+	println("before: lazy");
+	printf("%d\n", i());
+	println("after: lazy");
+}
+
+lazy(printr(5));
