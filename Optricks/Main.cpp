@@ -278,7 +278,8 @@ int main(int argc, char** argv){
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
 		if(!getRData().enableAsserts) return &VOID_DATA;
-		const Data* D = args[0]->evaluate(r)->callFunction(r,id,{});
+		std::vector<const Evaluatable*> EV;
+		const Data* D = args[0]->evaluate(r)->callFunction(r,id,EV);
 		assert(D->getReturnType()->classType==CLASS_BOOL);
 		Value* V = D->getValue(r, id);
 		if(auto C = dyn_cast<ConstantInt>(V)){

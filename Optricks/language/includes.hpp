@@ -60,11 +60,11 @@
 #include "llvm/IR/Module.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
-#include "llvm/IR/Verifier.h"
-#else
+//#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
+//#include "llvm/IR/Verifier.h"
+//#else
 #include "llvm/Analysis/Verifier.h"
-#endif
+//#endif
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
