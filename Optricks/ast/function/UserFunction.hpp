@@ -78,7 +78,9 @@ public:
 			body->collectReturns(yields,nullptr);
 			if(yields.size()==0) returnType = &voidClass;
 			else {
-				returnType = getMin(yields,filePos);
+				returnType = yields[0];
+				for(unsigned i=1;i<yields.size();i++)
+					returnType = getMin(returnType,yields[i],filePos);
 			}
 		}
 		assert(returnType);

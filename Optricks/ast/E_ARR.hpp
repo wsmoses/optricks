@@ -51,9 +51,10 @@ class E_ARR : public ErrorStatement{
 			if(values.size()==0){
 				return ArrayClass::get(nullptr,0);
 			}
-			std::vector<const AbstractClass*> vc;
-			for(auto& a: values) vc.push_back(a->getReturnType());
-			return ArrayClass::get(getMin(vc,filePos), values.size());
+			const AbstractClass* a=values[0]->getReturnType();
+			for(unsigned i=0; i<values.size(); i++)
+				a = getMin(a, values[i]->getReturnType(), filePos);
+			return ArrayClass::get(a, values.size());
 		}
 };
 

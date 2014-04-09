@@ -275,6 +275,10 @@ class Lexer{
 				trim(EOF);
 				while(f->peek()!='}'){
 					Statement* e = getNextStatement(data.getModule(module));
+					if(e->getToken()==T_VOID){
+						pos().error("Needed '}' to end block, found '"+String(1,f->peek())+"'");
+						exit(1);
+					}
 					if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
 					trim(EOF);
 					while(!f->done && f->peek()==';'){f->read();trim(data);}

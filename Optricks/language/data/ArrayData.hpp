@@ -40,24 +40,18 @@ public:
 		return castToV(r,getReturnType(),id);
 	}
 	const Data* toValue(RData& r,PositionID id) const override final{
-		std::vector<const AbstractClass*> vec;
+		std::vector<const Data*> vec(inner.size());
 		for(unsigned int i=0; i<inner.size(); i++){
-			auto tmp = inner[i]->getReturnType();
-			vec.push_back(tmp);
+			vec[i] = inner[i]->toValue(r, id);
 		}
-		TupleClass* tc = TupleClass::get(vec);
-		Type* t = tc->type;
-		Value* v = UndefValue::get(t);
-		for(unsigned int i=0; i<inner.size(); i++){
-			auto tmp = inner[i]->getValue(r,id);
-			v = r.builder.CreateInsertValue(v, tmp, i);
-		}
-		return new ConstantData(v, tc);
+		return new ArrayData(vec, filePos);
 	}
 	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType!=CLASS_ARRAY
-						&& right->classType!=CLASS_NAMED_TUPLE)
+						&& right->classType!=CLASS_NAMED_TUPLE){
 					id.error("Cannot cast array literal to '"+right->getName()+"'");
+			exit(1);
+		}
 		ArrayClass* tc = (ArrayClass*)right;
 		if(tc->len!=0){
 			id.compilerError("Cannot create array[len]");

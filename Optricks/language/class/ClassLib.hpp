@@ -85,10 +85,11 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 	exit(1);
 }
 
+/*
 const AbstractClass* getMin(const std::vector<const AbstractClass*>& ac, PositionID id){
 	if(ac.size()==1) return ac[0];
 	else if(ac.size()==2) return getMin(ac[0],ac[1],id);
 	id.compilerError("GetMin inf has not been implemented "+ str(ac.size()));
 	exit(1);
-}
+}*/
 #endif /* CLASSLIB_HPP_ */

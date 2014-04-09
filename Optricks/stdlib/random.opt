@@ -1,4 +1,10 @@
+def FE( int[] a, int& b, void% v){
+	for(int i=0; i<a.length;i++){
+		b =a[i]
+		v()
+	}
 
+}
 class primitive random{
 	static int RAND_MAX=4;
 	static def int rand_interval(int min, int max){
@@ -17,7 +23,13 @@ class primitive random{
 	}
 
 }
+def FOR(void% i, bool% b=true, void% c){
+	i();
+	while(b()){
+		c();
+	}
 
+}
 def repeat(void% a, int b){
 	for(int i=0; i<b; i++) a();
 }

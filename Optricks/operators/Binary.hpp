@@ -77,6 +77,8 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			if(operation=="+" || operation=="-" || operation=="*" || operation=="/" || operation=="%"
 					|| operation=="**" || operation=="&" || operation=="|" || operation=="^"
 							|| operation=="<<" || operation==">>" || operation==">>>") return cc;
+			else if(operation==">" || operation==">=" || operation=="<" || operation=="<="
+								|| operation=="==" || operation=="!=") return &boolClass;
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);

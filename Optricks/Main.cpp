@@ -413,6 +413,7 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 		{
+				//"./tmp"
 				"./stdlib/stdlib.opt"
 				};
 	InitializeNativeTarget();

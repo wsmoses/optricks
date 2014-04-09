@@ -64,7 +64,9 @@ class ClassFunction : public E_FUNCTION{
 				body->collectReturns(yields,returnType);
 				if(yields.size()==0) returnType = &voidClass;
 				else {
-					returnType = getMin(yields,filePos);
+					returnType = yields[0];
+					for(unsigned i=0; i<yields.size(); i++)
+						returnType = getMin(returnType, yields[i],filePos);
 				}
 			}
 			assert(returnType);

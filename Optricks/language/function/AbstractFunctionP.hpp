@@ -562,11 +562,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 							valid = false;
 							break;
 						}
-					}
-				}
-				const AbstractClass* const at = args[i]->getReturnType();
-				assert(at);
-				if(!args[i]->hasCastValue(dt)){
+					} else continue;
+				} else if(!args[i]->hasCastValue(dt)){
 					if(dt->classType!=CLASS_LAZY
 						|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID &&
 								!args[i]->hasCastValue(((LazyClass*) dt)->innerType))){
