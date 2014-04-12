@@ -13,7 +13,7 @@ public:
 	const Evaluatable* const ev;
 	const AbstractClass* const ac;
 	PositionID id;
-	CastEval(const Evaluatable* e, const AbstractClass* const a, PositionID d):ev(e),ac(a),id(d){};
+	CastEval(const Evaluatable* e, const AbstractClass* const a, PositionID d);
 
 	const Data* evaluate(RData& r) const override final{
 		return new ConstantData(ev->evaluate(r)->castToV(r,ac,id), ac);

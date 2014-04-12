@@ -48,7 +48,7 @@ public:
 		switch(toCast->classType){
 		case CLASS_ARRAY: {
 			//if(!inner) return true;
-			ArrayClass* tc = (ArrayClass*)toCast;
+			const ArrayClass* tc = (const ArrayClass*)toCast;
 			if(!inner->hasCast(tc->inner)) return false;
 			if(tc->len==0) return true;
 			return tc->len==len;
