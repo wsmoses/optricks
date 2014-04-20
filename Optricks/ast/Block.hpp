@@ -12,6 +12,7 @@
 
 class Block : public ErrorStatement{
 	public:
+		OModule module;
 		std::vector<Statement*> values;
 		void registerClasses() const override final{
 			for(auto& a: values) a->registerClasses();
@@ -25,7 +26,7 @@ class Block : public ErrorStatement{
 		void buildFunction(RData& r) const override final{
 			for(auto& a: values) a->buildFunction(r);
 		}
-		Block(PositionID a) : ErrorStatement(a),values(){}
+		Block(PositionID a, OModule* supMod) : ErrorStatement(a),module(supMod),values(){}
 		const Data* evaluate(RData& r) const override{
 			for(auto& a:values){
 				if(r.hadBreak()) error("Already had guaranteed return");

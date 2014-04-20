@@ -265,16 +265,15 @@ class Lexer{
 											;
 		}
 		Statement* getNextBlock(ParseData data, bool*par=nullptr){
-			OModule* module = new OModule(data.mod);
 			f->trim(EOF);
 			bool paren = f->peek()=='{';
 			if(paren) f->read();
 			if(par!=nullptr) *par=paren;
 			if(paren){
-				Block* blocks = new Block(pos());
+				Block* blocks = new Block(pos(), data.mod);
 				trim(EOF);
 				while(f->peek()!='}'){
-					Statement* e = getNextStatement(data.getModule(module));
+					Statement* e = getNextStatement(data.getModule(&(blocks->module)));
 					if(e->getToken()==T_VOID){
 						pos().error("Needed '}' to end block, found '"+String(1,f->peek())+"'");
 						exit(1);
@@ -289,7 +288,7 @@ class Lexer{
 				return blocks;
 			}
 			else{
-				Statement* s = getNextStatement(data.getModule(module)/*.getLoc(PARSE_EXPR)*/);//todo check
+				Statement* s = getNextStatement(data/*.getLoc(PARSE_EXPR)*/);//todo check
 				if(!f->done && f->peek()==';'){f->read();trim(data);}
 				trim(data);
 				return s;
@@ -450,12 +449,12 @@ class Lexer{
 			//if(
 			f->trim(EOF);//) f->error("Uncompleted for",true);
 			bool paren = f->peek()=='(';
-			//Standard for(i = 0; i<7; i++)
-			OModule* module = new OModule(data.mod);
+			//Standard for(int i = 0; i<7; i++)
 			if(paren){
 				f->read();
 				f->trim(EOF);
 				Statement* init = VOID_STATEMENT;
+				OModule* module = new OModule(data.mod);
 				if(f->peek()!=';') init = getNextStatement(ParseData(EOF, module, true, PARSE_LOCAL));
 				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 				f->trim(EOF);

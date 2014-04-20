@@ -62,11 +62,12 @@ class PositionID{
 			cerr << "Fatal Error: " << s << " at " << fileName << ":" << lineN << ":" << charN << endl << flush;
 			#ifndef NDEBUG
 				assert(0);
+				exit(1);
 			#else
 				exit(1);
 			#endif
 		}
-		void compilerError(String s, bool end=true) const __attribute__ ((noreturn)){
+		bool compilerError(String s, bool end=true) const __attribute__ ((noreturn)){
 			#ifndef NDEBUG
 				cerr <<  "Compiler Error: " << s <<  " at " <<  fileName <<  ":" << lineN << ":" << charN;
 				assert(0);

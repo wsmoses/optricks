@@ -11,6 +11,7 @@
 #include "../class/builtin/FunctionClass.hpp"
 #include "../class/builtin/LazyClass.hpp"
 #include "../class/builtin/ReferenceClass.hpp"
+#include "../data/LazyWrapperData.hpp"
 
 
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
@@ -86,7 +87,7 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 }
 
 
-std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const {
+std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const {
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	std::vector<const Evaluatable*> arg2;
@@ -99,10 +100,10 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,Posit
 				exit(1);
 			}
 
-			arg2.push_back(deLazy(r,id,proto->declarations[i].defaultValue,t));
+			arg2.push_back(deLazyInline(r,id,proto->declarations[i].defaultValue,t));
 		}
 		else
-			arg2.push_back(deLazy(r,id,args[i],t));
+			arg2.push_back(deLazyInline(r,id,args[i],t));
 		assert(arg2.back());
 	}
 	if(as>ds){
@@ -119,14 +120,19 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototype(RData& r,Posit
 				exit(1);
 			}
 			const AbstractClass* const t = proto->declarations[i].declarationType;
-			arg2.push_back(deLazy(r,id,proto->declarations[i].defaultValue,t));
+			arg2.push_back(deLazyInline(r,id,proto->declarations[i].defaultValue,t));
 		}
 		return arg2;
 	}
 }
-const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, Data* val, const AbstractClass* const t) {
+const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
-		if(t==val->getReturnType()) return val;
+		const AbstractClass* VRT = val->getReturnType();
+		if(t==VRT) return val;
+		if(VRT->classType!=CLASS_LAZY){
+			if(((LazyClass*)t)->innerType==VRT) return new LazyWrapperData(val);
+			else return new LazyWrapperData(new CastEval(val, ((LazyClass*)t)->innerType, id));
+		}
 		else return new CastEval(val,t,id);
 	} /*else if(t->classType==CLASS_REF){
 		if(val->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");
@@ -138,9 +144,14 @@ const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, Data* val, co
 		return val->castTo(r, t, id);
 	}
 }
-const Evaluatable* SingleFunction::deLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
+const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
-		if(t==val->getReturnType()) return val;
+		const AbstractClass* VRT = val->getReturnType();
+		if(t==VRT) return val;
+		if(VRT->classType!=CLASS_LAZY){
+			if(((LazyClass*)t)->innerType==VRT) return new LazyWrapperData(val);
+			else return new LazyWrapperData(new CastEval(val, ((LazyClass*)t)->innerType, id));
+		}
 		else return new CastEval(val,t,id);
 	} /*else if(t->classType==CLASS_REF){
 		const Data* tt = val->evaluate(r);
@@ -168,8 +179,6 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 
 		r.builder.CreateRet(val->castToV(r, lc->innerType, id));
 		if(Parent!=NULL) r.builder.SetInsertPoint(Parent);
-		r.lmod->dump();
-		cerr << endl << flush;
 		return F;
 	} /*else if(t->classType==CLASS_REF){
 		if(val->type!=R_LOC) id.error("Cannot use non-variable as argument for function requiring reference");

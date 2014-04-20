@@ -283,15 +283,15 @@ int main(int argc, char** argv){
 		assert(D->getReturnType()->classType==CLASS_BOOL);
 		Value* V = D->getValue(r, id);
 		if(auto C = dyn_cast<ConstantInt>(V)){
-			if(C->getValue().isStrictlyPositive()){
-				id.error("Assertion failed");
+			if(! C->isOne()){
+				id.fatalError("Assertion failed");
 			}
 			return &VOID_DATA;
 		}
 		BasicBlock* StartBB = r.builder.GetInsertBlock();
 		BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
 		BasicBlock *MergeBB = r.CreateBlock("ifcont",StartBB);
-		r.builder.CreateCondBr(V, ThenBB, MergeBB);
+		r.builder.CreateCondBr(V, MergeBB,ThenBB);
 
 		r.builder.SetInsertPoint(ThenBB);
 		std::stringstream ss;
@@ -300,7 +300,7 @@ int main(int argc, char** argv){
 		for(const auto& a: ss.str()){
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, a,false));
 		}
-		CU = r.getExtern("putchar", &voidClass, {&c_intClass});
+		CU = r.getExtern("exit", &voidClass, {&c_intClass});
 		r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, 1,false));
 		r.builder.CreateUnreachable();
 		r.builder.SetInsertPoint(MergeBB);

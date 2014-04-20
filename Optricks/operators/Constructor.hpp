@@ -103,7 +103,16 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		}
 	}
 	case CLASS_COMPLEX:{
-		if(args.size()==2){
+		if(args.size()==1){
+			const Data* D = args[0]->evaluate(r);
+			if(D->hasCastValue(this)){
+				return D->castTo(r, this, filePos);
+			}else{
+				filePos.error("incomplete -- Could not find valid constructor in "+getName());
+				exit(1);
+			}
+		}
+		else if(args.size()==2){
 			if(((const ComplexClass*)this)->innerClass->classType==CLASS_INT ||
 					((const ComplexClass*)this)->innerClass->classType==CLASS_FLOAT){
 				Value* V = UndefValue::get(this->type);
@@ -112,7 +121,13 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				V = r.builder.CreateInsertElement(V,
 								args[1]->evaluate(r)->castToV(r, ((const ComplexClass*)this)->innerClass, filePos), getInt32(1));
 				return new ConstantData(V, this);
+			}else{
+				filePos.error("incomplete -- Could not find valid constructor in "+getName());
+				exit(1);
 			}
+		} else{
+			filePos.error("Could not find valid constructor in "+getName());
+			exit(1);
 		}
 	}
 	case CLASS_FLOAT:{

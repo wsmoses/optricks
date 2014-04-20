@@ -270,6 +270,7 @@ enum DataType{
 	R_VOID,
 	R_CONST,
 	R_REF,
+	R_LAZY,
 	R_LOC,
 	R_FUNCMAP,
 	R_FUNC,

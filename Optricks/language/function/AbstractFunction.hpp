@@ -79,9 +79,9 @@ public:
 	inline llvm::Function* getValue(RData& r, PositionID id) const override{
 		return myFunc;
 	}
-	std::vector<const Evaluatable*> validatePrototype(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const;
-	static const Evaluatable* deLazy(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
-	static const Evaluatable* deLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
+	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const;
+	static const Evaluatable* deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
+	static const Evaluatable* deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
 	static Value* fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) ;
 	static llvm::SmallVector<Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
@@ -113,7 +113,7 @@ public:
 	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 		SingleFunction(fp,f),inlined(tmp){}
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
-		return inlined(r,id,validatePrototype(r,id,args));
+		return inlined(r,id,validatePrototypeInline(r,id,args));
 	}
 };
 
