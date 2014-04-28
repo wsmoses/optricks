@@ -135,6 +135,11 @@ class Data;
 class ConstantData;
 #endif
 
+#ifndef SCOPABLE_C_
+#define SCOPABLE_C_
+class Scopable;
+#endif
+
 #ifndef LOCATIONDATA_C_
 #define LOCATIONDATA_C_
 class LocationData;
@@ -295,6 +300,7 @@ enum DataType{
 };
 template<> String str<DataType>(DataType d){
 	switch(d){
+	case R_LAZY: return "R_LAZY";
 	case R_VOID: return "R_VOID";
 	case R_MATH: return "R_MATH";
 	case R_REF: return "R_REF";

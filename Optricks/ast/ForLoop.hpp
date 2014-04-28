@@ -13,15 +13,15 @@
 #include "./ForEachLoop.hpp"
 class ForLoop : public ErrorStatement{
 	public:
+		mutable OModule module;
 		Statement* initialize;
 		Statement* condition;
 		Statement* increment;
 		Statement* toLoop;
 		String name;
 		virtual ~ForLoop(){};
-		ForLoop(PositionID a, Statement* init, Statement* cond, Statement* inc,Statement* tL, String n="") :
-			ErrorStatement(a), initialize(init),condition(cond),increment(inc),toLoop(tL){
-			name = n;
+		ForLoop(PositionID a, OModule* supMod, String n=""):ErrorStatement(a),module(supMod),name(n){
+			increment = condition = initialize = toLoop = nullptr;//todo remove this
 		}
 		const AbstractClass* getReturnType() const override final{
 			return &voidClass;
@@ -62,7 +62,7 @@ class ForLoop : public ErrorStatement{
 			incBlock = r.CreateBlock("inc");
 			r.builder.SetInsertPoint(loopBlock);
 			assert(incBlock); assert(afterBlock);
-			Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+			Jumpable j(name, LOOP, &module, incBlock, afterBlock, NULL);
 			r.addJump(&j);
 			toLoop->evaluate(r);
 #ifndef NDEBUG

@@ -105,12 +105,12 @@ class ForEachLoop : public ErrorStatement{
 		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
-
+			/*
 			E_GEN* myGen = setUp(ra);
 			myGen->buildFunction(ra);
 			Jumpable j("", GENERATOR, NULL, NULL, theClass);
 			ra.addJump(&j);
-			myGen->body->evaluate(ra);
+			myGen->methodBody->evaluate(ra);
 			if(ra.popJump()!= &j) error("Did not receive same func jumpable created (j foreach)");
 			//Function* TheFunction;
 			BasicBlock *END = ra.CreateBlock("endLoop");
@@ -159,7 +159,7 @@ class ForEachLoop : public ErrorStatement{
 				}
 			}
 			ra.builder.SetInsertPoint(END);
-
+			*/
 			return &VOID_DATA;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{

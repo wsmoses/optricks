@@ -10,11 +10,17 @@
 #include "../../language/statement/Statement.hpp"
 class E_FUNCTION:public ErrorStatement{
 	public:
+		mutable OModule module;
 		std::vector<Declaration*> declaration;
 		mutable SingleFunction* myFunction;
-		E_FUNCTION(PositionID id, std::vector<Declaration*> dec):
-			ErrorStatement(id),
-				declaration(dec),myFunction(nullptr){
+		String name;
+		Statement* methodBody;
+		Statement* returnV;
+		E_FUNCTION(PositionID id, const OModule& myMod,String nam):
+			ErrorStatement(id),module(myMod),declaration(),myFunction(nullptr),name(nam){
+			methodBody = nullptr;
+			returnV = nullptr;
+			//todo remove
 		}
 		const AbstractFunction* evaluate(RData& a) const override{
 			registerFunctionPrototype(a);

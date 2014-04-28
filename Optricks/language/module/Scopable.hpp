@@ -26,6 +26,7 @@ struct SCOPE_POS{
 	SCOPE_POS(SCOPE_TYPE t,unsigned int a):type(t),pos(a){};
 };
 
+#define SCOPABLE_C_
 class Scopable{
 private:
 	const String name;
@@ -130,7 +131,8 @@ public:
 	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
 
 	const Data* getVariable(PositionID id, const String name) const;
-	/*
+	void setVariable(PositionID id, const String name, const Data* da);
+		/*
 	const Data*& getVariable(PositionID id, const String name){
 		auto f = find(id,name);
 		if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");

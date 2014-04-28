@@ -22,6 +22,19 @@ const AbstractClass* Scopable::getClass(PositionID id, const String name) const{
 		return f.first->classes[f.second->second.pos];
 	}
 
+void Scopable::setVariable(PositionID id, const String name, const Data* da){
+	auto d = find(id,name);
+	if(d.first==nullptr) return;
+	switch(d.second->second.type){
+		case SCOPE_VAR:
+			d.first->vars[d.second->second.pos] = da;
+			break;
+		default:
+			id.error("Unknown variable type getObject");
+			exit(1);
+	}
+}
+
 const Data* Scopable::getVariable(PositionID id, const String name) const{
 	auto f = find(id,name);
 	if(f.first==nullptr) return &VOID_DATA;

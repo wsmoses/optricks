@@ -25,13 +25,14 @@ struct Jumpable {
 	public:
 		String name;
 		TJump toJump;
+		Scopable* scope;
 		BasicBlock* start;
 		BasicBlock* end;
 		AbstractClass* returnType;
 		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
 		std::vector<std::pair<BasicBlock*,const Data*> > endings;
-		Jumpable(String n, TJump t, BasicBlock* s, BasicBlock* e, AbstractClass* p):
-			name(n), toJump(t), start(s), end(e), returnType(p){
+		Jumpable(String n, TJump t, Scopable* om, BasicBlock* s, BasicBlock* e, AbstractClass* p):
+			name(n), toJump(t), scope(om), start(s), end(e), returnType(p){
 
 		}
 };
@@ -148,7 +149,7 @@ struct RData{
 			}
 			return b;
 		}
-		BasicBlock* getBlock(String name, JumpType jump, BasicBlock* bb, const Data* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume=std::pair<BasicBlock*,BasicBlock*>(NULL,NULL));
+		void makeJump(String name, JumpType jump, const Data* val, PositionID id);
 };
 
 RData& getRData(){

@@ -22,7 +22,7 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		std::vector<const AbstractClass*> vec;
 		const AbstractClass* A = (inner.size()==0)?nullptr:inner[0]->getReturnType();
-		for(int i=1; i<inner.size(); i++){
+		for(unsigned i=1; i<inner.size(); i++){
 			A = getMin(A, inner[0]->getReturnType(),filePos);
 		}
 		return ArrayClass::get(A, inner.size());

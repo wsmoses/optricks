@@ -32,8 +32,9 @@ public:
 	Statement* value;
 	bool global;
 	mutable const LocationData* finished;
-	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) : ErrorStatement(id),
-	classV(v),returnType(nullptr),variable(loc),value(e),global(glob),finished(nullptr),isReference(2){
+	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) :
+		ErrorStatement(id),
+	classV(v),returnType(nullptr),isReference(2),variable(loc),value(e),global(glob),finished(nullptr){
 	}
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}

@@ -14,14 +14,15 @@
 class ClassFunction : public E_FUNCTION{
 	public:
 		const bool staticF;
-		const Resolvable thisPointer;
-		const String name;
 		Statement* const surroundingClass;
-		Statement* const returnV;
-		Statement* const body;
 		mutable bool built;
-		ClassFunction(PositionID id, std::vector<Declaration*> dec, bool st, Resolvable tPointer,String nam, Statement* a, Statement* b, Statement* r):
-			E_FUNCTION(id, dec),staticF(st),thisPointer(tPointer),name(nam),surroundingClass(a),returnV(b),body(r),built(false){
+		//TODO incorporate combined scope
+		ClassFunction(PositionID id, OModule* superScope,String nam,bool st, Statement* a):
+			E_FUNCTION(id, OModule(superScope),nam)
+		,staticF(st),surroundingClass(a)
+		,built(false)
+		{
+			module.addVariable(filePos,"this",&VOID_DATA);
 		}
 		void registerFunctionPrototype(RData& a) const override final{
 			if(myFunction) return;
@@ -61,7 +62,7 @@ class ClassFunction : public E_FUNCTION{
 
 			if(returnType==nullptr){
 				std::vector<const AbstractClass*> yields;
-				body->collectReturns(yields,returnType);
+				methodBody->collectReturns(yields,returnType);
 				if(yields.size()==0) returnType = &voidClass;
 				else {
 					returnType = yields[0];
@@ -98,9 +99,9 @@ class ClassFunction : public E_FUNCTION{
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT)){
 					assert(dyn_cast<PointerType>(AI->getType()));
 					Location* myLoc = getLazy(a,(Value*)AI,a.builder.GetInsertBlock(),nullptr);
-					thisPointer.setObject(new LocationData(myLoc, upperClass));
+					module.setVariable(filePos, "this", new LocationData(myLoc, upperClass));
 				} else{
-					thisPointer.setObject(new ConstantData(AI, upperClass));
+					module.setVariable(filePos, "this", new ConstantData(AI, upperClass));
 				}
 				++AI;
 				++Idx;
@@ -119,7 +120,7 @@ class ClassFunction : public E_FUNCTION{
 			}
 
 			if(Parent) a.builder.SetInsertPoint( Parent );
-			body->registerFunctionPrototype(a);
+			methodBody->registerFunctionPrototype(a);
 		};
 		void buildFunction(RData& a) const override final{
 			if(built) return;
@@ -129,7 +130,7 @@ class ClassFunction : public E_FUNCTION{
 			a.builder.SetInsertPoint(&(myFunction->getSingleFunc()->getEntryBlock()));
 			auto tmp = a.functionReturn;
 			a.functionReturn = myFunction->getSingleProto()->returnType;
-			body->evaluate(a);
+			methodBody->evaluate(a);
 			if( !a.hadBreak()){
 				if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
 					a.builder.CreateRetVoid();
@@ -140,11 +141,11 @@ class ClassFunction : public E_FUNCTION{
 			if(Parent) a.builder.SetInsertPoint( Parent );
 			assert(a.functionReturn == myFunction->getSingleProto()->returnType);
 			a.functionReturn = tmp;
-			body->buildFunction(a);
+			methodBody->buildFunction(a);
 		};
 
 		void registerClasses() const override final{
-			body->registerClasses();
+			methodBody->registerClasses();
 		}
 };
 

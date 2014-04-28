@@ -11,17 +11,13 @@
 #include "../../language/class/ClassLib.hpp"
 class UserFunction : public E_FUNCTION{
 private:
-	E_VAR* self;
-	Statement* returnV;
-	Statement* body;
 	mutable bool built;
 public:
-	UserFunction(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r, Statement* b):
-		E_FUNCTION(id,dec),self(s),returnV(r),body(b),built(false){
-		assert(s);
+	UserFunction(PositionID id, OModule* superScope,String n):
+		E_FUNCTION(id,OModule(superScope),n),built(false){
 	}
 	void registerClasses() const override final{
-		body->registerClasses();
+		methodBody->registerClasses();
 	}
 	void buildFunction(RData& a) const override final{
 		if(built) return;
@@ -33,7 +29,7 @@ public:
 		a.builder.SetInsertPoint(& (F->getEntryBlock()));
 		auto tmp = a.functionReturn;
 		a.functionReturn = myFunction->getSingleProto()->returnType;
-		body->evaluate(a);
+		methodBody->evaluate(a);
 		if(! a.hadBreak()){
 			if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
 				a.builder.CreateRetVoid();
@@ -44,7 +40,7 @@ public:
 		if(Parent) a.builder.SetInsertPoint( Parent );
 		assert(a.functionReturn == myFunction->getSingleProto()->returnType);
 		a.functionReturn = tmp;
-		body->buildFunction(a);
+		methodBody->buildFunction(a);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
@@ -75,7 +71,7 @@ public:
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
-			body->collectReturns(yields,nullptr);
+			methodBody->collectReturns(yields,nullptr);
 			if(yields.size()==0) returnType = &voidClass;
 			else {
 				returnType = yields[0];
@@ -86,10 +82,11 @@ public:
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		FunctionType *FT = FunctionType::get(r, args, false);
-		String nam = "!"+((self)?(self->getShortName()):("anon"));
+		String nam = "!"+((name.length()==0)?name:"anon");
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
-		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
-		self->getMetadata().addFunction(myFunction);
+		//TODO replace with long name
+		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
+		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 
 		BasicBlock *BB = a.CreateBlockD("entry", F);
 		a.builder.SetInsertPoint(BB);
@@ -109,7 +106,7 @@ public:
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );
-		body->registerFunctionPrototype(a);
+		methodBody->registerFunctionPrototype(a);
 	}
 };
 

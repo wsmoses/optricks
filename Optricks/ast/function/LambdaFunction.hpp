@@ -8,18 +8,16 @@
 #ifndef LAMBDAFUNCTION_HPP_
 #define LAMBDAFUNCTION_HPP_
 #include "./E_FUNCTION.hpp"
+#include "../../operators/Deconstructor.hpp"
 class LambdaFunction : public E_FUNCTION{
 private:
-	Statement* body;
 	bool built;
 public:
-	LambdaFunction(PositionID id, std::vector<Declaration*> dec, Statement* b):
-		E_FUNCTION(id,dec),body(b),built(false){
+	LambdaFunction(PositionID id, OModule* superMod):
+		E_FUNCTION(id,OModule(superMod),""),built(false){
 	}
 	void registerClasses() const override final{
-		body->registerClasses();
-		//self->registerClasses();
-		//returnV->registerClasses();
+		methodBody->registerClasses();
 	}
 	void buildFunction(RData& ra) const override final{
 		if(built) return;
@@ -31,7 +29,11 @@ public:
 		auto tmp = ra.functionReturn;
 		ra.functionReturn = nullptr;
 
-		const Data* ret = body->evaluate(ra);
+		const Data* ret = methodBody->evaluate(ra);
+		assert(!ra.hadBreak());
+		for(const auto& a: module.vars){
+			decrementCount(ra, filePos, a);
+		}
 		if(! ra.hadBreak()){
 			if(ret->type==R_VOID)
 				ra.builder.CreateRetVoid();
@@ -44,7 +46,7 @@ public:
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		assert(ra.functionReturn == nullptr);
 		ra.functionReturn = tmp;
-		body->buildFunction(ra);
+		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
@@ -74,7 +76,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = body->getReturnType();
+		const AbstractClass* returnType = methodBody->getReturnType();
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		assert(r);
@@ -101,7 +103,7 @@ public:
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );
-		body->registerFunctionPrototype(a);
+		methodBody->registerFunctionPrototype(a);
 	}
 };
 

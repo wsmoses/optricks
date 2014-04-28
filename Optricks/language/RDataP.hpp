@@ -24,40 +24,42 @@
 			FunctionType *FT = FunctionType::get(R->type, args, varArgs);
 			return getExtern(name, FT);
 		}
-BasicBlock* RData::getBlock(String name, JumpType jump, BasicBlock* bb, const Data* val, PositionID id, std::pair<BasicBlock*,BasicBlock*> resume){
+void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id){
 	if(name==""){
 		if(jump==RETURN || jump==YIELD){
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump==GENERATOR){
+					BasicBlock* cur = builder.GetInsertBlock();
 					if(jumps[i]->returnType->classType==CLASS_VOID){
 						if(val->type!=R_VOID && val->getReturnType()->classType!=CLASS_VOID) id.error("Cannot return something in function requiring void");
-						jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(bb, &VOID_DATA));
+						jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(cur, &VOID_DATA));
 					}
-					else jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(bb, val->castTo(*this, jumps[i]->returnType, id)));
-					jumps[i]->resumes.push_back(resume);
-					return jumps[i]->end;
+					else jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(cur, val->castTo(*this, jumps[i]->returnType, id)));
+					builder.CreateBr(jumps[i]->end);//TODO DECREMENT ALL COUNTS BEFORE HERE
+					BasicBlock *RESUME = CreateBlock("postReturn",cur);
+					jumps[i]->resumes.push_back(std::pair<BasicBlock*,BasicBlock*>(cur,RESUME));
+					builder.SetInsertPoint(RESUME);
 				}
 				if(i <= 0){
-					cerr << "Error could not find returning block" << endl << flush;
-					return NULL;
+					id.compilerError("Error could not find returning block");
+					exit(1);
 				}
 			}
 		} else {
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == LOOP){
 					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
-					return (jump==BREAK)?(jumps[i]->end):(jumps[i]->start);
+					builder.CreateBr((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));//TODO DECREMENT ALL COUNTS BEFORE HERE
 				}
 				if(i <= 0){
-					cerr << "Error could not find continue/break block" << endl << flush;
-					return NULL;
+					id.compilerError("Error could not find continue/break block");
+					exit(1);
 				}
 			}
 		}
 	} else {
-		cerr << "Error not done yet2" << endl << flush;
+		id.compilerError("Named jumps not supported yet");
 		exit(1);
-		return NULL;
 	}
 }
 

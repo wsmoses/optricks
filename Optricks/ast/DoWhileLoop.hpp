@@ -45,7 +45,7 @@ public:
 		r.builder.CreateBr(loopBlock);
 		r.builder.SetInsertPoint(loopBlock);
 		assert(incBlock); assert(afterBlock);
-		Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+		Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 		r.addJump(&j);
 		statement->evaluate(r);
 #ifndef NDEBUG

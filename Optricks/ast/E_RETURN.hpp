@@ -38,12 +38,7 @@ class E_RETURN : public ErrorStatement{
 		const Data* evaluate(RData& r) const override {
 			const Data* t = (inner && inner->getToken()!=T_VOID)?(inner->evaluate(r)):(&VOID_DATA);
 			if(jump==YIELD){
-				BasicBlock *RESUME = r.CreateBlock("postReturn",r.builder.GetInsertBlock());
-				//BasicBlock* toBreak =
-				r.getBlock(name, YIELD, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),RESUME));
-				//assert(toBreak!=NULL);
-//				r.addPred(toBreak,r.builder.GetInsertBlock());
-				r.builder.SetInsertPoint(RESUME);
+				r.makeJump(name, YIELD, t, filePos);
 			} else if(jump==RETURN){
 				if(t->type==R_VOID
 						//t.getReturnType(ar, filePos)==voidClass
@@ -57,8 +52,7 @@ class E_RETURN : public ErrorStatement{
 					r.builder.CreateRet(V);
 				}
 			} else {
-				BasicBlock* toBreak = r.getBlock(name, jump, r.builder.GetInsertBlock(), t, filePos, std::pair<BasicBlock*,BasicBlock*>(r.builder.GetInsertBlock(),NULL));
-				if(toBreak!=NULL) r.builder.CreateBr(toBreak);
+				r.makeJump(name, jump, t, filePos);
 			}
 			return &VOID_DATA;
 		}

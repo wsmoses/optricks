@@ -10,26 +10,21 @@
 #include "./E_FUNCTION.hpp"
 #include "../../language/basic_functions.h"
 class ExternFunction : public E_FUNCTION{
-private:
-	E_VAR* self;
-	Statement* returnV;
 public:
-	ExternFunction(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r):
-		E_FUNCTION(id,dec),self(s),returnV(r){
-		assert(s);
-		if(r==nullptr) id.error("Cannot have automatic return class for external function");
-		assert(r);
+	ExternFunction(PositionID id, OModule* o,String n):
+		E_FUNCTION(id,OModule(o),n){
+		returnV=nullptr;
 	}
 	void registerClasses() const override final{
-		//self->registerClasses();
 		//returnV->registerClasses();
 	}
 	void buildFunction(RData& a) const override final{
 		registerFunctionPrototype(a);
+		assert(methodBody==nullptr);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
-		//self->registerFunctionPrototype(a);
+		assert(methodBody==nullptr);
 		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
 		llvm::SmallVector<Type*,0> args(declaration.size());
@@ -42,12 +37,12 @@ public:
 			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
 			args[i] = cl;
 		}
+		assert(returnV);
 		const AbstractClass* returnType = returnV->getSelfClass(filePos);
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		FunctionType *FT = FunctionType::get(r, args, false);
-		String nam = self->getShortName();
-		llvm::Function *F = a.getExtern(nam, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);
+		llvm::Function *F = a.getExtern(name, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);
 		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 		else if(nam=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
 		else if(nam=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
@@ -55,11 +50,12 @@ public:
 		else if(nam=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
 		else if(nam=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
 		else*/
-		if(F->getName().str()!=nam){
-			error("Cannot extern function due to name in use "+nam+" was replaced with "+F->getName().str());
+		if(F->getName().str()!=name){
+			filePos.error("Cannot extern function due to name in use "+name+" was replaced with "+F->getName().str());
 		}
-		myFunction = new CompiledFunction(new FunctionProto(self->getFullName(), ad, returnType), F);
-		self->getMetadata().addFunction(myFunction);
+		//todo have full name
+		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
+		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
 	}
 };

@@ -15,17 +15,12 @@
 #define E_GEN_C_
 class E_GEN : public E_FUNCTION{
 public:
-	E_VAR* self;
-	Statement* returnV;
-	Statement* body;
 	mutable bool built;
-	E_GEN(PositionID id, std::vector<Declaration*> dec, E_VAR* s, Statement* r, Statement* b):
-		E_FUNCTION(id,dec),self(s),returnV(r),body(b),built(false){
-		assert(s);
-		assert(r);
+	E_GEN(PositionID id, OModule* sur, String n):
+		E_FUNCTION(id,OModule(sur),n),built(false){
 	}
 	void registerClasses() const override final{
-		body->registerClasses();
+		methodBody->registerClasses();
 	}
 /*
 	void registerFunctionPrototype(RData& a) const override final{
@@ -43,7 +38,7 @@ public:
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
-			body->collectReturns(yields,returnType);
+			methodBody->collectReturns(yields,returnType);
 			if(yields.size()==0) returnType = voidClass;
 			else {
 				returnType = getMin(yields,filePos);
@@ -71,7 +66,7 @@ public:
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );
-		body->registerFunctionPrototype(a);
+		methodBody->registerFunctionPrototype(a);
 	}*/
 	const Token getToken() const{
 		return T_GEN;
@@ -83,11 +78,11 @@ public:
 		if(registereD) return;
 		registereD = true;
 		for(auto& a:declaration) a->registerFunctionPrototype(ra);
-		body->registerFunctionPrototype(ra);
+		methodBody->registerFunctionPrototype(ra);
 		self->pointer.addFunction();
 		std::vector<const AbstractClass*> cp;
 		const AbstractClass* ret = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
-		body->collectReturns(cp,myFunction->getSingleProto()->returnType);
+		methodBody->collectReturns(cp,myFunction->getSingleProto()->returnType);
 		if(!ret){
 			if(cp.size()==0){
 				filePos.error("Cannot have auto-returning generator with no yield statements");
@@ -112,7 +107,7 @@ public:
 		if(returnClass!=NULL) returnClass->buildFunction(r);
 		for(auto& a:declaration) a->buildFunction(r);
 		self->buildFunction(r);
-		body->buildFunction(r);*/
+		methodBody->buildFunction(r);*/
 	};
 };
 

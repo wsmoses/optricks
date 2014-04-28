@@ -12,23 +12,24 @@
 
 class ConstructorFunction : public E_FUNCTION{
 private:
-	Statement* self;
-	Statement* body;
-	Resolvable _this;
+	Statement* myClass;
 	bool built;
 public:
-	ConstructorFunction(PositionID id, std::vector<Declaration*> dec, const Resolvable& r, Statement* s, Statement* b):
-		E_FUNCTION(id,dec),self(s),body(b),_this(r),built(false){
-		assert(s);
+	//TODO combine scope
+	ConstructorFunction(PositionID id, OModule* superScope,Statement* mc):
+//std::vector<Declaration*> dec, const Resolvable& r, Statement* s, Statement* b):
+		E_FUNCTION(id,OModule(superScope),"#constructor"),myClass(mc),built(false){
+		module.addVariable(filePos,"this",&VOID_DATA);
 	}
 	void registerClasses() const override final{
-		body->registerClasses();
+		methodBody->registerClasses();
 		//self->registerClasses();
 		//returnV->registerClasses();
 	}
 	void buildFunction(RData& ra) const override final{
 		if(built) return;
 		registerFunctionPrototype(ra);
+		assert(returnV==nullptr);
 
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
@@ -38,26 +39,27 @@ public:
 		assert(uc->classType==CLASS_USER);
 		auto UC = (const UserClass*)uc;
 		if(uc->layout==PRIMITIVE_LAYOUT)
-			_this.setObject((new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra));
+			module.setVariable(filePos, "this",(new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra));
 		else
-			_this.setObject(new ConstantData( UC->generateData(ra, filePos), uc));
+			module.setVariable(filePos, "this",new ConstantData( UC->generateData(ra, filePos), uc));
 
 		auto tmp = ra.functionReturn;
 		ra.functionReturn = nullptr;
-		body->evaluate(ra);
+		methodBody->evaluate(ra);
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
 		}
-		Value* V = _this.getValue(ra);
+		Value* V = module.getVariable(filePos, "this")->getValue(ra,filePos);
 		ra.builder.CreateRet(V);
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		assert(ra.functionReturn == nullptr);
 		ra.functionReturn = tmp;
-		body->buildFunction(ra);
+		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;
+		assert(returnV==nullptr);
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
 		BasicBlock *Parent = a.builder.GetInsertBlock();
@@ -83,7 +85,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = self->getSelfClass(filePos);
+		const AbstractClass* returnType = myClass->getSelfClass(filePos);
 		assert(returnType);
 		if(returnType->classType!=CLASS_USER) filePos.error("Cannot make constructor for built-in types");
 		llvm::Type* r = returnType->type;
@@ -109,7 +111,7 @@ public:
 		}
 
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
-		body->registerFunctionPrototype(a);
+		methodBody->registerFunctionPrototype(a);
 	}
 };
 

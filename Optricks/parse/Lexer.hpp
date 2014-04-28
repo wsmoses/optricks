@@ -221,14 +221,14 @@ class Lexer{
 		Statement* getNextStatement(char endWith,bool global){
 			return getNextStatement(ParseData(endWith,myMod,true,global?PARSE_GLOBAL:PARSE_LOCAL));
 		}
-		std::vector<Declaration*> parseArguments(ParseData data, char finish=')'){
-			std::vector<Declaration*> args;
-			if(f->done) return args;
+		void parseArguments(std::vector<Declaration*>& args, ParseData data, char finish=')'){
+			assert(args.size()==0);
+			if(f->done) return;
 			while(true){
 				trim(data);
 				if(f->peek()==finish){
 					f->read();
-					return args;
+					return;
 				}
 				Declaration* d = getNextDeclaration(data.getEndWith(EOF),false,true);
 				for(const Declaration*const& a:args){
@@ -241,11 +241,11 @@ class Lexer{
 				char tchar = f->peek();
 				if(tchar==finish || tchar==','){
 					f->read();
-					if(tchar==finish) return args;
+					if(tchar==finish) return;
 				}
 				else f->error("Could not parse arguments - encountered character "+String(1,tchar));
 			}
-			return args;
+			return;
 		}
 		inline PositionID pos() const{
 			assert(f!=nullptr);
@@ -453,22 +453,27 @@ class Lexer{
 			if(paren){
 				f->read();
 				f->trim(EOF);
-				Statement* init = VOID_STATEMENT;
-				OModule* module = new OModule(data.mod);
-				if(f->peek()!=';') init = getNextStatement(ParseData(EOF, module, true, PARSE_LOCAL));
+				auto FORLOOP = new ForLoop(pos(),data.mod);
+
+				if(f->peek()!=';') FORLOOP->initialize = getNextStatement(ParseData(EOF, & FORLOOP->module, true, PARSE_LOCAL));
+				else FORLOOP->initialize = VOID_STATEMENT;
 				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 				f->trim(EOF);
-				Statement* cond = VOID_STATEMENT;
-				if(f->peek()!=';') cond = getNextStatement(ParseData(EOF, module, true, PARSE_EXPR));
-				if(cond->getToken()==T_VOID) cond = ConstantData::getTrue();
+
+				if(f->peek()!=';'){
+					FORLOOP->condition = getNextStatement(ParseData(EOF, & FORLOOP->module, true, PARSE_EXPR));
+					if(FORLOOP->condition->getToken()==T_VOID)
+						FORLOOP->condition = ConstantData::getTrue();
+				} else FORLOOP->condition = ConstantData::getTrue();
 				if(!f->done && (f->peek()==';' || f->peek()==',')) f->read();
 				f->trim(EOF);
-				Statement* inc = VOID_STATEMENT;
-				if(f->peek()!=')') inc = getNextStatement(ParseData(EOF, module, true, PARSE_EXPR));
+
+				if(f->peek()!=')') FORLOOP->increment = getNextStatement(ParseData(EOF, & FORLOOP->module, true, PARSE_EXPR));
+				else FORLOOP->increment = VOID_STATEMENT;
 				f->trim(EOF);
 				if(f->read()!=')') f->error("Invalid additional piece of for loop",true);
-				Statement* blocks = getNextBlock(data.getModule(module));
-				return new ForLoop(pos(), init,cond,inc,blocks);
+				FORLOOP->toLoop = getNextBlock(data.getModule(& FORLOOP->module));
+				return FORLOOP;
 				//TODO implement for loop naming
 			}
 			else{
@@ -489,6 +494,7 @@ class Lexer{
 					f->read();
 					f->trim(EOF);
 				}
+				//TODO CLEANUP FOREACH MODULES
 				OModule* nmod = new OModule(data.mod);
 				nmod->addVariable(pos(), iterName,&VOID_DATA);
 				E_VAR* variable = new E_VAR( Resolvable(nmod,iterName,pos()));
@@ -531,16 +537,15 @@ class Lexer{
 		Statement* getLambdaFunction(ParseData data, bool read=false){
 			if(!read && f->getNextName(data.endWith)!="lambda") f->error("Could not find 'lambda' in lambda function");
 			if(f->trim(EOF)) f->error("Uncompleted lambda function");
-			OModule* module = new OModule(data.mod);
-			std::vector<Declaration*> arguments;
-			if(!f->done) arguments = parseArguments(ParseData(EOF, module, true,PARSE_LOCAL),':');
+			auto LAMBDA = new LambdaFunction(pos(), data.mod);
+			if(!f->done) parseArguments(LAMBDA->declaration, ParseData(EOF, & LAMBDA->module, true,PARSE_LOCAL),':');
 			if(f->trim(EOF)) f->error("Lambda Function without body");
 			if(!f->done && f->peek()==':'){
 				f->read();
 				if(f->trim(EOF)) f->error("Lambda Function without body (c)");
 			}
-			Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL));
-			return new LambdaFunction(pos(), arguments, methodBody);
+			LAMBDA->methodBody = getNextBlock(ParseData(data.endWith, & LAMBDA->module,true,PARSE_LOCAL));
+			return LAMBDA;
 		}
 		E_FUNCTION* getFunction(ParseData data, String temp="", AbstractClass* outer=nullptr,bool stat=false){
 			if(temp=="") temp = f->getNextName(EOF);
@@ -553,17 +558,16 @@ class Lexer{
 					trim(EOF);
 					mark = f->getMarker();
 				} else f->undoMarker(mark);
-				auto returnName = getNextType(data,true);
+				auto returnNameTemp = getNextType(data,true);
 				f->trim(EOF);
-				if(returnName){
+				if(returnNameTemp){
 					auto nex = f->peek();
 					if(!isStartName(nex)){
 						f->undoMarker(mark);
-						returnName = nullptr;
+						returnNameTemp = nullptr;
 					}
 				}
 
-				OModule* module = new OModule(data.mod);
 				std::vector<std::pair<String,PositionID> > methodName;
 				bool isOperator = false;
 				while(isStartName(f->peek())){
@@ -584,11 +588,66 @@ class Lexer{
 					methodName.push_back(std::pair<String,PositionID>(method,pos()));
 					if(isOperator || !op) break;
 				}
-				std::vector<Declaration*> arguments;
+				E_FUNCTION* func;
+				if(methodName.size()<=1 && outer==nullptr){
+					String name;
+					if(methodName.size()==0) name = "";
+					else{
+						assert(methodName.size()==1);
+						if(isOperator){
+							pos().error("Operator overloading not implemented yet");
+							exit(1);
+							assert(methodName[0].first.length()>0);
+							name = ":"+methodName[0].first;
+						} else {
+							data.mod->addFunction(pos(), methodName[0].first);
+							assert(methodName[0].first.length()>0);
+							name = methodName[0].first;
+						}
+					}
+					if(temp=="gen")
+						func = new E_GEN(pos(), data.mod,name);//arguments, funcName, returnName, methodBody);
+					else
+						func = new UserFunction(pos(), data.mod,name);//arguments, funcName, returnName, methodBody);
+
+					if(staticF)
+						pos().error("Cannot preface non-class function with keyword static");
+				} else {
+					Statement* funcName;
+					//TODO change scope
+					//myMod = nullptr;//make combined scope
+					if(outer==nullptr){
+						funcName = new E_VAR(Resolvable(data.mod, methodName[0].first, pos()));
+						for(unsigned int i = 1; i+2<methodName.size(); i++)
+							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
+					} else{
+						funcName = outer;//new E_LOOKUP(methodName[0].second, outer, methodName[0].first);
+						for(unsigned int i = 0; i+2<methodName.size(); ++i){
+							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
+						}
+					}
+					if((outer!=nullptr)?(methodName.back().first == outer->name):(methodName.back().first==methodName[methodName.size()-2].first)){
+						if(staticF)
+							pos().error("Cannot precede constructor with static keyword");
+						func = new ConstructorFunction(pos(), data.mod,funcName);
+							//arguments, Resolvable(module,"this",pos()), funcName, methodBody);
+					}
+					else{
+						if(temp=="gen"){
+							pos().compilerError("Class-based generators not implemented yet");
+							exit(1);
+							//func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
+						}
+						else
+							func = new ClassFunction(pos(), data.mod, methodName.back().first, staticF, funcName);
+						//, arguments, staticF, Resolvable(module,"this",pos()), methodName.back().first, funcName, returnName, methodBody);
+					}
+				}
+				func->returnV = returnNameTemp;
 				if(!f->done){
 					if(f->peek()=='('){
 						f->read();
-						arguments = parseArguments(ParseData(EOF, module,true,PARSE_LOCAL),')');
+						parseArguments(func->declaration,ParseData(EOF, & func->module,true,PARSE_LOCAL),')');
 					}
 					else f->error("Need '(' in function declaration, found "+String(1,f->read()),true);
 				}
@@ -598,61 +657,7 @@ class Lexer{
 					trim(data);
 				}
 				bool paren;
-				E_FUNCTION* func;
-				if(methodName.size()<=1 && outer==nullptr){
-					if(staticF){
-						pos().error("Cannot preface non-class function with keyword static");
-					}
-					E_VAR* funcName;
-					if(methodName.size()==0) funcName = nullptr;
-					else if(methodName.size()==1){
-						if(isOperator){
-							pos().error("Operator overloading not implemented yet");
-							exit(1);
-							funcName = new E_VAR(Resolvable(nullptr,methodName[0].first,pos()));
-						} else {
-							data.mod->addFunction(pos(), methodName[0].first);
-							funcName = new E_VAR(Resolvable(data.mod,methodName[0].first,pos()));
-						}
-					}
-					Statement* methodBody = getNextBlock(ParseData(data.endWith, module, true,PARSE_LOCAL),&paren);
-					auto tmp = pos();
-					if(temp=="gen")
-						func = new E_GEN(tmp, arguments, funcName, returnName, methodBody);
-					else
-						func = new UserFunction(tmp, arguments, funcName, returnName, methodBody);
-				}
-				else {
-					Statement* funcName;
-					//TODO change scope
-					//myMod = nullptr;//make combined scope
-					if(outer==nullptr){
-						funcName = new E_VAR(Resolvable(data.mod, methodName[0].first, pos()));
-						for(unsigned int i = 1; i+1<methodName.size(); i++)
-							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
-					} else{
-						funcName = outer;//new E_LOOKUP(methodName[0].second, outer, methodName[0].first);
-						for(unsigned int i = 0; i+1<methodName.size(); ++i){
-							funcName = new E_LOOKUP(methodName[i].second, funcName, methodName[i].first);
-						}
-					}
-					module->addVariable(pos(),"this",&VOID_DATA);
-					Statement* methodBody = getNextBlock(ParseData(data.endWith, module,true,PARSE_LOCAL), &paren);
-					PositionID tmp = pos();
-					if((outer!=nullptr)?(methodName.back().first == outer->name):(methodName.back().first==methodName[methodName.size()-2].first)){
-						if(staticF)
-							pos().error("Cannot precede constructor with static keyword");
-						func = new ConstructorFunction(tmp, arguments, Resolvable(module,"this",pos()), funcName, methodBody);
-					}
-					else{
-						if(temp=="gen"){
-							pos().compilerError("Class-based generators not implemented yet");
-							//func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
-						}
-						else
-							func = new ClassFunction(tmp, arguments, staticF, Resolvable(module,"this",pos()), methodName.back().first, funcName, returnName, methodBody);
-					}
-				}
+				func->methodBody = getNextBlock(ParseData(data.endWith, & func->module, true,PARSE_LOCAL),&paren);
 				trim(data);
 				//bool semi  = false;
 				//if(!f->done && f->peek()==';'){ semi = true; }
@@ -666,26 +671,24 @@ class Lexer{
 				trim(data);
 				String methodName = getNextName(EOF);
 				data.mod->addFunction(pos(), methodName);
-				E_VAR* externName = new E_VAR(Resolvable(data.mod,methodName,pos()));
-				//externName->getMetadata()->setObject(DATA::getFunction(nullptr,nullptr));
+				auto EXTERN = new ExternFunction(pos(), data.mod,methodName);
+				EXTERN->returnV = retV;
 				//todo check if necessary
 				trim(data);
 				if(f->peek()!='('){
 					f->error("'(' required after extern not "+String(1,f->peek()),true);
 				}
 				f->read();
-				std::vector<Declaration*> dec;
-				OModule* m2 = new OModule(data.mod);
 				while(true){
 					trim(data);
 					if(f->peek()==')') break;
-					Declaration* d= getNextDeclaration(ParseData(EOF, m2, true,PARSE_LOCAL));
-					dec.push_back(d);
+					Declaration* d= getNextDeclaration(ParseData(EOF, & EXTERN->module, true,PARSE_LOCAL));
+					EXTERN->declaration.push_back(d);
 					trim(data);
 					if(f->peek()==',') f->read();
 				}
 				if(f->read()!=')') f->error("Need ending ')' for extern", true);
-				return new ExternFunction(pos(), dec, externName, retV);
+				return EXTERN;
 			}
 			else{
 				f->error("Invalid function start -- used "+temp);

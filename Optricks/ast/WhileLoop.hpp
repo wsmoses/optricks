@@ -50,7 +50,7 @@ class WhileLoop : public ErrorStatement{
 				if(c->isOne()){
 					//is always true
 					BasicBlock *afterBlock = r.CreateBlock("afterloop");
-					Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+					Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 					r.addJump(&j);
 					statement->evaluate(r);
 					#ifndef NDEBUG
@@ -75,7 +75,7 @@ class WhileLoop : public ErrorStatement{
 			BasicBlock *afterBlock = r.CreateBlock("afterloop");
 			r.builder.CreateCondBr(v, loopBlock, afterBlock);
 			r.builder.SetInsertPoint(loopBlock);
-			Jumpable j(name, LOOP, incBlock, afterBlock, NULL);
+			Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 			r.addJump(&j);
 			statement->evaluate(r);
 			#ifndef NDEBUG
