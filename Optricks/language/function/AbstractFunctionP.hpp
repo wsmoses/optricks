@@ -61,7 +61,8 @@ inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 		assert(ar[i]);
 	}
 	llvm::Type* const T = (fp->returnType == &charClass)?CHARTYPE:fp->returnType->type;
-	assert(T);
+	assert(fp->returnType);
+	assert(T || PositionID(0,0,"#getF").warning(fp->returnType->getName()+"  has no type"));;
 	llvm::FunctionType* FT = FunctionType::get(T, ar, false);
 	return getRData().CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }

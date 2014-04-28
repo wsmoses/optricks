@@ -31,7 +31,7 @@ for(double im=-1.25; im<1.25; im+=.04){
 }
 printf("hi %f\n",angle);
 fflush(0);
-print(chr(27)+'['+int(2.5/.04+2)+'A');
+print(chr(27)+'['+int(2.5/.04+1)+'A');
 //print(angle);
 //(extern int usleep(int s))(50000);
 }

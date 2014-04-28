@@ -49,7 +49,12 @@ public:
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
 		}
-		Value* V = module.getVariable(filePos, "this")->getValue(ra,filePos);
+		const Data* th = module.getVariable(filePos, "this");
+		Value* V = th->getValue(ra,filePos);
+
+		for(const auto& dat: module.vars){
+			if(dat!=th) decrementCount(ra, filePos, dat);
+		}
 		ra.builder.CreateRet(V);
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );

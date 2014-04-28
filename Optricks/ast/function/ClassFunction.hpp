@@ -132,6 +132,10 @@ class ClassFunction : public E_FUNCTION{
 			a.functionReturn = myFunction->getSingleProto()->returnType;
 			methodBody->evaluate(a);
 			if( !a.hadBreak()){
+				const Data* th = module.getVariable(filePos, "this");
+				for(const auto& dat: module.vars){
+					if(dat!=th) decrementCount(a, filePos, dat);
+				}
 				if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
 					a.builder.CreateRetVoid();
 				else error("Could not find return statement");

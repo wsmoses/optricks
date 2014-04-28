@@ -40,6 +40,7 @@ class E_RETURN : public ErrorStatement{
 			if(jump==YIELD){
 				r.makeJump(name, YIELD, t, filePos);
 			} else if(jump==RETURN){
+				filePos.warning("Garbage collection for variables in function not complete yet");
 				if(t->type==R_VOID
 						//t.getReturnType(ar, filePos)==voidClass
 						//TODO check this

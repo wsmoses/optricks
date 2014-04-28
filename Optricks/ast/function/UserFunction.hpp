@@ -31,6 +31,9 @@ public:
 		a.functionReturn = myFunction->getSingleProto()->returnType;
 		methodBody->evaluate(a);
 		if(! a.hadBreak()){
+			for(const auto& dat: module.vars){
+				decrementCount(a, filePos, dat);
+			}
 			if(myFunction->getSingleProto()->returnType->classType==CLASS_VOID)
 				a.builder.CreateRetVoid();
 			else error("Could not find return statement");

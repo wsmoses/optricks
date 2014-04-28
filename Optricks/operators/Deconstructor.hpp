@@ -9,7 +9,12 @@
 #define DECONSTRUCTOR_HPP_
 
 #include "../language/includes.hpp"
-
+#include "../language/data/TupleData.hpp"
+#include "../language/data/LocationData.hpp"
+#include "../language/data/ConstantData.hpp"
+#include "../language/class/builtin/TupleClass.hpp"
+#include "../language/class/builtin/IntClass.hpp"
+#include "../language/class/builtin/FloatClass.hpp"
 void incrementCount(RData& r, PositionID filePos, const Data* D){
 	const AbstractClass* C = D->getReturnType();
 	switch(C->classType){
@@ -85,7 +90,11 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_LAZY:
 	case CLASS_FLOATLITERAL:
 	{
-		filePos.warning("Decrementing count for class "+C->getName()+" ");
+		llvm::SmallVector<Type*,1> t_args(1);
+		t_args[0] = CSTRINGTYPE;
+		auto CU = r.getExtern("puts", FunctionType::get(c_intClass.type, t_args,true));
+		r.builder.CreateCall(CU, r.getConstantCString("Decrementing count for class "+C->getName()+" "));
+		//filePos.warning("Decrementing count for class "+C->getName()+" ");
 		return;
 	}
 		/*

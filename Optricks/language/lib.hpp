@@ -80,8 +80,9 @@ class PositionID{
 		void error(String s, bool end=true) const{
 			cerr << "Error: " << s << " at " << fileName << ":" << lineN << ":" << charN << endl << flush;
 		}
-		void warning(String s) const{
+		bool warning(String s) const{
 			cerr << "Warning: " << s << " at " << fileName << ":" << lineN << ":" << charN << endl << flush;
+			return false;
 		}
 		ostream& operator << (ostream& o) const{
 			o << fileName;

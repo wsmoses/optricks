@@ -11,6 +11,7 @@
 #include "RData.hpp"
 #include "./class/AbstractClass.hpp"
 #include "./data/VoidData.hpp"
+#include "../operators/Deconstructor.hpp"
 
 		inline Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs ){
 			llvm::SmallVector<Type*,0> args(A.size());
@@ -39,6 +40,14 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					BasicBlock *RESUME = CreateBlock("postReturn",cur);
 					jumps[i]->resumes.push_back(std::pair<BasicBlock*,BasicBlock*>(cur,RESUME));
 					builder.SetInsertPoint(RESUME);
+				} else {
+					//TODO GENERATOR SCOPE GC
+					/*
+					if(jumps[i]->scope){
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+					}*/
 				}
 				if(i <= 0){
 					id.compilerError("Error could not find returning block");
@@ -49,7 +58,18 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == LOOP){
 					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+					if(jump==BREAK){
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+					}
 					builder.CreateBr((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));//TODO DECREMENT ALL COUNTS BEFORE HERE
+				} else {
+					if(jumps[i]->scope){
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+					}
 				}
 				if(i <= 0){
 					id.compilerError("Error could not find continue/break block");

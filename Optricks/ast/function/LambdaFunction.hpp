@@ -34,13 +34,11 @@ public:
 		for(const auto& a: module.vars){
 			decrementCount(ra, filePos, a);
 		}
-		if(! ra.hadBreak()){
-			if(ret->type==R_VOID)
-				ra.builder.CreateRetVoid();
-			else{
-				Value* V = ret->getValue(ra, filePos);
-				ra.builder.CreateRet(V);
-			}
+		if(ret->type==R_VOID)
+			ra.builder.CreateRetVoid();
+		else{
+			Value* V = ret->getValue(ra, filePos);
+			ra.builder.CreateRet(V);
 		}
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
