@@ -11,6 +11,16 @@
 #include "./class/builtin/FunctionClass.hpp"
 #include "./class/UserClass.hpp"
 
+
+FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va):name(n),declarations(a), returnType(r),varArg(va){
+	assert(r);
+	assert(r->getName().length()>0);
+}
+FunctionProto::FunctionProto(String n, const AbstractClass* r,bool va):name(n),declarations(), returnType(r),varArg(va){
+	if(r)
+		assert(r->getName().length()>0);
+}
+
 FunctionClass* FunctionProto::getFunctionClass() const{
 		std::vector<const AbstractClass*> ac;
 		for(const auto& a: declarations) ac.push_back(a.declarationType);
