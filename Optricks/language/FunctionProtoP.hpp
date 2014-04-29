@@ -14,11 +14,11 @@
 
 FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va):name(n),declarations(a), returnType(r),varArg(va){
 	assert(r);
-	assert(r->getName().length()>0);
+	//assert(r->getName().length()>0);
 }
 FunctionProto::FunctionProto(String n, const AbstractClass* r,bool va):name(n),declarations(), returnType(r),varArg(va){
-	if(r)
-		assert(r->getName().length()>0);
+	//if(r)
+		//assert(r->getName().length()>0);
 }
 
 FunctionClass* FunctionProto::getFunctionClass() const{

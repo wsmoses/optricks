@@ -32,6 +32,10 @@ class Block : public ErrorStatement{
 				if(r.hadBreak()) error("Already had guaranteed return");
 				a->evaluate(r);
 			}
+			if(!r.hadBreak())
+				for(const auto & dat: module.vars){
+					decrementCount(r, filePos, dat);
+				}
 			return &VOID_DATA;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{

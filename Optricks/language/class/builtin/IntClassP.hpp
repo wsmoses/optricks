@@ -6,6 +6,7 @@
  */
 #ifndef INTCLASSP_HPP_
 #define INTCLASSP_HPP_
+#include "BoolClass.hpp"
 #include "IntClass.hpp"
 #include "FloatClass.hpp"
 #include "CharClass.hpp"
@@ -21,11 +22,12 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 	IntClass::IntClass(String nam, unsigned len):
 		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
 		LANG_M->addClass(PositionID(0,0,"#int"),this);
-		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+		/*LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()==1);
 						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
+		*/
 		LANG_M->addFunction(PositionID(0,0,"#int"),"chr")->add(
 				new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
