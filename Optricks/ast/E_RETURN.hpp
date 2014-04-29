@@ -40,18 +40,7 @@ class E_RETURN : public ErrorStatement{
 			if(jump==YIELD){
 				r.makeJump(name, YIELD, t, filePos);
 			} else if(jump==RETURN){
-				filePos.warning("Garbage collection for variables in function not complete yet");
-				if(t->type==R_VOID
-						//t.getReturnType(ar, filePos)==voidClass
-						//TODO check this
-						//t.getType()==R_UNDEF
-						)
-					r.builder.CreateRetVoid();
-				else{
-					assert(r.functionReturn);
-					Value* V = t->castToV(r, r.functionReturn, filePos);
-					r.builder.CreateRet(V);
-				}
+				r.makeJump(name, RETURN, t, filePos);
 			} else {
 				r.makeJump(name, jump, t, filePos);
 			}

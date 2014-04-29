@@ -128,8 +128,8 @@ class ClassFunction : public E_FUNCTION{
 			registerFunctionPrototype(a);
 			BasicBlock *Parent = a.builder.GetInsertBlock();
 			a.builder.SetInsertPoint(&(myFunction->getSingleFunc()->getEntryBlock()));
-			auto tmp = a.functionReturn;
-			a.functionReturn = myFunction->getSingleProto()->returnType;
+			Jumpable j(name, FUNC, &module, nullptr,nullptr,myFunction->getSingleProto()->returnType);
+			a.addJump(&j);
 			methodBody->evaluate(a);
 			if( !a.hadBreak()){
 				const Data* th = module.getVariable(filePos, "this");
@@ -143,8 +143,8 @@ class ClassFunction : public E_FUNCTION{
 
 			a.FinalizeFunction(myFunction->getSingleFunc());
 			if(Parent) a.builder.SetInsertPoint( Parent );
-			assert(a.functionReturn == myFunction->getSingleProto()->returnType);
-			a.functionReturn = tmp;
+			auto tmp = a.popJump();
+			assert(tmp== &j);
 			methodBody->buildFunction(a);
 		};
 

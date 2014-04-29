@@ -27,8 +27,10 @@ public:
 		BasicBlock *Parent = a.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
 		a.builder.SetInsertPoint(& (F->getEntryBlock()));
-		auto tmp = a.functionReturn;
-		a.functionReturn = myFunction->getSingleProto()->returnType;
+
+		Jumpable j(name, FUNC, &module, nullptr,nullptr,myFunction->getSingleProto()->returnType);
+		a.addJump(&j);
+
 		methodBody->evaluate(a);
 		if(! a.hadBreak()){
 			for(const auto& dat: module.vars){
@@ -41,8 +43,9 @@ public:
 		assert(F);
 		a.FinalizeFunction(F);
 		if(Parent) a.builder.SetInsertPoint( Parent );
-		assert(a.functionReturn == myFunction->getSingleProto()->returnType);
-		a.functionReturn = tmp;
+		auto tmp = a.popJump();
+		assert(tmp== &j);
+
 		methodBody->buildFunction(a);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

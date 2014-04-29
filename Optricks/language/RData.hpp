@@ -18,8 +18,17 @@ enum JumpType{
 
 enum TJump{
 	LOOP,
+	FUNC,
 	GENERATOR,
 };
+
+template<> String str<TJump>(TJump d){
+	switch(d){
+		case LOOP: return "LOOP";
+		case FUNC: return "FUNC";
+		case GENERATOR: return "GENERATOR";
+	}
+}
 
 struct Jumpable {
 	public:
@@ -28,10 +37,10 @@ struct Jumpable {
 		Scopable* scope;
 		BasicBlock* start;
 		BasicBlock* end;
-		AbstractClass* returnType;
+		const AbstractClass* returnType;
 		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
 		std::vector<std::pair<BasicBlock*,const Data*> > endings;
-		Jumpable(String n, TJump t, Scopable* om, BasicBlock* s, BasicBlock* e, AbstractClass* p):
+		Jumpable(String n, TJump t, Scopable* om, BasicBlock* s, BasicBlock* e, const AbstractClass* p):
 			name(n), toJump(t), scope(om), start(s), end(e), returnType(p){
 
 		}
@@ -52,10 +61,9 @@ struct RData{
 		FunctionPassManager fpm;
 		PassManager mpm;
 		ExecutionEngine* exec;
-		const AbstractClass* functionReturn;
 		RData(): enableAsserts(false),lmod(new Module("main",getGlobalContext())),
 				builder(getGlobalContext())
-		,fpm(lmod),mpm(),functionReturn(nullptr){
+		,fpm(lmod),mpm(){
 			lmod->setDataLayout("p:64:64:64");
 			exec=nullptr;
 			// Set up optimizers

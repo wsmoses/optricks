@@ -16,6 +16,7 @@
 #include "../language/class/builtin/IntClass.hpp"
 #include "../language/class/builtin/FloatClass.hpp"
 void incrementCount(RData& r, PositionID filePos, const Data* D){
+	if(D->type==R_VOID) return;
 	const AbstractClass* C = D->getReturnType();
 	switch(C->classType){
 	case CLASS_FUNC:
@@ -65,6 +66,7 @@ void incrementCount(RData& r, PositionID filePos, const Data* D){
 }
 
 void decrementCount(RData& r, PositionID filePos, const Data* D){
+	if(D->type==R_VOID) return;
 	const AbstractClass* C = D->getReturnType();
 	switch(C->classType){
 	case CLASS_FUNC:

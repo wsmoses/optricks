@@ -26,8 +26,8 @@ public:
 		BasicBlock *Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
 		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
-		auto tmp = ra.functionReturn;
-		ra.functionReturn = nullptr;
+		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
+		ra.addJump(&j);
 
 		const Data* ret = methodBody->evaluate(ra);
 		assert(!ra.hadBreak());
@@ -42,8 +42,9 @@ public:
 		}
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		assert(ra.functionReturn == nullptr);
-		ra.functionReturn = tmp;
+		auto tmp = ra.popJump();
+		assert(tmp== &j);
+
 		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

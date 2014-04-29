@@ -65,12 +65,8 @@ class ForLoop : public ErrorStatement{
 			Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 			r.addJump(&j);
 			toLoop->evaluate(r);
-#ifndef NDEBUG
 			auto tmp = r.popJump();
 			assert(tmp== &j);
-#else
-			r.popJump();
-#endif
 			r.builder.CreateBr(incBlock);
 
 			r.builder.SetInsertPoint(incBlock);

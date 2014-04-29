@@ -42,9 +42,9 @@ public:
 			module.setVariable(filePos, "this",(new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra));
 		else
 			module.setVariable(filePos, "this",new ConstantData( UC->generateData(ra, filePos), uc));
+		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
+		ra.addJump(&j);
 
-		auto tmp = ra.functionReturn;
-		ra.functionReturn = nullptr;
 		methodBody->evaluate(ra);
 		if( ra.hadBreak()){
 			error("Cannot use return in constructor");
@@ -58,8 +58,9 @@ public:
 		ra.builder.CreateRet(V);
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
-		assert(ra.functionReturn == nullptr);
-		ra.functionReturn = tmp;
+		auto tmp = ra.popJump();
+		assert(tmp== &j);
+
 		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{

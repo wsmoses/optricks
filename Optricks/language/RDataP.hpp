@@ -27,7 +27,44 @@
 		}
 void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id){
 	if(name==""){
-		if(jump==RETURN || jump==YIELD){
+		if(jump==RETURN){
+			for(int i = jumps.size()-1; ; i--){
+				if(jumps[i]->toJump==FUNC){
+					if(jumps[i]->returnType==nullptr){
+						id.error("Cannot return from function that does not allow returns");
+					} else if(jumps[i]->returnType->classType==CLASS_VOID){
+						if(val->type!=R_VOID && val->getReturnType()->classType!=CLASS_VOID) id.error("Cannot return something in function requiring void");
+						assert(jumps[i]->scope);
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+						builder.CreateRetVoid();
+					}
+					else {
+						auto tmp = val->castToV(*this, jumps[i]->returnType, id);
+						assert(jumps[i]->scope);
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+						builder.CreateRet(tmp);
+					}
+					return;
+				} else {
+					if(jumps[i]->scope){
+						for(const auto& dat: jumps[i]->scope->vars){
+							decrementCount(*this, id, dat);
+						}
+					}
+				}
+				if(i <= 0){
+					for(auto a: jumps)
+						cerr << a->name << " and " << str(a->toJump) << endl << flush;
+					id.compilerError("Error could not find returning block - func");
+					exit(1);
+				}
+			}
+		} else if(jump==YIELD){
+			id.warning("Generator variable garbage collection / cleanup needs to be implemented");
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump==GENERATOR){
 					BasicBlock* cur = builder.GetInsertBlock();
@@ -40,6 +77,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					BasicBlock *RESUME = CreateBlock("postReturn",cur);
 					jumps[i]->resumes.push_back(std::pair<BasicBlock*,BasicBlock*>(cur,RESUME));
 					builder.SetInsertPoint(RESUME);
+					return;
 				} else {
 					//TODO GENERATOR SCOPE GC
 					/*
@@ -50,20 +88,16 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					}*/
 				}
 				if(i <= 0){
-					id.compilerError("Error could not find returning block");
+					id.compilerError("Error could not find returning block - gen");
 					exit(1);
 				}
 			}
-		} else {
+		} else{
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == LOOP){
 					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
-					if(jump==BREAK){
-						for(const auto& dat: jumps[i]->scope->vars){
-							decrementCount(*this, id, dat);
-						}
-					}
-					builder.CreateBr((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));//TODO DECREMENT ALL COUNTS BEFORE HERE
+					builder.CreateBr((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));
+					return;
 				} else {
 					if(jumps[i]->scope){
 						for(const auto& dat: jumps[i]->scope->vars){
