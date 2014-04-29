@@ -62,7 +62,7 @@ class ForLoop : public ErrorStatement{
 			incBlock = r.CreateBlock("inc");
 			r.builder.SetInsertPoint(loopBlock);
 			assert(incBlock); assert(afterBlock);
-			Jumpable j(name, LOOP, &module, incBlock, afterBlock, NULL);
+			Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 			r.addJump(&j);
 			toLoop->evaluate(r);
 #ifndef NDEBUG
@@ -86,6 +86,9 @@ class ForLoop : public ErrorStatement{
 			}
 
 			r.builder.SetInsertPoint(afterBlock);
+			for(const auto& dat: module.vars){
+				decrementCount(r, filePos, dat);
+			}
 			return &VOID_DATA;
 		}
 		void registerClasses() const override final{
