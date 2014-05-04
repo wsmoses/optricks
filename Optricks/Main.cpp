@@ -7,6 +7,7 @@
 
 #include "./language/Post.hpp"
 #include "./parse/Lexer.hpp"
+#include "./language/ffi/F_Class.hpp"
 /**
  * TODO create allocation of global memory after function prototype but before built
  */
@@ -441,6 +442,13 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;
+		std::cout << convertClass<void>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<bool>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<char>::convert(LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<void(bool, char)>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<void (*)(bool, char)>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<std::pair<bool, char>>::convert(LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<void (*)(int, char)>::convert(LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
 		/*

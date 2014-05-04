@@ -11,6 +11,7 @@
 #include "../language/statement/Statement.hpp"
 #include "./E_VAR.hpp"
 #include "../language/location/Location.hpp"
+#include "../operators/Deconstructor.hpp"
 
 #define DECLR_P_
 class Declaration: public ErrorStatement{
@@ -136,6 +137,7 @@ public:
 				Location* aloc = finished->getMyLocation();
 				Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
 				aloc->setValue(nex,r);
+				incrementCount(r, filePos, finished);
 			}
 			return finished;
 		}
@@ -154,6 +156,7 @@ public:
 			}
 			const ReferenceData* R = (const ReferenceData*)D;
 			variable.getMetadata().setObject(R->value);
+			filePos.warning("Garbage collection of references not implemented yet");
 			return finished=R->value;
 		}
 		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
@@ -162,7 +165,8 @@ public:
 		if(global){
 			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			GlobalVariable* GV;
-			if(Constant* cons = dyn_cast_or_null<Constant>(tmp)) GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,cons);
+			if(Constant* cons = dyn_cast_or_null<Constant>(tmp))
+				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,cons);
 			else{
 				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
@@ -179,6 +183,8 @@ public:
 			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
+
+		incrementCount(r, filePos, finished);
 		return finished;
 	}
 };

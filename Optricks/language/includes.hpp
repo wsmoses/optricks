@@ -15,6 +15,17 @@
 //#include <GL/glut.h>
 #undef VOID
 #define __cplusplus 201103L
+
+#include <boost/preprocessor/repetition/repeat.hpp>
+#include <boost/preprocessor/punctuation/comma_if.hpp>
+#include <boost/function_types/function_type.hpp>
+#include <boost/function_types/parameter_types.hpp>
+#include <boost/function_types/function_arity.hpp>
+#include <boost/typeof/std/utility.hpp>
+#include <boost/type_traits.hpp>
+#include <boost/units/detail/utility.hpp>
+#include <boost/exception/detail/type_info.hpp>
+
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -73,6 +84,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Support/CFG.h"
 using namespace llvm;
+#include "Macros.hpp"
 #include <assert.h>
 //#define cout std::cout
 #define cin std::cin
