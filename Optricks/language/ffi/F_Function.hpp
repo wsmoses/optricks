@@ -20,13 +20,21 @@ template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func
 			getRData().getExtern(name, C->returnType, C->argumentTypes, false, lib));
 };
 
-template<typename...B> inline void addMangledToStream(ostream& s);
+template<typename...B> struct addMangledToStream{
+	void add(ostream& s);
+};
 
-template<typename A, typename...B> inline void addMangledToStream<A,B...>(ostream& s){
-	s << typeid(A).name();
-}
-template<> inline void addMangledToStream<>(ostream& s){
-}
+template<typename A, typename...B> struct addMangledToStream<A,B...>{
+	void add(ostream& s){
+		s << typeid(A).name();
+	}
+};
+
+template<> struct addMangledToStream<>{
+	void add(ostream& s){
+	}
+};
+
 template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*func)(B...), String name, String lib=""){
 	const FunctionClass* C = convertClass<R(*)(B...)>::convert(&NS_LANG_CPP.staticVariables);
 	std::vector<AbstractDeclaration> ad;
@@ -36,7 +44,7 @@ template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*fu
 	s << "_Z";
 	s << name.length();
 	s << name;
-	addMangledToStream<B...>(s);
+	addMangledToStream<B...>::add(s);
 	return new CompiledFunction(
 			new FunctionProto(name, ad, C->returnType, false),
 			getRData().getExtern(s.str(), C->returnType, C->argumentTypes, false, lib));
