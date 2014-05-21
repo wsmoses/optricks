@@ -21,17 +21,18 @@ template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func
 };
 
 template<typename...B> struct addMangledToStream{
-	void add(ostream& s);
+	static void add(ostream& s);
 };
 
 template<typename A, typename...B> struct addMangledToStream<A,B...>{
-	void add(ostream& s){
+	static void add(ostream& s){
 		s << typeid(A).name();
+		addMangledToStream<B...>::add(s);
 	}
 };
 
 template<> struct addMangledToStream<>{
-	void add(ostream& s){
+	static void add(ostream& s){
 	}
 };
 
