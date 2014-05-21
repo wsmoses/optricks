@@ -107,6 +107,7 @@ void initClasses(){
 	add_import_c_const(&LANG_M, RAND_MAX);
 
 	add_import_c_function(&LANG_M, qsort);
+	add_import_cpp_function(&LANG_M, ::isalpha2);
 
 	add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
 	add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);

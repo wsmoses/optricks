@@ -63,4 +63,9 @@ template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*fu
 #define import_c_function(a) import_c_function_h(a, #a)
 #define import_c_function_from(a, lib) import_c_function(a, #a, lib)
 #define add_import_c_function(m, a) (m)->addFunction(PositionID("#internal",0,0), #a)->add(import_c_function(a), PositionID("#internal",0,0))
+
+#define import_cpp_function(a) import_cpp_function_h(a, #a)
+#define import_cpp_function_from(a, lib) import_cpp_function(a, #a, lib)
+#define add_import_cpp_function(m, a) (m)->addFunction(PositionID("#internal",0,0), #a)->add(import_cpp_function(a), PositionID("#internal",0,0))
+
 #endif /* F_FUNCTION_HPP_ */
