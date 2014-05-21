@@ -40,7 +40,7 @@ public:
 	std::vector<AbstractClass*> classes;
 public:
 	virtual ~Scopable(){};
-	Scopable(Scopable* above):surroundingScope(above){};
+	Scopable(Scopable* above,String n=""):surroundingScope(above),name(n){};
 	const bool existsHere(String s) const{
 		return mapping.find(s)!=mapping.end();
 	}
@@ -198,5 +198,8 @@ public:
 		}*/
 };
 
-OModule* LANG_M = new OModule(NULL);
+OModule LANG_M(NULL);
+
+//Scopable INNER_LANG_(&LANG_M,"lang");
+//Scopable INNER_LANG_C_(&INNER_LANG_,"c");
 #endif /* SCOPABLE_HPP_ */

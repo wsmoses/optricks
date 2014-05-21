@@ -1,18 +1,18 @@
 /*
- * VoidClass.hpp
+ * NullClass.hpp
  *
- *  Created on: Feb 7, 2014
+ *  Created on: May 12, 2014
  *      Author: Billy
  */
 
-#ifndef VOIDCLASS_HPP_
-#define VOIDCLASS_HPP_
+#ifndef NULLCLASS_HPP_
+#define NULLCLASS_HPP_
 #include "../AbstractClass.hpp"
 
-class VoidClass: public AbstractClass{
+class NullClass: public AbstractClass{
 public:
-	VoidClass(bool b): AbstractClass(nullptr,"void",nullptr,LITERAL_LAYOUT,CLASS_VOID,true,VOIDTYPE){
-		LANG_M.addClass(PositionID(0,0,"#int"),this);
+	NullClass(bool b): AbstractClass(nullptr,"null_t",nullptr,POINTER_LAYOUT,CLASS_NULL,true,VOIDTYPE){
+		LANG_M.addClass(PositionID(0,0,"#null"),this);
 	};
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);
@@ -26,25 +26,29 @@ public:
 		exit(1);
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final{
-		assert(a->classType==CLASS_VOID);
-		assert(b->classType==CLASS_VOID);
+		//TODO FOR REAL
+		assert(a->classType==CLASS_NULL);
+		assert(b->classType==CLASS_NULL);
 		return 0;
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_VOID;
+		//TODO FOR REAL
+		return toCast->classType==CLASS_NULL;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_VOID;
+		//TODO FOR REAL
+		return toCast->classType==CLASS_NULL;
 	}
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
-		if(toCast->classType!=CLASS_VOID) illegalCast(id,toCast);
+		//TODO FOR REAL
+		if(toCast->classType!=CLASS_NULL) illegalCast(id,toCast);
 		return valueToCast;
 	}
 };
 
 const VoidClass voidClass(true);
 
-#endif /* VOIDCLASS_HPP_ */
+#endif /* NULLCLASS_HPP_ */

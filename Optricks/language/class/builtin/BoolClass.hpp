@@ -14,7 +14,7 @@ class BoolClass: public AbstractClass{
 public:
 	inline BoolClass(bool b):
 		AbstractClass(nullptr,"bool", nullptr,PRIMITIVE_LAYOUT,CLASS_BOOL,true,IntegerType::get(getGlobalContext(),1)){
-		LANG_M->addClass(PositionID(0,0,"#int"),this);
+		LANG_M.addClass(PositionID(0,0,"#int"),this);
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		illegalLocal(id,s);

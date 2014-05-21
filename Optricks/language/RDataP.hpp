@@ -13,18 +13,18 @@
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
-		inline Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs ){
-			llvm::SmallVector<Type*,0> args(A.size());
-			for(unsigned i = 0; i<A.size(); i++){
-				assert(A[i]);
-				assert(A[i]->type);
-				args[i] = A[i]->type;
-			}
-			assert(R);
-			assert(R->type);
-			FunctionType *FT = FunctionType::get(R->type, args, varArgs);
-			return getExtern(name, FT);
-		}
+inline Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
+	llvm::SmallVector<Type*,0> args(A.size());
+	for(unsigned i = 0; i<A.size(); i++){
+		assert(A[i]);
+		assert(A[i]->type);
+		args[i] = A[i]->type;
+	}
+	assert(R);
+	assert(R->type);
+	FunctionType *FT = FunctionType::get(R->type, args, varArgs);
+	return getExtern(name, FT, lib);
+}
 void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id){
 	if(name==""){
 		if(jump==RETURN){

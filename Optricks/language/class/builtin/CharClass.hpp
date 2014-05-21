@@ -15,9 +15,9 @@ class CharClass: public AbstractClass{
 public:
 	inline CharClass(bool b):
 		AbstractClass(nullptr,"char", nullptr,PRIMITIVE_LAYOUT,CLASS_CHAR,true,CHARTYPE){
-		LANG_M->addClass(PositionID(0,0,"#char"),this);
+		LANG_M.addClass(PositionID(0,0,"#char"),this);
 		assert(c_intClass.getWidth()>=getWidth());
-		LANG_M->addFunction(PositionID(0,0,"#char"),"print")->add(
+		LANG_M.addFunction(PositionID(0,0,"#char"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
@@ -26,7 +26,7 @@ public:
 			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, value);
 			return &VOID_DATA;}), PositionID(0,0,"#char"));
-		LANG_M->addFunction(PositionID(0,0,"#char"),"println")->add(
+		LANG_M.addFunction(PositionID(0,0,"#char"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);

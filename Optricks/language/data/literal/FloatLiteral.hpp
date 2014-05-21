@@ -47,7 +47,7 @@ public:
 			assert(n=="-inf"||n=="-Inf");
 			mpfr_set_inf(value, 1);
 		}
-		LANG_M->addVariable(PositionID(0,0,"#floatLiteral"),n,this);
+		LANG_M.addVariable(PositionID(0,0,"#floatLiteral"),n,this);
 	}
 	//todo make nan / inf floatliterals
 	const AbstractClass* getReturnType() const override final;

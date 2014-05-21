@@ -1,31 +1,25 @@
 /*
- * UserClass.hpp
+ * ScopeClass.hpp
  *
- *  Created on: Jan 19, 2014
+ *  Created on: May 8, 2014
  *      Author: Billy
  */
 
-#ifndef USERCLASS_HPP_
-#define USERCLASS_HPP_
+#ifndef SCOPECLASS_HPP_
+#define SCOPECLASS_HPP_
+
 #include "./AbstractClass.hpp"
 #include "../function/UnaryFunction.hpp"
-//TODO note if class has 1 arg, does not make struct
-//TODO note if class has 0 arg, does not make anything
-class UserClass: public AbstractClass{
+class ScopeClass: public AbstractClass{
 private:
-	std::map<String, OverloadedFunction*> localFunctions;
-	std::vector<const AbstractClass*> localVars;
-	std::map<String,unsigned int> localMap;
-	std::map<String,UnaryFunction> preop;
-	std::map<String,UnaryFunction> postop;
-public:
-	mutable OverloadedFunction constructors;
-private:
-	unsigned int start;
-	bool final;
 public:
 	friend AbstractClass;
-	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false);
+	ScopeClass(Scopable* sc, PositionID id, String nam):
+		AbstractClass(sc, nam, nullptr, LITERAL_LAYOUT, CLASS_SCOPE, true, VOIDTYPE, sc)
+	{
+		sc->addClass(id, this);
+	}
+	/*
 	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
 		auto find = localFunctions.find(s);
 		if(find==localFunctions.end()){
@@ -142,135 +136,39 @@ public:
 		localMap[s]=localVars.size();
 		localVars.push_back(ac);
 	}
+	*/
 	bool hasLocalData(String s) const override final{
-		if(!final) PositionID(0,0,"#user").compilerError("Cannot hasLocalData() on unfinalized type");
-		auto tmp=this;
-		do{
-			auto fd = tmp->localMap.find(s);
-			if(fd!=tmp->localMap.end()){
-				return true;
-			}
-			tmp = (UserClass*)(tmp->superClass);
-		}while(tmp);
 		return false;
 	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
-		if(!final) id.compilerError("Cannot getLocalReturnClass() on unfinalized type");
-		auto tmp=this;
-			do{
-				auto fd = tmp->localMap.find(s);
-				if(fd!=tmp->localMap.end()){
-					return tmp->localVars[fd->second];
-				}
-				tmp = (UserClass*)(tmp->superClass);
-			}while(tmp);
 		illegalLocal(id,s);
 		exit(1);
 	}
 
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
-		if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
-
-		auto tmp=this;
-				do{
-					auto fd = tmp->localMap.find(s);
-					if(fd!=tmp->localMap.end()){
-						unsigned start = tmp->start+fd->second;
-						assert(instance->type==R_LOC || instance->type==R_CONST);
-						assert(instance->getReturnType()==this);
-						if(instance->type==R_LOC){
-							Location* ld;
-							if(layout==PRIMITIVE_LAYOUT)
-								ld = ((const LocationData*)instance)->value->getInner(r, id, 0, start);
-							else{
-								ld = new StandardLocation(r.builder.CreateConstGEP2_32(
-										((const LocationData*)instance)->value->getValue(r,id),0,start));
-							}
-							return new LocationData(ld, tmp->localVars[fd->second]);
-						} else{
-							assert(instance->type==R_CONST);
-							Value* v = ((ConstantData*)instance)->value;
-							if(layout==PRIMITIVE_LAYOUT)
-								return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
-							else{
-								return new LocationData(new StandardLocation(r.builder.CreateConstGEP2_32(v, 0, start)), tmp->localVars[fd->second]);
-							}
-						}
-					}
-					tmp = (UserClass*)(tmp->superClass);
-				}while(tmp);
 			illegalLocal(id,s);
 			exit(1);
 	}
-	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
-		if(!final) id.compilerError("Cannot getLocalVariable() on unfinalized type");
-		auto tmp=this;
-		do{
-			auto fd = tmp->localMap.find(s);
-			if(fd!=tmp->localMap.end()){
-				return std::pair<AbstractClass*,unsigned int>(tmp->localVars[fd->second], tmp->start+fd->second);
-			}
-			tmp = (UserClass*)(tmp->superClass);
-		}while(tmp);
-		id.error("Cannot find local variable '"+s+"' in class '"+getName()+"'");
-		return std::pair<AbstractClass*,unsigned int>(this,0);
-	}*/
+
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return this==toCast || toCast->classType==CLASS_VOID;
-		//todo decide if it is no-op class to
-//		return toCast->classType==CLASS_BOOL;
-	}
-	bool hasCast(const AbstractClass* const toCast) const override{
-		if(toCast->classType==CLASS_VOID) return true;
-		if(toCast->classType!=CLASS_USER) return false;
-		if(this==toCast) return true;
-		if(layout==PRIMITIVE_LAYOUT || toCast->layout==PRIMITIVE_LAYOUT) return false;
-		UserClass* tmp = (UserClass*)superClass;
-		while(tmp!=nullptr){
-			if(tmp==toCast) return true;
-			else tmp=(UserClass*)tmp->superClass;
-		}
 		return false;
 	}
-	/**
-	 * Will error with id if this.hasCast(toCast)==false
-	 */
+	bool hasCast(const AbstractClass* const toCast) const override{
+		return hasCast(toCast);
+	}
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
-		if(toCast->classType!=CLASS_USER){
-			id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());
-			exit(1);
-		}
-		if(this==toCast) return valueToCast;
-		if(layout==PRIMITIVE_LAYOUT || toCast->layout==PRIMITIVE_LAYOUT){
-			id.error("Cannot promote user-defined primitive types");
-			exit(1);
-		}
-		UserClass* tmp = (UserClass*)superClass;
-		while(tmp!=nullptr){
-			if(tmp==toCast) return r.builder.CreatePointerCast(valueToCast, toCast->type);
-			else tmp=(UserClass*)tmp->superClass;
-		}
-		id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());
+		id.compilerError("Scope class cannot be instantiated --- how did this even happen....?");
 		exit(1);
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		assert(hasCast(a));
 		assert(hasCast(b));
-		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
-		else if(a->classType==CLASS_VOID) return 1;
-		else if(b->classType==CLASS_VOID) return -1;
-
-		const UserClass* tmp = this;
-		do{
-			if(tmp==a){
-				return (tmp==b)?(0):(-1);
-			} else if(tmp==b) return 1;
-			tmp = (UserClass*) ( tmp->superClass);
-		}while(tmp!=nullptr);
 		return 0;
 	}
 };
 
-UserClass objectClass(&LANG_M,"object",nullptr,POINTER_LAYOUT,false,true);
+ScopeClass NS_LANG(&LANG_M, PositionID("#init",0,0), "lang");
+ScopeClass NS_LANG_C(&(NS_LANG.staticVariables), PositionID("#init",0,0), "c");
+ScopeClass NS_LANG_CPP(&(NS_LANG.staticVariables), PositionID("#init",0,0), "cpp");
 
-#endif /* USERCLASS_HPP_ */
+#endif /* SCOPECLASS_HPP_ */

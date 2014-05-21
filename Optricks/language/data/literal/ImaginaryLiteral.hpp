@@ -34,7 +34,7 @@ public:
 	ImaginaryLiteral(const Data* const i,String s=""):Literal(R_IMAG),imag(i){
 		assert(imag);
 		assert(imag->type==R_INT || imag->type==R_FLOAT);
-		if(s.length()>0) LANG_M->addVariable(PositionID(0,0,"#imag"),s,this);
+		if(s.length()>0) LANG_M.addVariable(PositionID(0,0,"#imag"),s,this);
 	}
 	const AbstractClass* getReturnType() const override final;
 	ConstantVector* getValue(RData& r, PositionID id) const override final;

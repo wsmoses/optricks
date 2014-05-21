@@ -21,8 +21,8 @@ public:
 		PPC_FP128Ty=6// 128-bit floating point type (two 64-bits, PowerPC)
 	};
 	const FloatType floatType;
-	inline FloatClass(String nam, FloatType t):
-		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_FLOAT,
+	inline FloatClass(Scopable* s, String nam, FloatType t):
+		RealClass(s, nam, PRIMITIVE_LAYOUT,CLASS_FLOAT,
 				(t==HalfTy)?Type::getHalfTy(getGlobalContext()):(
 				(t==FloatTy)?Type::getFloatTy(getGlobalContext()):(
 				(t==DoubleTy)?Type::getDoubleTy(getGlobalContext()):(
@@ -31,8 +31,8 @@ public:
 				/*t==PPC_FP128Ty*/Type::getPPC_FP128Ty(getGlobalContext())
 				)))))
 	),floatType(t){
-		LANG_M->addClass(PositionID(0,0,"#float"),this);
-#define SINGLE_FUNC_DECLR(X,Y) LANG_M->addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, SmallVector<Type*,1>(1,type))), PositionID(0,0,"#float"));
+		(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#float"),this);
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, SmallVector<Type*,1>(1,type))), PositionID(0,0,"#float"));
 		SINGLE_FUNC_DECLR("abs",fabs)
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
 		SINGLE_FUNC_DECLR("sin",sin)
@@ -52,7 +52,7 @@ public:
 
 
 #undef SINGLE_FUNC_DECLR
-		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+		LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(
 				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 				assert(args.size()==1);
@@ -210,13 +210,15 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
 };
 
-const FloatClass float16Class("float16", FloatClass::HalfTy);
-const FloatClass float32Class("float32", FloatClass::FloatTy);
-const FloatClass float64Class("float64", FloatClass::DoubleTy);
-const FloatClass float80Class("float80", FloatClass::X86_FP80Ty);
-const FloatClass float128Class("float128", FloatClass::FP128Ty);
+const FloatClass float16Class(nullptr, "float16", FloatClass::HalfTy);
+const FloatClass float32Class(nullptr, "float32", FloatClass::FloatTy);
+const FloatClass float64Class(nullptr, "float64", FloatClass::DoubleTy);
+const FloatClass float80Class(nullptr, "float80", FloatClass::X86_FP80Ty);
+const FloatClass float128Class(nullptr, "float128", FloatClass::FP128Ty);
 
+const FloatClass floatClass(nullptr, "float", FloatClass::FloatTy);
+const FloatClass doubleClass(nullptr, "double", FloatClass::DoubleTy);
 
-const FloatClass floatClass("float", FloatClass::FloatTy);
-const FloatClass doubleClass("double", FloatClass::DoubleTy);
+const FloatClass c_floatClass(&(NS_LANG_C.staticVariables), "float", FloatClass::FloatTy);
+const FloatClass c_doubleClass(&(NS_LANG_C.staticVariables), "double", FloatClass::DoubleTy);
 #endif /* FLOATCLASS_HPP_ */

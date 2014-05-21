@@ -6,7 +6,7 @@ def FOREACH( int[] a, int& b, void% v){
 
 }
 class primitive random{
-	static int RAND_MAX=4;
+//	static int RAND_MAX=4;
 	static def int rand_interval(int min, int max){
 		assert(max>min);
 //		const range = max-min;

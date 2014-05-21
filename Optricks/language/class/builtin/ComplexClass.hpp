@@ -26,8 +26,7 @@ public:
 		assert(inner);
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
-		assert(LANG_M);
-		if(reg) LANG_M->addClass(PositionID(0,0,"#int"),this);
+		if(reg) LANG_M.addClass(PositionID(0,0,"#int"),this);
 	}
 	inline Constant* getValue(PositionID id, const mpfr_t& value) const{
 		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());

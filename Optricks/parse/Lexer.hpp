@@ -717,7 +717,7 @@ class Lexer{
 			bool isFinal = false /*todo parse*/;
 			const AbstractClass* superC;
 			if(superClass==nullptr){
-				if(primitive==POINTER_LAYOUT) superC = objectClass;
+				if(primitive==POINTER_LAYOUT) superC = &objectClass;
 				else superC = nullptr;
 			} else superC = superClass->getSelfClass(pos());
 			//todo register in outer class instead of whereever this place is...
@@ -987,6 +987,10 @@ Statement* Lexer::getNextStatement(ParseData data){
 			return new E_RETURN(pos(), nullptr, name, (temp=="break")?BREAK:CONTINUE );
 		}
 		else{
+			while(f->peek()=='.'){
+				f->read();
+				f->getNextName(data.endWith);
+			}
 			auto start = f->getMarker();
 			trim(data);
 			if(data.allowsDec() && (!f->interactive || f->last()!='\n')){

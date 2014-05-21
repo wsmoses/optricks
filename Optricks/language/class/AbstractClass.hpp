@@ -120,10 +120,10 @@ public:
 		return this;
 	}
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final;
-	inline AbstractClass(const Scopable* const sc, const String nam, const AbstractClass* const supa, LayoutType const t, ClassType const ct, bool const fina, llvm::Type* const tp=NULL)
+	inline AbstractClass(const Scopable* const sc, const String nam, const AbstractClass* const supa, LayoutType const t, ClassType const ct, bool const fina, llvm::Type* const tp=nullptr, Scopable* ss=nullptr)
 	:
 		Literal(R_CLASS),myScope(sc),
-		staticVariables((supa==nullptr)?nullptr:(&(supa->staticVariables))),
+		staticVariables(ss?ss:(supa?(&(supa->staticVariables)):nullptr), nam),
 		name(nam),
 		superClass(supa),
 		layout(t),
@@ -131,6 +131,7 @@ public:
 		isFinal(fina)
 	,type(tp)
 	{
+		//cerr << getName() << "|" << (ss?(ss->getScopeName()):"null") << endl << flush;
 	};
 };
 

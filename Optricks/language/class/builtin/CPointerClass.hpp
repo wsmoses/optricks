@@ -9,11 +9,12 @@
 #define CPOINTERCLASS_HPP_
 
 #include "../AbstractClass.hpp"
+#include "../ScopeClass.hpp"
 class CPointerClass: public AbstractClass{
 public:
 	inline CPointerClass(bool b):
-		AbstractClass(nullptr,"c_pointer", NULL,PRIMITIVE_LAYOUT,CLASS_CPOINTER,true,C_POINTERTYPE){
-		LANG_M->addClass(PositionID(0,0,"#cpointer"),this);
+		AbstractClass(& NS_LANG_C.staticVariables,"pointer", NULL,PRIMITIVE_LAYOUT,CLASS_CPOINTER,true,C_POINTERTYPE){
+		NS_LANG_C.staticVariables.addClass(PositionID(0,0,"#pointer"),this);
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
@@ -51,7 +52,7 @@ public:
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
-		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast c_pointer type to "+toCast->getName());
+		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast "+getName()+" type to "+toCast->getName());
 		return valueToCast;
 	}
 };

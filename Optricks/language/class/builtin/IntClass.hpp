@@ -8,9 +8,10 @@
 #ifndef INTCLASS_HPP_
 #define INTCLASS_HPP_
 #include "RealClass.hpp"
+#include "../ScopeClass.hpp"
 class IntClass: public RealClass{
 public:
-	IntClass(String nam, unsigned len);
+	IntClass(Scopable* s, String nam, unsigned len);
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		illegalLocal(id,s);
 		exit(1);
@@ -125,14 +126,14 @@ public:
 	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
 };
 
-const IntClass byteClass("byte", 8);
-const IntClass shortClass("short", 16);
-const IntClass intClass("int", 32);
-const IntClass longClass("long", 64);
+const IntClass byteClass(nullptr, "byte", 8);
+const IntClass shortClass(nullptr, "short", 16);
+const IntClass intClass(nullptr, "int", 32);
+const IntClass longClass(nullptr, "long", 64);
 
-const IntClass c_intClass("c_int", 8*sizeof(int));
-const IntClass c_longClass("c_long", 8*sizeof(long));
-const IntClass c_longlongClass("c_longlong", 8*sizeof(long long));
-const IntClass c_size_tClass("c_size_t", 8*sizeof(size_t));
+const IntClass c_intClass(&(NS_LANG_C.staticVariables), "int", 8*sizeof(int));
+const IntClass c_longClass(&(NS_LANG_C.staticVariables), "long", 8*sizeof(long));
+const IntClass c_longlongClass(&(NS_LANG_C.staticVariables), "long_long", 8*sizeof(long long));
+//const IntClass c_size_tClass("c_size_t", 8*sizeof(size_t));
 
 #endif /* INTCLASS_HPP_ */

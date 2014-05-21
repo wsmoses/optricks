@@ -13,9 +13,9 @@
 class FloatLiteralClass: public RealClass{
 public:
 	FloatLiteralClass(bool b):
-		RealClass("floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,llvm::IntegerType::get(getGlobalContext(), 1)){
+		RealClass(nullptr,"floatLiteral",LITERAL_LAYOUT,CLASS_FLOATLITERAL,llvm::IntegerType::get(getGlobalContext(), 1)){
 #define FL(N,R,M) \
-	LANG_M->addFunction(PositionID(0,0,"#float"),N)->add(\
+	LANG_M.addFunction(PositionID(0,0,"#float"),N)->add(\
 		new BuiltinInlineFunction(new FunctionProto(N, {AbstractDeclaration(this)},R),\
 			nullptr,[this](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{\
 		M;})\

@@ -273,7 +273,7 @@ bool testFor(String toTest, String testing){
 	}
 }
 int main(int argc, char** argv){
-	LANG_M->addFunction(PositionID(0,0,"#str"),"assert")->add(
+	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
 		new BuiltinInlineFunction(
 				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
@@ -307,6 +307,12 @@ int main(int argc, char** argv){
 		r.builder.SetInsertPoint(MergeBB);
 		return &VOID_DATA;
 	}), PositionID(0,0,"#int"));
+
+	/*LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
+			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
+			nullptr,"stdout",GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true
+			),C_POINTERTYPE)
+			, &c_pointerClass));*/
 	String file = "";
 	String command = "";
 	String output = "";
@@ -442,13 +448,17 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;
-		std::cout << convertClass<void>::convert(LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<bool>::convert(LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<char>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<void>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<bool>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<char>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<int>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << "== int " << (convertClass<int>::convert(&LANG_M)==&intClass) << endl << flush;
+		std::cout << "== c_int " << (convertClass<int>::convert(&LANG_M)==&c_intClass) << endl << flush;
+		std::cout << convertClass<int32_t>::convert(&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass<void(bool, char)>::convert(LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<void (*)(bool, char)>::convert(LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<std::pair<bool, char>>::convert(LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<void (*)(int, char)>::convert(LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<void (*)(bool, char)>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<std::pair<bool, char>>::convert(&LANG_M)->getName() << endl << flush;
+		std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
 		/*

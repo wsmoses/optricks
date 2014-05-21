@@ -11,7 +11,7 @@
 #include "./AbstractClass.hpp"
 #include "./builtin/IntClass.hpp"
 UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject)
-	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(objectClass):(supa),
+	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(&objectClass):(supa),
 			t,CLASS_USER, fina,
 			(t==POINTER_LAYOUT)?(
 					(llvm::Type*) PointerType::getUnqual(StructType::create(getGlobalContext(), StringRef(nam)))

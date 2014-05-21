@@ -9,6 +9,9 @@
 #define OCLASS_HPP_
 
 #include "../language/class/UserClass.hpp"
+#include "../language/ffi/F_Class.hpp"
+#include "../language/ffi/F_Function.hpp"
+#include "../language/ffi/F_Var.hpp"
 class OClass: public ErrorStatement
 {
 	public:
@@ -89,6 +92,36 @@ class OClass: public ErrorStatement
 };
 
 void initClasses(){
+	convertClass<int>::convert(&LANG_M);
+	convertClass<long>::convert(&LANG_M);
+	convertClass<long long>::convert(&LANG_M);
+	//convertClass<size_t>::convert(&LANG_M);
+	convertClass<int64_t>::convert(&LANG_M);
+	//add_import_c_function(&LANG_M, malloc);
+	add_import_c_function(&LANG_M, clock);
+	add_import_c_function(&LANG_M, difftime);
+	add_import_c_const(&LANG_M, CLOCKS_PER_SEC);
+
+	add_import_c_function(&LANG_M, rand);
+	add_import_c_function(&LANG_M, srand);
+	add_import_c_const(&LANG_M, RAND_MAX);
+
+	add_import_c_function(&LANG_M, qsort);
+
+	add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
+	add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
+	//add_import_c_function(&LANG_M, mktime);
+
+	//(&LANG_M)->addVariable(PositionID("#internal",0,0), "CLOCKS_PER_SEC", import_c_var_h<typeof(CLOCKS_PER_SEC)>::import(CLOCKS_PER_SEC));
+
+	//add_import_c_function(&LANG_M, time);
+	//add_import_c_function(&LANG_M, asctime);
+	//add_import_c_function(&LANG_M, ctime);
+	//add_import_c_function(&LANG_M, gmtime);
+	//add_import_c_function(&LANG_M, localtime);
+	//add_import_c_function(&LANG_M, strftime);
+
+	//LANG_M.addScope()
 	/*
 	initClassesMeta();
 	AbstractClass* cl[] = {classClass, objectClass, autoClass, boolClass,

@@ -31,7 +31,7 @@ public:
 	MathConstantClass(MathConstant mc):
 		AbstractClass(nullptr,fromC(mc),nullptr,PRIMITIVE_LAYOUT,CLASS_MATHLITERAL,true,BOOLTYPE)
 		,mathType(mc){
-		LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(new BuiltinInlineFunction(
+		LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(new BuiltinInlineFunction(
 				new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);

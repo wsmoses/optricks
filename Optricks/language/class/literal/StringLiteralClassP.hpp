@@ -15,7 +15,7 @@
 		AbstractClass(nullptr,"stringLiteral",nullptr, LITERAL_LAYOUT,CLASS_STRLITERAL,true,llvm::IntegerType::get(getGlobalContext(), 1))
 		{
 
-		LANG_M->addFunction(PositionID(0,0,"#stringL"),"print")->add(
+		LANG_M.addFunction(PositionID(0,0,"#stringL"),"print")->add(
 				new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 				assert(args.size()==1);
@@ -26,7 +26,7 @@
 					r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, a,false));
 				}
 				return &VOID_DATA;}), PositionID(0,0,"#int"));
-		LANG_M->addFunction(PositionID(0,0,"#intL"),"println")->add(
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
@@ -38,7 +38,7 @@
 			}
 			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
-		LANG_M->addFunction(PositionID(0,0,"#str"),"printf")->add(
+		LANG_M.addFunction(PositionID(0,0,"#str"),"printf")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("printf",{AbstractDeclaration(this)},&intClass,true),
 				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{

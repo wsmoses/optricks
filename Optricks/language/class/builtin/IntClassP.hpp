@@ -19,23 +19,23 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 	Value*
 }*/
 
-	IntClass::IntClass(String nam, unsigned len):
-		RealClass(nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
-		LANG_M->addClass(PositionID(0,0,"#int"),this);
-		/*LANG_M->addFunction(PositionID(0,0,"#float"),"isNan")->add(
+	IntClass::IntClass(Scopable* s, String nam, unsigned len):
+		RealClass(s, nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
+		(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#int"),this);
+		/*LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 								[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()==1);
 						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
 		*/
-		LANG_M->addFunction(PositionID(0,0,"#int"),"chr")->add(
+		LANG_M.addFunction(PositionID(0,0,"#int"),"chr")->add(
 				new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 				assert(args.size()==1);
 				return new ConstantData(r.builder.CreateSExtOrTrunc(args[0]->evalV(r, id), CHARTYPE),&charClass);}), PositionID(0,0,"#float")
 			);
 		/*
-		LANG_M->addFunction(PositionID(0,0,"#int"),"print")->add(
+		LANG_M.addFunction(PositionID(0,0,"#int"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
@@ -59,7 +59,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
 			}
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
-		LANG_M->addFunction(PositionID(0,0,"#int"),"println")->add(
+		LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);

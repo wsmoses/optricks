@@ -20,7 +20,7 @@ public:
 	//IntLiteral(const mpz_t& val, IntClass* cp=NULL):Literal(R_INT),value(val),intType(cp){ assert(val);}
 	MathConstantLiteral(MathConstant mt, String toAdd):Literal(R_MATH),
 			mathType(mt){
-		if(toAdd.length()>0) LANG_M->addVariable(PositionID(0,0,"#math"),toAdd,this);
+		if(toAdd.length()>0) LANG_M.addVariable(PositionID(0,0,"#math"),toAdd,this);
 		assert(mathType.mathType==mt);
 	}
 	const AbstractClass* getReturnType() const override final{

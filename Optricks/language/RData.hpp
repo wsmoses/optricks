@@ -89,8 +89,9 @@ struct RData{
 			Function* f = Function::Create(FT,L,Twine(name),lmod);
 			return f;
 		}
-		inline Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false);
-		inline Function* getExtern(String name, FunctionType* FT){
+		inline Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
+		inline Function* getExtern(String name, FunctionType* FT, String lib=""){
+			//TODO actually check library
 			return (Function*) lmod->getOrInsertFunction(StringRef(name), FT);
 		}
 		inline Value* getConstantCString(String name){
