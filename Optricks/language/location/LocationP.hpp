@@ -9,7 +9,7 @@
 #define LOCATIONP_HPP_
 #include "./Location.hpp"
 
-Value* StandardLocation::getValue(RData& r, PositionID id){
+llvm::Value* StandardLocation::getValue(RData& r, PositionID id){
 	assert(position);
 	assert(position->getType()->isPointerTy());
 	auto V = r.builder.CreateLoad(position);
@@ -17,7 +17,7 @@ Value* StandardLocation::getValue(RData& r, PositionID id){
 	assert(V->getType());
 	return V;
 }
-void StandardLocation:: setValue(Value* v, RData& r){
+void StandardLocation:: setValue(llvm::Value* v, RData& r){
 	assert(position);
 	assert(position->getType()->isPointerTy());
 	r.builder.CreateStore(v, position);

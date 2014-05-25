@@ -30,11 +30,11 @@ public:
 	const Data* toValue(RData& r, PositionID id) const override final{
 		return this;
 	}
-	Value* getValue(RData& r, PositionID id) const override final{
+	llvm::Value* getValue(RData& r, PositionID id) const override final{
 		id.error("Cannot getValue of void");
 		exit(1);
 	}
-	Value* castToV(RData& r, const AbstractClass* const ac, PositionID id) const override final{
+	llvm::Value* castToV(RData& r, const AbstractClass* const ac, PositionID id) const override final{
 		id.error("Cannot castToV of void");
 		exit(1);
 	}

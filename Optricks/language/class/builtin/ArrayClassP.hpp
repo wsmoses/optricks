@@ -10,7 +10,7 @@
 
 #include "./ArrayClass.hpp"
 
-Value* ArrayClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+llvm::Value* ArrayClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 	id.compilerError("Casting array types has not been implemented");
 	exit(1);
 }

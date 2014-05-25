@@ -24,15 +24,15 @@ public:
 		}
 		return s+")";
 	}
-	static inline Type* getTupleType(const std::vector<const AbstractClass*>& args,const std::vector<String>& b){
+	static inline llvm::Type* getTupleType(const std::vector<const AbstractClass*>& args,const std::vector<String>& b){
 		const auto len = args.size();
 		if(len==1) return args[0]->type;
-		llvm::SmallVector<Type*,2> ar(len);
+		llvm::SmallVector<llvm::Type*,2> ar(len);
 		for(unsigned int i=0; i<len; i++){
 			assert(args[i]->classType!=CLASS_LAZY);
 			ar[i]=args[i]->type;
 		}
-		return StructType::create(ar,StringRef(str(args,b)),false);
+		return llvm::StructType::create(ar,llvm::StringRef(str(args,b)),false);
 	}
 	const std::vector<String> innerNames;
 private:
@@ -90,7 +90,7 @@ public:
 					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 				} else{
 					assert(instance->type==R_CONST);
-					Value* v = ((ConstantData*)instance)->value;
+					auto v = ((ConstantData*)instance)->value;
 					if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);
 					return new ConstantData(r.builder.CreateExtractValue(v,i),innerTypes[i]);
 				}
@@ -109,15 +109,15 @@ public:
 		}
 		return true;
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(toCast==this) return valueToCast;
 		if(toCast->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast named tuple class to "+toCast->getName());
 		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) id.error(toStr("Cannot cast named tuple class of length ",innerTypes.size()," to named tuple class of length ",tc->innerTypes.size()));
-		Value* V = UndefValue::get(toCast->type);
+		llvm::Value* V =llvm:: UndefValue::get(toCast->type);
 		for(unsigned i=0; i<innerTypes.size(); i++){
 			if(innerNames[i]!=tc->innerNames[i]) id.error("Cannot cast named tuple "+getName()+" to "+tc->getName());
-			Value* M = innerTypes[i]->castTo(tc->innerTypes[i], r, id, r.builder.CreateExtractElement(valueToCast, getInt32(i)));
+			llvm::Value* M = innerTypes[i]->castTo(tc->innerTypes[i], r, id, r.builder.CreateExtractElement(valueToCast, getInt32(i)));
 			r.builder.CreateInsertElement(V, M, getInt32(i));
 		}
 		return V;

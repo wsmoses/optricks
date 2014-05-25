@@ -47,11 +47,11 @@ public:
 		exit(1);
 	}
 
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		id.compilerError("Cannot get value of reference");
 		exit(1);
 	}
-	inline void setValue(RData& r, Value* v) const{
+	inline void setValue(RData& r, llvm::Value* v) const{
 		PositionID(0,0,"#ref").compilerError("Cannot set value of reference");
 		exit(1);
 	}
@@ -64,7 +64,7 @@ public:
 		id.compilerError("Cannot cast reference");
 		exit(1);
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType==CLASS_REF && value->type->noopCast(((ReferenceClass*)right)->innerType)) return value->value->getPointer(r, id);
 		id.compilerError("Cannot cast reference V "+value->type->getName()+" to "+right->getName());
 		exit(1);

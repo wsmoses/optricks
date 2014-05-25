@@ -26,8 +26,8 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		return & mathType;
 	}
-	Value* getValue(RData& r, PositionID id) const override final{
-		return UndefValue::get(mathType.type);
+	llvm::Value* getValue(RData& r, PositionID id) const override final{
+		return llvm::UndefValue::get(mathType.type);
 	}
 	String toString() const{
 		switch(mathType.mathType){
@@ -37,13 +37,14 @@ public:
 			case MATH_LN2: return "Log2";
 			case MATH_CATALAN: return "Catalan";
 		}
+		return "<error>";
 	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(&mathType==right) return this;
 		switch(right->classType){
 		case CLASS_VOID: return &VOID_DATA;
 		case CLASS_FLOAT:{
-			Constant* cfp;
+			llvm::Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
 			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -74,7 +75,7 @@ public:
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
 			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType.getName()+"' to '"+cc->getName()+"'");
-			Constant* cfp;
+			llvm::Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
 			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -83,22 +84,22 @@ public:
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
 			}
-			SmallVector<Constant*,2> ar(2);
+			llvm::SmallVector<llvm::Constant*,2> ar(2);
 			ar[0] = cfp;
 			ar[1] = cc->innerClass->getZero(id);
-			return new ConstantData(ConstantVector::get(llvm::SmallVector<Constant*,2>(ar)),cc);
+			return new ConstantData(llvm::ConstantVector::get(llvm::SmallVector<llvm::Constant*,2>(ar)),cc);
 		}
 		default:
 			id.error("Math literal '"+mathType.getName()+"' cannot be cast to "+right->getName());
 			exit(1);
 		}
 	}
-	Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right==&mathType)
-			return UndefValue::get(mathType.type);
+			return llvm::UndefValue::get(mathType.type);
 		switch(right->classType){
 		case CLASS_FLOAT:{
-			Constant* cfp;
+			llvm::Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(right);
 			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -112,7 +113,7 @@ public:
 		case CLASS_COMPLEX:{
 			const ComplexClass* cc = (const ComplexClass*)right;
 			if(cc->classType!=CLASS_FLOAT) id.error("Cannot cast math literal '"+mathType.getName()+"' to '"+cc->getName()+"'");
-			Constant* cfp;
+			llvm::Constant* cfp;
 			const FloatClass* fc = (const FloatClass*)(cc->innerClass);
 			switch(mathType.mathType){
 				case MATH_PI: cfp = fc->getPi(id); break;
@@ -121,10 +122,10 @@ public:
 				case MATH_LN2: cfp = fc->getLN2(id); break;
 				case MATH_CATALAN: cfp = fc->getCatalan(id); break;
 			}
-			SmallVector<Constant*,2> ar(2);
+			llvm::SmallVector<llvm::Constant*,2> ar(2);
 			ar[0] = cfp;
 			ar[1] = cc->innerClass->getZero(id);
-			return ConstantVector::get(llvm::SmallVector<Constant*,2>(ar));
+			return llvm::ConstantVector::get(llvm::SmallVector<llvm::Constant*,2>(ar));
 		}
 		default:
 			id.error("Math literal '"+mathType.getName()+"' cannot be cast to "+right->getName());

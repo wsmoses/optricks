@@ -40,7 +40,7 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
 		}
 		else{
-			id.compilerError("GetMin 2-1 has not been implemented");
+			id.compilerError("GetMin 2-1a has not been implemented");
 			exit(1);
 		}
 	} else if(a->classType==CLASS_FLOAT){
@@ -56,7 +56,7 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
 		}
 		else{
-			id.compilerError("GetMin 2-1 has not been implemented");
+			id.compilerError("GetMin 2-1b has not been implemented");
 			exit(1);
 		}
 	} else if(a->classType==CLASS_INTLITERAL){
@@ -67,17 +67,18 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
 		}
 		else{
-			id.compilerError("GetMin 2-1 has not been implemented");
+			id.compilerError("GetMin 2-1c has not been implemented");
 			exit(1);
 		}
 	} else if(a->classType==CLASS_FLOATLITERAL){
 		if(b->classType==CLASS_FLOATLITERAL) return a;
+		else if(b->classType==CLASS_INTLITERAL) return a;
 		else if(b->classType==CLASS_FLOAT) return b;
 		else if(b->classType==CLASS_COMPLEX){
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
 		}
 		else{
-			id.compilerError("GetMin 2-1 has not been implemented");
+			id.compilerError("GetMin 2-1d has not been implemented");
 			exit(1);
 		}
 	}

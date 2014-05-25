@@ -36,7 +36,7 @@ public:
 		exit(1);
 		//return voidClass;
 	}
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		return castToV(r,getReturnType(),id);
 	}
 	const Data* toValue(RData& r,PositionID id) const override final{
@@ -46,7 +46,7 @@ public:
 		}
 		return new ArrayData(vec, filePos);
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType!=CLASS_ARRAY
 						&& right->classType!=CLASS_NAMED_TUPLE){
 					id.error("Cannot cast array literal to '"+right->getName()+"'");
@@ -57,26 +57,26 @@ public:
 			id.compilerError("Cannot create array[len]");
 			exit(1);
 		}
-		uint64_t s = DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
-		IntegerType* ic = llvm::IntegerType::get(getGlobalContext(), 8*sizeof(size_t));
-		Instruction* v = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				tc->inner->type, ConstantInt::get(ic, s), ConstantInt::get(ic,inner.size()));
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
+		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
+		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+				tc->inner->type, llvm::ConstantInt::get(ic, s), llvm::ConstantInt::get(ic,inner.size()));
 		r.builder.Insert(v);
 		for(unsigned i = 0; i<inner.size(); i++){
 			r.builder.CreateStore(inner[i]->castToV(r, tc->inner, id),
 					r.builder.CreateConstGEP1_32(v, i));
 		}
-		assert(dyn_cast<PointerType>(tc->type));
-		auto tmp=(StructType*)(((PointerType*)tc->type)->getElementType());
-		s = DataLayout(r.lmod).getTypeAllocSize(tmp);
-		Instruction* p = CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-						tmp, ConstantInt::get(ic, s));
+		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
+		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
+		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+						tmp, llvm::ConstantInt::get(ic, s));
 		r.builder.Insert(p);
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(0)), 0),
+		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(1)), inner.size()),
+		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(1)), inner.size()),
 				r.builder.CreateConstGEP2_32(p, 0,1));
-		r.builder.CreateStore(ConstantInt::get((IntegerType*)(tmp->getElementType(2)), inner.size()),
+		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(2)), inner.size()),
 				r.builder.CreateConstGEP2_32(p, 0,2));
 		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
 		r.builder.CreateStore(v,G);

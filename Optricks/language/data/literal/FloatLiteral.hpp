@@ -49,9 +49,8 @@ public:
 		}
 		LANG_M.addVariable(PositionID(0,0,"#floatLiteral"),n,this);
 	}
-	//todo make nan / inf floatliterals
 	const AbstractClass* getReturnType() const override final;
-	ConstantFP* getValue(RData& r, PositionID id) const override final;
+	llvm::ConstantFP* getValue(RData& r, PositionID id) const override final;
 
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
 		id.error("Cannot use floating-point literal as function");
@@ -69,7 +68,7 @@ public:
 
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
-	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
+	llvm::Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 	virtual ~FloatLiteral(){
 		mpfr_clear(value);
 	}

@@ -19,6 +19,9 @@ void incrementCount(RData& r, PositionID filePos, const Data* D){
 	if(D->type==R_VOID) return;
 	const AbstractClass* C = D->getReturnType();
 	switch(C->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be incremented");
+		exit(1);
 	case CLASS_FUNC:
 	case CLASS_CPOINTER:
 	case CLASS_GEN:
@@ -69,6 +72,9 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 	if(D->type==R_VOID) return;
 	const AbstractClass* C = D->getReturnType();
 	switch(C->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be decremented");
+		exit(1);
 	case CLASS_FUNC:
 	case CLASS_CPOINTER:
 	case CLASS_GEN:
@@ -92,9 +98,9 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_LAZY:
 	case CLASS_FLOATLITERAL:
 	{
-		llvm::SmallVector<Type*,1> t_args(1);
+		llvm::SmallVector<llvm::Type*,1> t_args(1);
 		t_args[0] = CSTRINGTYPE;
-		auto CU = r.getExtern("puts", FunctionType::get(c_intClass.type, t_args,true));
+		auto CU = r.getExtern("puts", llvm::FunctionType::get(c_intClass.type, t_args,true));
 		r.builder.CreateCall(CU, r.getConstantCString("Decrementing count for class "+C->getName()+" "));
 		//filePos.warning("Decrementing count for class "+C->getName()+" ");
 		return;

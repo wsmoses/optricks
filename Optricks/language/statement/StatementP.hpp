@@ -10,7 +10,7 @@
 #include "Statement.hpp"
 #include "../class/AbstractClass.hpp"
 #include "../data/Data.hpp"
-		Value* Statement::evalCastV(RData& r,const AbstractClass* c, PositionID id){
+		llvm::Value* Statement::evalCastV(RData& r,const AbstractClass* c, PositionID id){
 			return evaluate(r)->castToV(r,c,id);
 		}
 		bool Statement::hasCastValue(const AbstractClass* const a) const {

@@ -10,6 +10,7 @@
 #include "ComplexClass.hpp"
 #include "../../RData.hpp"
 bool FloatClass::hasCast(const AbstractClass* const toCast) const {
+	if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->layout!=PRIMITIVE_LAYOUT) return false;
 		switch(toCast->classType){
 		case CLASS_FLOAT:{
@@ -21,7 +22,6 @@ bool FloatClass::hasCast(const AbstractClass* const toCast) const {
 		case CLASS_RATIONAL:
 			assert(0);
 			return false;
-		case CLASS_VOID: return true;
 		default:
 			return false;
 		}
@@ -63,7 +63,7 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+llvm::Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName());
 		assert(valueToCast->getType()==type ||
 				(valueToCast->getType()->isVectorTy() && valueToCast->getType()->getVectorElementType()==type));
@@ -74,8 +74,8 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 			if(ai>bi) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName() +" floating type too small ("+str(ai)+","+str(bi)+")");
 			if(ai==bi) return valueToCast;
 			if(valueToCast->getType()->isVectorTy()){
-				unsigned g = ((VectorType*)valueToCast->getType())->getVectorNumElements();
-				auto TC = VectorType::get(toCast->type, g);
+				unsigned g = ((llvm::VectorType*)valueToCast->getType())->getVectorNumElements();
+				auto TC = llvm::VectorType::get(toCast->type, g);
 				return r.builder.CreateFPExt(valueToCast, TC);
 			}
 			return r.builder.CreateFPExt(valueToCast, toCast->type);
@@ -85,7 +85,7 @@ int FloatClass::compare(const AbstractClass* const a, const AbstractClass* const
 			if(((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth()){
 			id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName()+ " width too small");
 			}
-			return r.builder.CreateInsertElement(ConstantVector::getSplat(2, getZero(id)), valueToCast, getInt32(0));
+			return r.builder.CreateInsertElement(llvm::ConstantVector::getSplat(2, getZero(id)), valueToCast, getInt32(0));
 		case CLASS_RATIONAL:
 			id.error("Does not exist");
 			assert(0);

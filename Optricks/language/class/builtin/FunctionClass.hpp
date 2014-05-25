@@ -18,11 +18,14 @@ public:
 		if(va)s+=", ...";
 		return s+"}";
 	}
-	static inline Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
+	static inline llvm::Type* getFuncType(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool isVarArg){
 		const auto len = args.size();
-		llvm::SmallVector<Type*,0> ar(len);
-		for(unsigned int i=0; i<len; i++)ar[i]=args[i]->type;
-		return PointerType::getUnqual(FunctionType::get(r1->type,ar,isVarArg));
+		llvm::SmallVector<llvm::Type*,0> ar(len);
+		for(unsigned int i=0; i<len; i++){
+			ar[i]=args[i]->type;
+			assert(ar[i]);
+		}
+		return llvm::PointerType::getUnqual(llvm::FunctionType::get(r1->type,ar,isVarArg));
 	}
 	const AbstractClass* const returnType;
 	std::vector<const AbstractClass*> argumentTypes;
@@ -65,7 +68,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
+	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const;
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		assert(hasCast(a));
 		assert(hasCast(b));

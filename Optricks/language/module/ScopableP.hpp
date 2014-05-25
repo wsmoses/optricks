@@ -128,38 +128,48 @@ void Resolvable::setObject(const Data* da) const{
 const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const{
 	auto f = find(id,name);
 	if(f.first==nullptr) return &voidClass;
+	const AbstractClass* ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
 			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
-			return d->getSingleProto()->returnType;
+			ret = d->getSingleProto()->returnType;
+			break;
 		}
 		case SCOPE_CLASS:{
-			return f.first->classes[f.second->second.pos];
+			ret = f.first->classes[f.second->second.pos];
+			break;
 		}
 		case SCOPE_VAR:{
 			auto P = f.first->vars[f.second->second.pos];
-			return P->getFunctionReturnType(id,fp);
+			ret = P->getFunctionReturnType(id,fp);
+			break;
 		}
 	}
+	return ret;
 }
 
 inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const{
 	auto f = find(id,name);
 	if(f.first==nullptr) return std::pair<const Data*,SCOPE_TYPE>(&VOID_DATA,f.second->second.type);
+	std::pair<const Data*,SCOPE_TYPE> ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
 			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
-			return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
+			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
+			break;
 		}
 		case SCOPE_CLASS:{
 			const Data* d = f.first->classes[f.second->second.pos];
-			return std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
+			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
+			break;
 		}
 		case SCOPE_VAR:{
 			auto P = f.first->vars[f.second->second.pos];
-			return std::pair<const Data*,SCOPE_TYPE>(P, SCOPE_VAR);
+			ret = std::pair<const Data*,SCOPE_TYPE>(P, SCOPE_VAR);
+			break;
 		}
 	}
+	return ret;
 }
 
 const Data* Scopable::get(PositionID id, const String name) const{
@@ -190,7 +200,7 @@ const Data* Scopable::get(PositionID id, const String name) const{
 		}
 	}
 
-	inline Value* Resolvable::getValue(RData& r) const{
+	inline llvm::Value* Resolvable::getValue(RData& r) const{
 		return getObject()->getValue(r,filePos);
 	}
 	inline void Resolvable::setValue(RData& r, Data* d2) const{
@@ -208,7 +218,7 @@ const Data* Scopable::get(PositionID id, const String name) const{
 				exit(1);
 		}
 	}
-	inline void Resolvable::setValue(RData& r,Value* v) const{
+	inline void Resolvable::setValue(RData& r,llvm::Value* v) const{
 		auto d = module->find(filePos,name);
 		if(d.first==nullptr) return;
 		switch(d.second->second.type){

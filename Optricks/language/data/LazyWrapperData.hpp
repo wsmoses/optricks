@@ -44,11 +44,11 @@ public:
 		return value->getReturnType();
 	}
 
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		id.compilerError("Cannot get value of reference");
 		exit(1);
 	}
-	inline void setValue(RData& r, Value* v) const{
+	inline void setValue(RData& r, llvm::Value* v) const{
 		PositionID(0,0,"#lazy").compilerError("Cannot set value of lazy");
 		exit(1);
 	}
@@ -62,14 +62,14 @@ public:
 		if(value->getReturnType()==RL->innerType) return this;
 		else return new LazyWrapperData(new CastEval(value, right, id));
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType!=CLASS_LAZY)
 				id.compilerError("Cannot cast lazy class to non-lazy class");
 		auto lc = (const LazyClass*)right;
-		BasicBlock *Parent = r.builder.GetInsertBlock();
-		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
-		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
-		BasicBlock *BB = r.CreateBlockD("entry", F);
+		llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
+		llvm::FunctionType* FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
+		llvm::Function* F = llvm::Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
+		llvm::BasicBlock* BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
 		const Data* D = value->evaluate(r);
 		if(lc->innerType->classType==CLASS_VOID)

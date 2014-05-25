@@ -8,8 +8,8 @@
 #ifndef GENERICCLASS_HPP_
 #define GENERICCLASS_HPP_
 
-#include "settings.hpp"
-#include "ClassProto.hpp"
+//#include "settings.hpp"
+//#include "ClassProto.hpp"
 
 
 

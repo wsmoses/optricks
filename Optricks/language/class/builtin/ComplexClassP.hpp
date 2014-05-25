@@ -27,7 +27,7 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 			return cl->imag->castTo(r, innerClass, id);
 		}
 	} else if(instance->type==R_CONST){
-		Value* v = ((ConstantData*)instance)->value;
+		llvm::Value* v = ((ConstantData*)instance)->value;
 		return new ConstantData(r.builder.CreateExtractElement(v,getInt32((s=="real")?0:1)),this);
 
 	} else {

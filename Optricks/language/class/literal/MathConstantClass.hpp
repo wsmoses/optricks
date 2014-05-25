@@ -13,18 +13,25 @@
 class MathConstantClass: public AbstractClass{
 protected:
 	inline String fromC(MathConstant mc){
+		String s;
 		switch(mc){
 		case MATH_PI:
-			return "PiClass";
+			s="PiClass";
+			break;
 		case MATH_E:
-			return "EClass";
+			s="EClass";
+			break;
 		case MATH_EULER_MASC:
-			return "EulerGammaClass";
+			s="EulerGammaClass";
+			break;
 		case MATH_LN2:
-			return "Log2Class";
+			s="Log2Class";
+			break;
 		case MATH_CATALAN:
-			return "CatalanClass";
+			s="CatalanClass";
+			break;
 		}
+		return s;
 	}
 public:
 	MathConstant mathType;
@@ -70,7 +77,7 @@ public:
 		if(toCast->classType==CLASS_VOID) return true;
 		return hasCast(toCast);
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		id.compilerError("This method should never be called.....ever....");
 		exit(1);
 	}

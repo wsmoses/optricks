@@ -8,7 +8,12 @@
 #ifndef LOCATIONDATAP_HPP_
 #define LOCATIONDATAP_HPP_
 #include "./LocationData.hpp"
-inline Value* LocationData::castToV(RData& r, const AbstractClass* const right, const PositionID id) const {
+
+const ConstantData* LocationData::toValue(RData& r,PositionID id) const{
+	return new ConstantData(value->getValue(r,id), type);
+}
+
+inline llvm::Value* LocationData::castToV(RData& r, const AbstractClass* const right, const PositionID id) const {
 		assert(value);
 		if(type == right)
 			return value->getValue(r,id);

@@ -26,22 +26,21 @@ public:
 		if(myFunction) return;
 		assert(methodBody==nullptr);
 		//returnV->registerFunctionPrototype(a);
-		BasicBlock *Parent = a.builder.GetInsertBlock();
-		llvm::SmallVector<Type*,0> args(declaration.size());
+		llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
+		llvm::SmallVector<llvm::Type*,0> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
+			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
-			Type* cl = ac->type;
-			if(cl==NULL) error("Type argument "+ac->getName()+" is null");
-			args[i] = cl;
+			if(ac->type==NULL) error("Type argument "+ac->getName()+" is null");
+			args[i] = ac->type;
 		}
 		assert(returnV);
 		const AbstractClass* returnType = returnV->getSelfClass(filePos);
 		assert(returnType);
-		llvm::Type* r = returnType->type;
-		FunctionType *FT = FunctionType::get(r, args, false);
+		auto FT = llvm::FunctionType::get(returnType->type, args, false);
 		llvm::Function *F = a.getExtern(name, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);
 		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
 		else if(nam=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
@@ -56,7 +55,7 @@ public:
 		//todo have full name
 		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
-		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
+		if(Parent) a.builder.SetInsertPoint( Parent );
 	}
 };
 

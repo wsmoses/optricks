@@ -23,11 +23,16 @@ enum TJump{
 };
 
 template<> String str<TJump>(TJump d){
+	String ret;
 	switch(d){
-		case LOOP: return "LOOP";
-		case FUNC: return "FUNC";
-		case GENERATOR: return "GENERATOR";
+		case LOOP: ret = "LOOP";
+			break;
+		case FUNC: ret = "FUNC";
+			break;
+		case GENERATOR: ret = "GENERATOR";
+			break;
 	}
+	return ret;
 }
 
 struct Jumpable {
@@ -35,12 +40,12 @@ struct Jumpable {
 		String name;
 		TJump toJump;
 		Scopable* scope;
-		BasicBlock* start;
-		BasicBlock* end;
+		llvm::BasicBlock* start;
+		llvm::BasicBlock* end;
 		const AbstractClass* returnType;
-		std::vector<std::pair<BasicBlock*,BasicBlock*>> resumes;
-		std::vector<std::pair<BasicBlock*,const Data*> > endings;
-		Jumpable(String n, TJump t, Scopable* om, BasicBlock* s, BasicBlock* e, const AbstractClass* p):
+		std::vector<std::pair<llvm::BasicBlock*,llvm::BasicBlock*>> resumes;
+		std::vector<std::pair<llvm::BasicBlock*,const Data*> > endings;
+		Jumpable(String n, TJump t, Scopable* om, llvm::BasicBlock* s, llvm::BasicBlock* e, const AbstractClass* p):
 			name(n), toJump(t), scope(om), start(s), end(e), returnType(p){
 
 		}
@@ -52,60 +57,60 @@ struct RData{
 		friend LazyLocation;
 	private:
 		std::vector<Jumpable*> jumps;
-		std::map<Function*,std::vector<LazyLocation*> > flocs;
-		std::map<Function*,std::map<BasicBlock*,BasicBlock*> > pred;
+		std::map<llvm::Function*,std::vector<LazyLocation*> > flocs;
+		std::map<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> > pred;
 	public:
 		bool enableAsserts;
-		Module* lmod;
-		IRBuilder<> builder;
-		FunctionPassManager fpm;
-		PassManager mpm;
-		ExecutionEngine* exec;
-		RData(): enableAsserts(false),lmod(new Module("main",getGlobalContext())),
-				builder(getGlobalContext())
+		llvm::Module* lmod;
+		llvm::IRBuilder<> builder;
+		llvm::FunctionPassManager fpm;
+		llvm::PassManager mpm;
+		llvm::ExecutionEngine* exec;
+		RData(): enableAsserts(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),
+				builder(llvm::getGlobalContext())
 		,fpm(lmod),mpm(){
 			lmod->setDataLayout("p:64:64:64");
 			exec=nullptr;
 			// Set up optimizers
-			PassManagerBuilder pmb;
-			pmb.Inliner = createFunctionInliningPass();
+			llvm::PassManagerBuilder pmb;
+			pmb.Inliner = llvm::createFunctionInliningPass();
 			pmb.OptLevel = 3;
 			pmb.populateFunctionPassManager(fpm);
 			pmb.populateModulePassManager(mpm);
 		};
-		PHINode* CreatePHI(Type *Ty, unsigned NumReservedValues, const Twine &Name = ""){
-			PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
+		llvm::PHINode* CreatePHI(llvm::Type *Ty, unsigned NumReservedValues, const llvm::Twine &Name = ""){
+			llvm::PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
 			assert(p);
 			assert(p->getType()==Ty);
-			Instruction* s = &(builder.GetInsertBlock()->front());
+			llvm::Instruction* s = &(builder.GetInsertBlock()->front());
 			if(s!=p) p->moveBefore(s);
 			return p;
 		}
-		inline BasicBlock* CreateBlockD(String name,Function* F){
-			BasicBlock* b = BasicBlock::Create(lmod->getContext(),Twine(name), F);
+		inline llvm::BasicBlock* CreateBlockD(String name,llvm::Function* F){
+			llvm::BasicBlock* b = llvm::BasicBlock::Create(lmod->getContext(),llvm::Twine(name), F);
 			return b;
 		}
-		inline Function* CreateFunctionD(String name,FunctionType* FT,Function::LinkageTypes L){
-			Function* f = Function::Create(FT,L,Twine(name),lmod);
+		inline llvm::Function* CreateFunctionD(String name,llvm::FunctionType* FT,llvm::Function::LinkageTypes L){
+			llvm::Function* f = llvm::Function::Create(FT,L,llvm::Twine(name),lmod);
 			return f;
 		}
-		inline Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
-		inline Function* getExtern(String name, FunctionType* FT, String lib=""){
+		inline llvm::Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
+		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
-			return (Function*) lmod->getOrInsertFunction(StringRef(name), FT);
+			return (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 		}
-		inline Value* getConstantCString(String name){
-			static std::map<String,Value*> M;
+		inline llvm::Value* getConstantCString(String name){
+			static std::map<String,llvm::Value*> M;
 			auto find = M.find(name);
 			if(find!=M.end()) return find->second;
 			else{
-				Value* const V = builder.CreateGlobalStringPtr(StringRef(name));
-				M.insert(std::pair<String,Value*>(name,V));
+				llvm::Value* const V = builder.CreateGlobalStringPtr(llvm::StringRef(name));
+				M.insert(std::pair<String,llvm::Value*>(name,V));
 				return V;
 			}
 		}
-		void FinalizeFunctionD(Function* f,bool debug=false){
-			BasicBlock* Parent = builder.GetInsertBlock();
+		void FinalizeFunctionD(llvm::Function* f,bool debug=false){
+			llvm::BasicBlock* Parent = builder.GetInsertBlock();
 			if(Parent) builder.SetInsertPoint(Parent);
 			if(debug){
 				f->dump();
@@ -115,11 +120,11 @@ struct RData{
 			fpm.run(*f);
 		}
 		inline bool hadBreak(){
-			BasicBlock* b = builder.GetInsertBlock();
+			llvm::BasicBlock* b = builder.GetInsertBlock();
 			if(b->getInstList().size()==0) return false;
 			return b->getInstList().back().isTerminator();
 		}
-		void recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator toFix);
+		void recursiveFinalize(LazyLocation* ll, std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator toFix);
 		void addJump(Jumpable* j){
 			jumps.push_back(j);
 		}
@@ -129,14 +134,14 @@ struct RData{
 			return a;
 		}
 
-		Function* CreateFunction(String name,FunctionType* FT,Function::LinkageTypes L){
-			Function* f = CreateFunctionD(name,FT,L);
-			flocs.insert(std::pair<Function*,std::vector<LazyLocation*> >(f,std::vector<LazyLocation*>()));
-			pred.insert(std::pair<Function*,std::map<BasicBlock*,BasicBlock*> >(f,std::map<BasicBlock*,BasicBlock*>()));
+		llvm::Function* CreateFunction(String name,llvm::FunctionType* FT,llvm::Function::LinkageTypes L){
+			llvm::Function* f = CreateFunctionD(name,FT,L);
+			flocs.insert(std::pair<llvm::Function*,std::vector<LazyLocation*> >(f,std::vector<LazyLocation*>()));
+			pred.insert(std::pair<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> >(f,std::map<llvm::BasicBlock*,llvm::BasicBlock*>()));
 			return f;
 		}
-		void FinalizeFunction(Function* f,bool debug=false);
-		void DeleteBlock(BasicBlock* b){
+		void FinalizeFunction(llvm::Function* f,bool debug=false);
+		void DeleteBlock(llvm::BasicBlock* b){
 
 			b->removeFromParent();
 			/*
@@ -145,16 +150,16 @@ struct RData{
 			found->second.std::pair<BasicBlock*,BasicBlock* >(b,p));
 			}*/
 		}
-		BasicBlock* CreateBlock(String name, BasicBlock* p=NULL){
-			Function* F = builder.GetInsertBlock()->getParent();
-			BasicBlock* b = BasicBlock::Create(lmod->getContext(), Twine(name), F);
+		llvm::BasicBlock* CreateBlock(String name, llvm::BasicBlock* p=NULL){
+			llvm::Function* F = builder.GetInsertBlock()->getParent();
+			llvm::BasicBlock* b = llvm::BasicBlock::Create(lmod->getContext(), llvm::Twine(name), F);
 			if(p!=nullptr){
 				auto found = pred.find(F);
 				assert(found!=pred.end() &&  "Compiler error -- could not find function in map");
 				assert(this);
 				assert(pred.size()>=0);
 				assert(found->second.size()>=0);
-				found->second.insert(std::pair<BasicBlock*,BasicBlock* >(b,p));
+				found->second.insert(std::pair<llvm::BasicBlock*,llvm::BasicBlock* >(b,p));
 			}
 			return b;
 		}

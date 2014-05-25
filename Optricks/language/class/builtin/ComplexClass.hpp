@@ -22,19 +22,19 @@ public:
 		return inner->type;
 	}
 	inline ComplexClass(String name, const RealClass* inner, bool reg = false):
-		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,VectorType::get(cType(inner),2)),innerClass(inner){
+		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,llvm::VectorType::get(cType(inner),2)),innerClass(inner){
 		assert(inner);
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
 		if(reg) LANG_M.addClass(PositionID(0,0,"#int"),this);
 	}
-	inline Constant* getValue(PositionID id, const mpfr_t& value) const{
+	inline llvm::Constant* getValue(PositionID id, const mpfr_t& value) const{
 		if(innerClass->classType!=CLASS_FLOAT) id.error("Cannot convert floating literal to "+getName());
 		const FloatClass* in = (const FloatClass*)innerClass;
-		SmallVector<Constant*,2> ar(2);
+		llvm::SmallVector<llvm::Constant*,2> ar(2);
 		ar[0] = in->getValue(id,value);
 		ar[1] = innerClass->getZero(id);
-		return ConstantVector::get(ar);
+		return llvm::ConstantVector::get(ar);
 	}
 	bool hasLocalData(String s) const override final{
 		return s=="real" || s=="imag";
@@ -69,7 +69,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(toCast->classType!=CLASS_COMPLEX) id.error("Cannot cast "+getName()+" type to "+toCast->getName());
 		//if(toCast==this || innerClass->noopCast(((ComplexClass*)toCast)->innerClass)) return valueToCast;
 		//if(!innerClass->hasCast(((ComplexClass*)toCast)->innerClass)) id.error()
@@ -87,26 +87,26 @@ public:
 		}
 		else return found->second;
 	}
-	inline Constant* getZero(PositionID id, bool negative=false) const{
-		return ConstantVector::getSplat(2, innerClass->getZero(id,negative));
+	inline llvm::Constant* getZero(PositionID id, bool negative=false) const{
+		return llvm::ConstantVector::getSplat(2, innerClass->getZero(id,negative));
 	}
-	inline Constant* getOne(PositionID id) const{
-		SmallVector<Constant*,2> ar(2);
+	inline llvm::Constant* getOne(PositionID id) const{
+		llvm::SmallVector<llvm::Constant*,2> ar(2);
 		ar[0] = innerClass->getOne(id);
 		ar[1] = innerClass->getZero(id);
-		return ConstantVector::get(ar);
+		return llvm::ConstantVector::get(ar);
 	}
-	inline Constant* getI(PositionID id) const{
-		SmallVector<Constant*,2> ar(2);
+	inline llvm::Constant* getI(PositionID id) const{
+		llvm::SmallVector<llvm::Constant*,2> ar(2);
 		ar[0] = innerClass->getZero(id);
 		ar[1] = innerClass->getOne(id);
-		return ConstantVector::get(ar);
+		return llvm::ConstantVector::get(ar);
 	}
-	inline Constant* getValue(PositionID id, const mpz_t& value) const{
-		SmallVector<Constant*,2> ar(2);
+	inline llvm::Constant* getValue(PositionID id, const mpz_t& value) const{
+		llvm::SmallVector<llvm::Constant*,2> ar(2);
 		ar[0] = innerClass->getValue(id,value);
 		ar[1] = innerClass->getZero(id);
-		return ConstantVector::get(ar);
+		return llvm::ConstantVector::get(ar);
 	}
 };
 

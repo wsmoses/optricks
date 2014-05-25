@@ -29,7 +29,7 @@ public:
 	const LayoutType layout;
 	const ClassType classType;
 	const bool isFinal;
-	Type* const type;
+	llvm::Type* const type;
 protected:
 public:
 	//virtual bool hasCast(AbstractClass* cl) const=0;
@@ -42,7 +42,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	virtual Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const=0;
+	virtual llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const=0;
 
 	//virtual const Data* applyPreop(RData& r, const PositionID id, const Data* toApply, String op) const=0;
 	//virtual const Data* applyPostop(RData& r, const PositionID id, const Data* toApply, String op) const=0;
@@ -79,8 +79,8 @@ public:
 		return this;
 	}
 	const AbstractClass* getReturnType() const override;
-	inline Constant* getValue(RData& r, PositionID id) const override final{
-		return ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
+	inline llvm::Constant* getValue(RData& r, PositionID id) const override final{
+		return llvm::ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
 		return a->classType==CLASS_CLASS || a->classType==CLASS_VOID;
@@ -92,7 +92,7 @@ public:
 		assert(hasCast(b));
 		return 0;
 	}
-	Constant* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	llvm::Constant* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType!=CLASS_CLASS) id.error("Cannot cast class 'class' to '"+right->getName()+"'");
 		return getValue(r,id);
 	}

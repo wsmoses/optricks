@@ -110,22 +110,20 @@ public:
 		if(finished) return finished;
 		getReturnType();
 		assert(returnType);
-		const AbstractClass* C = (value==NULL || value->getToken()==T_VOID)?NULL:value->getReturnType();
+		assert(returnType->type);
 		if(isReference == 1){
 			filePos.error("Cannot find references early");
 		}
 		if(global){
-			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
-			GlobalVariable* GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
-			((Value*)GV)->setName(Twine(variable.getFullName()));
+			llvm::Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
+			llvm::GlobalVariable* GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
+			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
 			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
-					TheFunction->getEntryBlock().begin());
-			Type* t = returnType->type;
-			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
+			auto TheFunction = r.builder.GetInsertBlock()->getParent();
+			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
+			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
 			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
@@ -135,7 +133,7 @@ public:
 		if(finished){
 			if(value){
 				Location* aloc = finished->getMyLocation();
-				Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
+				llvm::Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
 				aloc->setValue(nex,r);
 				incrementCount(r, filePos, finished);
 			}
@@ -159,27 +157,25 @@ public:
 			filePos.warning("Garbage collection of references not implemented yet");
 			return finished=R->value;
 		}
-		Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:
-				(D->castToV(r, returnType, filePos));
+		llvm::Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(D->castToV(r, returnType, filePos));
+		assert(returnType->type);
 		assert(!tmp || tmp->getType()==returnType->type);
 		if(global){
-			Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
-			GlobalVariable* GV;
-			if(Constant* cons = dyn_cast_or_null<Constant>(tmp))
-				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,cons);
+			llvm::Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
+			llvm::GlobalVariable* GV;
+			if(auto cons = llvm::dyn_cast_or_null<llvm::Constant>(tmp))
+				GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,cons);
 			else{
-				GV = new GlobalVariable(M, returnType->type,false, GlobalValue::PrivateLinkage,UndefValue::get(returnType->type));
+				GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
-			((Value*)GV)->setName(Twine(variable.getFullName()));
+			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
 			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
-			Function *TheFunction = r.builder.GetInsertBlock()->getParent();
-			IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
-					TheFunction->getEntryBlock().begin());
-			Type* t = returnType->type;
-			auto al = TmpB.CreateAlloca(t, NULL,Twine(variable.pointer.name));
+			auto TheFunction = r.builder.GetInsertBlock()->getParent();
+			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
+			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
 			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals

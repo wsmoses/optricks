@@ -26,8 +26,8 @@ class ClassFunction : public E_FUNCTION{
 		}
 		void registerFunctionPrototype(RData& a) const override final{
 			if(myFunction) return;
-			BasicBlock *Parent = a.builder.GetInsertBlock();
-			llvm::SmallVector<Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
+			llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
+			llvm::SmallVector<llvm::Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 			std::vector<AbstractDeclaration> ad;
 			auto upperClass = surroundingClass->getSelfClass(filePos);
 			if(!staticF){
@@ -50,11 +50,11 @@ class ClassFunction : public E_FUNCTION{
 				if(ad[Idx].declarationType->classType==CLASS_REF){
 					auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(UndefValue::get(ic->type),ic))
+						(new ConstantData(llvm::UndefValue::get(ic->type),ic))
 					);
 				} else{
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+						(new ConstantData(llvm::UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
 					);
 				}
 			}
@@ -71,9 +71,8 @@ class ClassFunction : public E_FUNCTION{
 				}
 			}
 			assert(returnType);
-			llvm::Type* r = returnType->type;
-			assert(r);
-			FunctionType *FT = FunctionType::get(r, args, false);
+			assert(returnType->type);
+			auto FT = llvm::FunctionType::get(returnType->type, args, false);
 			String nam = "!"+upperClass->getName()+"."+name;
 			llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 			myFunction = new CompiledFunction(new FunctionProto(upperClass->getName()+"."+name, ad, returnType), F);
@@ -88,17 +87,17 @@ class ClassFunction : public E_FUNCTION{
 				((UserClass*)upperClass)->addLocalFunction(name)->add(myFunction, filePos);
 			}
 
-			BasicBlock *BB = a.CreateBlockD("entry", F);
+			llvm::BasicBlock* BB = a.CreateBlockD("entry", F);
 			a.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
-			Function::arg_iterator AI = F->arg_begin();
+			llvm::Function::arg_iterator AI = F->arg_begin();
 			if(!staticF){
-				((Value*)AI)->setName(Twine("this"));
+				((llvm::Value*)AI)->setName(llvm::Twine("this"));
 
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT)){
-					assert(dyn_cast<PointerType>(AI->getType()));
-					Location* myLoc = getLazy(a,(Value*)AI,a.builder.GetInsertBlock(),nullptr);
+					assert(llvm::dyn_cast<llvm::PointerType>(AI->getType()));
+					Location* myLoc = getLazy(a,(llvm::Value*)AI,a.builder.GetInsertBlock(),nullptr);
 					module.setVariable(filePos, "this", new LocationData(myLoc, upperClass));
 				} else{
 					module.setVariable(filePos, "this", new ConstantData(AI, upperClass));
@@ -107,7 +106,7 @@ class ClassFunction : public E_FUNCTION{
 				++Idx;
 			}
 			for (;Idx != F->arg_size(); ++AI, ++Idx) {
-				((Value*)AI)->setName(Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
+				((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
 				if(ad[Idx].declarationType->classType==CLASS_REF){
 					declaration[Idx]->variable.getMetadata().setObject(
 						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
@@ -126,7 +125,7 @@ class ClassFunction : public E_FUNCTION{
 			if(built) return;
 			built = true;
 			registerFunctionPrototype(a);
-			BasicBlock *Parent = a.builder.GetInsertBlock();
+			llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
 			a.builder.SetInsertPoint(&(myFunction->getSingleFunc()->getEntryBlock()));
 			Jumpable j(name, FUNC, &module, nullptr,nullptr,myFunction->getSingleProto()->returnType);
 			a.addJump(&j);

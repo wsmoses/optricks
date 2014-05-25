@@ -67,7 +67,7 @@ public:
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
 		return proto->returnType;
 	}
-	Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
+	llvm::Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	const AbstractClass* getReturnType() const override final{
 		return (AbstractClass*) ( proto->getFunctionClass());
 	}
@@ -82,10 +82,10 @@ public:
 	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const;
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
-	static Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
-	static Value* fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) ;
-	static llvm::SmallVector<Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
-	Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const;
+	static llvm::Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
+	static llvm::Value* fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) ;
+	static llvm::SmallVector<llvm::Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
+	llvm::Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, llvm::Value* V) const;
 };
 
 class CompiledFunction: public SingleFunction{
@@ -146,7 +146,7 @@ public:
 		innerFuncs.push_back(t);
 		return false;
 	}
-	Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
+	llvm::Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		if(innerFuncs.size()==0) return 0;

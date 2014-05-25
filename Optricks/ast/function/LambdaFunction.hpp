@@ -23,7 +23,7 @@ public:
 		if(built) return;
 		registerFunctionPrototype(ra);
 
-		BasicBlock *Parent = ra.builder.GetInsertBlock();
+		llvm::BasicBlock* Parent = ra.builder.GetInsertBlock();
 		llvm::Function* F = myFunction->getSingleFunc();
 		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
@@ -37,7 +37,7 @@ public:
 		if(ret->type==R_VOID)
 			ra.builder.CreateRetVoid();
 		else{
-			Value* V = ret->getValue(ra, filePos);
+			llvm::Value* V = ret->getValue(ra, filePos);
 			ra.builder.CreateRet(V);
 		}
 		ra.FinalizeFunction(F);
@@ -51,15 +51,15 @@ public:
 		if(myFunction) return;
 		//self->registerFunctionPrototype(a);
 		//returnV->registerFunctionPrototype(a);
-		BasicBlock *Parent = a.builder.GetInsertBlock();
-		llvm::SmallVector<Type*,0> args(declaration.size());
+		llvm::BasicBlock *Parent = a.builder.GetInsertBlock();
+		llvm::SmallVector<llvm::Type*,0> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(filePos);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			assert(ac);
-			Type* cl = ac->type;
+			llvm::Type* cl = ac->type;
 			assert(cl);
 			args[i] = cl;
 		}
@@ -67,11 +67,11 @@ public:
 			if(ad[Idx].declarationType->classType==CLASS_REF){
 				auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(UndefValue::get(ic->type),ic))
+					(new ConstantData(llvm::UndefValue::get(ic->type),ic))
 				);
 			} else{
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+					(new ConstantData(llvm::UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
 				);
 			}
 		}
@@ -79,17 +79,17 @@ public:
 		assert(returnType);
 		llvm::Type* r = returnType->type;
 		assert(r);
-		FunctionType *FT = FunctionType::get(r, args, false);
+		auto FT = llvm::FunctionType::get(r, args, false);
 		String nam = "!lambda";
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto("lambda", ad, returnType), F);
 
-		BasicBlock *BB = a.CreateBlockD("entry", F);
+		llvm::BasicBlock* BB = a.CreateBlockD("entry", F);
 		a.builder.SetInsertPoint(BB);
 
 		unsigned Idx = 0;
-		for (Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
-			((Value*)AI)->setName(Twine(ad[Idx].declarationVariable));
+		for (llvm::Function::arg_iterator AI = F->arg_begin(); Idx != F->arg_size(); ++AI, ++Idx) {
+			((llvm::Value*)AI)->setName(llvm::Twine(ad[Idx].declarationVariable));
 			if(ad[Idx].declarationType->classType==CLASS_REF){
 				declaration[Idx]->variable.getMetadata().setObject(
 					new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)

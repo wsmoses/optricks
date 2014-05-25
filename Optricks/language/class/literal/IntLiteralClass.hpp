@@ -78,20 +78,20 @@ public:
 		if(toCast->classType==CLASS_VOID) return true;
 		return hasCast(toCast);
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		id.compilerError("This method should never be called.....ever....");
 		exit(1);
 	}
 
-	Constant* getZero(PositionID id, bool negative=false) const{
+	llvm::Constant* getZero(PositionID id, bool negative=false) const{
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}
-	Constant* getOne(PositionID id) const{
+	llvm::Constant* getOne(PositionID id) const{
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}
-	Constant* getValue(PositionID id, const mpz_t& c) const{
+	llvm::Constant* getValue(PositionID id, const mpz_t& c) const{
 		id.compilerError("Cannot convert int-literal to llvm type");
 		exit(1);
 	}

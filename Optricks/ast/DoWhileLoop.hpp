@@ -39,9 +39,9 @@ public:
 		return T_DOWHILE;
 	}
 	const Data* evaluate(RData& r) const override{
-		BasicBlock *loopBlock = r.CreateBlock("loop");
-		BasicBlock *incBlock = r.CreateBlock("inc");
-		BasicBlock *afterBlock = r.CreateBlock("afterloop");
+		llvm::BasicBlock* loopBlock = r.CreateBlock("loop");
+		llvm::BasicBlock* incBlock = r.CreateBlock("inc");
+		llvm::BasicBlock* afterBlock = r.CreateBlock("afterloop");
 		r.builder.CreateBr(loopBlock);
 		r.builder.SetInsertPoint(loopBlock);
 		assert(incBlock); assert(afterBlock);
@@ -57,9 +57,9 @@ public:
 
 		r.builder.CreateBr(incBlock);
 		r.builder.SetInsertPoint(incBlock);
-		Value *EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+		llvm::Value *EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 		if(!r.hadBreak()){
-			if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(EndCond)){
 				if(c->isOne()) r.builder.CreateBr(loopBlock);
 				else r.builder.CreateBr(afterBlock);
 			} else {

@@ -54,8 +54,8 @@ class IfStatement : public ErrorStatement{
 			return &voidClass;
 		}
 		const Data* evaluate(RData& r) const override{
-			Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
-			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
+			llvm::Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(cond)){
 				if(c->isOne()){
 					then->evaluate(r);
 				} else if(finalElse){
@@ -63,10 +63,10 @@ class IfStatement : public ErrorStatement{
 				}
 				return &VOID_DATA;
 			}
-			BasicBlock* StartBB = r.builder.GetInsertBlock();
-			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
-			BasicBlock *ElseBB;
-			BasicBlock *MergeBB;
+			llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+			llvm::BasicBlock* ThenBB = r.CreateBlock("then",StartBB);
+			llvm::BasicBlock* ElseBB;
+			llvm::BasicBlock* MergeBB;
 			if(finalElse){
 				ElseBB = r.CreateBlock("else",StartBB);
 				MergeBB = r.CreateBlock("ifcont"/*,ThenBB,ElseBB*/);

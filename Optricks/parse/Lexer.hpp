@@ -114,7 +114,7 @@ class Lexer{
 				if(chdir(cwd)!=0) pos().error("Could not change directory back to "+String(cwd));
 			}
 		}
-		void execFiles(bool global, std::vector<String> fileNames, raw_ostream* file, bool debug, int toFile=0,unsigned int optLevel = 3){
+		void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, bool debug, int toFile=0,unsigned int optLevel = 3){
 			std::vector<Statement*> stats;
 			getStatements(global, debug, fileNames, stats);
 			for(auto& n: stats) n->registerClasses();
@@ -125,11 +125,11 @@ class Lexer{
 				n->buildFunction(getRData());
 			}
 
-			FunctionType *FT = FunctionType::get(VOIDTYPE, SmallVector<Type*,0>(0), false);
+			llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
 			assert(FT);
-			Function *F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
+			llvm::Function* F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
 			assert(F);
-			BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+			llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 			getRData().builder.SetInsertPoint(BB);
 			for(auto& n: stats) n->evaluate(getRData());
 			getRData().builder.CreateRetVoid();
@@ -159,7 +159,7 @@ class Lexer{
 			if(toFile==3){
 				//				llvm::raw_os_ostream raw_stream(file);
 				assert(file);
-				WriteBitcodeToFile(getRData().lmod, *file);
+				llvm::WriteBitcodeToFile(getRData().lmod, *file);
 				//				getRData().lmod->print(raw_stream, 0);
 			} else if(toFile==2){
 				//				llvm::raw_os_ostream raw_stream(file);

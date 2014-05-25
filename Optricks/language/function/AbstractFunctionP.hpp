@@ -17,7 +17,7 @@
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
-		Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
+		llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else{
 			return new ConstantData(cal,proto->returnType);
@@ -25,15 +25,15 @@
 	}
 BuiltinInlineFunction::BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 SingleFunction(fp,getF(fp)),inlined(tmp){
-	BasicBlock *Parent = getRData().builder.GetInsertBlock();
-	BasicBlock *BB = getRData().CreateBlockD("entry", myFunc);
+	llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
+	llvm::BasicBlock* BB = getRData().CreateBlockD("entry", myFunc);
 	getRData().builder.SetInsertPoint(BB);
 
 	unsigned Idx = 0;
 	std::vector<const Evaluatable*> args;
-	for (Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
+	for (llvm::Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
 			++AI, ++Idx) {
-		((Value*)AI)->setName(Twine(proto->declarations[Idx].declarationVariable));
+		((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
 		//todo should have this be location?
 		if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
 			args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
@@ -45,7 +45,7 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 		if(proto->returnType->classType==CLASS_VOID)
 			getRData().builder.CreateRetVoid();
 		else{
-			Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
+			llvm::Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
 			getRData().builder.CreateRet(V);
 		}
 	}
@@ -55,7 +55,7 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	auto tmp=fp->declarations.size();
-	llvm::SmallVector<Type*,0> ar(tmp);
+	llvm::SmallVector<llvm::Type*,0> ar(tmp);
 	for(unsigned i=0; i<tmp; i++){
 		ar[i] = fp->declarations[i].declarationType->type;
 		assert(ar[i]);
@@ -63,7 +63,7 @@ inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	llvm::Type* const T = (fp->returnType == &charClass)?CHARTYPE:fp->returnType->type;
 	assert(fp->returnType);
 	assert(T || PositionID(0,0,"#getF").warning(fp->returnType->getName()+"  has no type"));;
-	llvm::FunctionType* FT = FunctionType::get(T, ar, false);
+	llvm::FunctionType* FT = llvm::FunctionType::get(T, ar, false);
 	return getRData().CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args){
@@ -129,9 +129,9 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r
 const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
 		const AbstractClass* VRT = val->getReturnType();
-		if(t==VRT) return val;
+		if(t==VRT || t->classType==CLASS_VOID) return val;
 		if(VRT->classType!=CLASS_LAZY){
-			if(((LazyClass*)t)->innerType==VRT) return new LazyWrapperData(val);
+			if(((LazyClass*)t)->innerType==VRT || ((LazyClass*)t)->innerType->classType==CLASS_VOID) return new LazyWrapperData(val);
 			else return new LazyWrapperData(new CastEval(val, ((LazyClass*)t)->innerType, id));
 		}
 		else return new CastEval(val,t,id);
@@ -142,15 +142,16 @@ const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, Data* v
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return val;
 	} */else {
+		if(t->classType==CLASS_VOID) return val;
 		return val->castTo(r, t, id);
 	}
 }
 const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
 		const AbstractClass* VRT = val->getReturnType();
-		if(t==VRT) return val;
+		if(t==VRT || t->classType==CLASS_VOID) return val;
 		if(VRT->classType!=CLASS_LAZY){
-			if(((LazyClass*)t)->innerType==VRT) return new LazyWrapperData(val);
+			if(((LazyClass*)t)->innerType==VRT || ((LazyClass*)t)->innerType->classType==CLASS_VOID) return new LazyWrapperData(val);
 			else return new LazyWrapperData(new CastEval(val, ((LazyClass*)t)->innerType, id));
 		}
 		else return new CastEval(val,t,id);
@@ -162,16 +163,17 @@ const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, const E
 		if(tmp!=rc->innerType) id.error("Cannot use "+tmp->getName()+"& in place of "+rc->getName());
 		return tt;
 	} */else {
+		if(t->classType==CLASS_VOID) return val->evaluate(r)->toValue(r, id);
 		return val->evaluate(r)->castTo(r, t, id)->toValue(r, id);
 	}
 }
-Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
+llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
-		BasicBlock *Parent = r.builder.GetInsertBlock();
+		llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 		const LazyClass* const lc = (const LazyClass*)t;
-		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
-		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
-		BasicBlock *BB = r.CreateBlockD("entry", F);
+		llvm::FunctionType* FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
+		llvm::Function* F = llvm::Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
+		llvm::BasicBlock *BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
 		if(lc->innerType->classType==CLASS_VOID)
 				r.builder.CreateRetVoid();
@@ -191,13 +193,13 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const A
 		return val->castToV(r, t, id);
 	}
 }
-Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
+llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
 	if(t->classType==CLASS_LAZY){
-		BasicBlock *Parent = r.builder.GetInsertBlock();
+		llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 		const LazyClass* lc = (const LazyClass*)t;
-		FunctionType *FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
-		Function* F = Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
-		BasicBlock *BB = r.CreateBlockD("entry", F);
+		llvm::FunctionType* FT = (llvm::FunctionType*)(((llvm::PointerType*)lc->type)->getElementType());
+		llvm::Function* F = llvm::Function::Create(FT,LOCAL_FUNC,"%lazy",r.lmod);
+		llvm::BasicBlock* BB = r.CreateBlockD("entry", F);
 		r.builder.SetInsertPoint(BB);
 		const Data* D = val->evaluate(r);
 		if(lc->innerType->classType==CLASS_VOID)
@@ -217,11 +219,11 @@ Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, 
 		return val->evaluate(r)->castToV(r, t, id);
 	}
 }
-llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
+llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	const auto ts = (as<=ds)?as:ds;
-	llvm::SmallVector<Value*,0> temp((ds>=as)?ds:as);
+	llvm::SmallVector<llvm::Value*,0> temp((ds>=as)?ds:as);
 	for(unsigned int i = 0; i<ts; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
 		if(args[i]==nullptr){
@@ -259,13 +261,13 @@ llvm::SmallVector<Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* 
 		return temp;
 	}
 }
-Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, Value* V) const{
+llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, llvm::Value* V) const{
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
 	for(unsigned int i = 0; i<as; i++){
 		const AbstractClass* const t = proto->declarations[i].declarationType;
-		Value* temp;
+		llvm::Value* temp;
 		if(args[i]==nullptr){
 			if(proto->declarations[i].defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
@@ -311,7 +313,7 @@ const ConstantData* AbstractFunction::castTo(RData& r, const AbstractClass* cons
 	}
 }
 
-Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const{
+llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const{
 	switch(right->classType){
 	case CLASS_FUNC:{
 		auto fc= proto->getFunctionClass();
@@ -330,21 +332,21 @@ Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, Posit
 }
 
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id){
-	llvm::SmallVector<Type*,0> args(fp->declarations.size());
+	llvm::SmallVector<llvm::Type*,0> args(fp->declarations.size());
 	for(unsigned i = 0; i<args.size(); i++) args[i] = fp->declarations[i].declarationType->type;
 	auto gt = fp->getGeneratorType()->type;
-	FunctionType *FT = FunctionType::get(gt, args, false);
-	Function* F = r.CreateFunctionD(fp->name,FT,LOCAL_FUNC);
-	BasicBlock *Parent = r.builder.GetInsertBlock();
-	BasicBlock *BB = BasicBlock::Create(r.lmod->getContext(), "entry", F);
+	llvm::FunctionType *FT = llvm::FunctionType::get(gt, args, false);
+	llvm::Function* F = r.CreateFunctionD(fp->name,FT,LOCAL_FUNC);
+	llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
+	llvm::BasicBlock* BB = llvm::BasicBlock::Create(r.lmod->getContext(), "entry", F);
 	r.builder.SetInsertPoint(BB);
-	assert(dyn_cast<VectorType>(gt)!=nullptr);
-	Value *V = UndefValue::get(gt);
+	assert(llvm::dyn_cast<llvm::VectorType>(gt)!=nullptr);
+	llvm::Value* V = llvm::UndefValue::get(gt);
 	auto const tmp=fp->declarations.size();
 	unsigned Idx = 0;
-	for (Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
+	for (llvm::Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
 			++AI, ++Idx)
-		V = r.builder.CreateInsertValue(V, (Value*)AI, llvm::SmallVector<unsigned int,1>({Idx}));
+		V = r.builder.CreateInsertValue(V, (llvm::Value*)AI, llvm::SmallVector<unsigned int,1>({Idx}));
 	r.builder.CreateRet(V);
 	if(Parent) r.builder.SetInsertPoint(Parent);
 	return F;
@@ -352,12 +354,12 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 
 const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
 	auto gt=proto->getGeneratorType();
-	Value *V = UndefValue::get(gt->type);
+	llvm::Value* V = llvm::UndefValue::get(gt->type);
 	return new ConstantData(validatePrototypeStruct(r,id,args,V),gt);
 }
 
 
-Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const {
+llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const {
 	switch(right->classType){
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this

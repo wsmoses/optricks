@@ -41,7 +41,7 @@ public:
 		exit(1);
 	}
 	//TODO
-	Constant* getValue(RData& r, PositionID id) const override final{
+	llvm::Constant* getValue(RData& r, PositionID id) const override final{
 		if(value.length()==1) return CharClass::getValue(value[0]);
 		id.compilerError("String literal not implemented yet");
 		exit(1);
@@ -56,7 +56,7 @@ public:
 		exit(1);
 	}
 	//TODO
-	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	llvm::Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(value.size()==1 && right->classType==CLASS_CHAR)
 			return CharClass::getValue(value[0]);
 		id.compilerError("String literal not implemented yet");

@@ -20,7 +20,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 }*/
 
 	IntClass::IntClass(Scopable* s, String nam, unsigned len):
-		RealClass(s, nam, PRIMITIVE_LAYOUT,CLASS_INT,IntegerType::get(getGlobalContext(),len)){
+		RealClass(s, nam, PRIMITIVE_LAYOUT,CLASS_INT,llvm::IntegerType::get(llvm::getGlobalContext(),len)){
 		(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#int"),this);
 		/*LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
@@ -75,7 +75,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		*/
 	}
-inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 	if(toCast->layout==LITERAL_LAYOUT) id.error("Cannot cast integer type to "+toCast->getName());
 	switch(toCast->classType){
 	case CLASS_INT:{
@@ -97,8 +97,8 @@ inline Value* IntClass::castTo(const AbstractClass* const toCast, RData& r, Posi
 	//case CLASS_RATIONAL:
 	case CLASS_COMPLEX:{
 		const RealClass* ac = ((const ComplexClass*)toCast)->innerClass;
-		Value* tmp = castTo(ac, r, id, valueToCast);
-		auto v = ConstantVector::getSplat(2, ac->getZero(id));
+		auto tmp = castTo(ac, r, id, valueToCast);
+		auto v = llvm::ConstantVector::getSplat(2, ac->getZero(id));
 		return r.builder.CreateInsertElement(v,tmp,getInt32(0));
 	}
 	default:

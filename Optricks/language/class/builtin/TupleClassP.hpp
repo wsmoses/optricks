@@ -13,7 +13,7 @@
 #include "../../RData.hpp"
 #include "../../data/LocationData.hpp"
 
-inline Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+inline llvm::Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		switch(toCast->classType){
 		case CLASS_TUPLE:
 		case CLASS_NAMED_TUPLE:{
@@ -34,12 +34,12 @@ inline Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, Po
 					break;
 				}
 			}
-			Value* res;
+			llvm::Value* res;
 			if(i==innerTypes.size()){
 				return res = valueToCast;
 			}
 			else{
-				res = UndefValue::get(tc->type);
+				res = llvm::UndefValue::get(tc->type);
 				for(unsigned j=0; j<i; j++)
 					r.builder.CreateInsertValue(res, r.builder.CreateExtractValue(valueToCast,j),j);
 				for( ; i<innerTypes.size(); i++)
@@ -85,7 +85,7 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 	} else{
 		assert(instance->type==R_CONST);
-		Value* v = ((ConstantData*)instance)->value;
+		llvm::Value* v = ((ConstantData*)instance)->value;
 		if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);
 		return new ConstantData(r.builder.CreateExtractValue(v,i),innerTypes[i]);
 	}

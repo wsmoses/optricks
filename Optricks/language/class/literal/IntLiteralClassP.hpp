@@ -11,7 +11,7 @@
 #include "./IntLiteralClass.hpp"
 #include "../../data/literal/IntLiteral.hpp"
 	IntLiteralClass::IntLiteralClass(bool b):
-		RealClass(nullptr,"intLiteral",LITERAL_LAYOUT,CLASS_INTLITERAL,llvm::IntegerType::get(getGlobalContext(), 1))
+		RealClass(nullptr,"intLiteral",LITERAL_LAYOUT,CLASS_INTLITERAL,BOOLTYPE)
 		{
 
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"isNan")->add(
@@ -29,7 +29,7 @@
 				auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 				//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 				for(const char* T = temp; *T !='\0'; ++T){
-					r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
+					r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, *T,false));
 				}
 				return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"println")->add(
@@ -42,9 +42,9 @@
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 			for(const char* T = temp; *T !='\0'; ++T){
-				r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, *T,false));
+				r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, *T,false));
 			}
-			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"chr")->add(
 			new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),

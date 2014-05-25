@@ -24,14 +24,14 @@ public:
 		id.compilerError("Cannot cast class function closure");
 		exit(1);
 	}
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		id.compilerError("Cannot cast class function closure");
 		exit(1);
 	}
 	const Data* toValue(RData& r,PositionID id) const override final{
 		return this;
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		id.compilerError("Cannot cast class function closure");
 		exit(1);
 	}

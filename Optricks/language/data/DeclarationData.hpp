@@ -35,7 +35,7 @@ public:
 		return value->getFunctionReturnType(id,args);
 	}
 
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		return value->fastEvaluate(r)->getValue(r,id);
 	}
 	inline const Data* toValue(RData& r,PositionID id) const override final{
@@ -44,7 +44,7 @@ public:
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		return value->fastEvaluate(r)->castTo(r, right,id);
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		return value->fastEvaluate(r)->castToV(r, right,id);
 	}
 };

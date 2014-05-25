@@ -13,8 +13,8 @@
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
-inline Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
-	llvm::SmallVector<Type*,0> args(A.size());
+inline llvm::Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
+	llvm::SmallVector<llvm::Type*,0> args(A.size());
 	for(unsigned i = 0; i<A.size(); i++){
 		assert(A[i]);
 		assert(A[i]->type);
@@ -22,7 +22,7 @@ inline Function* RData::getExtern(String name, const AbstractClass* R, const std
 	}
 	assert(R);
 	assert(R->type);
-	FunctionType *FT = FunctionType::get(R->type, args, varArgs);
+	llvm::FunctionType *FT = llvm::FunctionType::get(R->type, args, varArgs);
 	return getExtern(name, FT, lib);
 }
 void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id){
@@ -67,15 +67,15 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 			id.warning("Generator variable garbage collection / cleanup needs to be implemented");
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump==GENERATOR){
-					BasicBlock* cur = builder.GetInsertBlock();
+					llvm::BasicBlock* cur = builder.GetInsertBlock();
 					if(jumps[i]->returnType->classType==CLASS_VOID){
 						if(val->type!=R_VOID && val->getReturnType()->classType!=CLASS_VOID) id.error("Cannot return something in function requiring void");
-						jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(cur, &VOID_DATA));
+						jumps[i]->endings.push_back(std::pair<llvm::BasicBlock*,const Data*>(cur, &VOID_DATA));
 					}
-					else jumps[i]->endings.push_back(std::pair<BasicBlock*,const Data*>(cur, val->castTo(*this, jumps[i]->returnType, id)));
+					else jumps[i]->endings.push_back(std::pair<llvm::BasicBlock*,const Data*>(cur, val->castTo(*this, jumps[i]->returnType, id)));
 					builder.CreateBr(jumps[i]->end);//TODO DECREMENT ALL COUNTS BEFORE HERE
-					BasicBlock *RESUME = CreateBlock("postReturn",cur);
-					jumps[i]->resumes.push_back(std::pair<BasicBlock*,BasicBlock*>(cur,RESUME));
+					llvm::BasicBlock *RESUME = CreateBlock("postReturn",cur);
+					jumps[i]->resumes.push_back(std::pair<llvm::BasicBlock*,llvm::BasicBlock*>(cur,RESUME));
 					builder.SetInsertPoint(RESUME);
 					return;
 				} else {
@@ -117,15 +117,15 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 	}
 }
 
-void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator toFix){
+void RData::recursiveFinalize(LazyLocation* ll, std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator toFix){
 	assert(toFix->second.first);
-	PHINode* p = toFix->second.first;
-	if(BasicBlock* prev = toFix->first->getUniquePredecessor()){
+	llvm::PHINode* p = toFix->second.first;
+	if(llvm::BasicBlock* prev = toFix->first->getUniquePredecessor()){
 		//cerr << "has unique! "<<endl;fflush(stderr);
 		auto found = ll->data.find(prev);
 		if(found!=ll->data.end()){
 			//cerr << "has value! "<<endl;fflush(stderr);
-			Value* v = ll->getFastValue(*this,found);
+			llvm::Value* v = ll->getFastValue(*this,found);
 			p->replaceAllUsesWith(v);
 			p->eraseFromParent();
 			auto repdata = ll->data.find(toFix->first);
@@ -134,17 +134,17 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 		} else{
 			//cerr << "no value "<<endl;fflush(stderr);
 			assert(ll->phi.find(prev)==ll->phi.end());
-			std::vector<BasicBlock*> cache(1,toFix->first);
-			BasicBlock* tmp=prev;
+			std::vector<llvm::BasicBlock*> cache(1,toFix->first);
+			llvm::BasicBlock* tmp=prev;
 			do{
 				auto found3 = ll->data.find(tmp);
-				if(found3!=ll->data.end() && dyn_cast_or_null<PHINode>(found3->second)==NULL){
+				if(found3!=ll->data.end() && llvm::dyn_cast_or_null<llvm::PHINode>(found3->second)==NULL){
 					//cerr << "eventual unique value "<<endl;fflush(stderr);
-					Value* v = ll->getFastValue(*this,found3);
-					for(BasicBlock* bl:cache){
-						std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator fin = ll->phi.find(bl);
+					llvm::Value* v = ll->getFastValue(*this,found3);
+					for(llvm::BasicBlock* bl:cache){
+						std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator fin = ll->phi.find(bl);
 						if(fin!=ll->phi.end() && fin->second.first!=NULL){
-							PHINode* f = fin->second.first;
+							llvm::PHINode* f = fin->second.first;
 							assert(v->getType()==f->getType());
 							f->replaceAllUsesWith(v);
 							f->eraseFromParent();
@@ -166,11 +166,11 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 			if(found3!=ll->data.end()){
 				//cerr << "no unique, but value! "<<endl;fflush(stderr);
 				builder.SetInsertPoint(prev);
-				Value* v = ll->getFastValue(*this,found3);
-				for(BasicBlock* bl: cache){
+				llvm::Value* v = ll->getFastValue(*this,found3);
+				for(llvm::BasicBlock* bl: cache){
 					auto fin = ll->phi.find(bl);
 					if(fin!=ll->phi.end() && fin->second.first!=NULL){
-						PHINode* f = fin->second.first;
+						llvm::PHINode* f = fin->second.first;
 						assert(v->getType()==f->getType());
 						f->replaceAllUsesWith(v);
 						f->eraseFromParent();
@@ -190,14 +190,14 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 
 			//cerr << "no unique, no value!"<<endl;fflush(stderr);
 			builder.SetInsertPoint(prev);
-			PHINode* np = CreatePHI(p->getType(), 1U/*,ll->name*/);
+			llvm::PHINode* np = CreatePHI(p->getType(), 1/*,ll->name*/);
 			ll->data[prev] = np;
-			auto toRet = ll->phi.insert(std::pair<BasicBlock*,std::pair<PHINode*,PositionID> >
-			(prev, std::pair<PHINode*,PositionID>(np,toFix->second.second)));
-			for(BasicBlock* bl:cache){
+			auto toRet = ll->phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >
+			(prev, std::pair<llvm::PHINode*,PositionID>(np,toFix->second.second)));
+			for(llvm::BasicBlock* bl:cache){
 				auto fin = ll->phi.find(bl);
 				if(fin!=ll->phi.end() && fin->second.first!=NULL){
-					PHINode* f = fin->second.first;
+					llvm::PHINode* f = fin->second.first;
 					assert(np->getType()==f->getType());
 					f->replaceAllUsesWith(np);
 					f->eraseFromParent();
@@ -211,8 +211,8 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 			}
 		}
 	} else{
-		pred_iterator PI = pred_begin(toFix->first);
-		pred_iterator E = pred_end(toFix->first);
+		llvm::pred_iterator PI = pred_begin(toFix->first);
+		llvm::pred_iterator E = pred_end(toFix->first);
 		if(PI==E){
 /*			toFix->first->getParent()->dump();
 			cerr << endl << flush;
@@ -220,7 +220,7 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 			cerr << endl << flush;
 			toFix->second.second.error("Variable was not defined here");
 			*/
-			Value* tmp = UndefValue::get(p->getType());
+			llvm::Value* tmp = llvm::UndefValue::get(p->getType());
 			p->replaceAllUsesWith(tmp);
 			p->eraseFromParent();
 			if(ll->data[toFix->first]==p) ll->data[toFix->first]=tmp;
@@ -229,16 +229,16 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 		}
 		toFix->second.first = NULL;
 		do{
-			BasicBlock* bb = *PI;
+			llvm::BasicBlock* bb = *PI;
 			auto found = ll->data.find(bb);
 			if(found!=ll->data.end()){
 				p->addIncoming(ll->getFastValue(*this,found),bb);
 			} else{
 				assert(ll->phi.find(bb)==ll->phi.end());
 				builder.SetInsertPoint(bb);
-				PHINode* np = CreatePHI(p->getType(), 1U/*,ll->name*/);
-				auto toRet = ll->phi.insert(std::pair<BasicBlock*,std::pair<PHINode*,PositionID> >
-				(bb, std::pair<PHINode*,PositionID>(np,toFix->second.second)));
+				llvm::PHINode* np = CreatePHI(p->getType(), 1U/*,ll->name*/);
+				auto toRet = ll->phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >
+				(bb, std::pair<llvm::PHINode*,PositionID>(np,toFix->second.second)));
 				ll->data[bb] = np;//todo speed up
 				assert(np);
 				assert(np->getType()==ll->type);
@@ -251,15 +251,15 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<BasicBlock*,std::pair<P
 		}while(PI!=E);
 	}
 }
-void RData::FinalizeFunction(Function* f,bool debug){
-	BasicBlock* Parent = builder.GetInsertBlock();
+void RData::FinalizeFunction(llvm::Function* f,bool debug){
+	llvm::BasicBlock* Parent = builder.GetInsertBlock();
 	for(LazyLocation*& ll: flocs.find(f)->second){
 		//		ll->phi.
-		for(std::map<BasicBlock*,std::pair<PHINode*,PositionID> >::iterator it = ll->phi.begin(); it!=ll->phi.end(); ++it){
+		for(std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator it = ll->phi.begin(); it!=ll->phi.end(); ++it){
 			if(it->second.first) recursiveFinalize(ll,it);
 		}
 		if(!ll->used){
-			if(Instruction* u = dyn_cast<Instruction>(ll->position)) u->eraseFromParent();
+			if(llvm::Instruction* u = llvm::dyn_cast<llvm::Instruction>(ll->position)) u->eraseFromParent();
 		}
 		delete ll;
 	}

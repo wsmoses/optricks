@@ -631,7 +631,7 @@ public:
 		auto pek = peek();
 		if(pek=='i' || pek=='j'){
 			read();
-			return new ImaginaryLiteral(tmp);
+			return new ImaginaryLiteral(nullptr,tmp);
 		}
 		else return tmp;
 	}
@@ -686,7 +686,7 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 	}
 	else{
 		//TODO allow for a[::,2] or a[:,:]
-		Statement* start = NULL, *end=NULL,*step=NULL;
+		/*Statement* start = NULL, *end=NULL,*step=NULL;
 		unsigned int pos = 0, spos = 0;
 		while(stack.size()>spos){
 			if(stack[spos]==NULL){
@@ -710,10 +710,10 @@ Statement* getIndex(Stream* f, Statement* toIndex, std::vector<Statement*>& stac
 				spos++;
 			}
 		}
-		stack.clear();
+		stack.clear();*/
 		f->pos().compilerError("Slicing not implemented yet!");
 		exit(1);
-		//Statement* e = new SliceLiteral(f->pos(), start,end,step);
+		//auto e = new SliceLiteral(f->pos(), start,end,step);
 		//return new E_BINOP(f->pos(), toIndex,e,"[]");
 	}
 }

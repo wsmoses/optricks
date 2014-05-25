@@ -156,7 +156,7 @@ public:
 	bool hasCast(const AbstractClass* const toCast) const override{
 		return hasCast(toCast);
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		id.compilerError("Scope class cannot be instantiated --- how did this even happen....?");
 		exit(1);
 	}

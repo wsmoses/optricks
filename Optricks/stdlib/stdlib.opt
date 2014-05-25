@@ -13,7 +13,7 @@ def void test(){
 //import "string.opt"
 
 //import "file.opt";
-extern int rand();
+//extern int rand();
 /*
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)

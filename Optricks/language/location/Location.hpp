@@ -12,22 +12,22 @@
 class Location{
 	public:
 		virtual ~Location(){};
-		virtual Value* getValue(RData& r, PositionID id)=0;
-		virtual void setValue(Value* v, RData& r)=0;
-		virtual Value* getPointer(RData& r,PositionID id) =0;
+		virtual llvm::Value* getValue(RData& r, PositionID id)=0;
+		virtual void setValue(llvm::Value* v, RData& r)=0;
+		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
 };
 
 class StandardLocation : public Location{
 	private:
-		Value* position;
+	llvm::Value* position;
 	public:
 		~StandardLocation() override{};
-		StandardLocation(Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
-		Value* getValue(RData& r, PositionID id) override final;
-		void setValue(Value* v, RData& r) override final;
-		Value* getPointer(RData& r,PositionID id) override final{
+		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
+		llvm::Value* getValue(RData& r, PositionID id) override final;
+		void setValue(llvm::Value* v, RData& r) override final;
+		llvm::Value* getPointer(RData& r,PositionID id) override final{
 			return position;
 		}
 		Location* getInner(RData& r, PositionID id, unsigned idx) override final{
@@ -43,23 +43,23 @@ class LazyLocation: public Location{
 	friend RData;
 private:
 	bool used;
-	std::map<BasicBlock*,Value* > data;
-	std::map<BasicBlock*,std::pair<PHINode*,PositionID> > phi;
-	Value* position;
-	Type* type;
+	std::map<llvm::BasicBlock*,llvm::Value* > data;
+	std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> > phi;
+	llvm::Value* position;
+	llvm::Type* type;
 public:
 	~LazyLocation() override{};
-	LazyLocation(void* a, RData& r,Value* p, BasicBlock* b=NULL,Value* d=NULL,bool u = false):data(),position(p){
+	LazyLocation(void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):data(),position(p){
 		used = u;
 		assert(position);
 #ifndef NDEBUG
-		Type* t;
-		if(PointerType* pt = dyn_cast<PointerType>(p->getType())){
+		llvm::Type* t;
+		if(auto pt = llvm::dyn_cast<llvm::PointerType>(p->getType())){
 			t = pt->getElementType();
 		} else assert(0 && "Cannot use non-pointer type for LazyLocation");
 		type = t;
 #else
-		type = ((PointerType*) p->getType())->getElementType();
+		type = ((llvm::PointerType*) p->getType())->getElementType();
 #endif
 		assert(type);
 #ifndef NDEBUG
@@ -70,16 +70,16 @@ public:
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
 	}
-	Value* getPointer(RData& r,PositionID id) override final{
-		BasicBlock* me = r.builder.GetInsertBlock();
+	llvm::Value* getPointer(RData& r,PositionID id) override final{
+		llvm::BasicBlock* me = r.builder.GetInsertBlock();
 		auto found = data.find(me);
 		if(found==data.end()){
 			//not there -- create and insert phi-node unusable
 			//BasicBlock* prev = r.pred.find(me->getParent())->second.find(me)->second;
-			Value* v=NULL;
+			llvm::Value* v=NULL;
 			//if(prev==NULL){
-			PHINode* n = r.CreatePHI(type, 1U/*,name*/);
-			phi.insert(std::pair<BasicBlock*,std::pair<PHINode*,PositionID> >(me,std::pair<PHINode*,PositionID>(n,id)));
+			llvm::PHINode* n = r.CreatePHI(type, 1U/*,name*/);
+			phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >(me,std::pair<llvm::PHINode*,PositionID>(n,id)));
 			v = n;
 			/*} else {
 				auto found2 = data.find(prev);
@@ -103,7 +103,7 @@ public:
 		return position;
 	}
 private:
-		inline Value* getFastValue(RData& r, std::map<BasicBlock*,Value*>::iterator found,bool set=false){
+		inline llvm::Value* getFastValue(RData& r, std::map<llvm::BasicBlock*,llvm::Value*>::iterator found,bool set=false){
 			if(found->second==NULL){
 				if(set) r.builder.SetInsertPoint(found->first);
 				auto v = r.builder.CreateLoad(position);
@@ -119,17 +119,17 @@ private:
 				return v;
 			} else return found->second;
 		}
-	public:
-	Value* getValue(RData& r, PositionID id) override final{
-		BasicBlock* me = r.builder.GetInsertBlock();
+public:
+	llvm::Value* getValue(RData& r, PositionID id) override final{
+		llvm::BasicBlock* me = r.builder.GetInsertBlock();
 		auto found = data.find(me);
 		if(found==data.end()){
 			//not there -- create and insert phi-node unusable
 			//BasicBlock* prev = r.pred.find(me->getParent())->second.find(me)->second;
-			Value* v=NULL;
+			llvm::Value* v=NULL;
 			//if(prev==NULL){
-			PHINode* n = r.CreatePHI(type, 1U/*,name*/);
-			phi.insert(std::pair<BasicBlock*,std::pair<PHINode*,PositionID> >(me,std::pair<PHINode*,PositionID>(n,id)));
+			llvm::PHINode* n = r.CreatePHI(type, 1U/*,name*/);
+			phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >(me,std::pair<llvm::PHINode*,PositionID>(n,id)));
 			v = n;
 			/*} else {
 				auto found2 = data.find(prev);
@@ -145,11 +145,11 @@ private:
 			return v;
 		}else return getFastValue(r,found,true);
 	}
-	void setValue(Value* v, RData& r) override final{
+	void setValue(llvm::Value* v, RData& r) override final{
 		assert(v);
 		assert(v->getType()==type);
 		//v->setName(name);
-		BasicBlock* me = r.builder.GetInsertBlock();
+		llvm::BasicBlock* me = r.builder.GetInsertBlock();
 		data[me] = v;
 	}
 	Location* getInner(RData& r, PositionID id, unsigned idx) override final{
@@ -162,9 +162,9 @@ private:
 	}
 };
 
-Location* getLazy(RData& r,Value* p, BasicBlock* b=NULL,Value* d=NULL,bool u = false){
+Location* getLazy(RData& r,llvm::Value* p, llvm::BasicBlock* b=nullptr,llvm::Value* d=nullptr,bool u = false){
 	assert(p->getType()->isPointerTy());
-	llvm::Type* IT = ((PointerType*) p->getType())->getElementType();
+	llvm::Type* IT = ((llvm::PointerType*) p->getType())->getElementType();
 	assert(!IT->isVoidTy());
 	if(IT->isPointerTy() || IT->isIntegerTy() || IT->isHalfTy() || IT->isFloatTy()
 			|| IT->isDoubleTy() || IT->isX86_FP80Ty() || IT->isFP128Ty() || IT->isPPC_FP128Ty()
@@ -172,7 +172,7 @@ Location* getLazy(RData& r,Value* p, BasicBlock* b=NULL,Value* d=NULL,bool u = f
 		return new LazyLocation(nullptr,r,p,b,d,u);
 	} else{//todo allow structs
 		if(b && d){
-			auto* Parent = r.builder.GetInsertBlock();
+			auto Parent = r.builder.GetInsertBlock();
 			r.builder.SetInsertPoint(b);
 			r.builder.CreateStore(d,p);
 			if(Parent) r.builder.SetInsertPoint(Parent);

@@ -29,7 +29,7 @@
 		}
 const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const{
 	if(type->classType==CLASS_FUNC){
-		Value* F = getValue(r,id);
+		llvm::Value* F = getValue(r,id);
 		FunctionClass* fc = (FunctionClass*)type;
 
 		std::vector<AbstractDeclaration> v;
@@ -42,21 +42,21 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			v.push_back(AbstractDeclaration(a));
 		}
 		FunctionProto fp("",v,fc->returnType);
-		Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
+		llvm::Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
 		if(fp.returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else return new ConstantData(V,fp.returnType);
 	} else if(type->classType==CLASS_LAZY){
-		Value* F = getValue(r,id);
-		Value* V = r.builder.CreateCall(F);
+		llvm::Value* F = getValue(r,id);
+		llvm::Value* V = r.builder.CreateCall(F);
 		auto RT = ((LazyClass*)type)->innerType;
 		if(RT->classType==CLASS_VOID) return &VOID_DATA;
 		else return new ConstantData(V,RT);
 	}
 	else if(type->classType==CLASS_CLASS){
-		Value* v = getValue(r,id);
-		if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
-			auto t = c->getLimitedValue();
-			AbstractClass* a= (AbstractClass*)(  ((size_t)t)  );
+		llvm::Value* v = getValue(r,id);
+		if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
+			auto t = static_cast<size_t>(c->getLimitedValue());
+			auto a= (const AbstractClass*)t;
 			return a->callFunction(r,id,args);
 		} else{
 			id.error("Cannot use non-constant class type");
@@ -76,10 +76,10 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 
 		const AbstractClass* LLVMData::getMyClass(RData& r, PositionID id) const{
 			if(type->classType!=CLASS_CLASS) id.error("Cannot use non-class type as a class");
-			Value* v = getValue(r,id);
-			if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
-				auto t = c->getLimitedValue();
-				return (AbstractClass*)(  ((size_t)t)  );
+			llvm::Value* v = getValue(r,id);
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
+				auto t = static_cast<size_t>(c->getLimitedValue());
+				return (const AbstractClass*)t;
 			} else{
 				id.error("Cannot use non-constant class type");
 				exit(1);

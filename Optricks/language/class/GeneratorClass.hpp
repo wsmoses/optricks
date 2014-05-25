@@ -19,17 +19,17 @@ public:
 		}
 		return s+"}";
 	}
-	static inline Type* getGeneratorType(const String nam, const std::vector<std::pair<const AbstractClass*,String>>& args){
+	static inline llvm::Type* getGeneratorType(const String nam, const std::vector<std::pair<const AbstractClass*,String>>& args){
 		const auto len = args.size();
 		if(len==0) return VOIDTYPE;
 		if(len==1) return args[0].first->type;
-		llvm::SmallVector<Type*,0> ar(len);
+		llvm::SmallVector<llvm::Type*,0> ar(len);
 		for(unsigned int i=0; i<len; i++){
 			assert(args[i]->classType!=CLASS_LAZY);
 			assert(args[i]->classType!=CLASS_REF);
 			ar[i]=args[i].first->type;
 		}
-		return StructType::create(ar,StringRef(nam),false);
+		return llvm::StructType::create(ar,llvm::StringRef(nam),false);
 	}
 	const std::vector<std::pair<const AbstractClass*,String>> innerTypes;
 protected:
@@ -58,7 +58,7 @@ public:
 		assert(instance->type==R_LOC || instance->type==R_CONST);
 		assert(instance->getReturnType()==this);
 		if(instance->type==R_CONST){
-			Value* v = ((ConstantData*)instance)->value;
+			llvm::Value* v = ((ConstantData*)instance)->value;
 
 			for(unsigned i = 0; i<innerTypes.size(); i++)
 				if(innerTypes[i].second==s)
@@ -74,7 +74,7 @@ public:
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast == this || toCast->classType==CLASS_VOID;
 	}
-	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(toCast->classType==CLASS_VOID) return &VOID_DATA;
 		if(toCast!=this) id.error("Cannot cast between generator objects");
 		return valueToCast;

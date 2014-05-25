@@ -160,47 +160,46 @@ template<typename A, typename... B> struct convertClass<A(*)(B...)>{
 };
 
 template<typename C> inline const AbstractClass* convertClassType(Scopable* s){
-	cerr << "Cannot convert class (not implemented) "<< boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	cerr << "Cannot convert class (not implemented) "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
 	exit(1);
 }
 
 template<typename C> const AbstractClass* const convertClass<C>::convert(Scopable* s){
-	if(boost::is_union<C>::value){
-		cerr << "Cannot convert union "<< boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	if(std::is_union<C>::value){
+		cerr << "Cannot convert union "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
 		cerr << "  There are no unions in optricks (since they are inherently unsafe). Use polymorphism instead" << endl << flush;
 		exit(1);
-	} else if(boost::is_integral<C>::value){
-		/*if(!boost::is_signed<C>::value){
-			cerr << "Cannot convert unsigned integer "<< boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	} else if(std::is_integral<C>::value){
+		/*if(!std::is_signed<C>::value){
+			cerr << "Cannot convert unsigned integer "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
 			cerr << "  There are no unsigned types in optricks (since they are unsafe)." << endl << flush;
 			exit(1);
 		}*/
-		String s = boost::units::detail::demangle(typeid(C).name());
+		String s = demangle(typeid(C).name());
 		for(unsigned i=0; i<s.size(); i++)
 			if(s[i]==' ') s[i]='_';
 		static IntClass tmp(&(NS_LANG_C.staticVariables), s, sizeof(C));
 		return &tmp;
-	} else if(boost::is_float<C>::value){
+	} else if(std::is_floating_point<C>::value){
 
-	} else if(boost::is_member_object_pointer<C>::value){
+	} else if(std::is_member_object_pointer<C>::value){
 
-	//} else if(boost::is_function_member_pointer<C>::value){
+	//} else if(std::is_function_member_pointer<C>::value){
 
-	} else if(boost::is_class<C>::value){
+	} else if(std::is_class<C>::value){
 		return convertClassType<C>(s);
-	} else if(boost::is_pointer<C>::value){
-		cerr << "Warning: Cannot convert class " << boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	} else if(std::is_pointer<C>::value){
+		cerr << "Warning: Cannot convert class " << demangle(typeid(C).name()) << " to optricks" << endl << flush;
 		return &c_pointerClass;
 
 	}
-	cerr << "Cannot convert class " << boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	cerr << "Cannot convert class " << demangle(typeid(C).name()) << " to optricks" << endl << flush;
 	cerr << "Cannot convert class " << typeid(C).name() << " to optricks" << endl << flush;
 	cerr << "size: " << sizeof(C) << endl << flush;
 	cerr << "is std::int " << std::is_integral<C>::value << endl << flush;
-	cerr << "is boost::int " << boost::is_integral<C>::value << endl << flush;
-	cerr << "is pointer " << boost::is_pointer<C>::value << endl << flush;
-	cerr << "is int (errno) " << boost::is_integral<decltype(errno)>::value << endl << flush;
-	cerr << "is int (int)" << boost::is_integral<int>::value << endl << flush;
+	cerr << "is pointer " << std::is_pointer<C>::value << endl << flush;
+	cerr << "is int (errno) " << std::is_integral<decltype(errno)>::value << endl << flush;
+	cerr << "is int (int)" << std::is_integral<int>::value << endl << flush;
 	cerr <<  "int name : " << (typeid(int).name()) << endl << flush;
 	cerr <<  "errno name : " << (typeid(decltype(errno)).name()) << endl << flush;
 		//cerr << "errno: " << typeid(decltype(errno)) << endl << flush;
@@ -219,7 +218,7 @@ template<typename C> const AbstractClass* const convertClass<C>::convert(Scopabl
 #undef M
 //#define STR(x) #x
 	cerr << STR(_CRTIMP extern int *__cdecl ) << endl << flush;
-		//GIANT HACK......WHY IS THIS NEEDED????? (e.g. why is boost::is_integral<decltype(errno)>::value false?)
+		//GIANT HACK......WHY IS THIS NEEDED????? (e.g. why is std::is_integral<decltype(errno)>::value false?)
 	if(typeid(C)==typeid(decltype(errno)))
 		return &c_intClass;
 	exit(1);
@@ -231,28 +230,28 @@ template<typename C> struct convertLLVM{
 
 template<> struct convertLLVM<void>{
 	static llvm::Type* const convert(){
-		return llvm::Type::getVoidTy(getGlobalContext());
+		return llvm::Type::getVoidTy(llvm::getGlobalContext());
 	}
 };
 //TODO should this be
 template<> struct convertLLVM<bool>{
 	static llvm::IntegerType* const convert(){
-		return llvm::IntegerType::get(getGlobalContext(), sizeof(bool)*8);
+		return llvm::IntegerType::get(llvm::getGlobalContext(), sizeof(bool)*8);
 	}
 };
 template<> struct convertLLVM<float>{
 	static llvm::Type* const convert(){
-		return llvm::Type::getFloatTy(getGlobalContext());
+		return llvm::Type::getFloatTy(llvm::getGlobalContext());
 	}
 };
 template<> struct convertLLVM<double>{
 	static llvm::Type* const convert(){
-		return llvm::Type::getFloatTy(getGlobalContext());
+		return llvm::Type::getFloatTy(llvm::getGlobalContext());
 	}
 };
 template<> struct convertLLVM<char>{
 	static llvm::Type* const convert(){
-		return llvm::IntegerType::get(getGlobalContext(), sizeof(char)*8);
+		return llvm::IntegerType::get(llvm::getGlobalContext(), sizeof(char)*8);
 	}
 };
 template<> struct convertLLVM<void const*>{
@@ -273,9 +272,9 @@ template<> struct convertLLVM<void*>{
 
 template<typename A> struct convertLLVM<A*>{
 	static llvm::PointerType* const convert(){
-		if(boost::is_enum<A>::value ||
-				boost::is_union<A>::value ||
-				boost::is_class<A>::value){
+		if(std::is_enum<A>::value ||
+				std::is_union<A>::value ||
+				std::is_class<A>::value){
 			return C_POINTERTYPE;
 		}
 		return llvm::PointerType::getUnqual(convertLLVM<A>::convert());
@@ -283,9 +282,9 @@ template<typename A> struct convertLLVM<A*>{
 };
 template<typename A> struct convertLLVM<A* const>{
 	static llvm::PointerType* const convert(){
-		if(boost::is_enum<A>::value ||
-				boost::is_union<A>::value ||
-				boost::is_class<A>::value){
+		if(std::is_enum<A>::value ||
+				std::is_union<A>::value ||
+				std::is_class<A>::value){
 			return C_POINTERTYPE;
 		}
 		return llvm::PointerType::getUnqual(convertLLVM<A>::convert());
@@ -293,41 +292,41 @@ template<typename A> struct convertLLVM<A* const>{
 };
 
 template<size_t M, size_t s, typename... F> struct addLLVMToVector{
-	static void add(llvm::SmallVector<Type*,M>& v);
+	static void add(llvm::SmallVector<llvm::Type*,M>& v);
 };
 
 template<size_t M, size_t s, typename A, typename... F> struct addLLVMToVector<M, s, A, F...>{
-	static void add(llvm::SmallVector<Type*,M>& v){
+	static void add(llvm::SmallVector<llvm::Type*,M>& v){
 		v[s] = convertLLVM<A>::convert();
 		addLLVMToVector<M, s+1, F...>::add(v);
 	}
 };
 
 template<size_t M, size_t s> struct addLLVMToVector<M, s>{
-	static void add(llvm::SmallVector<Type*,M> in){}
+	static void add(llvm::SmallVector<llvm::Type*,M> in){}
 };
 template<typename A, typename... B> struct convertLLVM<A(B...)>{
 	static llvm::FunctionType* const convert(){
 		std::vector<const AbstractClass*> in(sizeof...(B));
-		llvm::SmallVector<Type*,sizeof...(B)> ar(sizeof...(B));
-		addLLVMToVector<0,B...>::add(in);
-		return FunctionType::get(convertLLVM<A>::convert(),ar,false);
+		llvm::SmallVector<llvm::Type*,sizeof...(B)> ar(sizeof...(B));
+		addLLVMToVector<sizeof...(B), 0,B...>::add(in);
+		return llvm::FunctionType::get(convertLLVM<A>::convert(),ar,false);
 	}
 };
 
 template<typename A, typename... B> struct convertLLVM<A(*)(B...)>{
 	static llvm::PointerType* const convert(){
 		std::vector<const AbstractClass*> in(sizeof...(B));
-		llvm::SmallVector<Type*,sizeof...(B)> ar(sizeof...(B));
-		addLLVMToVector<0,B...>::add(in);
-		return PointerType::getUnqual(FunctionType::get(convertLLVM<A>::convert(),ar,false));
+		llvm::SmallVector<llvm::Type*,sizeof...(B)> ar(sizeof...(B));
+		addLLVMToVector<sizeof...(B), 0,B...>::add(in);
+		return llvm::PointerType::getUnqual(llvm::FunctionType::get(convertLLVM<A>::convert(),ar,false));
 	}
 };
 
 
 template<> struct convertLLVM<decltype(errno)>{
 	static llvm::IntegerType* const convert(){
-		return llvm::IntegerType::get(getGlobalContext(), sizeof(decltype(errno)));
+		return llvm::IntegerType::get(llvm::getGlobalContext(), sizeof(decltype(errno)));
 	}
 };
 
@@ -337,22 +336,22 @@ template<typename A> struct convertLLVM<const A>{
 	}
 };
 template<typename C> llvm::Type* const convertLLVM<C>::convert(){
-	if(boost::is_union<C>::value){
-		cerr << "Cannot convert union "<< boost::units::detail::demangle(typeid(C).name()) << " to LLVM" << endl << flush;
+	if(std::is_union<C>::value){
+		cerr << "Cannot convert union "<< demangle(typeid(C).name()) << " to LLVM" << endl << flush;
 		cerr << "  There are no unions in optricks (since they are inherently unsafe). Use polymorphism instead" << endl << flush;
 		exit(1);
-	} else if(boost::is_integral<C>::value){
-		return llvm::IntegerType::get(getGlobalContext(), sizeof(C));
-	} else if(boost::is_float<C>::value){
+	} else if(std::is_integral<C>::value){
+		return llvm::IntegerType::get(llvm::getGlobalContext(), sizeof(C));
+	} else if(std::is_floating_point<C>::value){
 
-	} else if(boost::is_member_object_pointer<C>::value){
+	} else if(std::is_member_object_pointer<C>::value){
 
-	//} else if(boost::is_function_member_pointer<C>::value){
+	//} else if(std::is_function_member_pointer<C>::value){
 
-	} else if(boost::is_class<C>::value){
-	} else if(boost::is_pointer<C>::value){
+	} else if(std::is_class<C>::value){
+	} else if(std::is_pointer<C>::value){
 	}
-	cerr << "Cannot convert class " << boost::units::detail::demangle(typeid(C).name()) << " to LLVM" << endl << flush;
+	cerr << "Cannot convert class " << demangle(typeid(C).name()) << " to LLVM" << endl << flush;
 	exit(1);
 }
 

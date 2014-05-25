@@ -50,7 +50,7 @@ public:
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast ==this || toCast->classType==CLASS_VOID;
 	}
-	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(noopCast(toCast)) return valueToCast;
 		id.error("Cannot cast reference");
 		exit(1);

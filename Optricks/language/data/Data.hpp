@@ -24,8 +24,8 @@ public:
 		virtual const Data* toValue(RData& r, PositionID id) const=0;
 		virtual const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const=0;
 		virtual const AbstractClass* getReturnType() const=0;
-		virtual Value* getValue(RData& r, PositionID id) const=0;
-		virtual Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const=0;
+		virtual llvm::Value* getValue(RData& r, PositionID id) const=0;
+		virtual llvm::Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const=0;
 		llvm::Value* evalV(RData& r,PositionID id) const override final{
 			return getValue(r,id);
 		}

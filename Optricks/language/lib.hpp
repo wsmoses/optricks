@@ -12,7 +12,7 @@ bool isalpha(char c){
 	return (c>='a' && c<='z') || (c>='A' && c<='Z');
 }
 bool isalpha2(char c){
-	return (c>='a' && c<='z') || (c>='A' && c<='Z');
+	return (c>='a' && c<='z');
 }
 bool isalnum(char c){
 	return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9');
@@ -167,4 +167,24 @@ bool returnString(FILE* f, String c){
 	}
 	return false;
 }
+
+inline std::string demangle(const char* name){
+	#if (__GNUC__ && __cplusplus && __GNUC__ >= 3)
+    char*       realname;
+    std::size_t len;
+    int         stat;
+
+    realname = abi::__cxa_demangle(name,NULL,&len,&stat);
+
+    if (realname != NULL){
+        std::string   out(realname);
+        std::free(realname);
+        return out;
+    }
+    return std::string("demangle :: error - unable to demangle specified symbol");
+    #else
+    return name;
+    #endif
+}
+
 #endif /* LIB_HPP_ */

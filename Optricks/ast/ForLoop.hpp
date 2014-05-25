@@ -39,13 +39,13 @@ class ForLoop : public ErrorStatement{
 		}
 		const Data* evaluate(RData& r) const override{
 			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->evaluate(r);
-			BasicBlock *loopBlock;
-			BasicBlock *incBlock;
-			BasicBlock *afterBlock;
+			llvm::BasicBlock* loopBlock;
+			llvm::BasicBlock* incBlock;
+			llvm::BasicBlock* afterBlock;
 
-			Value *Cond1 = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+			llvm::Value* Cond1 = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			//BasicBlock* StartBB = r.builder.GetInsertBlock();
-			if(ConstantInt* c = dyn_cast<ConstantInt>(Cond1)){
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(Cond1)){
 				if(c->isOne()){
 					loopBlock = r.CreateBlock("loop");
 					afterBlock = r.CreateBlock("endLoop");
@@ -71,9 +71,9 @@ class ForLoop : public ErrorStatement{
 
 			r.builder.SetInsertPoint(incBlock);
 			if(increment!=NULL && increment->getToken()!= T_VOID) increment->evaluate(r);
-			Value *EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+			llvm::Value* EndCond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
 			if(!r.hadBreak()){
-				if(ConstantInt* c = dyn_cast<ConstantInt>(EndCond)){
+				if(auto c = llvm::dyn_cast<llvm::ConstantInt>(EndCond)){
 					if(c->isOne()) r.builder.CreateBr(loopBlock);
 					else r.builder.CreateBr(afterBlock);
 				} else {

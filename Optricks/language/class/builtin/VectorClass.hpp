@@ -21,9 +21,9 @@ public:
 		ss << "vector{" << d->getName() << "," << l << "}";
 		return ss.str();
 	}
-	static inline Type* getVectorType(const AbstractClass* const d, uint64_t l){
+	static inline llvm::Type* getVectorType(const AbstractClass* const d, uint64_t l){
 		if(d->classType==CLASS_INT || d->classType==CLASS_FLOAT){
-			return VectorType::get(d->type, l);
+			return llvm::VectorType::get(d->type, l);
 		} else{
 			PositionID(0,0,"#vector").compilerError("Vectors not implemented");
 			exit(1);
@@ -84,7 +84,7 @@ public:
 			return false;
 		}
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		id.compilerError("Casting vector types has not been implemented");
 		exit(1);
 	}

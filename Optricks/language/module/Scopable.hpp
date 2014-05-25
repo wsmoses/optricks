@@ -18,7 +18,7 @@ enum SCOPE_TYPE{
 	SCOPE_FUNC,/*Class method*/
 	SCOPE_VAR,/*Class variable*/
 	SCOPE_CLASS, /* class */
-	SCOPE_SCOPE /* sub-scope (like nested module) */
+	//SCOPE_SCOPE /* sub-scope (like nested module) */
 };
 struct SCOPE_POS{
 	SCOPE_TYPE type;
@@ -40,7 +40,7 @@ public:
 	std::vector<AbstractClass*> classes;
 public:
 	virtual ~Scopable(){};
-	Scopable(Scopable* above,String n=""):surroundingScope(above),name(n){};
+	Scopable(Scopable* above,String n=""):name(n),surroundingScope(above){};
 	const bool existsHere(String s) const{
 		return mapping.find(s)!=mapping.end();
 	}
@@ -181,9 +181,9 @@ public:
 	const AbstractClass* getReturnType() const;
 	inline const Data* getObject() const;
 	void setObject(const Data* da) const;
-	inline Value* getValue(RData& r) const;
+	inline llvm::Value* getValue(RData& r) const;
 	inline void setValue(RData& r, Data* d2) const;
-	inline void setValue(RData& r,Value* v) const;
+	inline void setValue(RData& r,llvm::Value* v) const;
 	inline void addFunction(SingleFunction* d) const;
 	inline void setFunction(SingleFunction* d) const;
 	inline const AbstractClass* getClass() const;

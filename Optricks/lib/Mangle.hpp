@@ -30,20 +30,21 @@ template<> struct mangleClass<clas>{\
 #endif
 
 #define MANGLE_T_ER(A, B, q)
-#ifdef _MSC_VER
-#define MANGLE_DEC_T(A, B, gcc, win)\
-#if win == error\
-template<A> struct mangleClass<B>{\
-	constexpr const char* mangled = win;\
-};\
-#endif
-#else
-#define MANGLE_DEC_T(A, B, gcc, win)\
-template<A> struct mangleClass<B>{\
-	constexpr const char* mangled = gcc;\
-};
-#endif
+//#ifdef _MSC_VER
+//#define MANGLE_DEC_T(A, B, gcc, win)\
+//#if win == error\
+//template<A> struct mangleClass<B>{\
+//	constexpr const char* mangled = win;\
+//};\
+//#endif
+//#else
+//#define MANGLE_DEC_T(A, B, gcc, win)\
+//template<A> struct mangleClass<B>{\
+//	constexpr const char* mangled = gcc;\
+//};
+//#endif
 
+/*
 MANGLE_DEC(void, "v",  "X")
 MANGLE_DEC(bool, "b", "_N")
 
@@ -108,6 +109,7 @@ MANGLE_DEC_T(typename A, A _seg *, error, error)
 MANGLE_DEC_T(typename A, A near &, error, "AA"+mangleClass<A>::mangled)
 MANGLE_DEC_T(typename A, A far &, error, "AE"+mangleClass<A>::mangled)
 MANGLE_DEC_T(typename A, A huge &, error, "AI"+mangleClass<A>::mangled)
+*/
 
 //MANGLE_DEC_T(typename A, ty, const A*, "PK"+mangleClass<A>::mangled, "QEB"+mangleClass<A>::mangled)
 

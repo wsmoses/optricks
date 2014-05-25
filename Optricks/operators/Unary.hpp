@@ -18,6 +18,9 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 		else return ReferenceClass::get(cc);
 	}
 	switch(cc->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be instatiated");
+		exit(1);
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
 		return VectorClass::get(getPreopReturnType(filePos, vc->inner, operation), vc->len);
@@ -35,7 +38,7 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 		}
 	}
 	case CLASS_INTLITERAL:{
-		const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
+		//const IntLiteralClass* ilc = (const IntLiteralClass*)cc;
 
 		if(operation==":str"){
 			return &stringLiteralClass;
@@ -151,14 +154,17 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 	}
 	switch(cc->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be instatiated");
+		exit(1);
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
 		return VectorClass::get(getPreopReturnType(filePos, vc->inner, operation), vc->len);
 	}
 	case CLASS_INT:{
 		if(operation==":str"){
-			Value* V = value->getValue(r, filePos);
-			if(auto C = dyn_cast<ConstantInt>(V)){
+			llvm::Value* V = value->getValue(r, filePos);
+			if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
 				return new StringLiteral(C->getValue().toString(10,true));
 			}
 		}
@@ -173,7 +179,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateAdd(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
@@ -181,7 +187,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateSub(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
@@ -271,7 +277,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateFAdd(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
@@ -279,7 +285,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateFSub(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
@@ -298,7 +304,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 	}
 	case CLASS_MATHLITERAL:{
-		const MathConstantClass* mlc = (const MathConstantClass*)cc;
+		//const MathConstantClass* mlc = (const MathConstantClass*)cc;
 		if(operation==":str"){
 			return new StringLiteral(((const MathConstantLiteral*)value)->toString());
 		}
@@ -320,21 +326,21 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	}
 	case CLASS_CHAR:{
 		if(operation==":str"){
-			if(auto CC = dyn_cast<ConstantInt>(value->getValue(r, filePos))){
+			if(auto CC = llvm::dyn_cast<llvm::ConstantInt>(value->getValue(r, filePos))){
 				return new StringLiteral(String(1,(char) CC->getLimitedValue()));
 			}
 		}
 		else if(operation=="++"){
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+cc->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateAdd(toR, charClass.getOne()), r);
 			return new ConstantData(toR, &charClass);
 		}
 		else if(operation=="--"){
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+cc->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
+			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateSub(toR, charClass.getOne()), r);
 			return new ConstantData(toR, &charClass);
 		}
@@ -372,6 +378,9 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 }
 inline const AbstractClass* getPostopReturnType(PositionID filePos, const AbstractClass* cc, const String operation){
 	switch(cc->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be instatiated");
+		exit(1);
 	case CLASS_VECTOR:{
 		const VectorClass* vc = (const VectorClass*)cc;
 		return VectorClass::get(getPostopReturnType(filePos, vc->inner, operation), vc->len);
@@ -406,6 +415,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	case CLASS_NULL:
 	case CLASS_MAP:
 	case CLASS_MATHLITERAL:
+	case CLASS_STRLITERAL:
 	case CLASS_STR:
 	case CLASS_SET:{
 		if(false) return cc;
@@ -429,6 +439,9 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 inline const Data* getPostop(RData& r, PositionID filePos, const String operation, const Data* value){
 	const AbstractClass* const cc = value->getReturnType();
 	switch(cc->classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be instatiated");
+		exit(1);
 	case CLASS_VECTOR:{
 		filePos.compilerError("Vector postops not implemented");
 		exit(1);
@@ -441,8 +454,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateAdd(toR, ic->getOne(filePos));
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateAdd(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
@@ -450,8 +463,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateSub(toR, ic->getOne(filePos));
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateSub(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
@@ -486,8 +499,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateFAdd(toR, ic->getOne(filePos));
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateFAdd(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
@@ -495,8 +508,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			const RealClass* ic = (const RealClass*)cc;
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateFSub(toR, ic->getOne(filePos));
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateFSub(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
@@ -509,16 +522,16 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		if(operation=="++"){
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateAdd(toR, charClass.getOne());
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateAdd(toR, charClass.getOne());
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
 		else if(operation=="--"){
 			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
 			auto L = ((const LocationData*)value)->value;
-			Value* toR = L->getValue(r, filePos);
-			Value* toS = r.builder.CreateSub(toR, charClass.getOne());
+			llvm::Value* toR = L->getValue(r, filePos);
+			llvm::Value* toS = r.builder.CreateSub(toR, charClass.getOne());
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
@@ -548,6 +561,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_GEN:
 	case CLASS_NULL:
 	case CLASS_MAP:
+	case CLASS_STRLITERAL:
 	case CLASS_STR:
 	case CLASS_SET:
 	case CLASS_MATHLITERAL:{

@@ -9,7 +9,7 @@
 #define FUNCTIONCLASSP_HPP_
 #include "FunctionClass.hpp"
 #include "../../RData.hpp"
-inline Value* FunctionClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+inline llvm::Value* FunctionClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		switch(toCast->classType){
 		case CLASS_CPOINTER: return r.builder.CreatePointerCast(valueToCast, C_POINTERTYPE);
 		case CLASS_FUNC: {

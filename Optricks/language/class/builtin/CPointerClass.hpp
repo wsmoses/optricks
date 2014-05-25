@@ -51,7 +51,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(toCast->classType!=CLASS_CPOINTER) id.error("Cannot cast "+getName()+" type to "+toCast->getName());
 		return valueToCast;
 	}

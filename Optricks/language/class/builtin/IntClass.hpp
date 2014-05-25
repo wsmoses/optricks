@@ -25,13 +25,13 @@ public:
 		exit(1);
 	}
 	unsigned getWidth() const{
-		return ((IntegerType*)type)->getBitWidth();
+		return ((llvm::IntegerType*)type)->getBitWidth();
 	}
-	ConstantInt* getZero(PositionID id, bool negative=false) const override final{
-		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)0);
+	llvm::ConstantInt* getZero(PositionID id, bool negative=false) const override final{
+		return llvm::ConstantInt::get((llvm::IntegerType*)type,(uint64_t)0);
 	}
-	ConstantInt* getOne(PositionID id) const override final{
-		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
+	llvm::ConstantInt* getOne(PositionID id) const override final{
+		return llvm::ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return (toCast->classType==CLASS_INT && type==toCast->type)|| toCast->classType==CLASS_VOID;
@@ -69,40 +69,41 @@ public:
 			//TODO force APInt to be right width/sign for value
 		}
 	}
-	inline ConstantInt* getMaxValue () const {
-		return ConstantInt::get(getGlobalContext(), APInt::getSignedMaxValue(getWidth()));
+	inline llvm::ConstantInt* getMaxValue () const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getSignedMaxValue(getWidth()));
 	}
-	inline ConstantInt* getMinValue () const {
-		return ConstantInt::get(getGlobalContext(), APInt::getSignedMinValue(getWidth()));
+	inline llvm::ConstantInt* getMinValue () const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getSignedMinValue(getWidth()));
 	}
-	inline ConstantInt* getAllOnes() const{
-		return ConstantInt::get(getGlobalContext(), APInt::getAllOnesValue(getWidth()));
+	inline llvm::ConstantInt* getAllOnes() const{
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getAllOnesValue(getWidth()));
 	}
-	inline ConstantInt* getOneBitSet(unsigned BitNo) const {
-		return ConstantInt::get(getGlobalContext(), APInt::getOneBitSet(getWidth(),BitNo));
+	inline llvm::ConstantInt* getOneBitSet(unsigned BitNo) const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getOneBitSet(getWidth(),BitNo));
 	}
-	inline ConstantInt* getBitsSet(unsigned loBit, unsigned hiBit) const {
-		return ConstantInt::get(getGlobalContext(), APInt::getBitsSet(getWidth(),loBit,hiBit));
+	inline llvm::ConstantInt* getBitsSet(unsigned loBit, unsigned hiBit) const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getBitsSet(getWidth(),loBit,hiBit));
 	}
-	inline ConstantInt* getHighBitsSet( unsigned hiBit) const {
-		return ConstantInt::get(getGlobalContext(), APInt::getHighBitsSet(getWidth(),hiBit));
+	inline llvm::ConstantInt* getHighBitsSet( unsigned hiBit) const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getHighBitsSet(getWidth(),hiBit));
 	}
-	inline ConstantInt* getLowBitsSet( unsigned hiBit) const {
-		return ConstantInt::get(getGlobalContext(), APInt::getLowBitsSet(getWidth(),hiBit));
+	inline llvm::ConstantInt* getLowBitsSet( unsigned hiBit) const {
+		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getLowBitsSet(getWidth(),hiBit));
 	}
-	inline ConstantInt* getValue(PositionID id, const int64_t value) const{
+	inline llvm::ConstantInt* getValue(PositionID id, const int64_t value) const{
 		checkFit(id,value);
-		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),value);
+		llvm::ConstantInt* ret = llvm::ConstantInt::get((llvm::IntegerType*)(type),value);
 		return ret;
 	}
-	inline ConstantInt* getValue(PositionID id, const mpz_t& value) const override final{
+	inline llvm::ConstantInt* getValue(PositionID id, const mpz_t& value) const override final{
 		checkFit(id,value);
 		char temp[mpz_sizeinbase (value, 10) + 2];
 		auto tmp =  mpz_get_str(temp, 10, value);
-		ConstantInt* ret = ConstantInt::get((IntegerType*)(type),StringRef(String(tmp)),10);
+		llvm::ConstantInt* ret = llvm::ConstantInt::get((llvm::IntegerType*)(type),llvm::StringRef(String(tmp)),10);
 		return ret;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
+		if(toCast->classType==CLASS_VOID) return true;
 		if(toCast->layout!=PRIMITIVE_LAYOUT) return false;
 		switch(toCast->classType){
 		case CLASS_INT:{
@@ -112,7 +113,6 @@ public:
 		case CLASS_FLOAT:
 		case CLASS_RATIONAL:
 		case CLASS_COMPLEX:
-		case CLASS_VOID:
 			return true;
 		default:
 			return false;
@@ -123,7 +123,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override;
 };
 
 const IntClass byteClass(nullptr, "byte", 8);

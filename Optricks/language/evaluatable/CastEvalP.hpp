@@ -12,7 +12,7 @@
 #include "../class/builtin/FunctionClass.hpp"
 #include "../class/builtin/LazyClass.hpp"
 CastEval::CastEval(const Evaluatable* e, const AbstractClass* const a, PositionID d):ev(e),ac(a),id(d){
-	assert((ev->getReturnType()->classType)==CLASS_LAZY == (ac->classType==CLASS_LAZY) || (d.compilerError("Lazy cast error from "+(ev->getReturnType()->getName())+" to "+ac->getName())));
+	assert(((ev->getReturnType()->classType)==CLASS_LAZY) == (ac->classType==CLASS_LAZY) || (d.compilerError("Lazy cast error from "+(ev->getReturnType()->getName())+" to "+ac->getName())));
 	};
 const AbstractClass* CastEval::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const{
 		if(ac->classType==CLASS_FUNC){

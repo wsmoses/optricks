@@ -19,23 +19,21 @@ public:
 		//assert(cp->classType!=CLASS_GEN);
 		assert(cp->layout!=LITERAL_LAYOUT);
 	}
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		return value->getValue(r,id);
 	}
-	inline void setValue(RData& r, Value* v) const{
+	inline void setValue(RData& r, llvm::Value* v) const{
 		value->setValue(v, r);
 	}
 	inline Location* getMyLocation() const{
 		return value;
 	}
-	inline const ConstantData* toValue(RData& r,PositionID id) const override final{
-		return new ConstantData(value->getValue(r,id), type);
-	}
+	const ConstantData* toValue(RData& r,PositionID id) const override final;
 	inline const LocationData* toLocation(RData& r) const override final{
 		return this;
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 };
 
 

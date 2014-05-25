@@ -23,16 +23,16 @@ public:
 	const FloatType floatType;
 	inline FloatClass(Scopable* s, String nam, FloatType t):
 		RealClass(s, nam, PRIMITIVE_LAYOUT,CLASS_FLOAT,
-				(t==HalfTy)?Type::getHalfTy(getGlobalContext()):(
-				(t==FloatTy)?Type::getFloatTy(getGlobalContext()):(
-				(t==DoubleTy)?Type::getDoubleTy(getGlobalContext()):(
-				(t==X86_FP80Ty)?Type::getX86_FP80Ty(getGlobalContext()):(
-				(t==FP128Ty)?Type::getFP128Ty(getGlobalContext()):(
-				/*t==PPC_FP128Ty*/Type::getPPC_FP128Ty(getGlobalContext())
+				(t==HalfTy)?llvm::Type::getHalfTy(llvm::getGlobalContext()):(
+				(t==FloatTy)?llvm::Type::getFloatTy(llvm::getGlobalContext()):(
+				(t==DoubleTy)?llvm::Type::getDoubleTy(llvm::getGlobalContext()):(
+				(t==X86_FP80Ty)?llvm::Type::getX86_FP80Ty(llvm::getGlobalContext()):(
+				(t==FP128Ty)?llvm::Type::getFP128Ty(llvm::getGlobalContext()):(
+				/*t==PPC_FP128Ty*/llvm::Type::getPPC_FP128Ty(llvm::getGlobalContext())
 				)))))
 	),floatType(t){
 		(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#float"),this);
-#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, SmallVector<Type*,1>(1,type))), PositionID(0,0,"#float"));
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, llvm::SmallVector<llvm::Type*,1>(1,type))), PositionID(0,0,"#float"));
 		SINGLE_FUNC_DECLR("abs",fabs)
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
 		SINGLE_FUNC_DECLR("sin",sin)
@@ -86,47 +86,49 @@ public:
 			//TODO force APInt to be right width/sign for value
 		}
 	}*/
-	inline const fltSemantics& getSemantics() const{
+	inline const llvm::fltSemantics& getSemantics() const{
 		switch(floatType){
-		case HalfTy: return APFloat::IEEEhalf;
-		case FloatTy: return APFloat::IEEEsingle;
-		case DoubleTy: return APFloat::IEEEdouble;
-		case X86_FP80Ty: return APFloat::x87DoubleExtended;
-		case FP128Ty: return APFloat::IEEEquad;
-		case PPC_FP128Ty: return APFloat::PPCDoubleDouble;
-		default: return APFloat::Bogus;
+		case HalfTy: return llvm::APFloat::IEEEhalf;
+		case FloatTy: return llvm::APFloat::IEEEsingle;
+		case DoubleTy: return llvm::APFloat::IEEEdouble;
+		case X86_FP80Ty: return llvm::APFloat::x87DoubleExtended;
+		case FP128Ty: return llvm::APFloat::IEEEquad;
+		case PPC_FP128Ty: return llvm::APFloat::PPCDoubleDouble;
+		default: return llvm::APFloat::Bogus;
 		}
 	}
 	inline unsigned getWidth() const{
+		unsigned r;
 		switch(floatType){
-		case HalfTy: return 16;
-		case FloatTy: return 32;
-		case DoubleTy: return 64;
-		case X86_FP80Ty: return 80;
-		case FP128Ty: return 128;
-		case PPC_FP128Ty: return 128;
+		case HalfTy: r=16; break;
+		case FloatTy: r=32;break;
+		case DoubleTy: r=64;break;
+		case X86_FP80Ty: r=80;break;
+		case FP128Ty: r=128;break;
+		case PPC_FP128Ty: r=128;break;
 		//default: assert(0); return 0;
 		}
+		return r;
 	}
-	inline ConstantFP* getLargest (bool Negative=false) const {
-		return ConstantFP::get(getGlobalContext(),APFloat::getLargest(getSemantics(),Negative));
+	inline llvm::ConstantFP* getLargest (bool Negative=false) const {
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getLargest(getSemantics(),Negative));
 	}
-	inline ConstantFP* getSmallest (bool Negative=false) const {
-		return ConstantFP::get(getGlobalContext(),APFloat::getSmallest(getSemantics(),Negative));
+	inline llvm::ConstantFP* getSmallest (bool Negative=false) const {
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallest(getSemantics(),Negative));
 	}
-	inline ConstantFP* getSmallestNormalized (bool Negative=false) const {
-		return ConstantFP::get(getGlobalContext(),APFloat::getSmallestNormalized(getSemantics(),Negative));
+	inline llvm::ConstantFP* getSmallestNormalized (bool Negative=false) const {
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallestNormalized(getSemantics(),Negative));
 	}
-	inline ConstantFP* getNaN() const{
-		return ConstantFP::get(getGlobalContext(), APFloat::getNaN(getSemantics()));
+	inline llvm::ConstantFP* getNaN() const{
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getNaN(getSemantics()));
 	}
-	inline ConstantFP* getZero(PositionID id, bool negative=false) const override final{
-		return ConstantFP::get(getGlobalContext(), APFloat::getZero(getSemantics(),negative));
+	inline llvm::ConstantFP* getZero(PositionID id, bool negative=false) const override final{
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getZero(getSemantics(),negative));
 	}
-	inline ConstantFP* getOne(PositionID id) const override final{
-		return ConstantFP::get(getGlobalContext(), APFloat(getSemantics(),1));
+	inline llvm::ConstantFP* getOne(PositionID id) const override final{
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(getSemantics(),1));
 	}
-	inline Constant* getEulerMasc(PositionID id) const{
+	inline llvm::Constant* getEulerMasc(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_euler(e, MPFR_RNDN);
@@ -134,7 +136,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline Constant* getPi(PositionID id) const{
+	inline llvm::Constant* getPi(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_pi(e, MPFR_RNDN);
@@ -142,7 +144,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline Constant* getE(PositionID id) const{
+	inline llvm::Constant* getE(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_t ze;
@@ -153,7 +155,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline Constant* getLN2(PositionID id) const{
+	inline llvm::Constant* getLN2(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_log2(e, MPFR_RNDN);
@@ -161,7 +163,7 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline Constant* getCatalan(PositionID id) const{
+	inline llvm::Constant* getCatalan(PositionID id) const{
 		mpfr_t e;
 		mpfr_init2(e, getWidth());
 		mpfr_const_catalan(e, MPFR_RNDN);
@@ -169,15 +171,15 @@ public:
 		mpfr_clear(e);
 		return tmp;
 	}
-	inline Constant* getInfinity(bool negative=false) const{
-		return ConstantFP::getInfinity(type,negative);
+	inline llvm::Constant* getInfinity(bool negative=false) const{
+		return llvm::ConstantFP::getInfinity(type,negative);
 	}
-	inline Constant* getValue(PositionID id, const mpz_t& value) const override final{
+	inline llvm::Constant* getValue(PositionID id, const mpz_t& value) const override final{
 		char temp[mpz_sizeinbase (value, 10) + 2];
 		mpz_get_str(temp, 10, value);
-		return ConstantFP::get(type,String(temp));
+		return llvm::ConstantFP::get(type,String(temp));
 	}
-	inline Constant* getValue(PositionID id, const mpfr_t& value) const{
+	inline llvm::Constant* getValue(PositionID id, const mpfr_t& value) const{
 		if(mpfr_regular_p(value)){
 
 		    char *s = NULL;
@@ -189,7 +191,7 @@ public:
 
 				mpfr_free_str(s);
 			} else id.compilerError("Error creating string for float to llvm conversion");
-			return ConstantFP::get(getGlobalContext(),APFloat(getSemantics(),out));
+			return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat(getSemantics(),out));
 		}
 		else if(mpfr_nan_p(value)) return getNaN();
 		else if(mpfr_inf_p(value)){
@@ -207,7 +209,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override;
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override;
 };
 
 const FloatClass float16Class(nullptr, "float16", FloatClass::HalfTy);

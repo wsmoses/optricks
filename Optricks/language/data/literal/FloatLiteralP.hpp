@@ -16,7 +16,7 @@
 const AbstractClass* FloatLiteral::getReturnType() const{
 	return &floatLiteralClass;
 }
-ConstantFP* FloatLiteral::getValue(RData& r, PositionID id) const{
+llvm::ConstantFP* FloatLiteral::getValue(RData& r, PositionID id) const{
 	id.error("Cannot getValue of class without type");
 	exit(1);
 }
@@ -28,14 +28,18 @@ const Data* FloatLiteral::castTo(RData& r, const AbstractClass* const right, Pos
 			return new ConstantData(((const FloatClass*)right)->getValue(id,value), right);
 		}
 		case CLASS_COMPLEX:{
-			return new ConstantData(((const ComplexClass*)right)->getValue(id, value), right);
+			const ComplexClass* cc = (const ComplexClass*)right;
+			if(cc->innerClass->classType==CLASS_FLOATLITERAL){
+				return new ImaginaryLiteral(this, &ZERO_LITERAL);
+			}
+			else return new ConstantData(cc->getValue(id, value), right);
 		}
 		default:
 			id.error("Cannot cast floating-point literal to non-float type "+right->getName());
 			exit(1);
 	}
 }
-Constant* FloatLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
+llvm::Constant* FloatLiteral::castToV(RData& r, const AbstractClass* const right, const PositionID id) const{
 	switch(right->classType){
 		case CLASS_FLOAT:{
 			return ((const FloatClass*)right)->getValue(id,value);

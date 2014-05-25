@@ -51,7 +51,7 @@ class E_SET: public ErrorStatement{
 				exit(1);
 			}
 			Location* aloc = ((LocationData*)to)->getMyLocation();
-			Value* nex = value->evaluate(r)->castToV(r, to->getReturnType(), filePos);
+			auto nex = value->evaluate(r)->castToV(r, to->getReturnType(), filePos);
 			aloc->setValue(nex,r);
 			return new ConstantData(nex,to->getReturnType());
 		}

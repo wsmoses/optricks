@@ -65,7 +65,7 @@ public:
 		exit(1);
 	}
 
-	inline Value* generateData(RData& r, PositionID id) const;
+	inline llvm::Value* generateData(RData& r, PositionID id) const;
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const{
 		auto tmp = this;
 		do{
@@ -84,11 +84,11 @@ public:
 			if(!uc->final) id.compilerError("Superclass is not finalized");
 			start = uc->start+uc->localVars.size();
 		} else start = 0;
-		StructType* structType = (layout==POINTER_LAYOUT)?(
-			(StructType*)(((PointerType*)type)->getArrayElementType())):
-		((StructType*)type);
+		llvm::StructType* structType = (layout==POINTER_LAYOUT)?(
+			(llvm::StructType*)(((llvm::PointerType*)type)->getArrayElementType())):
+		((llvm::StructType*)type);
 		int counter = start+localVars.size();
-		llvm::SmallVector<Type*,0> types(counter);
+		llvm::SmallVector<llvm::Type*,0> types(counter);
 		counter--;
 		UserClass* tmp = this;
 		do{
@@ -96,7 +96,7 @@ public:
 			if(at >0){
 			for(unsigned int i=at-1; ; i--){
 				assert(counter>=0);
-				assert(counter<types.size());
+				assert((unsigned)counter<types.size());
 				types[counter] = tmp->localVars[i]->type;
 				counter--;
 				if(i==0) break;
@@ -189,7 +189,7 @@ public:
 							return new LocationData(ld, tmp->localVars[fd->second]);
 						} else{
 							assert(instance->type==R_CONST);
-							Value* v = ((ConstantData*)instance)->value;
+							llvm::Value* v = ((ConstantData*)instance)->value;
 							if(layout==PRIMITIVE_LAYOUT)
 								return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
 							else{
@@ -235,7 +235,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(toCast->classType!=CLASS_USER){
 			id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());
 			exit(1);

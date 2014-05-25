@@ -13,21 +13,21 @@
 #include "../class/builtin/BoolClass.hpp"
 #include "LocationData.hpp"
 
-LocationData* ConstantData::toLocation(RData& r) const{
+const LocationData* ConstantData::toLocation(RData& r) const{
 	//TODO complete ConstantData toLocation
-	Value* L = r.builder.CreateAlloca(value->getType(), nullptr);
+	auto L = r.builder.CreateAlloca(value->getType(), nullptr);
 	return new LocationData(getLazy(r,L,r.builder.GetInsertBlock(),value), type);
 }
 
 ConstantData* ConstantData::getTrue(){
-	static ConstantData BOOL_TRUE(ConstantInt::get(BOOLTYPE, true), &boolClass);
+	static ConstantData BOOL_TRUE(llvm::ConstantInt::get(BOOLTYPE, true), &boolClass);
 	return &BOOL_TRUE;
 }
 ConstantData* ConstantData::getFalse(){
-	static ConstantData BOOL_FALSE(ConstantInt::get(BOOLTYPE, false), &boolClass);
+	static ConstantData BOOL_FALSE(llvm::ConstantInt::get(BOOLTYPE, false), &boolClass);
 	return &BOOL_FALSE;
 }
-ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVMData(R_CONST, cp),value(val){
+ConstantData::ConstantData(llvm::Value* const val, const AbstractClass* const cp):LLVMData(R_CONST, cp),value(val){
 	assert(val); assert(cp); assert(cp->classType!=CLASS_CLASS);
 	//assert(cp->classType!=CLASS_FUNC);
 	//assert(cp->classType!=CLASS_GEN);
@@ -55,7 +55,7 @@ ConstantData::ConstantData(Value* const val, const AbstractClass* const cp):LLVM
 }
 
 
-Value* ConstantData::castToV(RData& r, const AbstractClass* const right, const PositionID id) const {
+llvm::Value* ConstantData::castToV(RData& r, const AbstractClass* const right, const PositionID id) const {
 	if(type == right) return value;
 	if((type->layout==POINTER_LAYOUT && right->layout==POINTER_LAYOUT) || (type->layout==PRIMITIVEPOINTER_LAYOUT && right->layout==PRIMITIVEPOINTER_LAYOUT)){
 		if(type->hasSuper(right)) return value;

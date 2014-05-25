@@ -5,6 +5,10 @@
  *      Author: Billy
  */
 
+//TODO add templates with default args
+//TODO add int print/println
+//TODO add bigint/bigfloat with reference counting / gmp/mpfr
+
 #include "./language/Post.hpp"
 #include "./parse/Lexer.hpp"
 #include "./language/ffi/F_Class.hpp"
@@ -31,7 +35,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	n->buildFunction(getRData());
 	const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
-	Type* type;
+	llvm::Type* type;
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION) type=VOIDTYPE;
 	else type = retType->type;
 	assert(type!=NULL);
@@ -47,9 +51,9 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		//n->checkTypes();
 		type = VOIDTYPE;
 	}
-	FunctionType *FT = FunctionType::get(type, SmallVector<Type*,0>(0), false);
-	Function *F = getRData().CreateFunction("",FT,EXTERN_FUNC);
-	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry", F);
+	llvm::FunctionType* FT = llvm::FunctionType::get(type, llvm::SmallVector<llvm::Type*,0>(0), false);
+	llvm::Function* F = getRData().CreateFunction("",FT,EXTERN_FUNC);
+	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(getRData());
 		if(dat->type==R_INT){
@@ -210,6 +214,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		std::cout << temp << endl << flush;
 	} */ else if(retType->classType==CLASS_MATHLITERAL){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
+		FP();
 		switch(((const MathConstantClass*)retType)->mathType){
 		case MATH_PI:
 			std::cout << "Pi" << endl << flush; break;
@@ -282,16 +287,16 @@ int main(int argc, char** argv){
 		std::vector<const Evaluatable*> EV;
 		const Data* D = args[0]->evaluate(r)->callFunction(r,id,EV);
 		assert(D->getReturnType()->classType==CLASS_BOOL);
-		Value* V = D->getValue(r, id);
-		if(auto C = dyn_cast<ConstantInt>(V)){
+		llvm::Value* V = D->getValue(r, id);
+		if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
 			if(! C->isOne()){
 				id.fatalError("Assertion failed");
 			}
 			return &VOID_DATA;
 		}
-		BasicBlock* StartBB = r.builder.GetInsertBlock();
-		BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
-		BasicBlock *MergeBB = r.CreateBlock("ifcont",StartBB);
+		llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+		llvm::BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
+		llvm::BasicBlock *MergeBB = r.CreateBlock("ifcont",StartBB);
 		r.builder.CreateCondBr(V, MergeBB,ThenBB);
 
 		r.builder.SetInsertPoint(ThenBB);
@@ -299,15 +304,23 @@ int main(int argc, char** argv){
 		ss << "Assertion failed at " << id.fileName << " on line " << id.lineN << " character " << id.charN << "\n";
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		for(const auto& a: ss.str()){
-			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, a,false));
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 		}
 		CU = r.getExtern("exit", &voidClass, {&c_intClass});
-		r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, 1,false));
+		r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, 1,false));
 		r.builder.CreateUnreachable();
 		r.builder.SetInsertPoint(MergeBB);
 		return &VOID_DATA;
 	}), PositionID(0,0,"#int"));
 
+	LANG_M.addFunction(PositionID(0,0,"#str"),"typeof")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("typeof",{AbstractDeclaration(&voidClass)},&classClass),
+			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{
+			assert(args.size()==1);
+			return args[0]->getReturnType();
+			//const Data* D = args[0]->evaluate(r);
+		}), PositionID(0,0,"#int"));
 	/*LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
 			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
 			nullptr,"stdout",GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true
@@ -397,13 +410,13 @@ int main(int argc, char** argv){
 	if(!forceInt) interactive = file=="" && command=="";
 	//ofstream fout (output);
 	String error="";
-	raw_fd_ostream* outStream;
+	llvm::raw_fd_ostream* outStream;
 	if(llvmIR){
 		if(output=="-" || output==""){
-			outStream = new raw_fd_ostream(1, true);
+			outStream = new llvm::raw_fd_ostream(1, true);
 			output = "-";
 		}
-		else outStream = new raw_fd_ostream(output.c_str(), error);
+		else outStream = new llvm::raw_fd_ostream(output.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
 		if(error.length()>0){
 			cerr << error << endl << flush;
 			exit(1);
@@ -424,10 +437,10 @@ int main(int argc, char** argv){
 				//"./tmp"
 				"./stdlib/stdlib.opt"
 				};
-	InitializeNativeTarget();
-	InitializeAllTargets();
+	llvm::InitializeNativeTarget();
+	//llvm::InitializeAllTargets();
 	String erS;
-	getRData().exec = EngineBuilder(getRData().lmod).setErrorStr(& erS).create();
+	getRData().exec = llvm::EngineBuilder(getRData().lmod).setErrorStr(& erS).create();
 	if(!getRData().exec){
 		cerr << erS << endl << flush;
 		exit(1);

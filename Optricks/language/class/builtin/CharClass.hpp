@@ -34,7 +34,7 @@ public:
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 			//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, value);
-			r.builder.CreateCall(CU, ConstantInt::get(c_intClass.type, '\n',false));
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));
 			return &VOID_DATA;}), PositionID(0,0,"#char"));
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
@@ -46,8 +46,8 @@ public:
 		exit(1);
 	}
 
-	ConstantInt* getOne() const {
-		return ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
+	llvm::ConstantInt* getOne() const {
+		return llvm::ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
 	}
 	bool hasLocalData(String s) const override final{
 		return false;
@@ -57,7 +57,7 @@ public:
 		exit(1);
 	}
 	unsigned getWidth() const{
-		return ((IntegerType*)type)->getBitWidth();
+		return ((llvm::IntegerType*)type)->getBitWidth();
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(hasCast(a));
@@ -67,8 +67,8 @@ public:
 		else if(b->classType==CLASS_VOID) return -1;
 		return 0;
 	}
-	inline static Constant* getValue(char value){
-		return ConstantInt::get(CHARTYPE, value);
+	inline static llvm::Constant* getValue(char value){
+		return llvm::ConstantInt::get(CHARTYPE, value);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_CHAR || toCast->classType==CLASS_VOID;
@@ -79,7 +79,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(toCast->classType!=CLASS_CHAR) illegalCast(id,toCast);
 		return valueToCast;
 	}

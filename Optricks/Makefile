@@ -1,29 +1,34 @@
+GCC = g++
+CLANG = clang++ --analyze
+
+CC = $(GCC)
+
+LIB = `llvm-config --cppflags --libs all` -lclang `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -I/mingw64/include
+
+DEBUG = -g -ggdb
+
+STD = -std=c++11
+
 all: 
-	g++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -lmpfr -lgmp -lm
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG)
 
 all-win: 
-	g++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -lmpfr -lgmp -limagehlp -lm
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp
+
+clang-win: 
+	$(CLANG) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp
 
 ddebug: 
-	g++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -lopengl32 -lglu32 -lglut -DNDEBUG
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -DNDEBUG
 
 fast:
-	g++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS}
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB)
 
-clang: 
-	clang++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config-3.4 --cppflags --libs all` `llvm-config-3.4 --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb -static-libgcc -static
-
-shared: 
-	clang++ -std=c++11 Main.cpp -L/usr/local/lib -o Optricks `llvm-config-3.4 --cppflags --libs all` `llvm-config-3.4 --ldflags` ${CPPFLAGS} ${LDFLAGS} -g -ggdb
-	
 release: 
-	g++ -std=c++11 Main.cpp -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -fno-rtti -lopengl32 -lglu32 -lglut
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti
 
 release-win: 
-	g++ -std=c++11 Main.cpp -o Optricks `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -fno-rtti -lmpfr -lgmp -limagehlp -lm
-
-release-32: 
-	g++ -std=c++11 Main.cpp -o Optricks-32 `llvm-config --cppflags --libs all` `llvm-config --ldflags`	${CPPFLAGS} ${LDFLAGS} -O3 -static-libgcc -static -DNDEBUG -m32
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti -limagehlp
 
 func:
 	gcc -c containers/basic_functions.hpp -o containers/basic_functions.o

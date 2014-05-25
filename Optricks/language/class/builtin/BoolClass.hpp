@@ -13,7 +13,7 @@
 class BoolClass: public AbstractClass{
 public:
 	inline BoolClass(bool b):
-		AbstractClass(nullptr,"bool", nullptr,PRIMITIVE_LAYOUT,CLASS_BOOL,true,IntegerType::get(getGlobalContext(),1)){
+		AbstractClass(nullptr,"bool", nullptr,PRIMITIVE_LAYOUT,CLASS_BOOL,true,BOOLTYPE){
 		LANG_M.addClass(PositionID(0,0,"#int"),this);
 	}
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
@@ -33,7 +33,7 @@ public:
 		exit(1);
 	}
 	unsigned getWidth() const{
-		return ((IntegerType*)type)->getBitWidth();
+		return ((llvm::IntegerType*)type)->getBitWidth();
 	}
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(hasCast(a));
@@ -43,11 +43,11 @@ public:
 		else if(b->classType==CLASS_VOID) return -1;
 		return 0;
 	}
-	inline static Constant* getValue(bool value){
+	inline static llvm::Constant* getValue(bool value){
 		if(value)
-			return ConstantInt::getTrue(BOOLTYPE);
+			return llvm::ConstantInt::getTrue(BOOLTYPE);
 		else
-			return ConstantInt::getFalse(BOOLTYPE);
+			return llvm::ConstantInt::getFalse(BOOLTYPE);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		return toCast->classType==CLASS_BOOL || toCast->classType==CLASS_VOID;
@@ -58,7 +58,7 @@ public:
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const override{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(toCast->classType!=CLASS_BOOL) illegalCast(id,toCast);
 		return valueToCast;
 	}

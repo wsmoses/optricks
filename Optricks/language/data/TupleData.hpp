@@ -21,8 +21,8 @@ public:
 		unsigned int i;
 		for(i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getReturnType();
-			vec.push_back(tmp);
 			if(tmp->classType!=CLASS_CLASS) break;
+			vec.push_back(tmp);
 		}
 		if(i==inner.size()) return &classClass;
 		else{
@@ -38,21 +38,21 @@ public:
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
-		Value* v = UndefValue::get(tc->type);
+		llvm::Value* v = llvm::UndefValue::get(tc->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->castToV(r,tc->innerTypes[i],id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
 		}
 		return new ConstantData(v, tc);
 	}
-	inline Value* getValue(RData& r, PositionID id) const override final{
+	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		std::vector<const AbstractClass*> vec;
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getReturnType();
 			vec.push_back(tmp);
 		}
-		Type* t = TupleClass::get(vec)->type;
-		Value* v = UndefValue::get(t);
+		auto t = TupleClass::get(vec)->type;
+		llvm::Value* v = llvm::UndefValue::get(t);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getValue(r,id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
@@ -66,19 +66,18 @@ public:
 			vec.push_back(tmp);
 		}
 		TupleClass* tc = TupleClass::get(vec);
-		Type* t = tc->type;
-		Value* v = UndefValue::get(t);
+		llvm::Value* v = llvm::UndefValue::get(tc->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getValue(r,id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
 		}
 		return new ConstantData(v, tc);
 	}
-	inline Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
-		Value* v = UndefValue::get(tc->type);
+		llvm::Value* v = llvm::UndefValue::get(tc->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->castToV(r,tc->innerTypes[i],id);
 			v = r.builder.CreateInsertValue(v, tmp, i);

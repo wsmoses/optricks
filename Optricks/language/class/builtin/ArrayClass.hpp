@@ -22,17 +22,17 @@ public:
 			return ss.str();
 		}
 	}
-	static inline Type* getArrayType(const AbstractClass* const d, uint64_t l){
+	static inline llvm::Type* getArrayType(const AbstractClass* const d, uint64_t l){
 		if(l>0){
-			ArrayType* at = ArrayType::get((llvm::Type*) ( d->type) ,l);
+			llvm::ArrayType* at = llvm::ArrayType::get((llvm::Type*) ( d->type) ,l);
 			return at;
 		} else {
-			llvm::SmallVector<Type*,4> ar(4);
+			llvm::SmallVector<llvm::Type*,4> ar(4);
 			ar[0] = /* Counts (for garbage collection) */ intClass.type;
 			ar[1] = /* Length of array */ intClass.type;
 			ar[2] = /* Amount of memory allocated */ intClass.type;
-			ar[3] = /* Actual data */ PointerType::getUnqual(d->type);
-			return PointerType::getUnqual(StructType::create(ar,StringRef(str(d,l)),false));
+			ar[3] = /* Actual data */ llvm::PointerType::getUnqual(d->type);
+			return llvm::PointerType::getUnqual(llvm::StructType::create(ar,llvm::StringRef(str(d,l)),false));
 		}
 	}
 	const AbstractClass* inner;
@@ -60,6 +60,7 @@ public:
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
+		if(s=="carr") return &c_pointerClass;
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);
@@ -68,15 +69,22 @@ public:
 		else return & intLiteralClass;
 	}
 	bool hasLocalData(String s) const override final{
-		return s=="length";
+		return s=="length" || s=="carr";
 	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
+		//TODO reference count carr / make into int[len]&
+		if(s=="carr"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(
+					r.builder.CreatePointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
+					&c_pointerClass);
+		}
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);
 		}
 		if(len==0 && inner!=nullptr){
-			Value* V = instance->getValue(r,id);
+			llvm::Value* V = instance->getValue(r,id);
 			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)), &intClass);
 		} else return new IntLiteral(len);
 	}
@@ -94,7 +102,7 @@ public:
 			return false;
 		}
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const;
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const;
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
 		assert(hasCast(a));

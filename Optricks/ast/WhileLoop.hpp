@@ -41,15 +41,15 @@ class WhileLoop : public ErrorStatement{
 			return T_WHILE;
 		}
 		const Data* evaluate(RData& r) const override{
-			BasicBlock* prev = r.builder.GetInsertBlock();
-			BasicBlock *incBlock = r.CreateBlock("inc");
+			llvm::BasicBlock* prev = r.builder.GetInsertBlock();
+			llvm::BasicBlock* incBlock = r.CreateBlock("inc");
 			auto br = r.builder.CreateBr(incBlock);
 			r.builder.SetInsertPoint(incBlock);
-			Value* v = condition->evalCastV(r,&boolClass,filePos);
-			if(ConstantInt* c = dyn_cast<ConstantInt>(v)){
+			llvm::Value* v = condition->evalCastV(r,&boolClass,filePos);
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
 				if(c->isOne()){
 					//is always true
-					BasicBlock *afterBlock = r.CreateBlock("afterloop");
+					llvm::BasicBlock* afterBlock = r.CreateBlock("afterloop");
 					Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);
 					r.addJump(&j);
 					statement->evaluate(r);
@@ -71,8 +71,8 @@ class WhileLoop : public ErrorStatement{
 					return &VOID_DATA;
 				}
 			}
-			BasicBlock *loopBlock = r.CreateBlock("loop");
-			BasicBlock *afterBlock = r.CreateBlock("afterloop");
+			llvm::BasicBlock* loopBlock = r.CreateBlock("loop");
+			llvm::BasicBlock* afterBlock = r.CreateBlock("afterloop");
 			r.builder.CreateCondBr(v, loopBlock, afterBlock);
 			r.builder.SetInsertPoint(loopBlock);
 			Jumpable j(name, LOOP, nullptr, incBlock, afterBlock, NULL);

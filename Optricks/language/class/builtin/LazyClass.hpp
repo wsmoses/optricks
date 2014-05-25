@@ -14,7 +14,7 @@ class LazyClass: public AbstractClass{
 public:
 	const AbstractClass* const innerType;
 	inline llvm::Type* getLazyType(const AbstractClass* const& a){
-		return PointerType::getUnqual(FunctionType::get(a->type, llvm::SmallVector<Type*,0>(0),false));
+		return llvm::PointerType::getUnqual(llvm::FunctionType::get(a->type, llvm::SmallVector<llvm::Type*,0>(0),false));
 	}
 protected:
 	LazyClass(const AbstractClass* const in):
@@ -54,7 +54,7 @@ public:
 		LazyClass* tc = (LazyClass*)toCast;
 		return innerType->hasCast(tc->innerType);
 	}
-	inline Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(toCast==this) return valueToCast;
 		///todo
 		id.compilerError("todo cast of lazy");

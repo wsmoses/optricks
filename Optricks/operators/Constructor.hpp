@@ -12,6 +12,9 @@
 
 const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std::vector<const Evaluatable*>& args) const{
 	switch(classType){
+	case CLASS_SCOPE:
+		filePos.compilerError("Scope should never be instatiated");
+		exit(1);
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -21,6 +24,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_GEN:
 	case CLASS_NULL:
 	case CLASS_MAP:
+	case CLASS_STRLITERAL:
 	case CLASS_STR:
 	case CLASS_CHAR:
 	case CLASS_SET:
@@ -43,7 +47,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			exit(1);
 		} else if(V->classType==CLASS_CHAR){
 			auto M = d->getValue(r,filePos);
-			if(auto D = dyn_cast<ConstantInt>(M)){
+			if(auto D = llvm::dyn_cast<llvm::ConstantInt>(M)){
 				if(D->getValue().ult('0') || D->getValue().ugt('9')){
 					filePos.error("Character cannot be parsed as integer");
 				}
@@ -61,7 +65,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			return tmp;
 		}
 		else if(V->classType==CLASS_INT){
-			Value* M = d->getValue(r, filePos);
+			llvm::Value* M = d->getValue(r, filePos);
 			const IntClass* I = (const IntClass*)V;
 			auto Im = I->getWidth();
 			auto Tm = T->getWidth();
@@ -75,7 +79,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			const IntLiteral* IL = (const IntLiteral*)d;
 			return new ConstantData(T->getValue(filePos, IL->value),this);
 		} else if(V->classType==CLASS_FLOAT){
-			Value* M = d->getValue(r, filePos);
+			llvm::Value* M = d->getValue(r, filePos);
 			return new ConstantData(r.builder.CreateFPToSI(M, type), this);
 		} else if(V->classType==CLASS_FLOATLITERAL){
 			const auto& tmp = ((const FloatLiteral*)d)->value;
@@ -115,7 +119,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		else if(args.size()==2){
 			if(((const ComplexClass*)this)->innerClass->classType==CLASS_INT ||
 					((const ComplexClass*)this)->innerClass->classType==CLASS_FLOAT){
-				Value* V = UndefValue::get(this->type);
+				llvm::Value* V = llvm::UndefValue::get(this->type);
 				V = r.builder.CreateInsertElement(V,
 						args[0]->evaluate(r)->castToV(r, ((const ComplexClass*)this)->innerClass, filePos), getInt32(0));
 				V = r.builder.CreateInsertElement(V,

@@ -26,35 +26,12 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		return & intLiteralClass;
 	}
-	Value* getValue(RData& r, PositionID id) const override final{
+	llvm::Value* getValue(RData& r, PositionID id) const override final{
 		id.compilerError("Cannot get value of integer literal");
 		exit(1);
 	}
-	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		switch(right->classType){
-		case CLASS_VOID: return &VOID_DATA;
-		case CLASS_INTLITERAL: return this;
-		case CLASS_FLOATLITERAL:{
-			return new FloatLiteral(value);
-		}
-		case CLASS_INT:{
-			const IntClass* ic = (const IntClass*)right;
-			return new ConstantData(ic->getValue(id,value), right);
-		}
-		case CLASS_FLOAT:{
-			const FloatClass* fc = (const FloatClass*)right;
-			return new ConstantData(fc->getValue(id, value), right);
-		}
-		case CLASS_COMPLEX:{
-			const ComplexClass* cc = (const ComplexClass*)right;
-			return new ConstantData(cc->getValue(id, value), right);
-		}
-		default:
-			id.error("Integer literal cannot be cast to "+right->getName());
-			exit(1);
-		}
-	}
-	Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
+	llvm::Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		switch(right->classType){
 		case CLASS_INT:{
 			IntClass* ic = (IntClass*)right;

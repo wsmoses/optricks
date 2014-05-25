@@ -46,7 +46,7 @@ class Statement : public Evaluatable{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
 			return evaluate(r).getMyClass(r);
 		}*/
-		Value* evalCastV(RData& r,const AbstractClass* c, PositionID id);
+		llvm::Value* evalCastV(RData& r,const AbstractClass* c, PositionID id);
 		Statement(){};
 		virtual const Token getToken() const = 0;
 		//virtual bool hasCastValue(AbstractClass* a)=0;

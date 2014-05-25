@@ -57,8 +57,8 @@ class TernaryOperator : public ErrorStatement{
 			return tog;
 		}
 		const Data* evaluate(RData& r) const override{
-			Value* cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
-			if(ConstantInt* c = dyn_cast<ConstantInt>(cond)){
+			auto cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(cond)){
 				if(c->isOne()){
 					return then->evaluate(r)->toValue(r,filePos);
 				} else{
@@ -72,15 +72,15 @@ class TernaryOperator : public ErrorStatement{
 				Value* ElseV = finalElse->evaluate(r)->castToV(r, returnType, filePos);
 				return r.builder.CreateSelect(cond, ThenV, ElseV);
 			}*/
-			BasicBlock* StartBB = r.builder.GetInsertBlock();
-			BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
-			BasicBlock *ElseBB = r.CreateBlock("else",StartBB);
-			BasicBlock *MergeBB = r.CreateBlock("ifcont"/*,ThenBB,ElseBB*/);
-			BranchInst* branch = r.builder.CreateCondBr(cond, ThenBB, ElseBB);
+			llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+			llvm::BasicBlock *ThenBB = r.CreateBlock("then",StartBB);
+			llvm::BasicBlock *ElseBB = r.CreateBlock("else",StartBB);
+			llvm::BasicBlock *MergeBB = r.CreateBlock("ifcont"/*,ThenBB,ElseBB*/);
+			llvm::BranchInst* branch = r.builder.CreateCondBr(cond, ThenBB, ElseBB);
 
 			r.builder.SetInsertPoint(ThenBB);
 			//todo allow castToPointer as well as value
-			Value* ThenV = then->evaluate(r)->castToV(r, returnType, filePos);
+			llvm::Value* ThenV = then->evaluate(r)->castToV(r, returnType, filePos);
 			bool isSingleInstruction = ThenBB->getInstList().size()==0;
 			if(isSingleInstruction){
 				branch->setSuccessor(0,MergeBB);
@@ -93,7 +93,7 @@ class TernaryOperator : public ErrorStatement{
 			//r.addPred(MergeBB,ThenBB);
 			r.builder.SetInsertPoint(ElseBB);
 
-			Value* ElseV = finalElse->evaluate(r)->castToV(r, returnType, filePos);
+			llvm::Value* ElseV = finalElse->evaluate(r)->castToV(r, returnType, filePos);
 			bool isSingleInstruction2 = ElseBB->getInstList().size()==0;
 			if(isSingleInstruction2){
 				if(isSingleInstruction){
@@ -112,7 +112,7 @@ class TernaryOperator : public ErrorStatement{
 			}
 
 			r.builder.SetInsertPoint(MergeBB);
-			PHINode *PN = r.builder.CreatePHI(returnType->type, 2,"iftmp");
+			llvm::PHINode *PN = r.builder.CreatePHI(returnType->type, 2,"iftmp");
 			PN->addIncoming(ThenV, ThenBB);
 			PN->addIncoming(ElseV, ElseBB);
 			return new ConstantData(PN, returnType);

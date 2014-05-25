@@ -23,14 +23,14 @@ template<> struct import_c_const_h<bool>{
 	}
 };
 template<typename C> Data* import_c_const_h<C>::import(C val){
-	if(boost::is_integral<C>::value){
-		if(boost::is_signed<C>::value){
-			return new ConstantData(ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),(int64_t)val), convertClass<C>::convert(&NS_LANG_C.staticVariables));
+	if(std::is_integral<C>::value){
+		if(std::is_signed<C>::value){
+			return new ConstantData(llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),32),(int64_t)val), convertClass<C>::convert(&NS_LANG_C.staticVariables));
 		} else{
-			return new ConstantData(ConstantInt::get(IntegerType::get(getGlobalContext(),32),(uint64_t)val, false), convertClass<C>::convert(&NS_LANG_C.staticVariables));
+			return new ConstantData(llvm::ConstantInt::get(llvm::IntegerType::get(llvm::getGlobalContext(),32),(uint64_t)val, false), convertClass<C>::convert(&NS_LANG_C.staticVariables));
 		}
 	}
-	cerr << "Cannot convert value " << boost::units::detail::demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	cerr << "Cannot convert value " << demangle(typeid(C).name()) << " to optricks" << endl << flush;
 	exit(1);
 }
 
@@ -45,8 +45,8 @@ LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
 			, &c_pointerClass));*/
 #define import_c_var(a, b) new ConstantData(\
 		getRData().builder.CreatePointerCast(\
-		new GlobalVariable(convertLLVM<decltype(a)>::convert(), false, GlobalValue::LinkageTypes::ExternalLinkage,\
-				nullptr,#a,GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true),\
+		new llvm::GlobalVariable(convertLLVM<decltype(a)>::convert(), false, llvm::GlobalValue::LinkageTypes::ExternalLinkage,\
+				nullptr,#a,llvm::GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true),\
 	 convertClass<decltype(a)>::convert(b)->type), convertClass<decltype(a)>::convert(b))
 
 //import_c_const_h<typeof(a)>::import(a)

@@ -61,7 +61,7 @@ public:
 		if(toCast->classType==CLASS_VOID) return true;
 		return hasCast(toCast);
 	}
-	Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, Value* valueToCast) const{
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		id.compilerError("This method should never be called.....ever....");
 		exit(1);
 	}

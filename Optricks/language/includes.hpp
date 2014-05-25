@@ -8,24 +8,17 @@
 #ifndef INCLUDES_HPP_
 #define INCLUDES_HPP_
 
-#define  LOCAL_FUNC Function::PrivateLinkage
-#define EXTERN_FUNC Function::ExternalLinkage
+#define  LOCAL_FUNC llvm::Function::PrivateLinkage
+#define EXTERN_FUNC llvm::Function::ExternalLinkage
 #define VERIFY(A)
 //#define VERIFY(A) verifyFunction(A);
 //#include <GL/glut.h>
 #undef VOID
 #define __cplusplus 201103L
 
-#include <boost/preprocessor/repetition/repeat.hpp>
-#include <boost/preprocessor/punctuation/comma_if.hpp>
-#include <boost/function_types/function_type.hpp>
-#include <boost/function_types/parameter_types.hpp>
-#include <boost/function_types/function_arity.hpp>
-#include <boost/typeof/std/utility.hpp>
-#include <boost/type_traits.hpp>
-#include <boost/units/detail/utility.hpp>
-#include <boost/exception/detail/type_info.hpp>
-
+#if (__GNUC__ && __cplusplus && __GNUC__ >= 3)
+#include <cxxabi.h>
+#endif
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -72,9 +65,10 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 //#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
-//#include "llvm/IR/Verifier.h"
+#include "llvm/IR/Verifier.h"
+
 //#else
-#include "llvm/Analysis/Verifier.h"
+//#include "llvm/Analysis/Verifier.h"
 //#endif
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
@@ -82,8 +76,28 @@
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Support/CFG.h"
-using namespace llvm;
+#include "llvm/IR/CFG.h"
+
+/*
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/CharUnits.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Mangle.h"
+#include "clang/AST/RecordLayout.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Basic/Builtins.h"
+#include "clang/Basic/CharInfo.h"
+#include "clang/Basic/Diagnostic.h"
+#include "clang/Basic/Module.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TargetInfo.h"
+#include "clang/Basic/Version.h"
+#include "clang/Frontend/CodeGenOptions.h"
+#include "clang/Sema/SemaDiagnostic.h"
+#include "clang/AST/GlobalDecl.h"
+*/
 #include "Macros.hpp"
 #include <assert.h>
 //#define cout std::cout
@@ -91,7 +105,7 @@ using namespace llvm;
 #define cerr std::cerr
 #define flush std::flush
 #define endl std::endl << flush
-#define String std::string
+typedef std::string String;
 #define ostream std::ostream
 //#define char int
 #define byte unsigned short
@@ -197,8 +211,8 @@ class LazyLocation;
 class E_FUNC_CALL;
 #endif
 
-inline ConstantInt* getInt32(int32_t val){
-	return ConstantInt::getSigned(IntegerType::get(getGlobalContext(),32),(int64_t)val);
+inline llvm::ConstantInt* getInt32(int32_t val){
+	return llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),32),(int64_t)val);
 }
 
 template<typename T> inline void toStringStream(ostream& o, T s)
@@ -217,12 +231,12 @@ template<typename... Args> String toStr(Args... args){
 	return ss.str();
 }
 
-const auto C_POINTERTYPE = PointerType::get(IntegerType::get(getGlobalContext(), 8),0);
-const auto VOIDTYPE = Type::getVoidTy(getGlobalContext());
-const auto BOOLTYPE = IntegerType::get(getGlobalContext(),1);
-const auto CHARTYPE = IntegerType::get(getGlobalContext(),8);
-const auto CLASSTYPE = IntegerType::get(getGlobalContext(),8*sizeof(void*));
-const auto CSTRINGTYPE = PointerType::getUnqual(CHARTYPE);
+const auto C_POINTERTYPE = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8),0);
+const auto VOIDTYPE = llvm::Type::getVoidTy(llvm::getGlobalContext());
+const auto BOOLTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),1);
+const auto CHARTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8);
+const auto CLASSTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(void*));
+const auto CSTRINGTYPE = llvm::PointerType::getUnqual(CHARTYPE);
 #ifdef NULL
 #undef NULL
 #endif
