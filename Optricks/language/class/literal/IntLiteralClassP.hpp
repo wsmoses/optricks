@@ -63,6 +63,24 @@
 			}
 			return new ConstantData(CharClass::getValue(L),&charClass);}), PositionID(0,0,"#float")
 		);
+
+
+		LANG_M.addFunction(PositionID(0,0,"#int"),"abs")->add(
+					new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},this),
+					nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					assert(args.size()==1);
+					IntLiteral* out = new IntLiteral(0,0,0);
+					mpz_abs(out->value, ((const IntLiteral*) args[0]->evaluate(r))->value);
+					return out;
+		}), PositionID(0,0,"#int"));
+		LANG_M.addFunction(PositionID(0,0,"#int"),"abs2")->add(
+					new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},this),
+					nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					assert(args.size()==1);
+					IntLiteral* out = new IntLiteral(0,0,0);
+					mpz_mul(out->value, ((const IntLiteral*) args[0]->evaluate(r))->value, ((const IntLiteral*) args[0]->evaluate(r))->value);
+					return out;
+		}), PositionID(0,0,"#int"));
 		///register methods such as print / tostring / tofile / etc
 	}
 

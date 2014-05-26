@@ -98,10 +98,12 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_LAZY:
 	case CLASS_FLOATLITERAL:
 	{
+		/*
 		llvm::SmallVector<llvm::Type*,1> t_args(1);
 		t_args[0] = CSTRINGTYPE;
 		auto CU = r.getExtern("puts", llvm::FunctionType::get(c_intClass.type, t_args,true));
 		r.builder.CreateCall(CU, r.getConstantCString("Decrementing count for class "+C->getName()+" "));
+		*/
 		//filePos.warning("Decrementing count for class "+C->getName()+" ");
 		return;
 	}

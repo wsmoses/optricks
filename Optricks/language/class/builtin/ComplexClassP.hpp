@@ -8,10 +8,101 @@
 #ifndef COMPLEXCLASSP_HPP_
 #define COMPLEXCLASSP_HPP_
 #include "./ComplexClass.hpp"
+#include "../literal/FloatLiteralClass.hpp"
 #include "../../data/literal/ImaginaryLiteral.hpp"
+#include "../../data/literal/FloatLiteral.hpp"
 #include "../../data/literal/IntLiteral.hpp"
 #include "../../data/ConstantData.hpp"
 #include "../../data/LocationData.hpp"
+
+ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
+		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,llvm::VectorType::get(cType(inner),2)),innerClass(inner){
+		assert(inner);
+		assert(inner->classType!=CLASS_COMPLEX);
+		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
+		if(reg) LANG_M.addClass(PositionID(0,0,"#complex"),this);
+		if(inner==&doubleClass) LANG_M.addClass(PositionID(0,0,"#complex"),this,"complex");
+		if(inner->classType==CLASS_FLOATLITERAL){
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},&floatLiteralClass),
+				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				FloatLiteral* out = new FloatLiteral(0,0,0);
+				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
+				mpfr_mul(out->value, ((FloatLiteral*) il->imag)->value,((FloatLiteral*) il->imag)->value, MPFR_RNDN);
+				if(il->real){
+					mpfr_t tmp;
+					mpfr_init(tmp);
+					mpfr_mul(tmp, ((FloatLiteral*) il->real)->value,((FloatLiteral*) il->real)->value, MPFR_RNDN);
+					mpfr_add(out->value, out->value, tmp, MPFR_RNDN);
+				}
+				mpfr_sqrt(out->value, out->value, MPFR_RNDN);
+				return out;
+			}), PositionID(0,0,"#complex"));
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},&floatLiteralClass),
+				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				FloatLiteral* out = new FloatLiteral(0,0,0);
+				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
+				mpfr_mul(out->value, ((FloatLiteral*) il->imag)->value,((FloatLiteral*) il->imag)->value, MPFR_RNDN);
+				if(il->real){
+					mpfr_t tmp;
+					mpfr_init(tmp);
+					mpfr_mul(tmp, ((FloatLiteral*) il->real)->value,((FloatLiteral*) il->real)->value, MPFR_RNDN);
+					mpfr_add(out->value, out->value, tmp, MPFR_RNDN);
+				}
+				return out;
+			}), PositionID(0,0,"#complex"));
+		} else if(inner->classType==CLASS_INTLITERAL){
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},&intLiteralClass),
+				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				IntLiteral* out = new IntLiteral(0,0,0);
+				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
+				mpz_mul(out->value, ((IntLiteral*) il->imag)->value,((IntLiteral*) il->imag)->value);
+				if(il->real){
+					mpz_t tmp;
+					mpz_init(tmp);
+					mpz_mul(tmp, ((IntLiteral*) il->real)->value,((IntLiteral*) il->real)->value);
+					mpz_add(out->value, out->value, tmp);
+				}
+				return out;
+			}), PositionID(0,0,"#complex"));
+		}
+		else if(inner->classType==CLASS_FLOAT){
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},innerClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				llvm::Value* V = args[0]->evalV(r, id);
+				V = r.builder.CreateFMul(V, V);
+				V = r.builder.CreateFAdd(r.builder.CreateExtractElement(V, getInt32(0)),r.builder.CreateExtractElement(V, getInt32(1)));
+				V = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::sqrt, llvm::SmallVector<llvm::Type*,1>(1,innerClass->type)),V);
+				return new ConstantData(V, innerClass);
+			}), PositionID(0,0,"#complex"));
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},innerClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				llvm::Value* V = args[0]->evalV(r, id);
+				V = r.builder.CreateFMul(V, V);
+				V = r.builder.CreateFAdd(r.builder.CreateExtractElement(V, getInt32(0)),r.builder.CreateExtractElement(V, getInt32(1)));
+				return new ConstantData(V, innerClass);
+			}), PositionID(0,0,"#complex"));
+		} else if(inner->classType==CLASS_INT){
+			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
+				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},innerClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				assert(args.size()==1);
+				llvm::Value* V = args[0]->evalV(r, id);
+				V = r.builder.CreateMul(V, V);
+				V = r.builder.CreateAdd(r.builder.CreateExtractElement(V, getInt32(0)),r.builder.CreateExtractElement(V, getInt32(1)));
+				return new ConstantData(V, innerClass);
+			}), PositionID(0,0,"#complex"));
+		}
+	}
 
 const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const Data* instance) const{
 	if(s!="real" && s!="imag"){
@@ -28,7 +119,7 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		}
 	} else if(instance->type==R_CONST){
 		llvm::Value* v = ((ConstantData*)instance)->value;
-		return new ConstantData(r.builder.CreateExtractElement(v,getInt32((s=="real")?0:1)),this);
+		return new ConstantData(r.builder.CreateExtractElement(v,getInt32((s=="real")?0:1)),innerClass);
 
 	} else {
 		assert(instance->type==R_LOC);

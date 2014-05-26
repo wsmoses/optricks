@@ -205,6 +205,7 @@ public:
 	bool allowUndo;
 	bool done;
 	PositionID pos() const {
+		assert(this);
 		return PositionID(readChars.size(), readChars.back().size(),fileName);
 	}
 	virtual ~Stream(){

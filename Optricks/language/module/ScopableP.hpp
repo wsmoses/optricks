@@ -41,9 +41,10 @@ const Data* Scopable::getVariable(PositionID id, const String name) const{
 	if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
 	return f.first->vars[f.second->second.pos];
 }
-void Scopable::addClass(PositionID id, AbstractClass* c){
-	if(existsHere(c->name)) id.error("Cannot define class "+c->name+" -- identifier already used at this scope");
-	mapping.insert(std::pair<String,SCOPE_POS>(c->name,SCOPE_POS(SCOPE_CLASS,classes.size())));
+void Scopable::addClass(PositionID id, AbstractClass* c,String s){
+	if(s.length()==0) s = c->name;
+	if(existsHere(s)) id.error("Cannot define class "+s+" -- identifier already used at this scope");
+	mapping.insert(std::pair<String,SCOPE_POS>(s,SCOPE_POS(SCOPE_CLASS,classes.size())));
 	classes.push_back(c);
 //	return ( classes.back() );
 }

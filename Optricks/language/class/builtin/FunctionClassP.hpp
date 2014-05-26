@@ -13,7 +13,10 @@ inline llvm::Value* FunctionClass::castTo(const AbstractClass* const toCast, RDa
 		switch(toCast->classType){
 		case CLASS_CPOINTER: return r.builder.CreatePointerCast(valueToCast, C_POINTERTYPE);
 		case CLASS_FUNC: {
-			if(noopCast(toCast)) return valueToCast;
+			if(noopCast(toCast)){
+				if(toCast->type==valueToCast->getType()) return valueToCast;
+				else return r.builder.CreatePointerCast(valueToCast, toCast->type);
+			}
 			else {
 				id.error("Cannot cast value of function type "+getName()+" to "+toCast->getName());
 				exit(1);

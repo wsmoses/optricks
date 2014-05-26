@@ -20,5 +20,4 @@
 			return getReturnType()->compare(a,b);
 		}
 
-
 #endif /* STATEMENTP_HPP_ */

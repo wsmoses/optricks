@@ -19,16 +19,22 @@
 #if (__GNUC__ && __cplusplus && __GNUC__ >= 3)
 #include <cxxabi.h>
 #endif
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#ifdef WITH_ASSERTS
+#define NDEBUG
+#endif
+#include <assert.h>
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
 #include <list>
 #include <cstdio>
-#include <stdlib.h>
+#include <ctime>
 #include <cstdlib>
 #include <iostream>
 #include <cmath>
-#include <stdlib.h>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -72,34 +78,34 @@
 //#endif
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/IR/CFG.h"
 
-/*
-#include "clang/AST/ASTContext.h"
-#include "clang/AST/CharUnits.h"
-#include "clang/AST/DeclCXX.h"
-#include "clang/AST/DeclObjC.h"
-#include "clang/AST/DeclTemplate.h"
-#include "clang/AST/Mangle.h"
-#include "clang/AST/RecordLayout.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Basic/Builtins.h"
-#include "clang/Basic/CharInfo.h"
-#include "clang/Basic/Diagnostic.h"
-#include "clang/Basic/Module.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Basic/TargetInfo.h"
-#include "clang/Basic/Version.h"
-#include "clang/Frontend/CodeGenOptions.h"
-#include "clang/Sema/SemaDiagnostic.h"
-#include "clang/AST/GlobalDecl.h"
-*/
+
+//#include "clang/AST/ASTContext.h"
+//#include "clang/AST/CharUnits.h"
+//#include "clang/AST/DeclCXX.h"
+//#include "clang/AST/DeclObjC.h"
+//#include "clang/AST/DeclTemplate.h"
+//#include "clang/AST/Mangle.h"
+//#include "clang/AST/RecordLayout.h"
+//#include "clang/AST/RecursiveASTVisitor.h"
+//#include "clang/Basic/Builtins.h"
+//#include "clang/Basic/CharInfo.h"
+//#include "clang/Basic/Diagnostic.h"
+//#include "clang/Basic/Module.h"
+//#include "clang/Basic/SourceManager.h"
+//#include "clang/Basic/TargetInfo.h"
+//#include "clang/Basic/Version.h"
+//#include "clang/Frontend/CodeGenOptions.h"
+//#include "clang/Sema/SemaDiagnostic.h"
+//#include "clang/AST/GlobalDecl.h"
+
 #include "Macros.hpp"
-#include <assert.h>
 //#define cout std::cout
 #define cin std::cin
 #define cerr std::cerr
@@ -236,7 +242,7 @@ const auto VOIDTYPE = llvm::Type::getVoidTy(llvm::getGlobalContext());
 const auto BOOLTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),1);
 const auto CHARTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8);
 const auto CLASSTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(void*));
-const auto CSTRINGTYPE = llvm::PointerType::getUnqual(CHARTYPE);
+const auto C_STRINGTYPE = llvm::PointerType::getUnqual(CHARTYPE);
 #ifdef NULL
 #undef NULL
 #endif
@@ -290,6 +296,7 @@ enum ClassType{
 	CLASS_VECTOR,
 	CLASS_VOID,
 	CLASS_REF,
+	CLASS_CSTRING,
 //	CLASS_FILE,
 	CLASS_CLASS,
 	CLASS_SCOPE,

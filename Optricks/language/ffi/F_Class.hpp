@@ -178,7 +178,7 @@ template<typename C> const AbstractClass* const convertClass<C>::convert(Scopabl
 		String s = demangle(typeid(C).name());
 		for(unsigned i=0; i<s.size(); i++)
 			if(s[i]==' ') s[i]='_';
-		static IntClass tmp(&(NS_LANG_C.staticVariables), s, sizeof(C));
+		static IntClass tmp(&(NS_LANG_C.staticVariables), s, 8*sizeof(C));
 		return &tmp;
 	} else if(std::is_floating_point<C>::value){
 

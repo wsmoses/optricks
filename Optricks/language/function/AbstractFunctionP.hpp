@@ -317,7 +317,10 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 	switch(right->classType){
 	case CLASS_FUNC:{
 		auto fc= proto->getFunctionClass();
-		if(fc->noopCast(right)) return myFunc;
+		if(fc->noopCast(right)){
+			if(right->type==myFunc->getType()) return myFunc;
+			else return r.builder.CreatePointerCast(myFunc, right->type);
+		}
 		else {
 			id.error("Single Function automatic generation of types has not been implemented...");
 			exit(1);
@@ -364,7 +367,7 @@ llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const ri
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this
 		FunctionClass* fc = (FunctionClass*)right;
-		return getBestFit(id, fc->argumentTypes)->getSingleFunc();
+		return getBestFit(id, fc->argumentTypes)->castToV(r, right, id);
 	}
 	case CLASS_CPOINTER:
 		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
@@ -542,6 +545,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 }
 
 SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args) const{
+	//force type construction / templated function generation
+	for(const auto& a: args) a->getReturnType();
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;

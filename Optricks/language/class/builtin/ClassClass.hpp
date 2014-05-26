@@ -15,18 +15,12 @@ public:
 		AbstractClass(nullptr,"Class", nullptr,PRIMITIVE_LAYOUT,CLASS_CLASS,true,CLASSTYPE){
 
 	}
-	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
-		illegalLocal(id,s);
-		exit(1);
-	}
+	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final;
 
 	bool hasLocalData(String s) const override final{
 		return false;
 	}
-	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
-		illegalLocal(id,s);
-		exit(1);
-	}
+	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final;
 	/*
 	std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		illegalLocal(id,s);

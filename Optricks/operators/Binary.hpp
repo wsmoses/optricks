@@ -10,6 +10,7 @@
 
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
+#include "../language/class/builtin/CStringClass.hpp"
 #include "../language/evaluatable/CastEval.hpp"
 #include "../language/data/literal/MathConstantLiteral.hpp"
 #include "../language/data/ArrayData.hpp"
@@ -273,6 +274,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		break;
 	}
 	case CLASS_COMPLEX:{
+		if(operation=="==" || operation=="!=") return &boolClass;
 		return getMin(cc, dd,filePos);
 	}
 	case CLASS_BOOL:{
@@ -876,6 +878,14 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 						getBinop(r, filePos, getBinop(r, filePos, LR, RR,"*"), getBinop(r, filePos, LI, RI,"*"), "-"),
 						getBinop(r, filePos, getBinop(r, filePos, LR, RI,"*"), getBinop(r, filePos, LI, RR,"*"), "+")
 				);
+			} else if(operation=="=="){
+				auto re = getBinop(r, filePos, LR, RR, "==")->getValue(r, filePos);
+				auto im = getBinop(r, filePos, LI, RI, "==")->getValue(r, filePos);
+				return new ConstantData(r.builder.CreateAnd(re, im), &boolClass);
+			} else if(operation=="!="){
+				auto re = getBinop(r, filePos, LR, RR, "!=")->getValue(r, filePos);
+				auto im = getBinop(r, filePos, LI, RI, "!=")->getValue(r, filePos);
+				return new ConstantData(r.builder.CreateOr(re, im), &boolClass);
 			} else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);
@@ -923,6 +933,26 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				V = r.builder.CreateInsertElement(V, NR, getInt32(0));
 				V = r.builder.CreateInsertElement(V, NI, getInt32(1));
 				return new ConstantData(V,comp);
+			} else if(operation=="=="){
+				llvm::Value* LR = r.builder.CreateExtractElement(L, getInt32(0));
+				llvm::Value* LI = r.builder.CreateExtractElement(L, getInt32(1));
+				llvm::Value* RR = r.builder.CreateExtractElement(R, getInt32(0));
+				llvm::Value* RI = r.builder.CreateExtractElement(R, getInt32(1));
+				llvm::Value* re = (comp->innerClass->classType==CLASS_INT)?
+						r.builder.CreateICmpEQ(LR, RR):r.builder.CreateFCmpOEQ(LR, RR);
+				llvm::Value* im = (comp->innerClass->classType==CLASS_INT)?
+						r.builder.CreateICmpEQ(LI, RI):r.builder.CreateFCmpOEQ(LI, RI);
+				return new ConstantData(r.builder.CreateAnd(re, im), &boolClass);
+			} else if(operation=="!="){
+				llvm::Value* LR = r.builder.CreateExtractElement(L, getInt32(0));
+				llvm::Value* LI = r.builder.CreateExtractElement(L, getInt32(1));
+				llvm::Value* RR = r.builder.CreateExtractElement(R, getInt32(0));
+				llvm::Value* RI = r.builder.CreateExtractElement(R, getInt32(1));
+				llvm::Value* re = (comp->innerClass->classType==CLASS_INT)?
+						r.builder.CreateICmpEQ(LR, RR):r.builder.CreateFCmpONE(LR, RR);
+				llvm::Value* im = (comp->innerClass->classType==CLASS_INT)?
+						r.builder.CreateICmpEQ(LI, RI):r.builder.CreateFCmpONE(LI, RI);
+				return new ConstantData(r.builder.CreateOr(re, im), &boolClass);
 			} else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 				exit(1);

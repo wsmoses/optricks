@@ -39,6 +39,7 @@ public:
 		assert(imag);
 		assert(imag->type==R_INT || imag->type==R_FLOAT);
 		if(s.length()>0) LANG_M.addVariable(PositionID(0,0,"#imag"),s,this);
+		getReturnType();
 	}
 	const AbstractClass* getReturnType() const override final;
 	llvm::ConstantVector* getValue(RData& r, PositionID id) const override final;

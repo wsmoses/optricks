@@ -27,10 +27,6 @@ protected:
 		///register methods such as print / tostring / tofile / etc
 	}
 public:
-	inline bool hasCast(const AbstractClass* const toCast) const{
-		return this==toCast || toCast->classType==CLASS_VOID;
-//		return innerType->hasCast(toCast);
-	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
 		id.error("Cannot get local of reference");
@@ -48,13 +44,19 @@ public:
 		//fdasexit(1);
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{
-		return toCast ==this || toCast->classType==CLASS_VOID;
+		return toCast ==this || (toCast->classType==CLASS_REF && innerType->noopCast(
+				((const ReferenceClass*)toCast)->innerType)) || toCast->classType==CLASS_CPOINTER || toCast->classType==CLASS_VOID;
+	}
+	inline bool hasCast(const AbstractClass* const toCast) const{
+		return noopCast(toCast);
 	}
 	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
-		if(noopCast(toCast)) return valueToCast;
+		if(noopCast(toCast)){
+			if(toCast->type==type) return valueToCast;
+			else return r.builder.CreatePointerCast(valueToCast, toCast->type);
+		}
 		id.error("Cannot cast reference");
 		exit(1);
-		/////todo
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{

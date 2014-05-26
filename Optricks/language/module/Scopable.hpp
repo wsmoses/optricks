@@ -142,7 +142,7 @@ public:
 	const AbstractClass* getReturnClass(PositionID id, const String name) const;
 	const Data* get(PositionID id, const String name) const;
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
-	void addClass(PositionID id, AbstractClass* c);
+	void addClass(PositionID id, AbstractClass* c,String n="");
 	void addVariable(PositionID id, const String name,Data* d){
 		if(existsHere(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
 		mapping.insert(std::pair<const String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));

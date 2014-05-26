@@ -92,6 +92,9 @@ class OClass: public ErrorStatement
 };
 
 void initClasses(){
+	ComplexClass::get(&doubleClass);
+	ComplexClass::get(&intLiteralClass);
+	ComplexClass::get(&floatLiteralClass);
 	convertClass<int>::convert(&LANG_M);
 	convertClass<long>::convert(&LANG_M);
 	convertClass<long long>::convert(&LANG_M);

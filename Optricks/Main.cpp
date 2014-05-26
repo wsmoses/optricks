@@ -315,12 +315,25 @@ int main(int argc, char** argv){
 
 	LANG_M.addFunction(PositionID(0,0,"#str"),"typeof")->add(
 			new BuiltinInlineFunction(
-					new FunctionProto("typeof",{AbstractDeclaration(&voidClass)},&classClass),
+					new FunctionProto("typeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&classClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{
 			assert(args.size()==1);
 			return args[0]->getReturnType();
 			//const Data* D = args[0]->evaluate(r);
 		}), PositionID(0,0,"#int"));
+	LANG_M.addFunction(PositionID(0,0,"#str"),"sizeof")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("sizeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&intLiteralClass),
+				nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{
+				assert(args.size()==1);
+				const AbstractClass* a = args[0]->getReturnType();
+				if(a->classType==CLASS_CLASS)
+					a = args[0]->evaluate(r)->getMyClass(r, id);
+				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
+				return new IntLiteral(s);
+				//const Data* D = args[0]->evaluate(r);
+			}), PositionID(0,0,"#int"));
+
 	/*LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
 			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
 			nullptr,"stdout",GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true
@@ -515,6 +528,7 @@ int main(int argc, char** argv){
 		//TODO for(auto a = (0,1); a._1< 7; a = (a._0,a._1+1)) print(a._1)
 		//TODO (global)
 		//st.force("(int,int) a; a = (3,4); print(a._0);\n");
+		//st.force("int[] ar=[3,1,4,1,5,9,2,6];qsort(ar.carr,8,4,lambda int& a, int& b: lang.c.int(a-b));\n");
 		while(true){
 			st.enableOut = true;
 			st.trim(EOF);

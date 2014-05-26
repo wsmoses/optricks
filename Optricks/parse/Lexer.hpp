@@ -248,7 +248,7 @@ class Lexer{
 			return;
 		}
 		inline PositionID pos() const{
-			assert(f!=nullptr);
+			assert(f);
 			return f->pos();
 		}
 		inline void trim(char c){
@@ -1000,25 +1000,23 @@ Statement* Lexer::getNextStatement(ParseData data){
 				}
 				if(start==f->getMarker()){
 					auto fp = f->peek();
-					if(fp=='&' || fp=='%'){
-						f->read();
-						trim(data);
-						if((!f->interactive || f->last()!='\n') && isStartName(f->peek())){
-							f->undoMarker(undoRead);
-							return getNextDeclaration(data);
-						}
-					} else if(fp=='['){
-						f->read();
-						f->trim(EOF);
-						//TODO allow int[4]
-						if(f->peek()==']'){
-							f->read();
-							trim(data);
-							if((!f->interactive || f->last()!='\n') && isStartName(f->peek())){
-								f->undoMarker(undoRead);
-								return getNextDeclaration(data);
+					bool decl = true;
+					while((fp=='&' || fp=='%' || fp=='[')){
+						if(f->read()=='['){
+							f->trim(EOF);
+							//TODO allow int[4]
+							if(f->peek()!=']'){
+								decl = false;
+								break;
 							}
+							f->read();
 						}
+						f->trim(data.endWith);
+						fp = f->peek();
+					}
+					if(decl && (!f->interactive || f->last()!='\n') && isStartName(f->peek())){
+						f->undoMarker(undoRead);
+						return getNextDeclaration(data);
 					}
 				}
 			}

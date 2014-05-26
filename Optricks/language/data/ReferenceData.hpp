@@ -20,9 +20,7 @@ public:
 		exit(1);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
-		if(a->classType==CLASS_VOID) return true;
-		return a->classType==CLASS_REF && value->type->noopCast(
-				((const ReferenceClass*)a)->innerType);
+		return ReferenceClass::get(value->type)->hasCast(a);
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(hasCastValue(a));
@@ -30,6 +28,7 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+		//TODO fix
 		const ReferenceClass* ra = (const ReferenceClass*)a;
 		const ReferenceClass* rb = (const ReferenceClass*)b;
 		return value->type->compare(ra, rb);
@@ -60,12 +59,20 @@ public:
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
-		if(value->type->noopCast(right)) return this;
-		id.compilerError("Cannot cast reference");
-		exit(1);
+		if(right==value->type) return this;
+		else{
+			//todo check
+			llvm::Value* V = value->value->getPointer(r, id);
+			if(V->getType()!=right->type) V = r.builder.CreatePointerCast(V, right->type);
+			return new ConstantData(V, right);
+		}
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		if(right->classType==CLASS_REF && value->type->noopCast(((ReferenceClass*)right)->innerType)) return value->value->getPointer(r, id);
+		if(hasCastValue(right)){
+			llvm::Value* V = value->value->getPointer(r, id);
+			if(V->getType()==right->type) return V;
+			else return r.builder.CreatePointerCast(V, right->type);
+		}
 		id.compilerError("Cannot cast reference V "+value->type->getName()+" to "+right->getName());
 		exit(1);
 	}

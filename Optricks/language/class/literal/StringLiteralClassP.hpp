@@ -27,6 +27,13 @@
 				}
 				return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"println")->add(
+			new BuiltinInlineFunction(new FunctionProto("println",std::vector<AbstractDeclaration>(),&voidClass),
+			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==0);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));
+			return &VOID_DATA;}), PositionID(0,0,"#int"));
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
@@ -46,7 +53,7 @@
 				//TODO custom formatting for printf (and checks for literals / correct format / etc)
 				const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
 				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = CSTRINGTYPE;
+				t_args[0] = C_STRINGTYPE;
 				auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
 				llvm::SmallVector<llvm::Value*,1> m_args(args.size());
 				m_args[0] = r.getConstantCString(value);

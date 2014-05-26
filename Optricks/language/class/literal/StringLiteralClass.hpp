@@ -20,6 +20,7 @@ public:
 		if(toCast==this) return true;
 		switch(toCast->classType){
 		case CLASS_VOID: return true;
+		case CLASS_CSTRING: return true;
 		case CLASS_STR:{
 			PositionID(0,0,"#string").compilerError("Todo -- implement string");
 			exit(1);
@@ -36,6 +37,9 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+		if(a->classType==CLASS_CSTRING && b->classType==CLASS_CSTRING) return 0;
+		else if(a->classType==CLASS_CSTRING) return 1;
+		else if(b->classType==CLASS_CSTRING) return -1;
 		if(a==this) return (b==this)?0:-1;
 		else if(b==this) return 1;
 		if(a->classType==CLASS_STR) return (b->classType==CLASS_STR)?0:-1;

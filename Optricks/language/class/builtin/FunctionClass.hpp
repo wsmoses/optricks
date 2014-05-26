@@ -55,14 +55,29 @@ public:
 	}*/
 	inline bool noopCast(const AbstractClass* const toCast) const override{
 		if(toCast->classType==CLASS_VOID) return true;
-		if(toCast->classType!=CLASS_FUNC) return false;
+		if(toCast->classType==CLASS_CPOINTER) return true;
+		if(toCast->classType!=CLASS_FUNC){
+			//cerr << getName() << "is not func / " << toCast->getName() << endl << flush;
+			return false;
+		}
 		const FunctionClass* const fc = (FunctionClass*)toCast;
-		if(!returnType->noopCast(fc->returnType)) return false;
+		if(!returnType->noopCast(fc->returnType)){
+			//cerr << "RET: "<< returnType->getName() << " cannot cast to " << fc->returnType->getName() << endl << flush;
+			return false;
+		}
 		const auto a1=argumentTypes.size();
 		const auto a2 = fc->argumentTypes.size();
-		if(a1!=a2) return false;
+		if(a1!=a2){
+			//cerr << "ARGLEN: "<< a1 << " != " << a2 << endl << flush;
+			return false;
+		}
 		for(unsigned i=0; i<a1; i++)
-			if(!argumentTypes[i]->noopCast(fc->argumentTypes[i])) return false;
+			if(!argumentTypes[i]->noopCast(fc->argumentTypes[i])){
+			//	cerr << "ARG " << i << ": " << argumentTypes[i]->getName() << " cannot cast to " << fc->argumentTypes[i]->getName() << endl << flush;
+				return false;
+			}
+
+		//cerr << getName() << " CAN CAST TO " << toCast->getName() << endl << flush;
 		return true;
 	}
 	/**

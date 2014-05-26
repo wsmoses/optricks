@@ -5,9 +5,6 @@ def char printdensity(int d){
 	else         	return ' ';
 }
 
-def abs2(complex c)
-	return c.real*c.real+c.imag*c.imag
-
 double angle=0;
 def int mand(complex z0){
 	complex z = z0
@@ -16,12 +13,13 @@ def int mand(complex z0){
 		else z = z*z + complex(cos(angle),sin(angle))
 	return 1000
 }
+
 while(true){
-angle+=.1;
-print(chr(22)+'[2J');
-for(double im=-1.25; im<1.25; im+=.04){
-	for(double re=-1.8,re<1.8,re+=.02)
-		print(printdensity(mand(complex(re,im))));
-	println('');
-}
+	angle+=.1;
+	print(chr(22)+'[2J');
+	for(double im=-1.25; im<1.25; im+=.04){
+		for(double re=-1.8,re<1.8,re+=.02)
+			print(printdensity(mand(complex(re,im))));
+		println('');
+	}
 }

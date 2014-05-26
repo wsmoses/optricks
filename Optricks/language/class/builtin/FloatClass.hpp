@@ -32,6 +32,16 @@ public:
 				)))))
 	),floatType(t){
 		(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#float"),this);
+
+
+		LANG_M.addFunction(PositionID(0,0,"#float"),"abs2")->add(
+			new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},this),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			llvm::Value* V = args[0]->evalV(r, id);
+			V = r.builder.CreateFMul(V, V);
+			return new ConstantData(V, this);
+		}), PositionID(0,0,"#float"));
 #define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, llvm::SmallVector<llvm::Type*,1>(1,type))), PositionID(0,0,"#float"));
 		SINGLE_FUNC_DECLR("abs",fabs)
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
