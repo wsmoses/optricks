@@ -1,22 +1,22 @@
 
 class primitive_pointer File{
-	def File(c.string s, c.string t='r'){
-  	this = (extern File fopen(c.string a, c_string b))(s,t);
+	def File(lang.c.string s, lang.c.string t='r'){
+  	this = (extern File fopen(lang.c.string a, lang.c.string b))(s,t);
 	};
 	def void flush(){
 		(extern void fflush(File a))(this);
 	};
 	def void close(){
 		this.flush();
-		(extern c.int fclose(File a))(this);
+		(extern lang.c.int fclose(File a))(this);
 	};
 	def print(char c){
-		(extern c.int fputc(char c,File a))(c, this);
-		return f;
+		(extern lang.c.int fputc(char c,File a))(c, this);
+		return this;
 	};
-	def print(c.string c){
-		(extern c.int fputs(lang.c.string c, File p))(c,this);
-		return f;
+	def print(lang.c.string c){
+		(extern lang.c.int fputs(lang.c.string c, File p))(c,this);
+		return this;
 	};
 
 };

@@ -46,6 +46,9 @@ class ClassFunction : public E_FUNCTION{
 				args[i+(staticF?0:1)] = ac->type;
 				assert(ac->type);
 			}
+			ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
+			module.setVariable(filePos, "this", TEMP);
+
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
 				if(ad[Idx].declarationType->classType==CLASS_REF){
 					auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
@@ -112,6 +115,7 @@ class ClassFunction : public E_FUNCTION{
 						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
 					);
 				} else {
+					assert(declaration[Idx]->variable);
 					declaration[Idx]->variable.getMetadata().setObject(
 						(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a)
 					);

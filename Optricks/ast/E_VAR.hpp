@@ -14,7 +14,9 @@ class E_VAR : public VariableReference {
 	public:
 		Resolvable pointer;
 		virtual ~E_VAR(){};
-		E_VAR(const Resolvable& a) : VariableReference(),pointer(a){};
+		E_VAR(const Resolvable& a) : VariableReference(),pointer(a){
+			assert(pointer.module);
+		};
 //		E_VAR(PositionID id, Resolvable& a) : VariableReference(id),pointer(a){};
 		String getFullName() const {
 			return pointer.module->getScopeName()+"."+pointer.name;
@@ -28,9 +30,11 @@ class E_VAR : public VariableReference {
 		const Resolvable getMetadata() const
 		//final override
 		{
+			assert(pointer.module);
 			return pointer;
 		}
 		const Data* evaluate(RData& r) const override final{
+			assert(pointer.module);
 			auto tmp =  pointer.getObject();
 			assert(tmp);
 			return tmp;
