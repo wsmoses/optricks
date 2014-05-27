@@ -9,6 +9,26 @@
 //TODO add int print/println
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
 //TODO print/println floatLiteral
+//TODO FIX typeof w/ templates
+/*
+ *
+def r(int a){
+    println(a);
+    return a;
+}
+
+def hi(int a, int& b, int% c){
+    println(typeof(a));
+    println(typeof(b));
+    println(typeof(c));
+    return a + b + c();
+}
+
+int b = 17;
+
+hi(r(12),&b,r(35))
+ *
+ */
 #include "./language/Post.hpp"
 #include "./parse/Lexer.hpp"
 #include "./language/ffi/F_Class.hpp"

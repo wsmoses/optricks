@@ -13,7 +13,7 @@ class ClassClass: public AbstractClass{
 public:
 	inline ClassClass(bool b):
 		AbstractClass(nullptr,"Class", nullptr,PRIMITIVE_LAYOUT,CLASS_CLASS,true,CLASSTYPE){
-
+		LANG_M.addClass(PositionID(0,0,"#class"),this);
 	}
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final;
 
