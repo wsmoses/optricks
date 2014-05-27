@@ -8,7 +8,7 @@
 //TODO add templates with default args
 //TODO add int print/println
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
-
+//TODO print/println floatLiteral
 #include "./language/Post.hpp"
 #include "./parse/Lexer.hpp"
 #include "./language/ffi/F_Class.hpp"
@@ -131,7 +131,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		FP();
 		AbstractClass* cp = (AbstractClass*)(FP());
-		std::cout <<  "class<" << cp << ", '"<< cp->getName() << "'>" << endl << flush;
+		std::cout <<  "class{" << cp << ", '"<< cp->getName() << "'}" << endl << flush;
 	}else if(type==VOIDTYPE || retType->classType==CLASS_VOID){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();

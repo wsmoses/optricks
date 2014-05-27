@@ -112,7 +112,30 @@ void initClasses(){
 
 	add_import_c_function(&LANG_M, qsort);
 	//add_import_cpp_function(&LANG_M, std::terminate);
-
+	LANG_M.addFunction(PositionID(0,0,"#class"),"print")->add(
+		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
+		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		assert(args.size()==1);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+		std::stringstream s;
+		s << "class{" << ac << ", '"<< ac->getName() << "'}";
+		for(auto& a: s.str()){
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
+		}
+		return &VOID_DATA;}), PositionID(0,0,"#int"));
+	LANG_M.addFunction(PositionID(0,0,"#class"),"println")->add(
+		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
+		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		assert(args.size()==1);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+		std::stringstream s;
+		s << "class{" << ac << ", '"<< ac->getName() << "'}" << endl;
+		for(auto& a: s.str()){
+			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
+		}
+		return &VOID_DATA;}), PositionID(0,0,"#int"));
 	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
 	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
 	//add_import_c_function(&LANG_M, mktime);
