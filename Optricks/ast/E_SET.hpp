@@ -56,8 +56,9 @@ class E_SET: public ErrorStatement{
 			return new ConstantData(nex,to->getReturnType());
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-			return variable->getFunctionReturnType(id,args);
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+			assert(isClassMethod==false);
+			return variable->getFunctionReturnType(id,args, false);
 		}
 };
 

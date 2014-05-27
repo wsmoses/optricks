@@ -23,6 +23,7 @@ void incrementCount(RData& r, PositionID filePos, const Data* D){
 		filePos.compilerError("Scope should never be incremented");
 		exit(1);
 	case CLASS_FUNC:
+	case CLASS_CSTRING:
 	case CLASS_CPOINTER:
 	case CLASS_GEN:
 	case CLASS_BOOL:
@@ -50,19 +51,19 @@ void incrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	{
-		filePos.warning("Incrementing count for (literal) class "+C->getName()+" ");
+		//filePos.warning("Incrementing count for (literal) class "+C->getName()+" ");
 		return;
 	}
 	case CLASS_STR:{
-		filePos.error("Cannot increment count for class "+C->getName()+" ");
+		//filePos.error("Cannot increment count for class "+C->getName()+" ");
 		return;
 	}
 	case CLASS_USER:
 		if(C->layout==POINTER_LAYOUT){
-			filePos.error("Cannot increment count for pointer user class "+C->getName()+" ");
+			//filePos.error("Cannot increment count for pointer user class "+C->getName()+" ");
 			return;
 		} else{
-			filePos.warning("Incrementing count for primitive user class "+C->getName()+" ");
+			//filePos.warning("Incrementing count for primitive user class "+C->getName()+" ");
 			return;
 		}
 	}
@@ -92,6 +93,7 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_MAP:
 	case CLASS_SET:
 	case CLASS_VECTOR:
+	case CLASS_CSTRING:
 	case CLASS_VOID:
 	case CLASS_REF:
 	case CLASS_CLASS:
@@ -147,19 +149,19 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 				}
 			}
 		}
-		filePos.warning("Deconstructed literal class "+C->getName()+" ");
+		//filePos.warning("Deconstructed literal class "+C->getName()+" ");
 		return;
 	}
 	case CLASS_STR:{
-		filePos.error("Cannot decrement count for class "+C->getName()+" ");
+		//filePos.error("Cannot decrement count for class "+C->getName()+" ");
 		return;
 	}
 	case CLASS_USER:
 		if(C->layout==POINTER_LAYOUT){
-			filePos.error("Cannot decrement count for pointer user class "+C->getName()+" ");
+			//filePos.error("Cannot decrement count for pointer user class "+C->getName()+" ");
 			return;
 		} else{
-			filePos.warning("Decrementing count for primitive user class "+C->getName()+" ");
+			//filePos.warning("Decrementing count for primitive user class "+C->getName()+" ");
 			return;
 		}
 	}

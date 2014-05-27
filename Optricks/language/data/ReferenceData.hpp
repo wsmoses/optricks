@@ -33,7 +33,7 @@ public:
 		const ReferenceClass* rb = (const ReferenceClass*)b;
 		return value->type->compare(ra, rb);
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* inst) const override final{
 		id.error("Cannot call function of reference");
 		exit(1);
 	}
@@ -41,7 +41,7 @@ public:
 		return ReferenceClass::get(value->type);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b)const override final{
 		id.error("Cannot call function of reference");
 		exit(1);
 	}

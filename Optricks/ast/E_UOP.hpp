@@ -47,7 +47,8 @@ public:
 		id.compilerError("Cannot getSelfClass of OUOP "+operation);
 		exit(1);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		assert(isClassMethod==false);
 		const AbstractClass* ac = getReturnType();
 		if(ac->classType==CLASS_FUNC){
 			return ((FunctionClass*)ac)->returnType;

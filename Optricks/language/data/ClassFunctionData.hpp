@@ -44,11 +44,13 @@ public:
 		exit(1);
 	}
 
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* inst) const override{
+		assert(inst==nullptr);
 		return getLocalFunction(r, id, function, instance, args);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override {
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override {
+		assert(isClassMethod==false);
 		return getLocalFunctionReturnType(id, function, instance->getReturnType(), args);
 	}
 	/**

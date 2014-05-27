@@ -25,6 +25,7 @@
 #include "./data/ConstantDataP.hpp"
 #include "./data/LocationDataP.hpp"
 #include "./data/LLVMDataP.hpp"
+#include "./data/literal/LiteralP.hpp"
 #include "./data/literal/FloatLiteralP.hpp"
 #include "./data/literal/IntLiteralP.hpp"
 #include "./data/literal/ImaginaryLiteralP.hpp"

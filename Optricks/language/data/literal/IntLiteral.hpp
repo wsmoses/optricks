@@ -67,18 +67,6 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		return intLiteralClass.compare(a,b);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
-		id.error("Integer literal cannot act as function");
-		exit(1);
-	}
-	virtual Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-		id.error("Cannot call function on int-literal");
-		exit(1);
-	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		id.error("Cannot use integer literal as class");
-		exit(1);
-	}
 	static inline String str(const mpz_t& value){
 		char temp[mpz_sizeinbase (value, 10) + 2];
 		mpz_get_str(temp, 10, value);

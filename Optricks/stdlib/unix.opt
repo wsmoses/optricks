@@ -1,0 +1,10 @@
+def cat(lang.c.string s){
+        File f = File(s,'r');
+        auto t = f.getc();
+        while(t!=-1){
+                print(chr(t));
+                t = f.getc();
+        }
+        f.close();
+}
+

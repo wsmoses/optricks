@@ -15,7 +15,7 @@
 	LLVMData::LLVMData(DataType tp, const AbstractClass* const r):Data(tp),type(r){
 		assert(r->classType!=CLASS_REF);
 	};
-	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
+	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const{
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;
 			}  else if(type->classType==CLASS_LAZY){
@@ -27,7 +27,7 @@
 				exit(1);
 			}
 		}
-const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const{
+const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const{
 	if(type->classType==CLASS_FUNC){
 		llvm::Value* F = getValue(r,id);
 		FunctionClass* fc = (FunctionClass*)type;
@@ -42,11 +42,12 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			v.push_back(AbstractDeclaration(a));
 		}
 		FunctionProto fp("",v,fc->returnType);
-		llvm::Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args));
+		llvm::Value* V = r.builder.CreateCall(F,SingleFunction::validatePrototypeNow(&fp,r,id,args,instance));
 		if(fp.returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else return new ConstantData(V,fp.returnType);
 	} else if(type->classType==CLASS_LAZY){
 		llvm::Value* F = getValue(r,id);
+		assert(instance==nullptr);
 		llvm::Value* V = r.builder.CreateCall(F);
 		auto RT = ((LazyClass*)type)->innerType;
 		if(RT->classType==CLASS_VOID) return &VOID_DATA;
@@ -57,7 +58,7 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 		if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
 			auto t = static_cast<size_t>(c->getLimitedValue());
 			auto a= (const AbstractClass*)t;
-			return a->callFunction(r,id,args);
+			return a->callFunction(r,id,args,instance);
 		} else{
 			id.error("Cannot use non-constant class type");
 			exit(1);

@@ -52,18 +52,6 @@ public:
 	const AbstractClass* getReturnType() const override final;
 	llvm::ConstantFP* getValue(RData& r, PositionID id) const override final;
 
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
-		id.error("Cannot use floating-point literal as function");
-		return &VOID_DATA;
-	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-		id.error("Floating-point literal cannot act as function");
-		exit(1);
-	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		id.error("Cannot use floating-point literal as class");
-		exit(1);
-	}
 	bool hasCastValue(const AbstractClass* const a) const override final;
 
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;

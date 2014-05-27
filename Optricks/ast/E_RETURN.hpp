@@ -46,7 +46,7 @@ class E_RETURN : public ErrorStatement{
 			}
 			return &VOID_DATA;
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod)const override final{
 			id.error("Return statement cannot act as function");
 			exit(1);
 		}

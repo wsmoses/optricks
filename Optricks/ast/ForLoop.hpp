@@ -30,7 +30,7 @@ class ForLoop : public ErrorStatement{
 			toLoop->collectReturns(vals,toBe);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override{
 			id.error("for-loop cannot act as function");
 			exit(1);
 		}

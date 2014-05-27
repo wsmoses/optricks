@@ -36,7 +36,7 @@ class OClass: public ErrorStatement
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("Cannot use class-declaration as function");
 			exit(1);
 		}
@@ -96,6 +96,7 @@ void initClasses(){
 	ComplexClass::get(&intLiteralClass);
 	ComplexClass::get(&floatLiteralClass);
 	convertClass<int>::convert(&LANG_M);
+	convertClass<short>::convert(&LANG_M);
 	convertClass<long>::convert(&LANG_M);
 	convertClass<long long>::convert(&LANG_M);
 	//convertClass<size_t>::convert(&LANG_M);
@@ -110,10 +111,10 @@ void initClasses(){
 	add_import_c_const(&LANG_M, RAND_MAX);
 
 	add_import_c_function(&LANG_M, qsort);
-	add_import_cpp_function(&LANG_M, std::terminate);
+	//add_import_cpp_function(&LANG_M, std::terminate);
 
-	add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
-	add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
+	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
+	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
 	//add_import_c_function(&LANG_M, mktime);
 
 	//(&LANG_M)->addVariable(PositionID("#internal",0,0), "CLOCKS_PER_SEC", import_c_var_h<typeof(CLOCKS_PER_SEC)>::import(CLOCKS_PER_SEC));

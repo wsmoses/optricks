@@ -38,7 +38,7 @@ class ForEachLoop : public ErrorStatement{
 			toLoop->buildFunction(r);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override{
 			id.error("For-each cannot act as function");
 			exit(1);
 		}

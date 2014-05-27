@@ -17,7 +17,7 @@ class ImportStatement:public ErrorStatement{
 			filePos.compilerError("Cannot evaluate IMPORT");
 			exit(1);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("import-statement cannot act as function");
 			exit(1);
 		}

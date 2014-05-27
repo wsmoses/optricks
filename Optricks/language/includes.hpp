@@ -70,12 +70,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-//#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 5
-#include "llvm/IR/Verifier.h"
-
-//#else
-//#include "llvm/Analysis/Verifier.h"
-//#endif
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/FileSystem.h"
@@ -83,8 +77,13 @@
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Analysis/CFG.h"
+#else
+#include "llvm/IR/Verifier.h"
 #include "llvm/IR/CFG.h"
-
+#endif
 
 //#include "clang/AST/ASTContext.h"
 //#include "clang/AST/CharUnits.h"

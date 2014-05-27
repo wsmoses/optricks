@@ -15,7 +15,8 @@ class E_FUNC_CALL : public ErrorStatement{
 		E_FUNC_CALL(PositionID a, Statement* t, const std::vector<const Evaluatable*>& val) : ErrorStatement(a),
 				toCall(t), vals(val){
 		};
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+			assert(isClassMethod==false);
 			auto type=getReturnType();
 			if(type->classType==CLASS_FUNC){
 				return ((FunctionClass*)type)->returnType;
@@ -44,13 +45,13 @@ class E_FUNC_CALL : public ErrorStatement{
 			for(auto &a : vals) if(a) ((const Statement*)a)->buildFunction(r);
 		}
 		const AbstractClass* getReturnType() const override{
-			return toCall->getFunctionReturnType(filePos,vals);
+			return toCall->getFunctionReturnType(filePos,vals,false);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
 		const Data* evaluate(RData& a) const override{
 			const Data* tC = toCall->evaluate(a);
 			assert(tC);
-			return tC->callFunction(a,filePos,vals);
+			return tC->callFunction(a,filePos,vals,nullptr);
 		}
 };
 

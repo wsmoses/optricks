@@ -3,7 +3,7 @@ CLANG = clang++ --analyze
 
 CC = $(GCC)
 
-LIB = `llvm-config --cppflags --libs all` -lclang `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -I/mingw64/include
+LIB = `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -I/mingw64/include
 
 DEBUG = -g -ggdb
 

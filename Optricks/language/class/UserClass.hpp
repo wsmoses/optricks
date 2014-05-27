@@ -58,7 +58,7 @@ public:
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v);
+			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
 			tmp = (const UserClass*)superClass;
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
@@ -70,11 +70,12 @@ public:
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v);
+			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
 			tmp = (const UserClass*)superClass;
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
-		exit(1);
+		return nullptr;
+		//exit(1);
 	}
 	void finalize(PositionID id){
 		assert(!final);

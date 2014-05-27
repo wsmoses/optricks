@@ -1,33 +1,32 @@
-
-class primitive_pointer File{
-	def File(lang.c.string s, lang.c.string t='r'){
-  	this = (extern File fopen(lang.c.string a, lang.c.string b))(s,t);
+class primitive File{
+        lang.c.pointer f;
+        def File(lang.c.string s, lang.c.string t='r'){
+        	this.f = (extern lang.c.pointer fopen(lang.c.string a, lang.c.string b))(s,t);
+        };
+        def void flush(){
+                (extern void fflush(lang.c.pointer))(this.f);
+        };
+        def void close(){
+                this.flush();
+                (extern lang.c.int fclose(lang.c.pointer))(this.f);
+        };
+        def print(char c){
+                (extern lang.c.int fputc(char,lang.c.pointer))(c, this.f);
+                return this;
+        };
+        def print(lang.c.string c){
+                (extern lang.c.int fputs(lang.c.string, lang.c.pointer))(c,this.f);
+                return this;
+        };
+	def println(){
+		this.print('\n');
+	}
+	def println(char c){
+		this.print(c);
+		this.print('\n');
 	};
-	def void flush(){
-		(extern void fflush(File a))(this);
-	};
-	def void close(){
-		this.flush();
-		(extern lang.c.int fclose(File a))(this);
-	};
-	def print(char c){
-		(extern lang.c.int fputc(char c,File a))(c, this);
-		return this;
-	};
-	def print(lang.c.string c){
-		(extern lang.c.int fputs(lang.c.string c, File p))(c,this);
-		return this;
-	};
+	def lang.c.int getc(){
+		return (extern lang.c.int fgetc(lang.c.pointer))(this.f);
+	}
 
 };
-/*
-def File operator<<(File f, char c){
-	(extern c_int fputc(char c,File a))(c, f);
-	return f;
-};
-
-def File operator<<(File f, c_string c){
-	(extern c_int fputs(c_string c, File p))(c,f);
-	return f;
-};
-*/

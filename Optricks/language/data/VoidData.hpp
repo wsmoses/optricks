@@ -13,11 +13,11 @@ public:
 	inline VoidData(int a):Data(R_VOID){}
 
 	bool hasCastValue(const AbstractClass* const a) const override final{
-			return false;
-		}
-		int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
-			return 0;
-		}
+		return false;
+	}
+	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
+		return 0;
+	}
 	inline const AbstractClass* getReturnType() const override final{
 		PositionID(0,0,"#void").compilerError("Cannot get returntype of void data");
 		exit(1);
@@ -39,11 +39,11 @@ public:
 		exit(1);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b)const override{
 		id.error("Void cannot act as function");
 		exit(1);
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* d) const override{
 		id.error("Cannot use void as function");
 		return this;
 	}

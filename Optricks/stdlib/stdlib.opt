@@ -9,7 +9,7 @@ def void test(){
 		print(x);
 	}
 }*/
-
+import 'file.opt';
 //import "string.opt"
 
 //import "file.opt";

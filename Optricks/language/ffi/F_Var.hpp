@@ -25,9 +25,9 @@ template<> struct import_c_const_h<bool>{
 template<typename C> Data* import_c_const_h<C>::import(C val){
 	if(std::is_integral<C>::value){
 		if(std::is_signed<C>::value){
-			return new ConstantData(llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),32),(int64_t)val), convertClass<C>::convert(&NS_LANG_C.staticVariables));
+			return new ConstantData(llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),sizeof(C)*8),(int64_t)val), convertClass<C>::convert(&NS_LANG_C.staticVariables));
 		} else{
-			return new ConstantData(llvm::ConstantInt::get(llvm::IntegerType::get(llvm::getGlobalContext(),32),(uint64_t)val, false), convertClass<C>::convert(&NS_LANG_C.staticVariables));
+			return new ConstantData(llvm::ConstantInt::get(llvm::IntegerType::get(llvm::getGlobalContext(),sizeof(C)*8),(uint64_t)val, false), convertClass<C>::convert(&NS_LANG_C.staticVariables));
 		}
 	}
 	cerr << "Cannot convert value " << demangle(typeid(C).name()) << " to optricks" << endl << flush;

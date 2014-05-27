@@ -4,7 +4,7 @@
  *  Created on: Jan 3, 2014
  *      Author: Billy
  */
-
+//TODO allow returning references, but forbid returning local reference
 //TODO add templates with default args
 //TODO add int print/println
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
@@ -206,6 +206,14 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		auto t = FP();
 		printf("\"%s\"",t);
 		std::cout << endl << flush;
+	} else if(retType->classType==CLASS_CSTRING){
+		auto (*FP)() = (char* (*)())(intptr_t)FPtr;
+		char* t = FP();
+		std::cout << t << endl << flush;
+	} else if(retType->classType==CLASS_CPOINTER){
+		auto (*FP)() = (void* (*)())(intptr_t)FPtr;
+		void* t = FP();
+		std::cout << t << endl << flush;
 	}
 	/*else if(n->returnType==stringClass){
 		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;
@@ -285,7 +293,7 @@ int main(int argc, char** argv){
 		assert(args.size()==1);
 		if(!getRData().enableAsserts) return &VOID_DATA;
 		std::vector<const Evaluatable*> EV;
-		const Data* D = args[0]->evaluate(r)->callFunction(r,id,EV);
+		const Data* D = args[0]->evaluate(r)->callFunction(r,id,EV,nullptr);
 		assert(D->getReturnType()->classType==CLASS_BOOL);
 		llvm::Value* V = D->getValue(r, id);
 		if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){

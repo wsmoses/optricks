@@ -32,7 +32,16 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	case CLASS_SCOPE:
 		filePos.compilerError("Scope should never be instatiated");
 		exit(1);
+	case CLASS_CSTRING:{
+		if(operation=="[]") return &charClass;
+		else if(operation=="==" || operation=="!=") return &boolClass;
+		else {
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			return &voidClass;
+		}
+	}
 	case CLASS_STRLITERAL:{
+		if(operation=="[]") return &charClass;
 		if(dd->classType==CLASS_CHAR || dd->classType==CLASS_STRLITERAL || dd->classType==CLASS_INTLITERAL
 				|| dd->classType==CLASS_FLOATLITERAL || dd->classType==CLASS_MATHLITERAL)
 			return cc;
@@ -295,7 +304,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_CPOINTER:
 	case CLASS_NULL:{
-		if((dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)
+		if((dd->classType==CLASS_CSTRING || dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)
 			&& (operation=="==" || operation=="!=")) return &boolClass;
 		else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -412,7 +421,48 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		exit(1);
 	case CLASS_STRLITERAL:{
 		const StringLiteral* S = (const StringLiteral*)value;
-		if(operation=="+"){
+		if(operation=="[]"){
+			if(dd->classType!=CLASS_INT && dd->classType!=CLASS_INTLITERAL){
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				return &VOID_DATA;
+			}
+			llvm::Value* V;
+			if(dd->classType==CLASS_INT) V =
+					r.builder.CreateSExtOrTrunc(ev->evalV(r, filePos),intClass.type);
+			else{
+				assert(dd->classType==CLASS_INTLITERAL);
+				V = ev->evaluate(r)->castToV(r, &intClass, filePos);
+			}
+			StringLiteral* D = (StringLiteral*)value;
+			if(D->value.size()==0){
+				filePos.error("String index out of bounds");
+				return &VOID_DATA;
+			}
+			if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
+				auto tmp = C->getValue().getLimitedValue();
+				if(tmp>= D->value.size()){
+					filePos.error("String index out of bounds");
+					return &VOID_DATA;
+				}
+				return new ConstantData(charClass.getValue(D->value[tmp]),&charClass);
+			}
+			llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+			llvm::BasicBlock* ErrorBB = r.CreateBlock("stringError",StartBB);
+			llvm::BasicBlock* MergeBB = r.CreateBlock("stringMerge");
+			auto Switch = r.builder.CreateSwitch(V, ErrorBB, D->value.size());
+			r.builder.SetInsertPoint(MergeBB);
+			auto PHI = r.builder.CreatePHI(CHARTYPE, D->value.size());
+			for(unsigned i=0; i<D->value.size(); i++){
+				llvm::BasicBlock* TmpBB = r.CreateBlock("stringPiece",StartBB);
+				r.builder.SetInsertPoint(TmpBB);
+				auto VAL = charClass.getValue(D->value[i]);
+				PHI->addIncoming(VAL, TmpBB);
+				r.builder.CreateBr(MergeBB);
+				Switch->addCase(getInt32(i), TmpBB);
+			}
+			r.builder.SetInsertPoint(MergeBB);
+			return new ConstantData(PHI, &charClass);
+		} else if(operation=="+"){
 			const auto T = getPreop(r, filePos, ":str",ev->evaluate(r));
 			if(T->type==R_STR){
 				return new StringLiteral(S->value+ ((const StringLiteral*)T)->value);
@@ -1075,7 +1125,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		break;
 	}
 	case CLASS_NULL:{
-		if((dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)
+		if((dd->classType==CLASS_CSTRING || dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->classType==CLASS_NULL || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT)
 			&& (operation=="==" || operation=="!=")){
 			auto T = ev->evalV(r, filePos);
 			assert(llvm::dyn_cast<llvm::PointerType>(T->getType()));
@@ -1098,7 +1148,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		if(dd->classType==CLASS_NULL){
 			assert(llvm::dyn_cast<llvm::PointerType>(T->getType()));
 			NU = llvm::ConstantPointerNull::get((llvm::PointerType*) T->getType());
-		} else if(dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT){
+		} else if(dd->classType==CLASS_CSTRING || dd->classType==CLASS_CLASS || dd->classType==CLASS_ARRAY || dd->classType==CLASS_CPOINTER || dd->layout==POINTER_LAYOUT || dd->layout==PRIMITIVEPOINTER_LAYOUT){
 			NU = ev->evaluate(r)->castToV(r, cc, filePos);
 		} else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -1164,6 +1214,21 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
 		else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 	}
+	case CLASS_CSTRING:{
+		//TODO
+		if(operation=="[]"){
+			filePos.compilerError("TODO cstring[]");
+			exit(1);
+		}
+		else if(operation=="==" || operation=="!="){
+			filePos.compilerError("TODO cstring"+operation);
+			exit(1);
+		}
+		else {
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			return &voidClass;
+		}
+	}
 	case CLASS_ARRAY:{
 
 		if(operation=="==" || operation=="!="){
@@ -1197,9 +1262,35 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			//todo
 			if(value->type==R_ARRAY){
 				ArrayData* D = (ArrayData*)value;
-				if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
-					return D->inner[C->getValue().getLimitedValue()];
+				if(D->inner.size()==0){
+					filePos.error("Array index out of bounds");
+					return &VOID_DATA;
 				}
+				if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
+					auto tmp = C->getValue().getLimitedValue();
+					if(tmp>= D->inner.size()){
+						filePos.error("Array index out of bounds");
+						return &VOID_DATA;
+					}
+					return D->inner[tmp];
+				}
+				const AbstractClass* RT = ((ArrayClass*)D->getReturnType())->inner;
+				llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+				llvm::BasicBlock* ErrorBB = r.CreateBlock("arrayError",StartBB);
+				llvm::BasicBlock* MergeBB = r.CreateBlock("arrayMerge");
+				auto Switch = r.builder.CreateSwitch(V, ErrorBB, D->inner.size());
+				r.builder.SetInsertPoint(MergeBB);
+				auto PHI = r.builder.CreatePHI(RT->type, D->inner.size());
+				for(unsigned i=0; i<D->inner.size(); i++){
+					llvm::BasicBlock* TmpBB = r.CreateBlock("arrayPiece",StartBB);
+					r.builder.SetInsertPoint(TmpBB);
+					auto VAL = D->inner[i]->getValue(r, filePos);
+					PHI->addIncoming(VAL, TmpBB);
+					r.builder.CreateBr(MergeBB);
+					Switch->addCase(getInt32(i), TmpBB);
+				}
+				r.builder.SetInsertPoint(MergeBB);
+				return new ConstantData(PHI, RT);
 			} else {
 				llvm::Value* A = value->getValue(r,filePos);
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
@@ -1233,7 +1324,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	}
 	case CLASS_USER:{
 		const UserClass* uc = (const UserClass*)cc;
-		return uc->getLocalFunction(filePos, ":"+operation, {value, ev})->callFunction(r, filePos, {value, ev});
+		return uc->getLocalFunction(filePos, ":"+operation, {ev})->callFunction(r, filePos, {ev},value);
 	}
 	}
 }

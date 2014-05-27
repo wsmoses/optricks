@@ -85,7 +85,8 @@ public:
 	const Token getToken() const override{
 		return T_BINOP;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		assert(isClassMethod==false);
 		auto type=getReturnType();
 		if(type->classType==CLASS_FUNC){
 			return ((FunctionClass*)type)->returnType;

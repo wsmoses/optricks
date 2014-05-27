@@ -18,12 +18,12 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final;
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final;
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 	const AbstractClass* getReturnType() const override final{
 		return type;
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final;
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final;
 };
 
 

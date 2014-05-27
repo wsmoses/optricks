@@ -78,7 +78,8 @@ public:
 		return returnType;
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		assert(isClassMethod==false);
 		getReturnType();
 		if(returnType->classType==CLASS_FUNC){
 			return ((FunctionClass*)returnType)->returnType;

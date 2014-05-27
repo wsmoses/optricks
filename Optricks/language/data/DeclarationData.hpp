@@ -24,15 +24,15 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		return value->getReturnType()->compare(a,b);
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-		return value->fastEvaluate(r)->callFunction(r, id, args);
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
+		return value->fastEvaluate(r)->callFunction(r, id, args, instance);
 	}
 	const AbstractClass* getReturnType() const override final{
 		return value->getReturnType();
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-		return value->getFunctionReturnType(id,args);
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		return value->getFunctionReturnType(id,args,isClassMethod);
 	}
 
 	inline llvm::Value* getValue(RData& r, PositionID id) const override final{

@@ -14,10 +14,10 @@
 #include "../data/LazyWrapperData.hpp"
 
 
-	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
+	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
-		llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args));
+		llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else{
 			return new ConstantData(cal,proto->returnType);
@@ -40,6 +40,7 @@ SingleFunction(fp,getF(fp)),inlined(tmp){
 		else
 			args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 	}
+	//ASSUMES NO INLINE LOCAL METHODS
 	const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args);
 	if(! getRData().hadBreak()){
 		if(proto->returnType->classType==CLASS_VOID)
@@ -219,75 +220,111 @@ llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable*
 		return val->evaluate(r)->castToV(r, t, id);
 	}
 }
-llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args){
+llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance){
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	const auto ts = (as<=ds)?as:ds;
 	llvm::SmallVector<llvm::Value*,0> temp((ds>=as)?ds:as);
+	if(instance){
+		llvm::Value* T;
+		if(proto->declarations[0].declarationType->classType==CLASS_REF){
+			if(instance->type!=R_LOC)
+				id.error("Cannot use constant "+str(instance->type)+" in place of location");
+			T = ((LocationData*)instance)->value->getPointer(r, id);
+		} else {
+			T = instance->getValue(r, id);
+		}
+		if(T->getType()!= proto->declarations[0].declarationType->type)
+			T = r.builder.CreatePointerCast(T, proto->declarations[0].declarationType->type);
+		assert(T != NULL);
+		temp[0] = T;
+	}
 	for(unsigned int i = 0; i<ts; i++){
-		const AbstractClass* const t = proto->declarations[i].declarationType;
+		auto myDec = proto->declarations[i+(instance?1:0)];
+		const AbstractClass* const t = myDec.declarationType;
+		llvm::Value* T;
 		if(args[i]==nullptr){
-			if(proto->declarations[i].defaultValue==nullptr){
+			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
 				exit(1);
 			}
-			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue, t);
+			T = fixLazy(r, id, myDec.defaultValue, t);
 		}
 		else{
-			temp[i] = fixLazy(r, id, args[i], t);
+			T = fixLazy(r, id, args[i], t);
 		}
-		assert(temp[i]);
-		assert(temp[i]->getType());
+		assert(T);
+		assert(T->getType());
+		temp[i+(instance?1:0)] = T;
 	}
 
-	if(as>ds){
+	if(as+(instance?1:0)>ds){
 		if(!proto->varArg)
 			id.error("Gave too many arguments to function "+proto->toString());
 		else
 			for(unsigned int i=ts; i<as; i++)
-				temp[i] = args[i]->evaluate(r)->getValue(r,id);
+				temp[i+(instance?1:0)] = args[i]->evaluate(r)->getValue(r,id);
 		return temp;
 	} else{
-		for(unsigned int i = as; i<ds; i++){
-			if(proto->declarations[i].defaultValue==nullptr){
+		for(unsigned int i = as; i+(instance?1:0)<ds; i++){
+			auto myDec = proto->declarations[i+(instance?1:0)];
+			const AbstractClass* const t = myDec.declarationType;
+			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
 				exit(1);
 			}
-			const AbstractClass* const t = proto->declarations[i].declarationType;
-			temp[i] = fixLazy(r, id, proto->declarations[i].defaultValue, t);
-			assert(temp[i]);
-			assert(temp[i]->getType());
+			llvm::Value* V = fixLazy(r, id, proto->declarations[i].defaultValue, t);
+			assert(V);
+			assert(V->getType());
+			temp[i+(instance?1:0)] = V;
 		}
 		return temp;
 	}
 }
-llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, llvm::Value* V) const{
+llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance, llvm::Value* V) const{
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
-	if(as>ds) id.error("Gave too many arguments to function "+proto->toString());
+	if(as+(instance?1:0)>ds) id.error("Gave too many arguments to function "+proto->toString());
+
+	if(instance){
+		llvm::Value* T;
+		if(proto->declarations[0].declarationType->classType==CLASS_REF){
+			if(instance->type!=R_LOC)
+				id.error("Cannot use constant "+str(instance->type)+" in place of location");
+			T = ((LocationData*)instance)->value->getPointer(r, id);
+		} else {
+			T = instance->getValue(r, id);
+		}
+		if(T->getType()!= proto->declarations[0].declarationType->type)
+			T = r.builder.CreatePointerCast(T, proto->declarations[0].declarationType->type);
+		assert(T != NULL);
+		V = r.builder.CreateInsertValue(V, T, 0);
+	}
 	for(unsigned int i = 0; i<as; i++){
-		const AbstractClass* const t = proto->declarations[i].declarationType;
+		auto myDec = proto->declarations[i+(instance?1:0)];
+		const AbstractClass* const t = myDec.declarationType;
 		llvm::Value* temp;
 		if(args[i]==nullptr){
-			if(proto->declarations[i].defaultValue==nullptr){
+			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
 				exit(1);
 			}
-			temp = fixLazy(r, id, proto->declarations[i].defaultValue, t);
+			temp = fixLazy(r, id, myDec.defaultValue, t);
 		}
 		else{
 			temp = fixLazy(r, id, args[i], t);
 		}
-		V = r.builder.CreateInsertValue(V, temp, i);
+		V = r.builder.CreateInsertValue(V, temp, i+(instance?1:0));
 		assert(V != NULL);
 	}
-	for(unsigned int i = as; i<ds; i++){
-		if(proto->declarations[i].defaultValue==nullptr){
+	for(unsigned int i = as; i+(instance?1:0)<ds; i++){
+		auto myDec = proto->declarations[i+(instance?1:0)];
+		const AbstractClass* const t = myDec.declarationType;
+		if(myDec.defaultValue==nullptr){
 			id.error("Error: No default argument available for argument "+str(i+1));
 			exit(1);
 		}
-		const AbstractClass* const t = proto->declarations[i].declarationType;
-		V = r.builder.CreateInsertValue(V, fixLazy(r, id, proto->declarations[i].defaultValue, t), i);
+		V = r.builder.CreateInsertValue(V, fixLazy(r, id, myDec.defaultValue, t), i);
 	}
 	return V;
 }
@@ -355,10 +392,10 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	return F;
 }
 
-const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const{
+const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) const{
 	auto gt=proto->getGeneratorType();
 	llvm::Value* V = llvm::UndefValue::get(gt->type);
-	return new ConstantData(validatePrototypeStruct(r,id,args,V),gt);
+	return new ConstantData(validatePrototypeStruct(r,id,args,instance,V),gt);
 }
 
 
@@ -367,7 +404,7 @@ llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const ri
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this
 		FunctionClass* fc = (FunctionClass*)right;
-		return getBestFit(id, fc->argumentTypes)->castToV(r, right, id);
+		return getBestFit(id, fc->argumentTypes,false)->castToV(r, right, id);
 	}
 	case CLASS_CPOINTER:
 		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
@@ -432,12 +469,12 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 	else return false;
 }
 
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args) const{
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
-			for(unsigned i=0; i<a->getSingleProto()->declarations.size(); i++){
-				if(args[i]!=a->getSingleProto()->declarations[i].declarationType){
+			for(unsigned i=(isClassMethod?1:0); i<a->getSingleProto()->declarations.size(); i++){
+				if(args[i-(isClassMethod?1:0)]!=a->getSingleProto()->declarations[i].declarationType){
 					perfect=false;
 					break;
 				}
@@ -452,15 +489,16 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
-				if(i>=a->getSingleProto()->declarations.size()) continue;
-				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
+				if(i+(isClassMethod?1:0)>=a->getSingleProto()->declarations.size()) continue;
+				auto myDec = a->getSingleProto()->declarations[i+(isClassMethod?1:0)];
+				const AbstractClass* const dt = myDec.declarationType;
 				if(args[i]==nullptr){
-					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
+					if(myDec.defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+					} else if(!myDec.defaultValue->hasCastValue(dt)){
 						if(dt->classType!=CLASS_LAZY
-							|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID && !a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
+							|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID && !myDec.defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
 							valid = false;
 							break;
 						}
@@ -475,15 +513,16 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++) {
-				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
-				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
+			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size()-(isClassMethod?1:0); i++) {
+				auto myDec = a->getSingleProto()->declarations[i+(isClassMethod?1:0)];
+				const AbstractClass* const dt = myDec.declarationType;
+				if(myDec.defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+				} else if(!myDec.defaultValue->hasCastValue(dt)){
 					if(dt->classType!=CLASS_LAZY
 						|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID &&
-								!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
+								!myDec.defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
 						valid = false;
 						break;
 					}
@@ -507,14 +546,13 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		++current;
 		for(; current!=best;){
 			//less means better
-			//cerr << "C1 " << i << endl << flush;
-			if(i>=(*best)->getSingleProto()->declarations.size() ||
-					i>=(*current)->getSingleProto()->declarations.size()){
+			if(i+(isClassMethod?1:0)>=(*best)->getSingleProto()->declarations.size() ||
+					i+(isClassMethod?1:0)>=(*current)->getSingleProto()->declarations.size()){
 				++current;
 				continue;
 			}
-			auto c1 = (*best)->getSingleProto()->declarations[i].declarationType;
-			auto c2 = (*current)->getSingleProto()->declarations[i].declarationType;
+			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
+			auto c2 = (*current)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			if(c1->classType==CLASS_LAZY) c1 = ((LazyClass*)c1)->innerType;
 			if(c2->classType==CLASS_LAZY) c2 = ((LazyClass*)c2)->innerType;
 			auto c=args[i]->compare(c1,c2);
@@ -532,7 +570,6 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			if(current == choices.end()) current = choices.begin();
 		}
 	}
-	//cerr << "C1-B " << endl << flush;
 	if(choices.size()==1) return choices.front();
 	else{
 		String t = "Ambiguous function for "+toClassArgString(myName, args)+" options are:\n";
@@ -543,15 +580,15 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		exit(1);
 	}
 }
-
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args) const{
+//TODO allow for first arg to be ignored
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
 	for(const auto& a: args) a->getReturnType();
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
-			for(unsigned i=0; i<a->getSingleProto()->declarations.size(); i++){
-				if(args[i]->getReturnType()!=a->getSingleProto()->declarations[i].declarationType){
+			for(unsigned i=(isClassMethod?1:0); i<a->getSingleProto()->declarations.size(); i++){
+				if(args[i-(isClassMethod?1:0)]->getReturnType()!=a->getSingleProto()->declarations[i].declarationType){
 					perfect=false;
 					break;
 				}
@@ -567,15 +604,16 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(i>=a->getSingleProto()->declarations.size()) continue;
-				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
+				auto myDec = a->getSingleProto()->declarations[i+(isClassMethod?1:0)];
+				const AbstractClass* const dt = myDec.declarationType;
 				if(args[i]==nullptr){
-					if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
+					if(myDec.defaultValue==nullptr){
 						valid=false;
 						break;
-					} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+					} else if(!myDec.defaultValue->hasCastValue(dt)){
 						if(dt->classType!=CLASS_LAZY
 							|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID &&
-									!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
+									!myDec.defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
 							valid = false;
 							break;
 						}
@@ -590,15 +628,16 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				}
 			}
 			if(!valid) continue;
-			for(unsigned int i=args.size(); i<a->getSingleProto()->declarations.size(); i++){
-				const AbstractClass* const dt = a->getSingleProto()->declarations[i].declarationType;
-				if(a->getSingleProto()->declarations[i].defaultValue==nullptr){
+			for(unsigned int i=args.size(); i+(isClassMethod?1:0)<a->getSingleProto()->declarations.size(); i++){
+				auto myDec = a->getSingleProto()->declarations[i+(isClassMethod?1:0)];
+				const AbstractClass* const dt = myDec.declarationType;
+				if(myDec.defaultValue==nullptr){
 					valid=false;
 					break;
-				} else if(!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(dt)){
+				} else if(!myDec.defaultValue->hasCastValue(dt)){
 					if(dt->classType!=CLASS_LAZY
 						|| (((LazyClass*) dt)->innerType->classType!=CLASS_VOID &&
-								!a->getSingleProto()->declarations[i].defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
+								!myDec.defaultValue->hasCastValue(((LazyClass*) dt)->innerType))){
 						valid = false;
 						break;
 					}
@@ -627,8 +666,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				++current;
 				continue;
 			}
-			auto c1 = (*best)->getSingleProto()->declarations[i].declarationType;
-			auto c2 = (*current)->getSingleProto()->declarations[i].declarationType;
+			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
+			auto c2 = (*current)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			if(c1->classType==CLASS_LAZY) c1 = ((LazyClass*)c1)->innerType;
 			if(c2->classType==CLASS_LAZY) c2 = ((LazyClass*)c2)->innerType;
 			auto c=args[i]->compareValue(c1,c2);

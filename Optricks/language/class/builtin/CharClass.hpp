@@ -65,6 +65,12 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+		if(a->classType==CLASS_CSTRING && b->classType==CLASS_CSTRING) return 0;
+		else if(a->classType==CLASS_CSTRING) return 1;
+		else if(b->classType==CLASS_CSTRING) return -1;
+		if(a->classType==CLASS_STR && b->classType==CLASS_STR) return 0;
+		else if(a->classType==CLASS_STR) return 1;
+		else if(b->classType==CLASS_STR) return -1;
 		return 0;
 	}
 	inline static llvm::Constant* getValue(char value){
@@ -74,12 +80,20 @@ public:
 		return toCast->classType==CLASS_CHAR || toCast->classType==CLASS_VOID;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
-		return toCast->classType==CLASS_CHAR || toCast->classType==CLASS_VOID;
+		return toCast->classType==CLASS_CHAR ||
+				toCast->classType==CLASS_CSTRING ||
+				toCast->classType==CLASS_STR ||
+				toCast->classType==CLASS_VOID;
 	}
 	/**
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
+		if(toCast->classType==CLASS_CSTRING){
+			if(auto C = llvm::dyn_cast<llvm::ConstantInt>(valueToCast)){
+				return r.getConstantCString(String(1, (char)(C->getValue().getLimitedValue())));
+			}
+		}
 		if(toCast->classType!=CLASS_CHAR) illegalCast(id,toCast);
 		return valueToCast;
 	}

@@ -64,7 +64,7 @@ public:
 		if(f)
 		assert(f->getReturnType());
 	};
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 		return proto->returnType;
 	}
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
@@ -84,8 +84,8 @@ public:
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static llvm::Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
 	static llvm::Value* fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) ;
-	static llvm::SmallVector<llvm::Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args);
-	llvm::Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, llvm::Value* V) const;
+	static llvm::SmallVector<llvm::Value*,0> validatePrototypeNow(FunctionProto* proto, RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance);
+	llvm::Value* validatePrototypeStruct(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance, llvm::Value* V) const;
 };
 
 class CompiledFunction: public SingleFunction{
@@ -93,7 +93,7 @@ private:
 public:
 	CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
 	}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id);
@@ -102,8 +102,9 @@ public:
 	GeneratorFunction(FunctionProto* const fp, RData& r, PositionID id):
 		SingleFunction(fp,createGeneratorFunction(fp,r,id)){
 	}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
+//CANNOT BE USED FOR LOCAL FUNCTIONS
 class BuiltinInlineFunction: public SingleFunction{
 private:
 	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> inlined;
@@ -112,7 +113,8 @@ public:
 	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp);
 	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
 		SingleFunction(fp,f),inlined(tmp){}
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
+		assert(instance==nullptr);
 		return inlined(r,id,validatePrototypeInline(r,id,args));
 	}
 };
@@ -159,13 +161,13 @@ public:
 		exit(1);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const{
-		return getBestFit(id,args)->getSingleProto()->returnType;
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const{
+		return getBestFit(id,args, isClassMethod)->getSingleProto()->returnType;
 	}
-	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args) const;
-	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args) const;
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const override final{
-		return getBestFit(id,args)->callFunction(r,id,args);
+	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod) const;
+	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
+		return getBestFit(id,args, instance!=nullptr)->callFunction(r,id,args, instance);
 	}
 	llvm::Function* getValue(RData& r, PositionID id) const override final{
 		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();

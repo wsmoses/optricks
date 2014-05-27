@@ -16,6 +16,31 @@ public:
 	inline CStringClass(bool b):
 		AbstractClass(& NS_LANG_C.staticVariables,"string", NULL,PRIMITIVE_LAYOUT,CLASS_CSTRING,true,C_STRINGTYPE){
 		NS_LANG_C.staticVariables.addClass(PositionID(0,0,"#cstring"),this);
+		/*
+		LANG_M.addFunction(PositionID(0,0,"#stringL"),"print")->add(
+						new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						assert(args.size()==1);
+						const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
+						auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+						//auto CU = r.getExtern("putchar_unlocked", &c_intClass, {&c_intClass});
+						for(const auto& a: value){
+							r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
+						}
+						return &VOID_DATA;}), PositionID(0,0,"#int"));*/
+		LANG_M.addFunction(PositionID(0,0,"#cstr"), "println")->add(
+				new CompiledFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+						getRData().getExtern("puts",this, {&c_intClass})), PositionID(0,0,"#cstr"));
+		/*
+				LANG_M.addFunction(PositionID(0,0,"#cstr"),"println")->add(
+					new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+					nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					assert(args.size()==1);
+					llvm::Value* value = args[0]->evalV(r, id);
+					auto CU = r.getExtern("puts", this, {&c_intClass});
+					r.builder.CreateCall(CU, value);
+				return &VOID_DATA;}), PositionID(0,0,"#cstr"));
+		*/
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{

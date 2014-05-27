@@ -13,8 +13,8 @@ public:
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
 		inner->collectReturns(vals, toBe);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-		return inner->getFunctionReturnType(id,args);
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		return inner->getFunctionReturnType(id,args,isClassMethod);
 	}
 	/*inline Resolvable getMetadata() override final{
 		return inner->getMetadata();

@@ -18,18 +18,6 @@ public:
 	const Data* const real;
 	const Data* const imag;
 	virtual ~ImaginaryLiteral(){};
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override{
-		id.error("Cannot use complex literal as function");
-		return &VOID_DATA;
-	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
-		id.error("Complex literal cannot act as function");
-		exit(1);
-	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		id.error("Cannot use complex literal as class");
-		exit(1);
-	}
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;
 	ImaginaryLiteral(const Data* r, const Data* const i,String s=""):Literal(R_IMAG),real(r),imag(i){

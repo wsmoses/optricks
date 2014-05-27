@@ -50,14 +50,14 @@ class ClassFunction : public E_FUNCTION{
 			module.setVariable(filePos, "this", TEMP);
 
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
-				if(ad[Idx].declarationType->classType==CLASS_REF){
-					auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
+				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
+					auto ic = ((ReferenceClass*)ad[Idx+(staticF?0:1)].declarationType)->innerType;
 					declaration[Idx]->variable.getMetadata().setObject(
 						(new ConstantData(llvm::UndefValue::get(ic->type),ic))
 					);
 				} else{
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(llvm::UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+						(new ConstantData(llvm::UndefValue::get(ad[Idx+(staticF?0:1)].declarationType->type),ad[Idx+(staticF?0:1)].declarationType))
 					);
 				}
 			}
@@ -106,18 +106,19 @@ class ClassFunction : public E_FUNCTION{
 					module.setVariable(filePos, "this", new ConstantData(AI, upperClass));
 				}
 				++AI;
-				++Idx;
+				//++Idx;
 			}
-			for (;Idx != F->arg_size(); ++AI, ++Idx) {
+			for (;Idx != declaration.size(); ++AI, ++Idx) {
+				assert(Idx < declaration.size());
+				assert(declaration[Idx]);
 				((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
-				if(ad[Idx].declarationType->classType==CLASS_REF){
+				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
 					declaration[Idx]->variable.getMetadata().setObject(
-						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
+						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx+(staticF?0:1)].declarationType)->innerType)
 					);
 				} else {
-					assert(declaration[Idx]->variable);
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a)
+						(new ConstantData(AI,ad[Idx+(staticF?0:1)].declarationType))->toLocation(a)
 					);
 				}
 			}

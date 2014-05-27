@@ -28,8 +28,8 @@ class E_FUNCTION:public ErrorStatement{
 			assert(myFunction->getReturnType());
 			return myFunction;
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-			assert(myFunction);
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod) const override final{
+			if(!myFunction) registerFunctionPrototype(getRData());
 			return myFunction->getSingleProto()->returnType;
 		}
 		const AbstractClass* getReturnType() const override final{

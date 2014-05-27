@@ -87,10 +87,10 @@ class Lexer{
 				String fileName = fileNames.back();
 				fileNames.pop_back();
 				char cwd[1024];
-				if(getcwd(cwd,sizeof(cwd))==nullptr) pos().error("Could not determine Current Working Directory");
+				if(getcwd(cwd,sizeof(cwd))==nullptr) PositionID(0,0,fileName).error("Could not determine Current Working Directory");
 				String dir, file;
 				getDir(fileName, dir, file);
-				if(dir!="." && chdir(dir.c_str())!=0) pos().error("Could not change directory to "+dir+"/"+file);
+				if(dir!="." && chdir(dir.c_str())!=0) PositionID(0,0,fileName).error("Could not change directory to "+dir+"/"+file);
 				//cout << "Opened: " << dir << "/" << file << endl << flush;
 				Stream* tmp = f;
 				Stream next(file,false);
@@ -198,7 +198,7 @@ class Lexer{
 			//else pointer = &data.mod->addPointer(pos(), getNextName(data.endWith),DATA::getNull());
 			//return new E_VAR(pos(), late?(Resolvable(data.mod, getNextName(data.endWith), pos())):());
 		}
-		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false,bool enableScope=true){
+		Declaration* getNextDeclaration(ParseData data,bool global=false,bool allowAuto=false,bool enableScope=true,bool emptyName=false){
 			trim(data);
 			Statement* declarationType = getNextType(data.getEndWith(EOF),true);
 			trim(EOF);
@@ -206,16 +206,24 @@ class Lexer{
 			if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
 				varName = ((E_VAR*)(declarationType))->pointer.name;
 				declarationType = nullptr; // now means auto
-			} else varName = getNextName(data.endWith);
+			} else{
+				if(emptyName && !isStartName(f->peek()))
+					varName = "";
+				else
+					varName = getNextName(data.endWith);
+			}
 			trim(data);
 			Statement* value = nullptr;
 			if(f->peek()=='='){
 				f->read();
 				value = getNextStatement(data.getLoc(PARSE_EXPR));
+				assert(value);
 			}
+			assert(data.mod);
 			auto RT=new Declaration(pos(), declarationType, E_VAR(Resolvable(data.mod, varName, pos())), global || (data.loc==PARSE_GLOBAL), value);
-			if(enableScope)
+			if(enableScope && varName.size() > 0)
 			data.mod->addVariable(pos(), varName,new DeclarationData(RT));
+			assert(RT);
 			return RT;
 		}
 		Statement* getNextStatement(char endWith,bool global){
@@ -236,6 +244,7 @@ class Lexer{
 						f->error("Cannot have duplicate argument name: "+a->variable.pointer.name, true);
 					}
 				}
+				assert(d);
 				args.push_back(d);
 				trim(data);
 				char tchar = f->peek();
@@ -682,7 +691,7 @@ class Lexer{
 				while(true){
 					trim(data);
 					if(f->peek()==')') break;
-					Declaration* d= getNextDeclaration(ParseData(EOF, & EXTERN->module, true,PARSE_LOCAL));
+					Declaration* d= getNextDeclaration(ParseData(EOF, & EXTERN->module, true,PARSE_LOCAL),false,false,true,true);
 					EXTERN->declaration.push_back(d);
 					trim(data);
 					if(f->peek()==',') f->read();

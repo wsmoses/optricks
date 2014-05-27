@@ -97,7 +97,8 @@ public:
 		return getValue(r,id);
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+		assert(isClassMethod=false);
 		return this;
 	}
 	/**
@@ -119,7 +120,7 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		return this;
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final;
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 	inline AbstractClass(const Scopable* const sc, const String nam, const AbstractClass* const supa, LayoutType const t, ClassType const ct, bool const fina, llvm::Type* const tp=nullptr, Scopable* ss=nullptr)
 	:
 		Literal(R_CLASS),myScope(sc),

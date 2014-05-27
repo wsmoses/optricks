@@ -37,7 +37,7 @@ class E_TUPLE : public Statement{
 			return new TupleData(vec);
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("Tuple-literal cannot act as function");
 			exit(1);
 		}
@@ -108,7 +108,7 @@ class E_NAMED_TUPLE : public ErrorStatement{
 			return &classClass;
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override{
 			id.error("Tuple-literal cannot act as function");
 			exit(1);
 		}

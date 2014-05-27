@@ -82,7 +82,7 @@ class VoidStatement : public Statement{
 		void registerClasses() const override final{}
 		void registerFunctionPrototype(RData& r) const override final{};
 		void buildFunction(RData& r) const override final{};
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args) const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b) const override final{
 			id.compilerError("Getting return type of voidType");
 			exit(1);
 		}

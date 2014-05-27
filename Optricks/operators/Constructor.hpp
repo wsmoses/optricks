@@ -10,7 +10,8 @@
 
 #include "../language/includes.hpp"
 
-const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std::vector<const Evaluatable*>& args) const{
+const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std::vector<const Evaluatable*>& args, const Data* instance) const{
+	assert(instance==nullptr);
 	switch(classType){
 	case CLASS_SCOPE:
 		filePos.compilerError("Scope should never be instatiated");
@@ -164,7 +165,8 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	}
 	case CLASS_USER:{
 		const UserClass* uc = (const UserClass*)this;
-		return uc->constructors.getBestFit(filePos, args)->callFunction(r, filePos, args);
+		//TODO consider alloc'ing first, then passing
+		return uc->constructors.getBestFit(filePos, args,false)->callFunction(r, filePos, args,nullptr);
 	}
 	}
 }

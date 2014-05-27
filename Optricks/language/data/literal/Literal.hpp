@@ -15,6 +15,9 @@ public:
 	inline const Literal* toValue(RData& r,PositionID id) const override final{
 		return this;
 	}
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override;
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override;
+	const AbstractClass* getMyClass(RData& r, PositionID id) const override;
 };
 
 

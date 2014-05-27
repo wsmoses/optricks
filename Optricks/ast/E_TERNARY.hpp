@@ -40,9 +40,9 @@ class TernaryOperator : public ErrorStatement{
 			then->buildFunction(r);
 			finalElse->buildFunction(r);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
-			const AbstractClass* const g = then->getFunctionReturnType(id,args);
-			const AbstractClass* const b = finalElse->getFunctionReturnType(id,args);
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
+			const AbstractClass* const g = then->getFunctionReturnType(id,args, isClassMethod);
+			const AbstractClass* const b = finalElse->getFunctionReturnType(id,args, isClassMethod);
 			const AbstractClass* tog = getMin(g, b, filePos);
 			if(tog==NULL) error("Need matching types for ternary operator "+g->getName()+" and "+ b->getName());
 			assert(tog);

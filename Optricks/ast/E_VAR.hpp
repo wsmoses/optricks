@@ -54,7 +54,8 @@ class E_VAR : public VariableReference {
 			return temp;
 		}
 
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override{
+			assert(isClassMethod==false);
 			return pointer.getFunctionReturnType(args);
 		}
 

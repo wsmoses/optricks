@@ -132,7 +132,7 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 	const AbstractClass* ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
-			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
+			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
 			ret = d->getSingleProto()->returnType;
 			break;
 		}
@@ -142,7 +142,7 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 		}
 		case SCOPE_VAR:{
 			auto P = f.first->vars[f.second->second.pos];
-			ret = P->getFunctionReturnType(id,fp);
+			ret = P->getFunctionReturnType(id,fp,false);
 			break;
 		}
 	}
@@ -155,7 +155,7 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 	std::pair<const Data*,SCOPE_TYPE> ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
-			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp);
+			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
 			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
 			break;
 		}

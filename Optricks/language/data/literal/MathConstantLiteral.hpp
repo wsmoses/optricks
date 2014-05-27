@@ -138,18 +138,6 @@ public:
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		return mathType.compare(a,b);
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override{
-		id.error("Math literal cannot act as function");
-		exit(1);
-	}
-	virtual Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
-		id.error("Cannot call function on math literal");
-		exit(1);
-	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		id.error("Cannot use math literal as class");
-		exit(1);
-	}
 };
 const MathConstantLiteral MY_PI(MATH_PI,"Pi");
 const MathConstantLiteral MY_E(MATH_E,"E");

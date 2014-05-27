@@ -22,7 +22,7 @@ public:
 		condition(cond), statement(stat){
 		name = n;
 	}
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 		id.error("Do-while cannot act as function");
 		exit(1);
 	}

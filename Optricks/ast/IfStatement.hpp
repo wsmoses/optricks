@@ -21,7 +21,7 @@ class IfStatement : public ErrorStatement{
 			ErrorStatement(a), condition(cond), then(th), finalElse(stat){
 			if(finalElse) assert(finalElse->getToken()!=T_VOID);
 		}
-		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("if-statement cannot act as function");
 			exit(1);
 		}

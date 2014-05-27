@@ -29,18 +29,20 @@ public:
 		assert(hasCastValue(b));
 		return value->compareValue(a, b);
 	}
-	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args) const override final{
+	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
 		if(args.size()!=0){
 			id.error("Cannot evaluate lazy as function with arguments");
 			exit(1);
 		}
+		assert(instance==nullptr);
 		return value->evaluate(r);
 	}
 	const AbstractClass* getReturnType() const override final{
 		return LazyClass::get(value->getReturnType());
 	}
 
-	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args)const override final{
+	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b)const override final{
+		assert(b==false);
 		return value->getReturnType();
 	}
 
