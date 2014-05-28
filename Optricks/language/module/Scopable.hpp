@@ -9,6 +9,7 @@
 #define SCOPABLE_HPP_
 
 #include "../includes.hpp"
+#include "./ClassTemplate.hpp"
 //#include "../data/Data.hpp"
 //#include "../FunctionProto.hpp"
 //#include "../functions/AbstractFunction.hpp"
