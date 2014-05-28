@@ -7,7 +7,6 @@
 
 #ifndef E_INDEXER_HPP_
 #define E_INDEXER_HPP_
-#include "../language/Operators.hpp"
 #include "../language/statement/Statement.hpp"
 #include "../language/data/Data.hpp"
 #include "../operators/Binary.hpp"
@@ -123,10 +122,6 @@ public:
 		right->buildFunction(r);
 	};
 	static Statement* createBinop(PositionID id, Statement* L, Statement* R, String operation){
-		//todo fixing binop for
-		// - a ** b == - (a**b) NOT (-a)**b
-		// AND
-		// a**b**c == a**(b**c) NOT (a**b)**c
 		if(operation=="[]" || operation=="[]=") return new E_BINOP(id, L, R, operation);
 		if(operation=="**"){
 			if(R->getToken()==T_BINOP){

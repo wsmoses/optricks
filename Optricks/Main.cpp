@@ -6,10 +6,12 @@
  */
 //TODO allow returning references, but forbid returning local reference
 //TODO add templates with default args
-//TODO add int print/println
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
-//TODO print/println floatLiteral
+//TODO print/println floatLiteral/float
 //TODO FIX typeof w/ templates
+//TODO create website that finds best price considering sales tax / student discount /etc
+//TODO nullptr/choice{vector}
+//TODO enum class
 /*
  *
 def r(int a){
@@ -234,6 +236,10 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		auto (*FP)() = (void* (*)())(intptr_t)FPtr;
 		void* t = FP();
 		std::cout << t << endl << flush;
+	} else if(retType->classType==CLASS_ENUM){
+		auto (*FP)() = (int32_t (*)())(intptr_t)FPtr;
+		int32_t t = FP();
+		std::cout << ((const EnumClass*)retType)->names[t] << endl << flush;
 	}
 	/*else if(n->returnType==stringClass){
 		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;

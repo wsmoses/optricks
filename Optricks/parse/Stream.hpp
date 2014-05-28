@@ -319,11 +319,6 @@ public:
 					escape = 0;
 					filling+='\n';
 					break;
-				case 'N':
-					escape = 0;
-					//TODO implement STRING N
-					//							filling+='\N';
-					break;
 				case 'r':
 					escape = 0;
 					filling+='\r';

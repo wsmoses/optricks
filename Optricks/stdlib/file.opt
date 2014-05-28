@@ -1,3 +1,9 @@
+enum Open{
+	Read
+	Write
+	Append
+}
+
 class primitive File{
         lang.c.pointer f;
         def File(lang.c.string s, lang.c.string t='r'){

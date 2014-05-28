@@ -1042,7 +1042,6 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			StartBB = r.builder.GetInsertBlock();
 			r.builder.SetInsertPoint(ElseBB);
 			llvm::Value* fin = ev->evaluate(r)->castToV(r,&boolClass,filePos);
-			//TODO can allow check if right is constant
 			r.builder.CreateBr(MergeBB);
 			ElseBB = r.builder.GetInsertBlock();
 			//a.addPred(MergeBB,ElseBB);

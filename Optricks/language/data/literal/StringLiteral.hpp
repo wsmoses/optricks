@@ -10,12 +10,11 @@
 #include "Literal.hpp"
 #include "../../class/builtin/CharClass.hpp"
 #include "../../class/literal/StringLiteralClass.hpp"
-//TODO
+
 class StringLiteral: public Literal{
 public:
 	const String value;
 	StringLiteral(const String val):Literal(R_STR),value(val){}
-	//TODO
 	const AbstractClass* getReturnType() const override final{
 		if(value.length()==1) return &charClass;
 		else return &stringLiteralClass;

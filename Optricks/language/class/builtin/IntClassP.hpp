@@ -39,7 +39,6 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()>=1);
-						//TODO custom formatting for printf (and checks for literals / correct format / etc)
 						llvm::SmallVector<llvm::Type*,1> t_args(1);
 						t_args[0] = C_STRINGTYPE;
 						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
@@ -51,7 +50,6 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()>=1);
-						//TODO custom formatting for printf (and checks for literals / correct format / etc)
 						llvm::SmallVector<llvm::Type*,1> t_args(1);
 						t_args[0] = C_STRINGTYPE;
 						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));

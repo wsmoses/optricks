@@ -210,7 +210,7 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		else if(operation=="~"){
 			auto R = new IntLiteral(0,0,0);
 			mpz_add_ui(R->value, il->value, 1);
-			mpz_neg(R->value, R->value);//todo check this
+			mpz_neg(R->value, R->value);
 			return R;
 		}
 		else{

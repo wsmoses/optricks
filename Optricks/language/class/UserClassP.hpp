@@ -12,22 +12,22 @@
 #include "./builtin/IntClass.hpp"
 UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject)
 	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(&objectClass):(supa),
-			t,CLASS_USER, fina,
-			(t==POINTER_LAYOUT)?(
-					(llvm::Type*) llvm::PointerType::getUnqual(llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
-	):(
-					(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam))
-			)
-			),
-					constructors(nam, nullptr),start(0),final(false)
-	{
-		if(t==PRIMITIVEPOINTER_LAYOUT) PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
-		if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
-		if(isObject){
-			localVars.push_back(&intClass);
-			final = true;
-		}
-	};
+				t,CLASS_USER, fina,
+				(t==POINTER_LAYOUT)?(
+						(llvm::Type*) llvm::PointerType::getUnqual(llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
+		):(
+						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam))
+				)
+				),
+						constructors(nam, nullptr),start(0),final(false)
+		{
+			if(t==PRIMITIVEPOINTER_LAYOUT) PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
+			if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
+			if(isObject){
+				localVars.push_back(&intClass);
+				final = true;
+			}
+		};
 
 llvm::Value* UserClass::generateData(RData& r, PositionID id) const{
 	if(!final) id.compilerError("Cannot generateData of non-finalized type");

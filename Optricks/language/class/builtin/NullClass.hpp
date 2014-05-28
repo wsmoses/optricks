@@ -33,11 +33,11 @@ public:
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
 		//TODO FOR REAL
-		return toCast->classType==CLASS_NULL;
+		return toCast->classType==CLASS_NULL || toCast->classType==CLASS_VOID;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
 		//TODO FOR REAL
-		return toCast->classType==CLASS_NULL;
+		return toCast->classType==CLASS_NULL || toCast->classType==CLASS_VOID;
 	}
 	/**
 	 * Will error with id if this.hasCast(toCast)==false

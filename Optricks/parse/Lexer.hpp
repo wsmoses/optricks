@@ -39,6 +39,7 @@
 #include "../language/data/literal/StringLiteral.hpp"
 #include "../language/data/DeclarationData.hpp"
 #include "../language/class/builtin/CharClass.hpp"
+#include "../language/class/EnumClass.hpp"
 
 enum ParseLoc{
 	PARSE_GLOBAL = 1,
@@ -761,7 +762,7 @@ class Lexer{
 					auto uClass = getClass(nd, true, selfClass, stat);
 					selfClass->under.push_back(uClass);
 				} else if(temp=="def" || temp=="gen" || temp=="inl"){
-					Statement* func = getFunction(nd, temp,proto,stat);//TODO allow methods to be static
+					Statement* func = getFunction(nd, temp,proto,stat);
 					selfClass->under.push_back(func);
 				} else if(temp=="extern"){
 					pos().error("Optricks does not allow the use of external functions in the definition classes!");
@@ -781,6 +782,47 @@ class Lexer{
 			}
 			if(f->read()!='}') f->error("Need closing brace for class definition");
 			return selfClass;
+		}
+		Statement* getEnum(ParseData data, bool read=false,OClass* outer=nullptr,bool stat/*ic*/=true){
+			if(!read && f->getNextName(data.endWith)!="enum") f->error("Could not find 'enum' for enum declaration");
+			String name = getNextName(EOF);//TODO -- allow generic class definition
+			if(f->trim(EOF)) f->error("No class defined!");
+			if(f->read()!='{') f->error("Need opening brace for enum definition");
+			f->trim(EOF);
+			//TODO should enums have local functions / static vars / inner classes / etc
+			std::vector<String> s;
+			while(true){
+				auto tmp = f->peek();
+				if(tmp=='}' || tmp==EOF) break;
+				else if(tmp==';'){
+					f->read();
+					f->trim(EOF);
+					continue;
+				} else if(tmp==','){
+					f->read();
+					f->trim(EOF);
+					continue;
+				} else {
+					if(!isStartName(tmp)){
+						f->error("Need name for enum internal -- fonud "+String(1,tmp));
+						f->read();
+						f->trim(EOF);
+						continue;
+					}
+					else{
+						s.push_back(f->getNextName(EOF));
+						f->trim(EOF);
+					}
+				}
+			}
+			if(f->read()!='}') f->error("Need closing brace for class definition");
+			EnumClass* proto = new EnumClass(data.mod, name, s);
+			data.mod->addClass(pos(), proto);
+			while(f->peek()==';'){
+				f->read();
+				f->trim(EOF);
+			}
+			return proto;
 		}
 		Statement* operatorCheck(ParseData data, Statement* exp){
 			if(f->done || f->trim(data.endWith))	return exp;
@@ -960,6 +1002,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		auto undoRead = f->getMarker();
 		String temp = f->getNextName(data.endWith);
 		if(temp=="class") return getClass(data, true);
+		else if(temp=="enum") return getEnum(data, true);
 		else if(temp=="if") return getIfStatement(data,true);
 		else if(temp=="for") return getForLoop(data,true);
 		else if(temp=="while") return getWhileLoop(data,true);

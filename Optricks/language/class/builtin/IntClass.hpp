@@ -53,8 +53,7 @@ public:
 		if(value<0){
 			if((-value) >> getWidth() > 0) id.warning("Cannot fit negative integer literal in signed type");
 		} else {
-			if((-value) >> getWidth() > 0) id.warning("Cannot fit positive integer literal in integral type");
-			//TODO force APInt to be right width/sign for value
+			if((value) >> getWidth() > 0) id.warning("Cannot fit positive integer literal in integral type");
 		}
 	}
 	inline void checkFit(PositionID id, mpz_t const value) const{
@@ -66,7 +65,6 @@ public:
 			auto t_width = mpz_sizeinbase(value,2)+1;
 			auto r_width = getWidth();
 			if(t_width > r_width) id.warning("Cannot fit positive integer literal needing "+str(t_width)+" bits in integral type of size "+str(r_width)+" bits");
-			//TODO force APInt to be right width/sign for value
 		}
 	}
 	inline llvm::ConstantInt* getMaxValue () const {

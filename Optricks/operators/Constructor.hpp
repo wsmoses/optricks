@@ -56,9 +56,11 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			}
 			filePos.compilerError("char parsing not implemented");
 			exit(1);
-		}else if(V->classType==CLASS_STRLITERAL){
+		} else if(V->classType==CLASS_CSTRING){
+			//TODO cstring parse int
+			filePos.compilerError("parsing from cstring not implemented");
+		} else if(V->classType==CLASS_STRLITERAL){
 			auto M = ((const StringLiteral*)d)->value;
-			//todo int parsing
 			mpz_t Z;
 			mpz_init_set_str(Z,M.c_str(),10);
 			auto tmp = new ConstantData(T->getValue(filePos, Z), this);
