@@ -31,14 +31,14 @@ public:
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(filePos);
+			const AbstractClass* ac = b->getClass(a, filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			if(ac->type==NULL) error("Type argument "+ac->getName()+" is null");
 			args[i] = ac->type;
 		}
 		assert(returnV);
-		const AbstractClass* returnType = returnV->getSelfClass(filePos);
+		const AbstractClass* returnType = returnV->getMyClass(a, filePos, {});
 		assert(returnType);
 		auto FT = llvm::FunctionType::get(returnType->type, args, false);
 		llvm::Function *F = a.getExtern(name, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);

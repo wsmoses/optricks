@@ -121,6 +121,10 @@ public:
 		left->buildFunction(r);
 		right->buildFunction(r);
 	};
+
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+	}
 	static Statement* createBinop(PositionID id, Statement* L, Statement* R, String operation){
 		if(operation=="[]" || operation=="[]=") return new E_BINOP(id, L, R, operation);
 		if(operation=="**"){

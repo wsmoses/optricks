@@ -56,7 +56,7 @@ public:
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(filePos);
+			const AbstractClass* ac = b->getClass(a, filePos);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			assert(ac);
 			llvm::Type* cl = ac->type;

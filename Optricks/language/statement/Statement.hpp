@@ -42,10 +42,12 @@ class Statement : public Evaluatable{
 		/**
 		 * Gets the class which this expression represents (assuming this is a class-type object or reference)
 		 */
-		virtual const AbstractClass* getSelfClass(PositionID id){
-			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
-			return evaluate(r).getMyClass(r);
-		}*/
+		virtual const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const =0;
+
+		//virtual const AbstractClass* getSelfClass(PositionID id){
+		//	id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
+		//	return evaluate(r).getMyClass(r);
+		//}*/
 		llvm::Value* evalCastV(RData& r,const AbstractClass* c, PositionID id);
 		Statement(){};
 		virtual const Token getToken() const = 0;
@@ -66,6 +68,10 @@ public:
 class VoidStatement : public Statement{
 	public:
 		VoidStatement() : Statement(){}
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
+
 		const Data* evaluate(RData& a) const override{
 			PositionID(0,0,"#Void").error("Attempted evaluation of void statement");
 			exit(1);
@@ -91,6 +97,7 @@ class VoidStatement : public Statement{
 			exit(1);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
+
 };
 
 static VoidStatement* VOID_STATEMENT = new VoidStatement();
@@ -109,7 +116,16 @@ class VariableReference : public Statement{
 		virtual String getShortName() const=0;
 };
 
-
+struct T_ARGS {
+	bool inUse;
+	bool evaled;
+	mutable std::vector<const AbstractClass*> evals;
+	T_ARGS(bool in):inUse(in),evaled(false){}
+	void add(Statement* a){
+		evals.push_back((const AbstractClass*)a);
+	}
+	std::vector<const AbstractClass*>& eval(RData& r, PositionID id) const;
+};
 
 
 #endif /* STATEMENT_HPP_ */

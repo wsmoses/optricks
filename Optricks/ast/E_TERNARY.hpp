@@ -19,6 +19,10 @@ class TernaryOperator : public ErrorStatement{
 		TernaryOperator(PositionID a, Statement* cond, Statement* th, Statement* const stat) :
 			ErrorStatement(a), condition(cond), then(th), finalElse(stat){
 		}
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 		const Token getToken() const override {

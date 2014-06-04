@@ -17,6 +17,10 @@ public:
 	Statement* const statement;
 	String name;
 	virtual ~DoWhileLoop(){};
+
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+	}
 	DoWhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
 		ErrorStatement(a),
 		condition(cond), statement(stat){

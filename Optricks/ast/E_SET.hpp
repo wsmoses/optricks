@@ -20,6 +20,9 @@ class E_SET: public ErrorStatement{
 			variable = loc;
 			value = e;
 		}
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 		const Token getToken() const final override{

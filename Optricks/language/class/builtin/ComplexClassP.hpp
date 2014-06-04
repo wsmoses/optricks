@@ -21,7 +21,31 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		assert(inner->classType!=CLASS_COMPLEX);
 		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
 		if(reg) LANG_M.addClass(PositionID(0,0,"#complex"),this);
-		if(inner==&doubleClass) LANG_M.addClass(PositionID(0,0,"#complex"),this,"complex");
+		LANG_M.addFunction(PositionID(0,0,"#complex"),"print")->add(
+			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&floatLiteralClass),
+			nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const Data* D = args[0]->evaluate(r);
+			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			r.builder.CreateCall(CU, getInt32('+'));
+			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
+			r.builder.CreateCall(CU, getInt32('j'));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#complex"));
+		LANG_M.addFunction(PositionID(0,0,"#complex"),"println")->add(
+			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&floatLiteralClass),
+			nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()==1);
+			const Data* D = args[0]->evaluate(r);
+			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
+			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
+			r.builder.CreateCall(CU, getInt32('+'));
+			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
+			r.builder.CreateCall(CU, getInt32('j'));
+			r.builder.CreateCall(CU, getInt32('\n'));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#complex"));
 		if(inner->classType==CLASS_FLOATLITERAL){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},&floatLiteralClass),

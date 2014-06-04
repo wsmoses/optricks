@@ -40,6 +40,10 @@ class WhileLoop : public ErrorStatement{
 		const Token getToken() const override {
 			return T_WHILE;
 		}
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		const Data* evaluate(RData& r) const override{
 			llvm::BasicBlock* prev = r.builder.GetInsertBlock();
 			llvm::BasicBlock* incBlock = r.CreateBlock("inc");

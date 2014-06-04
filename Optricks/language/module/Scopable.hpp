@@ -38,7 +38,7 @@ public:
 	std::vector<OverloadedFunction*> funcs;
 	std::vector<const Data*> vars;
 	std::vector<Scopable*> scopes;
-	std::vector<AbstractClass*> classes;
+	std::vector<const Data*> classes;
 public:
 	virtual ~Scopable(){};
 	Scopable(Scopable* above,String n=""):name(n),surroundingScope(above){};
@@ -115,7 +115,7 @@ public:
 		}while(tmp!=NULL);
 		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
-	const AbstractClass* getClass(PositionID id, const String name) const;
+	const AbstractClass* getClass(PositionID id, const String name, const std::vector<TemplateArg>&) const;
 	/*
 	AbstractClass*& getClass(PositionID id, const String name){
 		auto f = find(id,name);
@@ -143,7 +143,8 @@ public:
 	const AbstractClass* getReturnClass(PositionID id, const String name) const;
 	const Data* get(PositionID id, const String name) const;
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
-	void addClass(PositionID id, AbstractClass* c,String n="");
+	void addClass(PositionID id, AbstractClass* c);
+	void addClass(PositionID id, const Data* c,String n="");
 	void addVariable(PositionID id, const String name,Data* d){
 		if(existsHere(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
 		mapping.insert(std::pair<const String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));
@@ -187,7 +188,7 @@ public:
 	inline void setValue(RData& r,llvm::Value* v) const;
 	inline void addFunction(SingleFunction* d) const;
 	inline void setFunction(SingleFunction* d) const;
-	inline const AbstractClass* getClass() const;
+	inline const AbstractClass* getClass(const std::vector<TemplateArg>& args) const;
 	//const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
 	const AbstractClass* getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const;
 	std::pair<const Data*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;

@@ -44,6 +44,10 @@ class E_FUNC_CALL : public ErrorStatement{
 			toCall->buildFunction(r);
 			for(auto &a : vals) if(a) ((const Statement*)a)->buildFunction(r);
 		}
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		const AbstractClass* getReturnType() const override{
 			return toCall->getFunctionReturnType(filePos,vals,false);
 		}

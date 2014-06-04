@@ -26,7 +26,7 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 class AbstractFunction: public Data{
 public:
 	virtual ~AbstractFunction(){};
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
 		id.error("Cannot use function as class");
 		exit(1);
 	}

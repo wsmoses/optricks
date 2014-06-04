@@ -58,7 +58,9 @@ const ClassClass classClass(true);
 const AbstractClass* AbstractClass::getReturnType() const{
 	return &classClass;
 }
-
+const AbstractClass* BuiltinClassTemplate::getReturnType() const{
+	return &classClass;
+}
 const Data* AbstractClass::castTo(RData& r, const AbstractClass* const right, PositionID id) const {
 	if(right->classType==CLASS_VOID) return &VOID_DATA;
 	if(right->classType==CLASS_CLASS) return this;
@@ -67,4 +69,5 @@ const Data* AbstractClass::castTo(RData& r, const AbstractClass* const right, Po
 		return this;
 	}
 }
+
 #endif /* CLASSCLASS_HPP_ */

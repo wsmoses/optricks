@@ -37,8 +37,12 @@ public:
 	void buildFunction(RData& r) const override final{
 		value->buildFunction(r);
 	};
-	AbstractClass* getSelfClass(PositionID id) override final{
-		auto t = value->getSelfClass(id);
+
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		if(args.size()!=0){
+			id.compilerError("Template error");
+		}
+		auto t = value->getMyClass(r, id, {});
 		if(pre==UOP_POST){
 			if(operation=="[]") return ArrayClass::get(t,0);
 			if(operation=="&") return ReferenceClass::get(t);

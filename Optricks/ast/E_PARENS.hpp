@@ -34,7 +34,10 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		return inner->getReturnType();
 	}
-	const AbstractClass* getSelfClass(PositionID id) override final{ return inner->getSelfClass(id); }
+
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		return inner->getMyClass(r, id, args);
+	}
 };
 
 

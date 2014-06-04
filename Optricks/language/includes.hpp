@@ -330,10 +330,12 @@ enum DataType{
 	R_SLICE,
 	R_MATH,
 	R_CLASSFUNC,
-	R_NULL
+	R_NULL,
+	R_CLASSTEMPLATE
 };
 template<> String str<DataType>(DataType d){
 	switch(d){
+	case R_CLASSTEMPLATE: return "R_CLASSTEMPLATE";
 	case R_LAZY: return "R_LAZY";
 	case R_VOID: return "R_VOID";
 	case R_MATH: return "R_MATH";
@@ -373,6 +375,30 @@ template<typename N> inline N check(const N& a){
 	assert(a);
 	return a;
 }
+
+enum TemplateArgType{
+	TEMPLATE_CLASS,
+	TEMPLATE_INT
+};
+
+/*
+struct TemplateArg {
+	//TemplateArgType argType;
+	union TemplateValue{
+		const AbstractClass* t_class;
+	//	mpz_t t_int;
+	} argValue;
+	TemplateArg(const AbstractClass* a){
+	//	argType = TEMPLATE_CLASS;
+		argValue.t_class = a;
+	}
+	//TemplateArg(const mpz_t& v){
+	//	argType = TEMPLATE_INT;
+	//	mpz_init_set(argValue.t_int,v);
+	//}
+};
+*/
+#define TemplateArg const AbstractClass*
 #include "lib.hpp"
 #include "output.hpp"
 #endif /* INCLUDES_HPP_ */

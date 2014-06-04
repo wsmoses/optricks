@@ -23,6 +23,10 @@ class ForLoop : public ErrorStatement{
 		ForLoop(PositionID a, OModule* supMod, String n=""):ErrorStatement(a),module(supMod),name(n){
 			increment = condition = initialize = toLoop = nullptr;//todo remove this
 		}
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		const AbstractClass* getReturnType() const override final{
 			return &voidClass;
 		}

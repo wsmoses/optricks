@@ -55,7 +55,7 @@ public:
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(filePos);
+			const AbstractClass* ac = b->getClass(a, filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			if(ac->type==nullptr) error("Type argument "+ac->getName()+" is null");
@@ -73,7 +73,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
+		const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos, {})):(nullptr);
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;

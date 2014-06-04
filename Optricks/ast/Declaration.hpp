@@ -20,9 +20,12 @@ private:
 	mutable const AbstractClass* returnType;
 	mutable unsigned isReference;
 public:
-	const AbstractClass* getClass(PositionID id) const{
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+				id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+			}
+	const AbstractClass* getClass(RData& r, PositionID id)const{
 		if(classV){
-			return classV->getSelfClass(id);
+			return classV->getMyClass(r, id, {});
 		}
 		else{
 			id.error("Cannot use auto declaration");
@@ -65,7 +68,7 @@ public:
 				exit(1);
 			}
 		}
-		returnType = classV->getSelfClass(filePos);
+		returnType = classV->getMyClass(getRData(), filePos, {});
 		if(returnType->classType==CLASS_REF){
 			returnType = ((ReferenceClass*)returnType)->innerType;
 			isReference = 1;

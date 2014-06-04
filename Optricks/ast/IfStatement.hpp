@@ -25,6 +25,10 @@ class IfStatement : public ErrorStatement{
 			id.error("if-statement cannot act as function");
 			exit(1);
 		}
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		bool hasCastValue(const AbstractClass* a) const override final{
 			return false;
 		}

@@ -19,6 +19,10 @@ class E_ARR : public ErrorStatement{
 		const  Token getToken() const override{
 			return T_ARR;
 		};
+
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("Array cannot act as function");
 			exit(1);

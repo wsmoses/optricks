@@ -33,8 +33,6 @@ public:
 		/**
 		 * Returns the class that this represents, if it represents a class
 		 */
-		virtual const AbstractClass* getMyClass(RData& r, PositionID id)const =0;
-
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 
 		}

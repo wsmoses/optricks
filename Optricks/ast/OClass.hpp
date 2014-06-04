@@ -33,6 +33,9 @@ class OClass: public ErrorStatement
 		}
 
 
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}
 
@@ -69,7 +72,7 @@ class OClass: public ErrorStatement
 				else{
 					for(const auto& d:data){
 						if(!d.first) {
-							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(filePos));
+							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(getRData(), filePos));
 						}
 					}
 					//TODO allow default in constructor
@@ -116,7 +119,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}";
@@ -128,7 +131,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
 		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}" << endl;
@@ -136,6 +139,24 @@ void initClasses(){
 			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 		}
 		return &VOID_DATA;}), PositionID(0,0,"#int"));
+
+	LANG_M.addClass(PositionID(0,0,"#complex"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+		if(args.size()==0) return ComplexClass::get(&doubleClass);
+		if(args.size()!=1){
+			id.error("Cannot use template class 'complex' with more than one argument");
+		}
+		switch(args[0]->classType){
+		case CLASS_INT:
+		case CLASS_FLOAT:
+		case CLASS_INTLITERAL:
+		case CLASS_FLOATLITERAL:
+			return ComplexClass::get((RealClass*) args[0]);
+		default:
+			id.error("Cannot use class '"+args[0]->getName()+"' as template arg for class 'complex'");
+		}
+		return nullptr;
+	}),"complex");
+
 	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
 	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
 	//add_import_c_function(&LANG_M, mktime);

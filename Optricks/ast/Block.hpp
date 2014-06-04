@@ -48,6 +48,9 @@ class Block : public ErrorStatement{
 		Token const getToken() const override{
 			return T_BLOCK;
 		}
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const override final{
+			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+		}
 };
 
 

@@ -66,7 +66,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 			&& ((const ComplexClass*)retType)->innerClass->classType!=CLASS_FLOATLITERAL
 			)
 			){
-		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "printc",PositionID(0,0,"#main"))), {n});
+		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "println",PositionID(0,0,"#main")), false), {n});
 		n->registerClasses();
 		n->registerFunctionPrototype(getRData());
 		n->buildFunction(getRData());
@@ -362,7 +362,7 @@ int main(int argc, char** argv){
 				assert(args.size()==1);
 				const AbstractClass* a = args[0]->getReturnType();
 				if(a->classType==CLASS_CLASS)
-					a = args[0]->evaluate(r)->getMyClass(r, id);
+					a = args[0]->evaluate(r)->getMyClass(r, id,{});
 				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
 				return new IntLiteral(s);
 				//const Data* D = args[0]->evaluate(r);
@@ -482,7 +482,7 @@ int main(int argc, char** argv){
 	std::vector<String> files =
 		{
 				//"./tmp"
-				"./stdlib/stdlib.opt"
+				//"./stdlib/stdlib.opt"
 				};
 	llvm::InitializeNativeTarget();
 	//llvm::InitializeAllTargets();
@@ -521,6 +521,7 @@ int main(int argc, char** argv){
 		std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
+		st.force("complex{int} a;\n");
 		/*
 		st.force("4/2*3/4\n");
 		st.force("extern double cos(double a); cos(3.14159)\n");

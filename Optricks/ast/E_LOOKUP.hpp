@@ -11,17 +11,20 @@
 #include "../language/statement/Statement.hpp"
 #include "../language/data/ClassFunctionData.hpp"
 #include "../operators/LocalFuncs.hpp"
+
+//TODO introduce templates here
 class E_LOOKUP :
 		public Statement
 {
 public:
 	const Token getToken() const override{ return T_LOOKUP; }
+	T_ARGS t_args;
 	Statement* left;
 	String right;
 	virtual ~E_LOOKUP(){};
 	PositionID filePos;
-	E_LOOKUP(PositionID id, Statement* a,  String b):
-		Statement(),
+	E_LOOKUP(PositionID id, Statement* a,  String b, bool isTemplate):
+		Statement(), t_args(isTemplate),
 			left(a), right(b),filePos(id){};
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
@@ -29,9 +32,10 @@ public:
 		assert(isClassMethod==false);
 		const AbstractClass* cla= left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			return left->getSelfClass(filePos)->staticVariables.getFunctionReturnType(id,right,args);
+			id.warning("Function templates not complete");
+			return left->getMyClass(getRData(), filePos, {})->staticVariables.getFunctionReturnType(id,right,args);
 		} else {
-
+			id.warning("Local data templates not complete");
 			if(cla->hasLocalData(right)){
 				const AbstractClass* tmp = cla->getLocalReturnClass(id,right);
 				if(tmp->classType==CLASS_FUNC){
@@ -43,6 +47,7 @@ public:
 				}
 			}
 			else{
+				id.warning("Function templates not complete");
 				return getLocalFunctionReturnType(filePos, right, left->getReturnType(), args);
 			}
 		}
@@ -58,12 +63,6 @@ public:
 			exit(1);
 		}
 	}
-	//String getShortName() override final{
-	//	return right;
-	//}
-	//String getFullName() override final{
-	//	return left->getFullName()+"."+right;
-	//}
 	void registerClasses() const override final{
 		left->registerClasses();
 	}
@@ -73,14 +72,16 @@ public:
 	void buildFunction(RData& r) const override final{
 		left->buildFunction(r);
 	};
-	const AbstractClass* getSelfClass(PositionID id) override final{
-		auto t = left->getSelfClass(id);
-		return t->staticVariables.getClass(id,right);
+
+	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		assert(args.size()==0);
+		auto t = left->getMyClass(r,id,{});
+		return t->staticVariables.getClass(id,right,t_args.eval(r, id));
 	}
 	const AbstractClass* getReturnType() const override final{
 		const AbstractClass* superC = left->getReturnType();
 		if(superC->classType==CLASS_CLASS){
-			return left->getSelfClass(filePos)->staticVariables.getReturnClass(filePos,right);
+			return left->getMyClass(getRData(), filePos, {})->staticVariables.getReturnClass(filePos,right);
 		} else {
 			return superC->getLocalReturnClass(filePos, right);
 		}
@@ -90,9 +91,14 @@ public:
 		const AbstractClass* cla = eval->getReturnType();
 		///STATIC STUFF
 		if(cla->classType==CLASS_CLASS){
-			const AbstractClass* c = eval->getMyClass(a, filePos);
+			const AbstractClass* c = eval->getMyClass(a, filePos,{});
+			if(t_args.inUse>0){
+				filePos.warning("Using only class templates");
+				return c->staticVariables.getClass(filePos, right, t_args.eval(a, filePos));
+			}
 			return c->staticVariables.get(filePos, right);
 		} else {
+			filePos.warning("Local data templates not complete");
 			//todo allow use of functions here
 			if(cla->hasLocalData(right)) return cla->getLocalData(a, filePos, right, eval);
 			else return new ClassFunctionData(eval, right);

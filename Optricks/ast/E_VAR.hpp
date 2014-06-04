@@ -13,8 +13,9 @@
 class E_VAR : public VariableReference {
 	public:
 		Resolvable pointer;
+		T_ARGS t_args;
 		virtual ~E_VAR(){};
-		E_VAR(const Resolvable& a) : VariableReference(),pointer(a){
+		E_VAR(const Resolvable& a, bool isTemplate) : VariableReference(),pointer(a), t_args(isTemplate){
 			assert(pointer.module);
 		};
 //		E_VAR(PositionID id, Resolvable& a) : VariableReference(id),pointer(a){};
@@ -35,6 +36,10 @@ class E_VAR : public VariableReference {
 		}
 		const Data* evaluate(RData& r) const override final{
 			assert(pointer.module);
+			if(t_args.inUse){
+				pointer.filePos.warning("Using only class templates");
+				return pointer.getClass(t_args.eval(r, pointer.filePos));
+			}
 			auto tmp =  pointer.getObject();
 			assert(tmp);
 			return tmp;
@@ -59,8 +64,9 @@ class E_VAR : public VariableReference {
 			return pointer.getFunctionReturnType(args);
 		}
 
-		const AbstractClass* getSelfClass(PositionID id) override final{
-			return pointer.getClass();
+		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+			assert(args.size()==0);
+			return pointer.getClass(t_args.eval(r, id));
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}

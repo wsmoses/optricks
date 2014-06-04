@@ -15,12 +15,12 @@
 #include "../data/LocationData.hpp"
 #include "../class/builtin/ClassClass.hpp"
 
-const AbstractClass* Scopable::getClass(PositionID id, const String name) const{
-		auto f = find(id,name);
-		if(f.first==nullptr) return &voidClass;
-		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
-		return f.first->classes[f.second->second.pos];
-	}
+const AbstractClass* Scopable::getClass(PositionID id, const String name, const std::vector<TemplateArg>& args) const{
+	auto f = find(id,name);
+	if(f.first==nullptr) return &voidClass;
+	if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
+	return f.first->classes[f.second->second.pos]->getMyClass(getRData(), id, args);
+}
 
 void Scopable::setVariable(PositionID id, const String name, const Data* da){
 	auto d = find(id,name);
@@ -41,8 +41,10 @@ const Data* Scopable::getVariable(PositionID id, const String name) const{
 	if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
 	return f.first->vars[f.second->second.pos];
 }
-void Scopable::addClass(PositionID id, AbstractClass* c,String s){
-	if(s.length()==0) s = c->name;
+void Scopable::addClass(PositionID id, AbstractClass* c){
+	addClass(id, c, c->name);
+}
+void Scopable::addClass(PositionID id, const Data* c, String s){
 	if(existsHere(s)) id.error("Cannot define class "+s+" -- identifier already used at this scope");
 	mapping.insert(std::pair<String,SCOPE_POS>(s,SCOPE_POS(SCOPE_CLASS,classes.size())));
 	classes.push_back(c);
@@ -137,7 +139,7 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 			break;
 		}
 		case SCOPE_CLASS:{
-			ret = f.first->classes[f.second->second.pos];
+			ret = f.first->classes[f.second->second.pos]->getMyClass(getRData(), id, {});
 			break;
 		}
 		case SCOPE_VAR:{
@@ -238,8 +240,8 @@ const Data* Scopable::get(PositionID id, const String name) const{
 	inline void Resolvable::addFunction(SingleFunction* d) const{
 		module->addFunction(filePos,name)->add(d, filePos);
 	}
-	inline const AbstractClass* Resolvable::getClass() const{
-		return module->getClass(filePos, name);
+	inline const AbstractClass* Resolvable::getClass(const std::vector<TemplateArg>& args) const{
+		return module->getClass(filePos, name, args);
 	}
 	inline void Resolvable::setFunction(SingleFunction* d) const{
 		module->addFunction(filePos,name)->set(d,filePos);
