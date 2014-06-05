@@ -1216,8 +1216,17 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	case CLASS_CSTRING:{
 		//TODO
 		if(operation=="[]"){
-			filePos.compilerError("TODO cstring[]");
-			exit(1);
+			llvm::Value* V;
+			if(dd->classType==CLASS_INT) V =
+					r.builder.CreateSExtOrTrunc(ev->evalV(r, filePos),intClass.type);
+			else{
+				assert(dd->classType==CLASS_INTLITERAL);
+				V = ev->evaluate(r)->castToV(r, &intClass, filePos);
+			}
+			llvm::Value* A = value->getValue(r,filePos);
+
+			llvm::Value* I = r.builder.CreateGEP(A, V);
+			return new LocationData(new StandardLocation(I), &charClass);
 		}
 		else if(operation=="==" || operation=="!="){
 			filePos.compilerError("TODO cstring"+operation);
