@@ -26,10 +26,10 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
-			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, getInt32('+'));
-			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
 			r.builder.CreateCall(CU, getInt32('j'));
 			return &VOID_DATA;
 		}), PositionID(0,0,"#complex"));
@@ -38,10 +38,10 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
-			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 			r.builder.CreateCall(CU, getInt32('+'));
-			LANG_M.getFunction(id, "print", {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "imag", D)}, nullptr);
 			r.builder.CreateCall(CU, getInt32('j'));
 			r.builder.CreateCall(CU, getInt32('\n'));
 			return &VOID_DATA;

@@ -15,7 +15,8 @@ class ClassFunctionData:public Data{
 public:
 	const Data* const instance;
 	const String function;
-	ClassFunctionData(const Data* i, const String f):Data(R_CLASSFUNC),instance(i),function(f){};
+	const T_ARGS t_args;
+	ClassFunctionData(const Data* i, const String f, const T_ARGS& t):Data(R_CLASSFUNC),instance(i),function(f), t_args(t){};
 	const AbstractClass* getReturnType() const override final{
 		PositionID(0,0,"#hm").compilerError("Cannot use instance.localFunction as wrapper");
 		exit(1);
@@ -46,12 +47,12 @@ public:
 
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* inst) const override{
 		assert(inst==nullptr);
-		return getLocalFunction(r, id, function, instance, args);
+		return getLocalFunction(r, id, function, instance, t_args, args);
 	}
 
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override {
 		assert(isClassMethod==false);
-		return getLocalFunctionReturnType(id, function, instance->getReturnType(), args);
+		return getLocalFunctionReturnType(id, function, instance->getReturnType(), t_args, args);
 	}
 	/**
 	 * Returns the class that this represents, if it represents a class

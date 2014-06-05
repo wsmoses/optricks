@@ -160,14 +160,16 @@ public:
 		PositionID(0,0,"#overload").compilerError("Cannot deduce return-type of overloaded function "+myName);
 		exit(1);
 	}
-
+	//TODO ALLOW TEMPLATE ARGS
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const{
-		return getBestFit(id,args, isClassMethod)->getSingleProto()->returnType;
+		return getBestFit(id,NO_TEMPLATE, args, isClassMethod)->getSingleProto()->returnType;
 	}
-	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod) const;
-	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
+	SingleFunction* getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args, bool isClassMethod) const;
+	SingleFunction* getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
+
+	//TODO ALLOW TEMPLATE ARGS
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		return getBestFit(id,args, instance!=nullptr)->callFunction(r,id,args, instance);
+		return getBestFit(id,NO_TEMPLATE, args, instance!=nullptr)->callFunction(r,id,args, instance);
 	}
 	llvm::Function* getValue(RData& r, PositionID id) const override final{
 		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();

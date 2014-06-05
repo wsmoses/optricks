@@ -99,7 +99,7 @@ extern double	asinh	(double a);
 extern double	atanh	(double a);
 extern double	frexp	(double a);
 extern double	ldexp	(double a);
-extern double	modf	(double a);
+extern double	modf	(double, double&);
 extern double	expm1	(double a);
 extern int 		ilogb	(double a);
 extern double 	log1p	(double a);

@@ -11,7 +11,9 @@
 #include "./ArrayClass.hpp"
 
 llvm::Value* ArrayClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
-	id.compilerError("Casting array types has not been implemented");
+	if(toCast==this) return valueToCast;
+	cerr << this << " " << toCast << endl << flush;
+	id.compilerError("Casting array types has not been implemented "+toCast->getName());
 	exit(1);
 }
 

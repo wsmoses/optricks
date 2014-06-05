@@ -9,6 +9,7 @@
 #define OCLASS_HPP_
 
 #include "../language/class/UserClass.hpp"
+#include "../language/class/builtin/NullClass.hpp"
 #include "../language/ffi/F_Class.hpp"
 #include "../language/ffi/F_Function.hpp"
 #include "../language/ffi/F_Var.hpp"
@@ -167,7 +168,7 @@ void initClasses(){
 		}),"array");
 	LANG_M.addClass(PositionID(0,0,"#function"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			if(args.size()==0) {
-				id.error("Must use template class 'function' with at least one argument");
+				id.error("Must use template class 'function' with at least one argument - found "+str(args.size()));
 				return nullptr;
 			}
 			std::vector<const AbstractClass*> ar;

@@ -36,11 +36,11 @@ class E_VAR : public VariableReference {
 		}
 		const Data* evaluate(RData& r) const override final{
 			assert(pointer.module);
-			if(t_args.inUse){
+			/*if(t_args.inUse){
 				pointer.filePos.warning("Using only class templates");
-				return pointer.getClass(t_args.eval(r, pointer.filePos));
-			}
-			auto tmp =  pointer.getObject();
+				return pointer.getClass(t_args);
+			}*/
+			auto tmp = pointer.getObject(r, t_args);
 			assert(tmp);
 			return tmp;
 		}
@@ -54,19 +54,19 @@ class E_VAR : public VariableReference {
 			//TODO force var build function
 		};
 		const AbstractClass* getReturnType() const override{
-			const AbstractClass* temp = pointer.getReturnType();
+			const AbstractClass* temp = pointer.getReturnType(t_args);
 			if(temp==NULL) pointer.filePos.error("Cannot determine return-type of variable "+pointer.name);
 			return temp;
 		}
 
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override{
 			assert(isClassMethod==false);
-			return pointer.getFunctionReturnType(args);
+			return pointer.getFunctionReturnType(t_args, args);
 		}
 
 		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
 			assert(args.size()==0);
-			return pointer.getClass(t_args.eval(r, id));
+			return pointer.getClass(t_args);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
 		}

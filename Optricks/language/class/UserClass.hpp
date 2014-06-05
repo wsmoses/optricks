@@ -54,11 +54,11 @@ public:
 		id.error("Could not find unary pre-operator '"+s+"' in class '"+getName()+"'");
 		exit(1);
 	}
-	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const AbstractClass*>& v) const{
+	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const AbstractClass*>& v) const{
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
+			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,t_args, v,true);
 			tmp = (const UserClass*)superClass;
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
@@ -66,11 +66,11 @@ public:
 	}
 
 	inline llvm::Value* generateData(RData& r, PositionID id) const;
-	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const{
+	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
+			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,t_args, v,true);
 			tmp = (const UserClass*)superClass;
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");

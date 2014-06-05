@@ -14,12 +14,11 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	assert(instance==nullptr);
 	switch(classType){
 	case CLASS_SCOPE:
-		filePos.compilerError("Scope should never be instatiated");
+		filePos.compilerError("Scope should never be instantiated");
 		exit(1);
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
-	case CLASS_ARRAY:
 	case CLASS_VOID:
 	case CLASS_CPOINTER:
 	case CLASS_GEN:
@@ -37,6 +36,54 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_VECTOR:{
 		filePos.error("Could not find constructor in class '"+getName()+"'");
 		exit(1);
+	}
+	case CLASS_ARRAY:{
+		if(args.size()!=1 ) filePos.error("Could not find valid constructor in array");
+		auto L = args[0]->evaluate(r);
+		auto V = L->getReturnType();
+		llvm::Value* LEN;
+		if(V->classType==CLASS_INT){
+			llvm::Value* M = L->getValue(r, filePos);
+			const IntClass* I = (const IntClass*)V;
+			auto Im = I->getWidth();
+			if(Im==32) LEN = M;
+			else if(32>Im){
+				LEN = r.builder.CreateSExt(M, type);
+			} else{
+				LEN = r.builder.CreateTrunc(M, type);
+			}
+		} else if(V->classType==CLASS_INTLITERAL){
+			const IntLiteral* IL = (const IntLiteral*)L;
+			assert(intClass.getWidth()==32);
+			LEN = intClass.getValue(filePos, IL->value);
+		}
+		const ArrayClass* tc = (const ArrayClass*)this;
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
+		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
+		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+				tc->inner->type, llvm::ConstantInt::get(ic, s), LEN);
+		r.builder.Insert(v);
+		/*
+		 //TODO EMPTY
+		 for(unsigned i = 0; i<inner.size(); i++){
+			r.builder.CreateStore(inner[i]->castToV(r, tc->inner, id),
+					r.builder.CreateConstGEP1_32(v, i));
+		}*/
+		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
+		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
+		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+						tmp, llvm::ConstantInt::get(ic, s));
+		r.builder.Insert(p);
+		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
+				r.builder.CreateConstGEP2_32(p, 0,0));
+		r.builder.CreateStore(LEN,
+				r.builder.CreateConstGEP2_32(p, 0,1));
+		r.builder.CreateStore(LEN,
+				r.builder.CreateConstGEP2_32(p, 0,2));
+		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
+		r.builder.CreateStore(v,G);
+		return new ConstantData(p, this);
 	}
 	case CLASS_INT:{
 		if(args.size()!=1 ) filePos.error("Could not find valid constructor in bool");
@@ -168,7 +215,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_USER:{
 		const UserClass* uc = (const UserClass*)this;
 		//TODO consider alloc'ing first, then passing
-		return uc->constructors.getBestFit(filePos, args,false)->callFunction(r, filePos, args,nullptr);
+		return uc->constructors.getBestFit(filePos, NO_TEMPLATE, args,false)->callFunction(r, filePos, args,nullptr);
 	}
 	}
 }

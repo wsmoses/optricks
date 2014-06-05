@@ -404,7 +404,7 @@ llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const ri
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this
 		FunctionClass* fc = (FunctionClass*)right;
-		return getBestFit(id, fc->argumentTypes,false)->castToV(r, right, id);
+		return getBestFit(id, NO_TEMPLATE, fc->argumentTypes,false)->castToV(r, right, id);
 	}
 	case CLASS_CPOINTER:
 		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
@@ -469,7 +469,8 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 	else return false;
 }
 
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
+	assert(t_args.inUse==false);
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
@@ -581,8 +582,9 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 }
 //TODO allow for first arg to be ignored
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
+	assert(t_args.inUse==false);
 	for(const auto& a: args) a->getReturnType();
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){

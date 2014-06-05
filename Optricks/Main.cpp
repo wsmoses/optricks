@@ -215,10 +215,6 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		bool (*FP)() = (bool (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << (t?"true\n":"false\n") << flush;
-	//} else if(retType->classType==CLASS_CLASS){
-	//	auto (*FP)() = (complex (*)())(intptr_t)FPtr;
-	//	complex t = FP();
-	//	printc(t,true);
 	} else if(retType->classType==CLASS_CHAR){
 		auto (*FP)() = (char (*)())(intptr_t)FPtr;
 		auto t = FP();
@@ -262,6 +258,9 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		case MATH_CATALAN:
 			std::cout << "Catalan" << endl << flush; break;
 		}
+	} else if(retType->classType==CLASS_NULL){
+		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
+		std::cout << "null" << endl << flush;
 	}
 	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
@@ -509,17 +508,17 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;
-		std::cout << convertClass<void>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<bool>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<char>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<int>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << "== int " << (convertClass<int>::convert(&LANG_M)==&intClass) << endl << flush;
-		std::cout << "== c_int " << (convertClass<int>::convert(&LANG_M)==&c_intClass) << endl << flush;
-		std::cout << convertClass<int32_t>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<void>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<bool>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<char>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<int>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << "== int " << (convertClass<int>::convert(&LANG_M)==&intClass) << endl << flush;
+		//std::cout << "== c_int " << (convertClass<int>::convert(&LANG_M)==&c_intClass) << endl << flush;
+		//std::cout << convertClass<int32_t>::convert(&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass<void(bool, char)>::convert(LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<void (*)(bool, char)>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<std::pair<bool, char>>::convert(&LANG_M)->getName() << endl << flush;
-		std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<void (*)(bool, char)>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<std::pair<bool, char>>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
 		//st.force("complex{int} a;\n");

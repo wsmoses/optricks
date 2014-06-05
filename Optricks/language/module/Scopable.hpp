@@ -115,7 +115,7 @@ public:
 		}while(tmp!=NULL);
 		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
-	const AbstractClass* getClass(PositionID id, const String name, const std::vector<TemplateArg>&) const;
+	const AbstractClass* getClass(PositionID id, const String name, const T_ARGS&) const;
 	/*
 	AbstractClass*& getClass(PositionID id, const String name){
 		auto f = find(id,name);
@@ -128,8 +128,8 @@ public:
 		return f.first->funcs[f.second->second.pos];
 	}*/
 	//inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
-	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const Evaluatable*>& fp) const;
-	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
+	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const T_ARGS& t_args, const std::vector<const Evaluatable*>& fp) const;
+	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const T_ARGS&, const std::vector<const AbstractClass*>& fp) const;
 
 	const Data* getVariable(PositionID id, const String name) const;
 	void setVariable(PositionID id, const String name, const Data* da);
@@ -140,8 +140,8 @@ public:
 		return f.first->vars[f.second->second.pos];
 	}*/
 
-	const AbstractClass* getReturnClass(PositionID id, const String name) const;
-	const Data* get(PositionID id, const String name) const;
+	const AbstractClass* getReturnClass(PositionID id, const String name, const T_ARGS&) const;
+	const Data* get(PositionID id, const String name, const T_ARGS&) const;
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
 	void addClass(PositionID id, AbstractClass* c);
 	void addClass(PositionID id, const Data* c,String n="");
@@ -180,18 +180,18 @@ public:
 		assert(module);
 		assert(n!="auto");
 	};
-	const AbstractClass* getReturnType() const;
-	inline const Data* getObject() const;
+	const AbstractClass* getReturnType(const T_ARGS&) const;
+	inline const Data* getObject(RData& r, const T_ARGS&) const;
 	void setObject(const Data* da) const;
-	inline llvm::Value* getValue(RData& r) const;
+	inline llvm::Value* getValue(RData& r, const T_ARGS&) const;
 	inline void setValue(RData& r, Data* d2) const;
 	inline void setValue(RData& r,llvm::Value* v) const;
 	inline void addFunction(SingleFunction* d) const;
 	inline void setFunction(SingleFunction* d) const;
-	inline const AbstractClass* getClass(const std::vector<TemplateArg>& args) const;
+	inline const AbstractClass* getClass(const T_ARGS& args) const;
 	//const AbstractClass* getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const;
-	const AbstractClass* getFunctionReturnType(const std::vector<const Evaluatable*>& fp) const;
-	std::pair<const Data*,SCOPE_TYPE> getFunction(const String name, const std::vector<const AbstractClass*>& fp) const;
+	const AbstractClass* getFunctionReturnType(const T_ARGS&, const std::vector<const Evaluatable*>& fp) const;
+	std::pair<const Data*,SCOPE_TYPE> getFunction(const String name, const T_ARGS&, const std::vector<const AbstractClass*>& fp) const;
 	/*inline void addLocalFunction(RData& r, PositionID id, DATA d){
 			module->addLocalFunction(id,name).add(d, r, id);
 		}

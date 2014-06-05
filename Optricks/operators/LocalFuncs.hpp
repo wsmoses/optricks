@@ -10,11 +10,11 @@
 
 #include "../language/class/AbstractClass.hpp"
 
-const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const AbstractClass* cc, const std::vector<const Evaluatable*>& v){
+const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const AbstractClass* cc, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v){
 	switch(cc->classType){
 	case CLASS_USER:{
 		auto uc = (const UserClass*)cc;
-		auto lf = uc->getLocalFunction(id, s, v);
+		auto lf = uc->getLocalFunction(id, s, t_args, v);
 		if(lf==nullptr) return &voidClass;
 		return lf->getSingleProto()->returnType;
 	}
@@ -24,13 +24,13 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 	exit(1);
 }
 
-const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst, const std::vector<const Evaluatable*>& v){
+const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v){
 	assert(inst);
 	const AbstractClass* cc = inst->getReturnType();
 	switch(cc->classType){
 		case CLASS_USER:{
 			auto uc = (const UserClass*)cc;
-			auto lf = uc->getLocalFunction(id, s, v);
+			auto lf = uc->getLocalFunction(id, s, t_args, v);
 			if(lf==nullptr) return &VOID_DATA;
 			return lf->callFunction(r,id, v, inst);
 		}

@@ -216,6 +216,11 @@ class LazyLocation;
 class E_FUNC_CALL;
 #endif
 
+#ifndef STATEMENT_C_
+#define STATEMENT_C_
+class Statement;
+#endif
+
 inline llvm::ConstantInt* getInt32(int32_t val){
 	return llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),32),(int64_t)val);
 }
@@ -398,7 +403,21 @@ struct TemplateArg {
 	//}
 };
 */
-#define TemplateArg const AbstractClass*
+
+
 #include "lib.hpp"
+
+struct T_ARGS {
+	bool inUse;
+	bool evaled;
+	mutable std::vector<const AbstractClass*> evals;
+	T_ARGS(bool in):inUse(in),evaled(false){}
+	void add(Statement* a){
+		evals.push_back((const AbstractClass*)a);
+	}
+	std::vector<const AbstractClass*>& eval(RData& r, PositionID id) const;
+};
+const T_ARGS NO_TEMPLATE(false);
+#define TemplateArg const AbstractClass*
 #include "output.hpp"
 #endif /* INCLUDES_HPP_ */

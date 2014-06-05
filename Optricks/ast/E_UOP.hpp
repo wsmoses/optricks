@@ -53,13 +53,21 @@ public:
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 		assert(isClassMethod==false);
-		const AbstractClass* ac = getReturnType();
+		const AbstractClass* ac;
+		const AbstractClass* V = value->getReturnType();
+		if(V->classType==CLASS_CLASS && operation=="[]" && pre==UOP_POST){
+			return ArrayClass::get(value->getMyClass(getRData(), id,{}), 0);
+		}
+		if(pre==UOP_PRE)
+			return getPreopReturnType(filePos, V, operation);
+		else
+			return getPostopReturnType(filePos, V, operation);
 		if(ac->classType==CLASS_FUNC){
 			return ((FunctionClass*)ac)->returnType;
 		} else if(ac->classType==CLASS_LAZY){
 			return ((LazyClass*)ac)->innerType;
-		} else if(ac->classType==CLASS_CLASS){
-			return ac;
+		//} else if(ac->classType==CLASS_CLASS){
+		//	return ac;
 		}	else {
 			id.error("Class '"+ac->getName()+"' cannot be used as function");
 			exit(1);

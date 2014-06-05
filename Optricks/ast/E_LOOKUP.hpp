@@ -32,10 +32,8 @@ public:
 		assert(isClassMethod==false);
 		const AbstractClass* cla= left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			id.warning("Function templates not complete");
-			return left->getMyClass(getRData(), filePos, {})->staticVariables.getFunctionReturnType(id,right,args);
+			return left->getMyClass(getRData(), filePos, {})->staticVariables.getFunctionReturnType(id,right,t_args, args);
 		} else {
-			id.warning("Local data templates not complete");
 			if(cla->hasLocalData(right)){
 				const AbstractClass* tmp = cla->getLocalReturnClass(id,right);
 				if(tmp->classType==CLASS_FUNC){
@@ -47,8 +45,7 @@ public:
 				}
 			}
 			else{
-				id.warning("Function templates not complete");
-				return getLocalFunctionReturnType(filePos, right, left->getReturnType(), args);
+				return getLocalFunctionReturnType(filePos, right, left->getReturnType(), t_args, args);
 			}
 		}
 		auto type=getReturnType();
@@ -76,12 +73,12 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
 		assert(args.size()==0);
 		auto t = left->getMyClass(r,id,{});
-		return t->staticVariables.getClass(id,right,t_args.eval(r, id));
+		return t->staticVariables.getClass(id,right,t_args);
 	}
 	const AbstractClass* getReturnType() const override final{
 		const AbstractClass* superC = left->getReturnType();
 		if(superC->classType==CLASS_CLASS){
-			return left->getMyClass(getRData(), filePos, {})->staticVariables.getReturnClass(filePos,right);
+			return left->getMyClass(getRData(), filePos, {})->staticVariables.getReturnClass(filePos,right, t_args);
 		} else {
 			return superC->getLocalReturnClass(filePos, right);
 		}
@@ -92,16 +89,15 @@ public:
 		///STATIC STUFF
 		if(cla->classType==CLASS_CLASS){
 			const AbstractClass* c = eval->getMyClass(a, filePos,{});
-			if(t_args.inUse>0){
+			/*if(t_args.inUse>0){
 				filePos.warning("Using only class templates");
-				return c->staticVariables.getClass(filePos, right, t_args.eval(a, filePos));
-			}
-			return c->staticVariables.get(filePos, right);
+				return c->staticVariables.getClass(filePos, right, t_args);
+			}*/
+			return c->staticVariables.get(filePos, right, t_args);
 		} else {
-			filePos.warning("Local data templates not complete");
 			//todo allow use of functions here
 			if(cla->hasLocalData(right)) return cla->getLocalData(a, filePos, right, eval);
-			else return new ClassFunctionData(eval, right);
+			else return new ClassFunctionData(eval, right, t_args);
 		}
 		/*
 			SCOPE_TYPE varType = lT->getScopeType(filePos, right);

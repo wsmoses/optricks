@@ -11,7 +11,7 @@
 #include "../data/Data.hpp"
 #include "../module/Scopable.hpp"
 #include "../evaluatable/Evaluatable.hpp"
-#define STATEMENT_P_
+#define STATEMENT_C_
 class Statement : public Evaluatable{
 	private:
 	public:
@@ -114,17 +114,6 @@ class VariableReference : public Statement{
 		 */
 //		virtual String getFullName() =0;
 		virtual String getShortName() const=0;
-};
-
-struct T_ARGS {
-	bool inUse;
-	bool evaled;
-	mutable std::vector<const AbstractClass*> evals;
-	T_ARGS(bool in):inUse(in),evaled(false){}
-	void add(Statement* a){
-		evals.push_back((const AbstractClass*)a);
-	}
-	std::vector<const AbstractClass*>& eval(RData& r, PositionID id) const;
 };
 
 

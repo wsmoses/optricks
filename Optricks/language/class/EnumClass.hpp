@@ -132,23 +132,11 @@ public:
 		exit(1);
 	}
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const AbstractClass*>& v) const{
-		auto tmp = this;
-		do{
-			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
-			tmp = (const EnumClass*)superClass;
-		}while(tmp);
-		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		id.error("Could not find local method '"+s+"' in enum '"+getName()+"'");
 		exit(1);
 	}
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const std::vector<const Evaluatable*>& v) const{
-		auto tmp = this;
-		do{
-			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,v,true);
-			tmp = (const EnumClass*)superClass;
-		}while(tmp);
-		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		id.error("Could not find local method '"+s+"' in enum '"+getName()+"'");
 		return nullptr;
 		//exit(1);
 	}
