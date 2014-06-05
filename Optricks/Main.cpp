@@ -153,7 +153,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		FP();
 		AbstractClass* cp = (AbstractClass*)(FP());
-		std::cout <<  "class{" << cp << ", '"<< cp->getName() << "'}" << endl << flush;
+		if(cp)
+			std::cout <<  "class{" << cp << ", '"<< cp->getName() << "'}" << endl << flush;
 	}else if(type==VOIDTYPE || retType->classType==CLASS_VOID){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
@@ -482,7 +483,7 @@ int main(int argc, char** argv){
 	std::vector<String> files =
 		{
 				//"./tmp"
-				//"./stdlib/stdlib.opt"
+				"./stdlib/stdlib.opt"
 				};
 	llvm::InitializeNativeTarget();
 	//llvm::InitializeAllTargets();
@@ -521,7 +522,7 @@ int main(int argc, char** argv){
 		std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
-		st.force("complex{int} a;\n");
+		//st.force("complex{int} a;\n");
 		/*
 		st.force("4/2*3/4\n");
 		st.force("extern double cos(double a); cos(3.14159)\n");

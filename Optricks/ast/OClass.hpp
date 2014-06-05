@@ -144,6 +144,7 @@ void initClasses(){
 		if(args.size()==0) return ComplexClass::get(&doubleClass);
 		if(args.size()!=1){
 			id.error("Cannot use template class 'complex' with more than one argument");
+			return nullptr;
 		}
 		switch(args[0]->classType){
 		case CLASS_INT:
@@ -156,6 +157,24 @@ void initClasses(){
 		}
 		return nullptr;
 	}),"complex");
+	LANG_M.addClass(PositionID(0,0,"#array"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+			//if(args.size()==0) return ComplexClass::get(&doubleClass);
+			if(args.size()!=1){
+				id.error("Must use template class 'array' with one argument");
+				return nullptr;
+			}
+			return ArrayClass::get(args[0], 0);
+		}),"array");
+	LANG_M.addClass(PositionID(0,0,"#function"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+			if(args.size()==0) {
+				id.error("Must use template class 'function' with at least one argument");
+				return nullptr;
+			}
+			std::vector<const AbstractClass*> ar;
+			for(unsigned i=1; i<args.size(); i++)
+				ar.push_back(args[i]);
+			return FunctionClass::get(args[0], ar);
+		}),"function");
 
 	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
 	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
