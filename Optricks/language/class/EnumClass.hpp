@@ -30,7 +30,7 @@ public:
 		LANG_M.addFunction(PositionID(0,0,"#enum"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-						nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()==1);
 						llvm::Value* V = args[0]->evalV(r, id);
 						if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
@@ -61,7 +61,7 @@ public:
 		LANG_M.addFunction(PositionID(0,0,"#enum"),"println")->add(
 				new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						nullptr,[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 				assert(args.size()==1);
 				llvm::Value* V = args[0]->evalV(r, id);
 				if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){

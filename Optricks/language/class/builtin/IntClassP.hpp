@@ -37,7 +37,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()>=1);
 						llvm::SmallVector<llvm::Type*,1> t_args(1);
 						t_args[0] = C_STRINGTYPE;
@@ -48,7 +48,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 						assert(args.size()>=1);
 						llvm::SmallVector<llvm::Type*,1> t_args(1);
 						t_args[0] = C_STRINGTYPE;

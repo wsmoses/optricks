@@ -23,36 +23,39 @@
 			return new ConstantData(cal,proto->returnType);
 		}
 	}
-BuiltinInlineFunction::BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
-SingleFunction(fp,getF(fp)),inlined(tmp){
-	llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
-	llvm::BasicBlock* BB = getRData().CreateBlockD("entry", myFunc);
-	getRData().builder.SetInsertPoint(BB);
 
-	unsigned Idx = 0;
-	std::vector<const Evaluatable*> args;
-	for (llvm::Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
-			++AI, ++Idx) {
-		((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
-		//todo should have this be location?
-		if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
-			args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
-		else
-			args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
-	}
-	//ASSUMES NO INLINE LOCAL METHODS
-	const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args);
-	if(! getRData().hadBreak()){
-		if(proto->returnType->classType==CLASS_VOID)
-			getRData().builder.CreateRetVoid();
-		else{
-			llvm::Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
-			getRData().builder.CreateRet(V);
+	llvm::Function* BuiltinInlineFunction::getSingleFunc() const{
+		if(myFunc!=nullptr) return myFunc;
+		myFunc = getF(proto);
+		llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
+		llvm::BasicBlock* BB = getRData().CreateBlockD("entry", myFunc);
+		getRData().builder.SetInsertPoint(BB);
+
+		unsigned Idx = 0;
+		std::vector<const Evaluatable*> args;
+		for (llvm::Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
+				++AI, ++Idx) {
+			((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
+			//todo should have this be location?
+			if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
+				args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
+			else
+				args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 		}
+		//ASSUMES NO INLINE LOCAL METHODS
+		const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args);
+		if(! getRData().hadBreak()){
+			if(proto->returnType->classType==CLASS_VOID)
+				getRData().builder.CreateRetVoid();
+			else{
+				llvm::Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
+				getRData().builder.CreateRet(V);
+			}
+		}
+		getRData().FinalizeFunctionD(myFunc);
+		if(Parent) getRData().builder.SetInsertPoint( Parent );
+		return myFunc;
 	}
-	getRData().FinalizeFunctionD(myFunc);
-	if(Parent) getRData().builder.SetInsertPoint( Parent );
-}
 
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	auto tmp=fp->declarations.size();

@@ -19,7 +19,7 @@ public:
 		assert(c_intClass.getWidth()>=getWidth());
 		LANG_M.addFunction(PositionID(0,0,"#char"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
 			const auto value = r.builder.CreateZExtOrTrunc(args[0]->evalV(r, id), c_intClass.type);
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -28,7 +28,7 @@ public:
 			return &VOID_DATA;}), PositionID(0,0,"#char"));
 		LANG_M.addFunction(PositionID(0,0,"#char"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-			nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()==1);
 			const auto value = r.builder.CreateZExtOrTrunc(args[0]->evalV(r, id), c_intClass.type);
 			auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});

@@ -118,7 +118,7 @@ void initClasses(){
 	//add_import_cpp_function(&LANG_M, std::terminate);
 	LANG_M.addFunction(PositionID(0,0,"#class"),"print")->add(
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
-		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
 		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -130,7 +130,7 @@ void initClasses(){
 		return &VOID_DATA;}), PositionID(0,0,"#int"));
 	LANG_M.addFunction(PositionID(0,0,"#class"),"println")->add(
 		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
-		nullptr,[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
 		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -177,6 +177,31 @@ void initClasses(){
 			return FunctionClass::get(args[0], ar);
 		}),"function");
 
+	LANG_M.addFunction(PositionID(0,0,"#str"),"scanf")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("scanf",{AbstractDeclaration(&stringLiteralClass)},&intClass,&stringLiteralClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			assert(args.size()>=1);
+			//TODO custom formatting for printf (and checks for literals / correct format / etc)
+			const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_STRINGTYPE;
+			auto CU = r.getExtern("scanf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+			llvm::SmallVector<llvm::Value*,1> m_args(args.size());
+			m_args[0] = r.getConstantCString(value);
+			for(unsigned i=1; i<args.size(); i++){
+				const Data* D = args[i]->evaluate(r);
+				if(D->getReturnType()->classType!=CLASS_REF){
+					id.error("Cannot have non-reference as argument to 'scanf'");
+					return &VOID_DATA;
+				}
+				assert(D->type==R_REF);
+				m_args[i] = ((ReferenceData*)D)->value->getMyLocation()->getPointer(r, id);
+			}
+			llvm::Value* V = r.builder.CreateCall(CU, m_args);
+			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
+			return new ConstantData(V, &intClass);
+		}), PositionID(0,0,"#int"));
 	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
 	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
 	//add_import_c_function(&LANG_M, mktime);

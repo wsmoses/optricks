@@ -21,8 +21,8 @@ clang-win:
 ddebug: 
 	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -DNDEBUG
 
-fast:
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB)
+fast: 
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -limagehlp
 
 release: 
 	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti

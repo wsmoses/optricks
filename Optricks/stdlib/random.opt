@@ -47,31 +47,40 @@ def void lazy(int% i){
        printf("%d\n", i());
        println("after: lazy");
 }
-def test(){
-	int a = 3;
+/*
+class T{
+static int a;
+static def test(){
+	int& a = & T.a;
+	a = 3;
 	printf("%d\n",a);
 	lazy(a++);
 	printf("%d\n",a);
 }
-def test2(){
-	int a = 3;
+static def test2(){
+	int& a = & T.a;
+	a = 3;
 	printf("%d\n",a);
 	lazy(a);
 	printf("%d\n",a);
 }
-def printr(int a){
+static def printr(int a){
 	printf("%d\n", a);
 }
-def test3(){
-	int a = 3;
+static def test3(){
+	int& a = & T.a;
+	a = 3;
 	printf("%d\n",a);
 	printr(a++);
 	printf("%d\n",a);
 }
 
-def test4(){
-	int a = 3;
+static def test4(){
+	int& a = & T.a;
+	a = 3;
 	printr(a);
 	inc(&a);
 	printr(a);
 }
+}
+*/

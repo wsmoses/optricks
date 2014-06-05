@@ -50,12 +50,12 @@ class SingleFunction: public AbstractFunction{
 	//friend OverloadedFunction;
 protected:
 	FunctionProto* const proto;
-	llvm::Function* const myFunc;
+	mutable llvm::Function* myFunc;
 public:
 	inline FunctionProto* getSingleProto() const{
 		return proto;
 	}
-	inline llvm::Function* getSingleFunc() const{
+	virtual llvm::Function* getSingleFunc() const{
 		assert(myFunc);
 		return myFunc;
 	}
@@ -110,9 +110,9 @@ private:
 	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> inlined;
 public:
 	static inline llvm::Function* getF(FunctionProto* fp);
-	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp);
-	BuiltinInlineFunction(FunctionProto* fp, llvm::Function* const f,std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
-		SingleFunction(fp,f),inlined(tmp){}
+	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
+		SingleFunction(fp,nullptr),inlined(tmp){}
+	llvm::Function* getSingleFunc() const override final;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
 		assert(instance==nullptr);
 		return inlined(r,id,validatePrototypeInline(r,id,args));

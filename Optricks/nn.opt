@@ -1,0 +1,200 @@
+def sigmoid(double x): return 1 / (1 + exp(-x))
+
+def print(lang.c.string s){
+	int i=0;
+	while(s[i]!='\0'){
+		print(s[i]);
+		++i;
+	}
+}
+
+def sub(double[] a,double[] b){
+	auto ar = double[](a.length);
+	for(int i=0; i<a.length; i++)
+		ar[i] = a[i]-b[i];
+	return ar;
+}
+
+def dot(double[] a,double[] b){
+	double tmp = 0
+	for(int i=0; i<a.length; i++)
+		tmp+=a[i]*b[i];
+	return tmp
+}
+
+def matMul(double[][] a, double[][] b){
+	auto ar = double[][](a.length);
+	for(int r=0; r<a.length; r++){
+		ar[r] = double[](b[0].length);
+		for(int c = 0; c<b[0].length; c++){
+			ar[r,c] = 0;
+			for(int s=0; s<a[r].length; s++){
+				ar[r,c]+=a[r,s]*b[s,c];
+			}
+		}
+	}	
+	return ar;
+}
+
+def printMat(double[][] a){
+	for(int r=0; r<a.length; r++){
+		print('[');
+		for(int c = 0; c<a[0].length; c++){
+			if(c>0)
+				printf(", %f", a[r,c]);
+			else
+				printf("%f", a[r,c]);
+		}
+		println(']')
+	}
+}
+//def randomMat(r,c,min=.1,max=.9): return [[random()*(max-min)+min for j in range(c)] for i in range(r)]
+
+int inputL  = 3
+int outputL = 2
+int hidden1 = 2
+int hidden2 = 3
+
+double[][] Matrix1 = [
+  [0.7,0.2],
+  [0.3,0.5],
+  [0.9,0.1],
+  [0.4,0.6]]
+
+double[][] Matrix2 = [
+  [0.4,0.1,0.6],
+  [0.2,0.9,0.5],
+  [0.3,0.7,0.8]]
+
+double[][] Matrix3 = [
+  [0.8,0.2],
+  [0.5,0.4],
+  [0.6,0.3],
+  [0.1,0.7]] 
+#Matrix1 = randomMat(inputL+1, hidden1,.1,.9)
+#Matrix2 = randomMat(hidden1+1, hidden2, .1, .9)
+#Matrix3 = randomMat(hidden2+1, outputL, .1, .9)
+def ms(function{double, double} f, double[] ar){
+	double[] a = double[](ar.length+1);
+	for(int i=0; i<ar.length; i++) a[i] = f(ar[i]);
+	a[ar.length] = -1;
+	return a;
+}
+def wrap(double[] a){
+	double[][] z = double[][](1);
+	z[0] = a;
+	return z;
+}
+def run(double[] iv){
+	double[][] inputVector = double[][](1);
+	inputVector[0] = double[](iv.length+1);
+	for(int i=0; i<iv.length; i++) inputVector[0,i] = iv[i];
+	inputVector[0,iv.length] = -1;
+  	auto r = matMul(inputVector, Matrix1)
+	assert(r.length==1)
+	auto hiddenVector1 = wrap(ms(sigmoid, r[0]));
+	r = matMul(hiddenVector1, Matrix2)
+	assert(r.length==1)
+	auto hiddenVector2 = wrap(ms(sigmoid, r[0]));
+	r = matMul(hiddenVector2, Matrix3)
+	assert(r.length==1)
+	for(int i=0; i<r[0].length; i++) r[0,i] = sigmoid(r[0,i]);
+	return r[0];
+}
+def error(double[] output, double[] target){
+	double d =0;
+	for(int i=0; i<output.length; i++)
+		d+=(output[i]-target[i])*(output[i]-target[i]);
+	return d/2;
+}
+
+def backProp(double[] iv, double[] target, double alpha){
+	double[][] inputVector = double[][](1);
+	inputVector[0] = double[](iv.length+1);
+	for(int i=0; i<iv.length; i++) inputVector[0,i] = iv[i];
+  	auto r = matMul(inputVector, Matrix1)
+	assert(r.length==1)
+	auto hiddenVector1 = wrap(ms(sigmoid, r[0]));
+	r = matMul(hiddenVector1, Matrix2)
+	assert(r.length==1)
+	auto hiddenVector2 = wrap(ms(sigmoid, r[0]))
+	r = matMul(hiddenVector2, Matrix3)
+	assert(r.length==1)
+	double[] out = double[](r[0].length);
+	for(int i=0; i<out.length; i++) out[i] = sigmoid(r[0,i]);
+  	auto delta = sub(out,target)
+	for(int j=0; j<Matrix3.length; j++)
+		for(int k=0; j<Matrix3[j].length; j++)
+			Matrix3[j][k]-=alpha*delta[k]*out[k]*(1-out[k])*hiddenVector2[0][j]
+
+      	auto tmp = double[][](out.length);
+	for(int i=0; i<tmp.length; i++){
+		tmp[i] = double[](1);
+		tmp[i,0] = out[i];
+	}
+	auto tmp2 = matMul(Matrix3, tmp);
+	delta = double[](tmp2.length);
+	for(int i=0; i<delta.length; i++) delta[i] = tmp2[0,i];
+
+	for(int j=0; j<Matrix2.length; j++)
+		for(int k=0; j<Matrix2[j].length; j++)
+			Matrix2[j][k]-=alpha*delta[k]*hiddenVector2[0][k]*(1-hiddenVector2[0][k])*hiddenVector1[0][j]
+
+      	tmp = double[][](out.length);
+	for(int i=0; i<tmp.length; i++){
+		tmp[i] = double[](1);
+		tmp[i,0] = out[i];
+	}
+	tmp2 = matMul(Matrix2, tmp);
+	delta = double[](tmp2.length);
+	for(int i=0; i<delta.length; i++) delta[i] = tmp2[0,i];
+
+	for(int j=0; j<Matrix1.length; j++)
+		for(int k=0; j<Matrix1[j].length; j++)
+			Matrix1[j][k]-=alpha*delta[k]*hiddenVector1[0][k]*(1-hiddenVector1[0][k])*inputVector[0][j]
+}
+def train(double[] inputVector, double[] target, double alpha, int count, double err):
+  for(int i=0; i<count; i++)
+    if(error(run(inputVector),target) < err): return
+    backProp(inputVector,target, alpha)
+
+def print(lang.c.string s, double[] ar){
+	print(s);
+	print('[');
+	for(int i=0; i<ar.length; i++)
+		printf("%f, ", ar[i]);
+	println(']');
+}    
+auto out = run([1,0,1])
+print("out 1 ", out)
+printf("error 1 %f\n", error(out, [1,0])*2)
+printMat(Matrix1)
+println()
+printMat(Matrix2)
+println()
+printMat(Matrix3)
+println()
+
+print('--------------prop---------------')
+backProp([1,0,1],[1,0],.1)
+printMat(Matrix1)
+println()
+printMat(Matrix2)
+println()
+printMat(Matrix3)
+println()
+out = run([1,0,1])
+print("out 2 ", out)
+printf("error 2 %f\n", error(out, [1,0])*2)
+
+print('--------------prop 2---------------')
+train([1,0,1],[1,0],.1, 3000, .001)
+printMat(Matrix1)
+println()
+printMat(Matrix2)
+println()
+printMat(Matrix3)
+println()
+out = run([1,0,1])
+print("out 3 ", out)
+printf("error 3 %f\n", error(out, [1,0])*2)
