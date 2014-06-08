@@ -8,6 +8,10 @@
 #ifndef LIB_HPP_
 #define LIB_HPP_
 #include "includes.hpp"
+
+template<typename T> constexpr T log2(T index){
+	return (index>1)?(log2(index/2)+1):0;
+}
 bool isalpha(char c){
 	return (c>='a' && c<='z') || (c>='A' && c<='Z');
 }

@@ -316,7 +316,7 @@ int main(int argc, char** argv){
 	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
 		new BuiltinInlineFunction(
 				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
-		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		if(!getRData().enableAsserts) return &VOID_DATA;
 		std::vector<const Evaluatable*> EV;
@@ -351,7 +351,7 @@ int main(int argc, char** argv){
 	LANG_M.addFunction(PositionID(0,0,"#str"),"typeof")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("typeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&classClass),
-			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
 			assert(args.size()==1);
 			return args[0]->getReturnType();
 			//const Data* D = args[0]->evaluate(r);
@@ -359,7 +359,7 @@ int main(int argc, char** argv){
 	LANG_M.addFunction(PositionID(0,0,"#str"),"sizeof")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("sizeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&intLiteralClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
 				assert(args.size()==1);
 				const AbstractClass* a = args[0]->getReturnType();
 				if(a->classType==CLASS_CLASS)

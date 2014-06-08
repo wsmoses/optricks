@@ -16,12 +16,12 @@
 
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
 						return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"print")->add(
 				new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
 				char temp[mpz_sizeinbase (value, 10) + 2];
@@ -34,7 +34,7 @@
 				return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
 			char temp[mpz_sizeinbase (value, 10) + 2];
@@ -48,7 +48,7 @@
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"chr")->add(
 			new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
-			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
 			long int L;
@@ -67,7 +67,7 @@
 
 		LANG_M.addFunction(PositionID(0,0,"#int"),"abs")->add(
 					new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},this),
-					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==1);
 					IntLiteral* out = new IntLiteral(0,0,0);
 					mpz_abs(out->value, ((const IntLiteral*) args[0]->evaluate(r))->value);
@@ -75,7 +75,7 @@
 		}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"abs2")->add(
 					new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},this),
-					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==1);
 					IntLiteral* out = new IntLiteral(0,0,0);
 					mpz_mul(out->value, ((const IntLiteral*) args[0]->evaluate(r))->value, ((const IntLiteral*) args[0]->evaluate(r))->value);

@@ -36,7 +36,7 @@ public:
 
 		LANG_M.addFunction(PositionID(0,0,"#float"),"abs2")->add(
 			new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},this),
-			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			llvm::Value* V = args[0]->evalV(r, id);
 			V = r.builder.CreateFMul(V, V);
@@ -64,7 +64,7 @@ public:
 #undef SINGLE_FUNC_DECLR
 		LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(
 				new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				auto V = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateFCmpUNO(V,V),&boolClass);}), PositionID(0,0,"#float"));

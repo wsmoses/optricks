@@ -43,7 +43,7 @@
 				args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 		}
 		//ASSUMES NO INLINE LOCAL METHODS
-		const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args);
+		const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args,nullptr);
 		if(! getRData().hadBreak()){
 			if(proto->returnType->classType==CLASS_VOID)
 				getRData().builder.CreateRetVoid();
@@ -92,26 +92,31 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 }
 
 
-std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const {
+std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data*& instance) const {
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	std::vector<const Evaluatable*> arg2;
 	const auto ts = (as<=ds)?as:ds;
+	if(instance){
+		if(instance->getReturnType() != proto->declarations[0].declarationType)
+			instance = instance->castTo(r, proto->declarations[0].declarationType, id);
+	}
 	for(unsigned int i = 0; i<ts; i++){
-		const AbstractClass* const t = proto->declarations[i].declarationType;
+		auto myDec = proto->declarations[i+(instance?1:0)];
+		const AbstractClass* const t = myDec.declarationType;
 		if(args[i]==nullptr){
-			if(proto->declarations[i].defaultValue==nullptr){
+			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
 				exit(1);
 			}
 
-			arg2.push_back(deLazyInline(r,id,proto->declarations[i].defaultValue,t));
+			arg2.push_back(deLazyInline(r,id,myDec.defaultValue,t));
 		}
 		else
 			arg2.push_back(deLazyInline(r,id,args[i],t));
 		assert(arg2.back());
 	}
-	if(as>ds){
+	if(as+(instance?1:0)>ds){
 		if(!proto->varArg)
 			id.error("Gave too many arguments to function "+proto->toString());
 		else
@@ -119,13 +124,14 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r
 				arg2.push_back(args[i]->evaluate(r)->toValue(r,id));
 		return arg2;
 	} else{
-		for(unsigned int i = as; i<ds; i++){
-			if(proto->declarations[i].defaultValue==nullptr){
+		for(unsigned int i = as; i+(instance?1:0)<ds; i++){
+			auto myDec = proto->declarations[i+(instance?1:0)];
+			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(i+1));
 				exit(1);
 			}
-			const AbstractClass* const t = proto->declarations[i].declarationType;
-			arg2.push_back(deLazyInline(r,id,proto->declarations[i].defaultValue,t));
+			const AbstractClass* const t = myDec.declarationType;
+			arg2.push_back(deLazyInline(r,id,myDec.defaultValue,t));
 		}
 		return arg2;
 	}

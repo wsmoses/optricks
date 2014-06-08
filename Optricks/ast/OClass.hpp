@@ -118,7 +118,7 @@ void initClasses(){
 	//add_import_cpp_function(&LANG_M, std::terminate);
 	LANG_M.addFunction(PositionID(0,0,"#class"),"print")->add(
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
-		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -130,7 +130,7 @@ void initClasses(){
 		return &VOID_DATA;}), PositionID(0,0,"#int"));
 	LANG_M.addFunction(PositionID(0,0,"#class"),"println")->add(
 		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
-		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -180,7 +180,7 @@ void initClasses(){
 	LANG_M.addFunction(PositionID(0,0,"#str"),"scanf")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("scanf",{AbstractDeclaration(&stringLiteralClass)},&intClass,true),
-			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()>=1);
 			//TODO custom formatting for printf (and checks for literals / correct format / etc)
 			const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
@@ -202,31 +202,53 @@ void initClasses(){
 			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 			return new ConstantData(V, &intClass);
 		}), PositionID(0,0,"#int"));
-	//add_import_c_var(&LANG_M, errno, &NS_LANG_C.staticVariables);
-	//add_import_c_var(&LANG_M, stdout, &NS_LANG_C.staticVariables);
-	//add_import_c_function(&LANG_M, mktime);
 
-	//(&LANG_M)->addVariable(PositionID("#internal",0,0), "CLOCKS_PER_SEC", import_c_var_h<typeof(CLOCKS_PER_SEC)>::import(CLOCKS_PER_SEC));
-
-	//add_import_c_function(&LANG_M, time);
-	//add_import_c_function(&LANG_M, asctime);
-	//add_import_c_function(&LANG_M, ctime);
-	//add_import_c_function(&LANG_M, gmtime);
-	//add_import_c_function(&LANG_M, localtime);
-	//add_import_c_function(&LANG_M, strftime);
-
-	//LANG_M.addScope()
-	/*
-	initClassesMeta();
-	AbstractClass* cl[] = {classClass, objectClass, autoClass, boolClass,
-			doubleClass, complexClass, intClass, charClass,
-			sliceClass, voidClass,
-			c_stringClass,c_intClass, c_longClass, c_long_longClass, c_pointerClass,byteClass};
-	for(AbstractClass*& p:cl){
-		//TODO fix this
-		LANG_M->addClass(PositionID(0,0,"oclass#init"),p);
+	auto SDL = new ScopeClass(&LANG_M, PositionID("#init",0,0), "sdl");
+	{
+		auto AF = new UserClass(&SDL->staticVariables,"AudioFormat",nullptr,PRIMITIVE_LAYOUT,false);
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),AF);
+		AF->addLocalVariable(PositionID("#sdl",0,0),"_data",&shortClass);
+		AF->finalize(PositionID("#sdl",0,0));
+		AF->constructors.add(new BuiltinInlineFunction(new FunctionProto("AudioFormat",{AbstractDeclaration(&shortClass)},AF),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==1);
+			llvm::Value* A = args[0]->evalV(r, id);
+			llvm::Value* V = llvm::UndefValue::get(AF->type);
+			return new ConstantData(r.builder.CreateInsertValue(V, A, 0), AF);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isFloat")->add(new BuiltinInlineFunction(new FunctionProto("isFloat",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE),&boolClass);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("bitSize")->add(new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data",instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
+		}), PositionID("#sdl",0,0));
+#define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(getRData().builder.CreateInsertValue(llvm::UndefValue::get(AF->type), llvm::ConstantInt::get(shortClass.type,A,false), 0),AF));
+		SDL_A(AUDIO_S8, S8);
+		SDL_A(AUDIO_U8, U8);
+		SDL_A(AUDIO_S16LSB, S16LSB);
+		SDL_A(AUDIO_S16MSB, S16MSB);
+		SDL_A(AUDIO_S16SYS, S16SYS);
+		SDL_A(AUDIO_S16, S16);
+		SDL_A(AUDIO_U16LSB, U16LSB);
+		SDL_A(AUDIO_U16MSB, U16MSB);
+		SDL_A(AUDIO_U16SYS, U16SYS);
+		SDL_A(AUDIO_U16, U16);
+		SDL_A(AUDIO_S32LSB, S32LSB);
+		SDL_A(AUDIO_S32MSB, S32MSB);
+		SDL_A(AUDIO_S32SYS, S32SYS);
+		SDL_A(AUDIO_S32, S32);
+		SDL_A(AUDIO_F32LSB, F32LSB);
+		SDL_A(AUDIO_F32MSB, F32MSB);
+		SDL_A(AUDIO_F32SYS, F32SYS);
+		SDL_A(AUDIO_F32, F32);
+#undef SDL_A
 	}
-	*/
 }
 
 

@@ -40,7 +40,7 @@ public:
 		,mathType(mc){
 		LANG_M.addFunction(PositionID(0,0,"#float"),"isNan")->add(new BuiltinInlineFunction(
 				new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		return new ConstantData(BoolClass::getValue(false),&boolClass);}), PositionID(0,0,"#float"));
 

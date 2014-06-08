@@ -15,7 +15,7 @@
 #define FL(N,R,M) \
 	LANG_M.addFunction(PositionID(0,0,"#float"),N)->add(\
 		new BuiltinInlineFunction(new FunctionProto(N, {AbstractDeclaration(this)},R),\
-			[this](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> const Data*{\
+			[this](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{\
 		M;})\
 		,PositionID(0,0,"#float"));
 #define FLT(N,MP) FL(N,this,\

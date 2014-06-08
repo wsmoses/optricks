@@ -23,7 +23,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		if(reg) LANG_M.addClass(PositionID(0,0,"#complex"),this);
 		LANG_M.addFunction(PositionID(0,0,"#complex"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&floatLiteralClass),
-			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
 			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
@@ -35,7 +35,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		}), PositionID(0,0,"#complex"));
 		LANG_M.addFunction(PositionID(0,0,"#complex"),"println")->add(
 			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&floatLiteralClass),
-			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
 			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->innerClass}).first->callFunction(r, id, {this->getLocalData(r, id, "real", D)}, nullptr);
@@ -49,7 +49,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		if(inner->classType==CLASS_FLOATLITERAL){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},&floatLiteralClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				FloatLiteral* out = new FloatLiteral(0,0,0);
 				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
@@ -65,7 +65,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			}), PositionID(0,0,"#complex"));
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},&floatLiteralClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				FloatLiteral* out = new FloatLiteral(0,0,0);
 				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
@@ -81,7 +81,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		} else if(inner->classType==CLASS_INTLITERAL){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},&intLiteralClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				IntLiteral* out = new IntLiteral(0,0,0);
 				const ImaginaryLiteral* il = (const ImaginaryLiteral*) args[0]->evaluate(r);
@@ -98,7 +98,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		else if(inner->classType==CLASS_FLOAT){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},innerClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				llvm::Value* V = args[0]->evalV(r, id);
 				V = r.builder.CreateFMul(V, V);
@@ -108,7 +108,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			}), PositionID(0,0,"#complex"));
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},innerClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				llvm::Value* V = args[0]->evalV(r, id);
 				V = r.builder.CreateFMul(V, V);
@@ -118,7 +118,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		} else if(inner->classType==CLASS_INT){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},innerClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 				assert(args.size()==1);
 				llvm::Value* V = args[0]->evalV(r, id);
 				V = r.builder.CreateMul(V, V);

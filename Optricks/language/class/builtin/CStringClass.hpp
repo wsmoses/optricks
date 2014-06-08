@@ -19,7 +19,7 @@ public:
 		/*
 		LANG_M.addFunction(PositionID(0,0,"#stringL"),"print")->add(
 						new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
 						const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
 						auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
@@ -34,7 +34,7 @@ public:
 		/*
 				LANG_M.addFunction(PositionID(0,0,"#cstr"),"println")->add(
 					new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
+					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==1);
 					llvm::Value* value = args[0]->evalV(r, id);
 					auto CU = r.getExtern("puts", this, {&c_intClass});

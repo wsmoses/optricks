@@ -79,7 +79,7 @@ public:
 	inline llvm::Function* getValue(RData& r, PositionID id) const override{
 		return myFunc;
 	}
-	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args) const;
+	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data*& instance) const;
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t);
 	static llvm::Value* fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) ;
@@ -107,15 +107,15 @@ public:
 //CANNOT BE USED FOR LOCAL FUNCTIONS
 class BuiltinInlineFunction: public SingleFunction{
 private:
-	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> inlined;
+	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> inlined;
 public:
 	static inline llvm::Function* getF(FunctionProto* fp);
-	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&)> tmp):
+	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> tmp):
 		SingleFunction(fp,nullptr),inlined(tmp){}
 	llvm::Function* getSingleFunc() const override final;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		assert(instance==nullptr);
-		return inlined(r,id,validatePrototypeInline(r,id,args));
+		//assert(instance==nullptr);
+		return inlined(r,id,validatePrototypeInline(r,id,args,instance),instance);
 	}
 };
 

@@ -55,34 +55,38 @@
 #include <mpfr.h>
 #include <mpf2mpfr.h>
 
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/ExecutionEngine/JIT.h"
-#include "llvm/ADT/APSInt.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Analysis/Passes.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JIT.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/PassManager.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/Support/raw_os_ostream.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
+
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/ADT/APSInt.h>
+#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Analysis/Passes.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/IR/DataLayout.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/PassManager.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/InitializePasses.h>
+#include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Analysis/CFG.h"
+#include <llvm/Analysis/Verifier.h>
+#include <llvm/Analysis/CFG.h>
 #else
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/CFG.h"
+#include <llvm/IR/Verifier.h>
+#include <llvm/IR/CFG.h>
 #endif
 
 //#include "clang/AST/ASTContext.h"

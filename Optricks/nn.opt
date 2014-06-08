@@ -1,4 +1,4 @@
-/*
+
 def sigmoid(double x): return 1 / (1 + exp(-x))
 
 def print(lang.c.string s){
@@ -175,7 +175,7 @@ printMat(Matrix2)
 println()
 printMat(Matrix3)
 println()
-
+/*
 print('--------------prop---------------')
 backProp([1,0,1],[1,0],.1)
 printMat(Matrix1)
