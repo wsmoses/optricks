@@ -45,7 +45,7 @@ class E_FUNC_CALL : public ErrorStatement{
 			for(auto &a : vals) if(a) ((const Statement*)a)->buildFunction(r);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractClass* getReturnType() const override{

@@ -64,8 +64,7 @@ class E_VAR : public VariableReference {
 			return pointer.getFunctionReturnType(t_args, args);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-			assert(args.size()==0);
+		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			return pointer.getClass(t_args);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{

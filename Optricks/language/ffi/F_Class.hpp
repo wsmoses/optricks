@@ -10,6 +10,9 @@
 #include "../class/AbstractClass.hpp"
 #include "../class/ScopeClass.hpp"
 
+//#define NAME(C) demangle(typeid(C).name())
+#define NAME(C) "<unknown.name>"
+
 template<typename F, size_t s> struct getFunctionArg;
 
 template<size_t s, typename R, typename B1, typename... B> struct getFunctionArg<R(B1, B...),s> {
@@ -21,21 +24,21 @@ template<typename R, typename B1, typename... B> struct getFunctionArg<R(B1, B..
 };
 
 template<typename C> struct convertClass{
-	static const AbstractClass* const convert(Scopable* s);
+	static const AbstractClass* const convert(Scopable* s, String st);
 };
 
 template<> struct convertClass<void>{
-	static const VoidClass* const convert(Scopable* s){
+	static const VoidClass* const convert(Scopable* s, String st="void"){
 		return &voidClass;
 	}
 };
 template<> struct convertClass<bool>{
-	static const BoolClass* const convert(Scopable* s){
+	static const BoolClass* const convert(Scopable* s, String st="bool"){
 		return &boolClass;
 	}
 };
 template<> struct convertClass<decltype(errno)>{
-	static const IntClass* const convert(Scopable* s){
+	static const IntClass* const convert(Scopable* s, String st="errno_t"){
 		if(sizeof(decltype(errno))==sizeof(int))
 			return &c_intClass;
 		if(sizeof(decltype(errno))==sizeof(long))
@@ -43,59 +46,63 @@ template<> struct convertClass<decltype(errno)>{
 		if(sizeof(decltype(errno))==sizeof(long long))
 			return &c_longlongClass;
 		else{
-			static IntClass ic(&(NS_LANG_C.staticVariables), "errno_t", 8*sizeof(decltype(errno)));
+			static IntClass ic(&(NS_LANG_C.staticVariables), st, 8*sizeof(decltype(errno)));
 			return &ic;
 		}
 	}
 };
 template<> struct convertClass<int>{
-	static const IntClass* const convert(Scopable* s){
+	static const IntClass* const convert(Scopable* s, String st=""){
 		return &c_intClass;
 	}
 };
 template<> struct convertClass<long>{
-	static const IntClass* const convert(Scopable* s){
+	static const IntClass* const convert(Scopable* s, String st=""){
 		return &c_longClass;
 	}
 };
 template<> struct convertClass<long long>{
-	static const IntClass* const convert(Scopable* s){
+	static const IntClass* const convert(Scopable* s, String st=""){
 		return &c_longlongClass;
 	}
 };
 template<> struct convertClass<float>{
-	static const FloatClass* const convert(Scopable* s){
+	static const FloatClass* const convert(Scopable* s, String st=""){
 		return &c_floatClass;
 	}
 };
 template<> struct convertClass<double>{
-	static const FloatClass* const convert(Scopable* s){
+	static const FloatClass* const convert(Scopable* s, String st=""){
 		return &c_doubleClass;
 	}
 };
 template<> struct convertClass<char>{
-	static const CharClass* const convert(Scopable* s){
+	static const CharClass* const convert(Scopable* s, String st=""){
 		return &charClass;
 	}
 };
 template<> struct convertClass<void const*>{
-	static const CPointerClass* const convert(Scopable* s){
+	static const CPointerClass* const convert(Scopable* s, String st=""){
 		return &c_pointerClass;
 	}
 };
 template<> struct convertClass<void*>{
-	static const CPointerClass* const convert(Scopable* s){
+	static const CPointerClass* const convert(Scopable* s, String st=""){
 		return &c_pointerClass;
 	}
 };
 template<typename A> struct convertClass<const A>{
-	static const ArrayClass* const convert(Scopable* s){
-		return convertClass<A>::convert(s);
+	static const ArrayClass* const convert(Scopable* s, String st){
+		return convertClass<A>::convert(s,st);
 	}
 };
 template<typename A, size_t B> struct convertClass<A[B]>{
-	static const ArrayClass* const convert(Scopable* s){
-		return ArrayClass::get(convertClass<A>::convert(s), B);
+	static const ArrayClass* const convert(Scopable* s, String st=""){
+		String str;
+		auto a = st.find('[');
+		if(a!=String::npos) str = st.substr(0,a);
+		else str = "<unknown>";
+		return ArrayClass::get(convertClass<A>::convert(s,st), B);
 	}
 };
 template<typename... A> struct totalSize{
@@ -113,69 +120,89 @@ template<> struct totalSize<>{
 };
 
 template<size_t s, typename... F> struct addClassToVector{
-	static void add(std::vector<const AbstractClass*>& v, Scopable* sc);
+	static void add(std::vector<const AbstractClass*>& v, Scopable* sc, String st);
 };
 
 template<size_t s, typename A, typename... F> struct addClassToVector<s, A, F...>{
-	static void add(std::vector<const AbstractClass*>& v, Scopable* sc){
-		v[s] = convertClass<A>::convert(sc);
-		addClassToVector<s+1, F...>::add(v, sc);
+	static void add(std::vector<const AbstractClass*>& v, Scopable* sc, String st){
+		//TODO fix name for tuple
+		int end = 0;
+		int start = 0; while(st[start]==' '&&start<st.length()) start++;
+		int count = 0;
+		for(end=start; end<st.length(); end++){
+			if(count==0 && st[end]==','){
+				break;
+			} else if(st[end]=='<') count++;
+			else if(st[end]=='>') count--;
+		}
+		v[s] = convertClass<A>::convert(sc, st.substr(start, end-start));
+		addClassToVector<s+1, F...>::add(v, sc, st.substr(end+1));
 	}
 };
 
 template<size_t s> struct addClassToVector<s>{
-	static void add(std::vector<const AbstractClass*> in, Scopable* sc){}
+	static void add(std::vector<const AbstractClass*> in, Scopable* sc, String st){}
 };
 
 template<typename A, typename B> struct convertClass<std::pair<A,B>>{
-	static const TupleClass* const convert(Scopable* s){
+	static const TupleClass* const convert(Scopable* s, String st=""){
 		assert(sizeof(A)+sizeof(B)==sizeof(std::pair<A,B>));
-		return TupleClass::get({convertClass<A>::convert(s), convertClass<B>::convert(s)});
+		auto a = st.find('<');
+		if(a!=String::npos) st = st.substr(a+1);
+		std::vector<const AbstractClass*> in(2);
+		addClassToVector<0,A,B>::add(in, s,st);
+		return TupleClass::get(in);
 	}
 };
 
 template<typename... A> struct convertClass<std::tuple<A...>>{
-	static const TupleClass* const convert(Scopable* s){
+	static const TupleClass* const convert(Scopable* s, String st=""){
 		assert(totalSize<A...>::get()==sizeof(std::tuple<A...>));
+		auto a = st.find('<');
+		if(a!=String::npos) st = st.substr(a+1);
 		std::vector<const AbstractClass*> in(sizeof...(A));
-		addClassToVector<0,A...>::add(in, s);
+		addClassToVector<0,A...>::add(in, s,st);
 		return TupleClass::get(in);
 	}
 };
 
 template<typename A, typename... B> struct convertClass<A(&)(B...)>{
-	static const FunctionClass* const convert(Scopable* s){
+	static const FunctionClass* const convert(Scopable* s, String st=""){
 		std::vector<const AbstractClass*> in(sizeof...(B));
-		addClassToVector<0,B...>::add(in,s);
-		return FunctionClass::get(convertClass<A>::convert(s),in);
+		auto a = st.find("(&)(");
+		if(a!=String::npos) st = st.substr(a+String("(&)(").length());
+		addClassToVector<0,B...>::add(in,s,st);
+		return FunctionClass::get(convertClass<A>::convert(s, "<unknown.funcreturn&>"),in);
 	}
 };
 
 template<typename A, typename... B> struct convertClass<A(*)(B...)>{
-	static const FunctionClass* const convert(Scopable* s){
+	static const FunctionClass* const convert(Scopable* s, String st=""){
 		std::vector<const AbstractClass*> in(sizeof...(B));
-		addClassToVector<0,B...>::add(in, s);
-		return FunctionClass::get(convertClass<A>::convert(s),in);
+		auto a = st.find("(*)(");
+		if(a!=String::npos) st = st.substr(a+String("(*)(").length());
+		addClassToVector<0,B...>::add(in, s,st);
+		return FunctionClass::get(convertClass<A>::convert(s, "<unknown.funcreturn*>"),in);
 	}
 };
 
 template<typename C> inline const AbstractClass* convertClassType(Scopable* s){
-	cerr << "Cannot convert class (not implemented) "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
+	cerr << "Cannot convert class (not implemented) "<< NAME(C) << " to optricks" << endl << flush;
 	exit(1);
 }
 
-template<typename C> const AbstractClass* const convertClass<C>::convert(Scopable* s){
+template<typename C> const AbstractClass* const convertClass<C>::convert(Scopable* s, String st){
 	if(std::is_union<C>::value){
-		cerr << "Cannot convert union "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
+		cerr << "Cannot convert union "<< st << " to optricks" << endl << flush;
 		cerr << "  There are no unions in optricks (since they are inherently unsafe). Use polymorphism instead" << endl << flush;
 		exit(1);
 	} else if(std::is_integral<C>::value){
 		/*if(!std::is_signed<C>::value){
-			cerr << "Cannot convert unsigned integer "<< demangle(typeid(C).name()) << " to optricks" << endl << flush;
+			cerr << "Cannot convert unsigned integer "<< st << " to optricks" << endl << flush;
 			cerr << "  There are no unsigned types in optricks (since they are unsafe)." << endl << flush;
 			exit(1);
 		}*/
-		String s = demangle(typeid(C).name());
+		String s = st;
 		for(unsigned i=0; i<s.size(); i++)
 			if(s[i]==' ') s[i]='_';
 		static IntClass tmp(&(NS_LANG_C.staticVariables), s, 8*sizeof(C));
@@ -189,38 +216,14 @@ template<typename C> const AbstractClass* const convertClass<C>::convert(Scopabl
 	} else if(std::is_class<C>::value){
 		return convertClassType<C>(s);
 	} else if(std::is_pointer<C>::value){
-		cerr << "Warning: Cannot convert class " << demangle(typeid(C).name()) << " to optricks" << endl << flush;
+		cerr << "Warning: Cannot convert class " << st << " to optricks" << endl << flush;
 		return &c_pointerClass;
 
 	}
-	cerr << "Cannot convert class " << demangle(typeid(C).name()) << " to optricks" << endl << flush;
-	cerr << "Cannot convert class " << typeid(C).name() << " to optricks" << endl << flush;
-	cerr << "size: " << sizeof(C) << endl << flush;
-	cerr << "is std::int " << std::is_integral<C>::value << endl << flush;
-	cerr << "is pointer " << std::is_pointer<C>::value << endl << flush;
-	cerr << "is int (errno) " << std::is_integral<decltype(errno)>::value << endl << flush;
-	cerr << "is int (int)" << std::is_integral<int>::value << endl << flush;
-	cerr <<  "int name : " << (typeid(int).name()) << endl << flush;
-	cerr <<  "errno name : " << (typeid(decltype(errno)).name()) << endl << flush;
-		//cerr << "errno: " << typeid(decltype(errno)) << endl << flush;
-#define MM(a)\
-	cerr << #a << ": " << (typeid(a)==typeid(decltype(errno))) << endl << flush;\
-	cerr << "signed " << #a << ": " << (typeid(signed a)==typeid(decltype(errno))) << endl << flush;\
-	cerr <<"unsigned " << #a << ": " << (typeid(unsigned a)==typeid(decltype(errno))) << endl << flush;
-	MM(int);
-	MM(long);
-	MM(long long);
-	MM(char);
-	MM(int const);
-	MM(long const);
-	MM(long long const);
-	MM(char const);
-#undef M
-//#define STR(x) #x
-	cerr << STR(_CRTIMP extern int *__cdecl ) << endl << flush;
-		//GIANT HACK......WHY IS THIS NEEDED????? (e.g. why is std::is_integral<decltype(errno)>::value false?)
-	if(typeid(C)==typeid(decltype(errno)))
-		return &c_intClass;
+	cerr << "Cannot convert class " << st << " to optricks" << endl << flush;
+
+	//if(typeid(C)==typeid(decltype(errno)))
+	//	return &c_intClass;
 	exit(1);
 }
 //////////////////////////////////////////////////////// LLVM //////////////////////////////////////////////////////////
@@ -337,7 +340,7 @@ template<typename A> struct convertLLVM<const A>{
 };
 template<typename C> llvm::Type* const convertLLVM<C>::convert(){
 	if(std::is_union<C>::value){
-		cerr << "Cannot convert union "<< demangle(typeid(C).name()) << " to LLVM" << endl << flush;
+		cerr << "Cannot convert union "<< NAME(C) << " to LLVM" << endl << flush;
 		cerr << "  There are no unions in optricks (since they are inherently unsafe). Use polymorphism instead" << endl << flush;
 		exit(1);
 	} else if(std::is_integral<C>::value){
@@ -351,9 +354,10 @@ template<typename C> llvm::Type* const convertLLVM<C>::convert(){
 	} else if(std::is_class<C>::value){
 	} else if(std::is_pointer<C>::value){
 	}
-	cerr << "Cannot convert class " << demangle(typeid(C).name()) << " to LLVM" << endl << flush;
+	cerr << "Cannot convert class " << NAME(C) << " to LLVM" << endl << flush;
 	exit(1);
 }
+#define convertClass(A,s) convertClass<A>::convert(s, STR(A))
 
 
 #endif /* F_CLASS_HPP_ */

@@ -19,7 +19,7 @@ const AbstractClass* Scopable::getClass(PositionID id, const String name, const 
 	auto f = find(id,name);
 	if(f.first==nullptr) return &voidClass;
 	if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
-	return f.first->classes[f.second->second.pos]->getMyClass(getRData(), id, args.eval(getRData(), id));
+	return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, args.eval(getRData(), id));
 }
 
 void Scopable::setVariable(PositionID id, const String name, const Data* da){
@@ -44,7 +44,7 @@ const Data* Scopable::getVariable(PositionID id, const String name) const{
 void Scopable::addClass(PositionID id, AbstractClass* c){
 	addClass(id, c, c->name);
 }
-void Scopable::addClass(PositionID id, const Data* c, String s){
+void Scopable::addClass(PositionID id, const MetaClass* c, String s){
 	if(existsHere(s)) id.error("Cannot define class "+s+" -- identifier already used at this scope");
 	mapping.insert(std::pair<String,SCOPE_POS>(s,SCOPE_POS(SCOPE_CLASS,classes.size())));
 	classes.push_back(c);
@@ -101,9 +101,9 @@ const Data* Resolvable::getObject(RData& r, const T_ARGS& t_args) const{
 		}
 		case SCOPE_CLASS:{
 			if(t_args.inUse)
-				return d.first->classes[d.second->second.pos]->getMyClass(r, filePos, t_args.eval(r, filePos));
+				return d.first->classes[d.second->second.pos]->resolveClass(r, filePos, t_args.eval(r, filePos));
 			else
-				return d.first->classes[d.second->second.pos];
+				return d.first->classes[d.second->second.pos]->resolveClass(r, filePos, {});
 		}
 		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
@@ -156,7 +156,7 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 			break;
 		}
 		case SCOPE_CLASS:{
-			ret = f.first->classes[f.second->second.pos]->getMyClass(getRData(), id, t_args.eval(getRData(), id));
+			ret = f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
 			break;
 		}
 		case SCOPE_VAR:{
@@ -182,9 +182,11 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 		}
 		case SCOPE_CLASS:{
 			assert(t_args.inUse==false);
-			const Data* d = f.first->classes[f.second->second.pos];
-			if(t_args.inUse) d = d->getMyClass(getRData(), id, t_args.eval(getRData(), id));
-			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_CLASS);
+			auto d = f.first->classes[f.second->second.pos];
+			const AbstractClass* R;
+			if(t_args.inUse) R = d->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+			else R = d->resolveClass(getRData(), id, {});
+			ret = std::pair<const Data*,SCOPE_TYPE>(R, SCOPE_CLASS);
 			break;
 		}
 		case SCOPE_VAR:{
@@ -208,9 +210,10 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 			assert(t_args.inUse==false);
 			return f.first->funcs[f.second->second.pos];
 		case SCOPE_CLASS:
+			//TODO reconsider?
 			if(t_args.inUse)
-				return f.first->classes[f.second->second.pos];
-			else return f.first->classes[f.second->second.pos]->getMyClass(getRData(), id, t_args.eval(getRData(), id));
+				return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, {});
+			else return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
 		default:
 			id.error(name+" found at current scope, but was not static -- needed static variable/class");
 			exit(1);

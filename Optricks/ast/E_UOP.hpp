@@ -38,11 +38,8 @@ public:
 		value->buildFunction(r);
 	};
 
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-		if(args.size()!=0){
-			id.compilerError("Template error");
-		}
-		auto t = value->getMyClass(r, id, {});
+	const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		auto t = value->getMyClass(r, id);
 		if(pre==UOP_POST){
 			if(operation=="[]") return ArrayClass::get(t,0);
 			if(operation=="&") return ReferenceClass::get(t);
@@ -56,7 +53,7 @@ public:
 		const AbstractClass* ac;
 		const AbstractClass* V = value->getReturnType();
 		if(V->classType==CLASS_CLASS && operation=="[]" && pre==UOP_POST){
-			return ArrayClass::get(value->getMyClass(getRData(), id,{}), 0);
+			return ArrayClass::get(value->getMyClass(getRData(), id), 0);
 		}
 		if(pre==UOP_PRE)
 			return getPreopReturnType(filePos, V, operation);

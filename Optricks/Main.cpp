@@ -260,6 +260,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		}
 	} else if(retType->classType==CLASS_NULL){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
+		FP();
 		std::cout << "null" << endl << flush;
 	}
 	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){
@@ -362,7 +363,7 @@ int main(int argc, char** argv){
 				assert(args.size()==1);
 				const AbstractClass* a = args[0]->getReturnType();
 				if(a->classType==CLASS_CLASS)
-					a = args[0]->evaluate(r)->getMyClass(r, id,{});
+					a = args[0]->evaluate(r)->getMyClass(r, id);
 				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
 				return new IntLiteral(s);
 				//const Data* D = args[0]->evaluate(r);
@@ -482,7 +483,6 @@ int main(int argc, char** argv){
 	std::vector<String> files =
 		{
 				//"./tmp"
-				"./nn.opt",
 				"./stdlib/stdlib.opt"
 				};
 	llvm::InitializeNativeTarget();
@@ -509,17 +509,17 @@ int main(int argc, char** argv){
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;
-		//std::cout << convertClass<void>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<bool>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<char>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<int>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << "== int " << (convertClass<int>::convert(&LANG_M)==&intClass) << endl << flush;
-		//std::cout << "== c_int " << (convertClass<int>::convert(&LANG_M)==&c_intClass) << endl << flush;
-		//std::cout << convertClass<int32_t>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<void(bool, char)>::convert(LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<void (*)(bool, char)>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<std::pair<bool, char>>::convert(&LANG_M)->getName() << endl << flush;
-		//std::cout << convertClass<void (*)(int, char)>::convert(&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(void,&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(bool,&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(char,&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(int,&LANG_M)->getName() << endl << flush;
+		//std::cout << "== int " << (convertClass(int,&LANG_M)==&intClass) << endl << flush;
+		//std::cout << "== c_int " << (convertClass(int,&LANG_M)==&c_intClass) << endl << flush;
+		//std::cout << convertClass(int32_t,&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(void(bool, char),LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(void (*)(bool, char),&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(std::pair<bool, char>,&LANG_M)->getName() << endl << flush;
+		//std::cout << convertClass(void (*)(int, char),&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
 		//st.force("int[] a\n");
 		//st.force("complex{int} a;\n");

@@ -29,7 +29,7 @@ class ClassFunction : public E_FUNCTION{
 			llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
 			llvm::SmallVector<llvm::Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 			std::vector<AbstractDeclaration> ad;
-			auto upperClass = surroundingClass->getMyClass(a, filePos, {});
+			auto upperClass = surroundingClass->getMyClass(a, filePos);
 			if(!staticF){
 				const AbstractClass* tA;
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT))
@@ -61,7 +61,7 @@ class ClassFunction : public E_FUNCTION{
 					);
 				}
 			}
-			const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos, {})):(nullptr);
+			const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos)):(nullptr);
 
 			if(returnType==nullptr){
 				std::vector<const AbstractClass*> yields;

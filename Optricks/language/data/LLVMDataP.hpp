@@ -75,11 +75,8 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			return type->compare(a, b);
 		}
 
-		const AbstractClass* LLVMData::getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const{
+		const AbstractClass* LLVMData::getMyClass(RData& r, PositionID id) const{
 			if(type->classType!=CLASS_CLASS) id.error("Cannot use non-class type as a class");
-			if(args.size()!=0){
-				id.error("Cannot template non-template class");
-			}
 			llvm::Value* v = getValue(r,id);
 			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
 				auto t = static_cast<size_t>(c->getLimitedValue());

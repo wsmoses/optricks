@@ -73,7 +73,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos, {})):(nullptr);
+		const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos)):(nullptr);
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;

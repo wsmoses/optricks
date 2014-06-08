@@ -11,7 +11,7 @@
 
 
 template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func)(B...), String name, String lib=""){
-	const FunctionClass* C = convertClass<R(*)(B...)>::convert(&NS_LANG_C.staticVariables);
+	const FunctionClass* C = convertClass(R(*)(B...),&NS_LANG_C.staticVariables);
 	std::vector<AbstractDeclaration> ad;
 	for(const auto& a: C->argumentTypes)
 		ad.push_back(AbstractDeclaration(a));
@@ -20,6 +20,7 @@ template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func
 			getRData().getExtern(name, C->returnType, C->argumentTypes, false, lib));
 };
 
+/*
 template<typename...B> struct addMangledToStream{
 	static void add(ostream& s);
 };
@@ -34,7 +35,7 @@ template<typename A, typename...B> struct addMangledToStream<A,B...>{
 template<> struct addMangledToStream<>{
 	static void add(ostream& s){
 	}
-};
+};*/
 
 /*
 llvm::StringRef getMangledName(clang::GlobalDecl GD) {
@@ -83,7 +84,7 @@ llvm::StringRef getMangledName(clang::GlobalDecl GD) {
 
 
 template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*func)(B...), String name, Scopable* scope=nullptr, String lib="",PositionID id=PositionID("#internalCPP",0,0)){
-	const FunctionClass* C = convertClass<R(*)(B...)>::convert(&NS_LANG_CPP.staticVariables);
+	const FunctionClass* C = convertClass(R(*)(B...),&NS_LANG_CPP.staticVariables);
 	std::vector<AbstractDeclaration> ad;
 	for(const auto& a: C->argumentTypes)
 		ad.push_back(AbstractDeclaration(a));
@@ -113,7 +114,8 @@ template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*fu
 		s << "_Z";
 		s << name.length();
 		s << name;
-		addMangledToStream<B...>::add(s);
+		//addMangledToStream<B...>::add(s);
+		//TODO
 	}
 	cerr << name << " vs " << s.str() << endl << flush;
 	auto CF = new CompiledFunction(
@@ -126,7 +128,7 @@ template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*fu
 };
 
 /*template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func)(B..., ...), String name, String lib=""){
-	const FunctionClass* C = convertClass<R(*)(B...)>::convert(&NS_LANG_C.staticVariables);
+	const FunctionClass* C = convertClass(R(*)(B...),&NS_LANG_C.staticVariables);
 	std::vector<AbstractDeclaration> ad;
 	for(const auto& a: C->argumentTypes)
 		ad.push_back(AbstractDeclaration(a));

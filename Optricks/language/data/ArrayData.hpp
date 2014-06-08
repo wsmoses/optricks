@@ -31,7 +31,7 @@ public:
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		return new ConstantData(castToV(r, right, id), right);
 	}
-	AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
+	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		id.error("Cannot use array as class");
 		exit(1);
 		//return voidClass;

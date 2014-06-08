@@ -32,7 +32,7 @@ public:
 		assert(isClassMethod==false);
 		const AbstractClass* cla= left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			return left->getMyClass(getRData(), filePos, {})->staticVariables.getFunctionReturnType(id,right,t_args, args);
+			return left->getMyClass(getRData(), filePos)->staticVariables.getFunctionReturnType(id,right,t_args, args);
 		} else {
 			if(cla->hasLocalData(right)){
 				const AbstractClass* tmp = cla->getLocalReturnClass(id,right);
@@ -70,15 +70,14 @@ public:
 		left->buildFunction(r);
 	};
 
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-		assert(args.size()==0);
-		auto t = left->getMyClass(r,id,{});
+	const AbstractClass* getMyClass(RData& r, PositionID id)const{
+		auto t = left->getMyClass(r,id);
 		return t->staticVariables.getClass(id,right,t_args);
 	}
 	const AbstractClass* getReturnType() const override final{
 		const AbstractClass* superC = left->getReturnType();
 		if(superC->classType==CLASS_CLASS){
-			return left->getMyClass(getRData(), filePos, {})->staticVariables.getReturnClass(filePos,right, t_args);
+			return left->getMyClass(getRData(), filePos)->staticVariables.getReturnClass(filePos,right, t_args);
 		} else {
 			return superC->getLocalReturnClass(filePos, right);
 		}
@@ -88,7 +87,7 @@ public:
 		const AbstractClass* cla = eval->getReturnType();
 		///STATIC STUFF
 		if(cla->classType==CLASS_CLASS){
-			const AbstractClass* c = eval->getMyClass(a, filePos,{});
+			const AbstractClass* c = eval->getMyClass(a, filePos);
 			/*if(t_args.inUse>0){
 				filePos.warning("Using only class templates");
 				return c->staticVariables.getClass(filePos, right, t_args);

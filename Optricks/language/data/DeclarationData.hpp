@@ -15,8 +15,8 @@ public:
 		Data(R_REF),value(val){
 		assert(val);
 	}
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
-		return value->fastEvaluate(r)->getMyClass(r,id,args);
+	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+		return value->fastEvaluate(r)->getMyClass(r,id);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
 		return value->getReturnType()->hasCast(a);

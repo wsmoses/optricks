@@ -35,8 +35,8 @@ public:
 		return inner->getReturnType();
 	}
 
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-		return inner->getMyClass(r, id, args);
+	const AbstractClass* getMyClass(RData& r, PositionID id)const{
+		return inner->getMyClass(r, id);
 	}
 };
 

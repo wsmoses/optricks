@@ -42,7 +42,7 @@ class Statement : public Evaluatable{
 		/**
 		 * Gets the class which this expression represents (assuming this is a class-type object or reference)
 		 */
-		virtual const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const =0;
+		virtual const AbstractClass* getMyClass(RData& r, PositionID id)const =0;
 
 		//virtual const AbstractClass* getSelfClass(PositionID id){
 		//	id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
@@ -68,7 +68,7 @@ public:
 class VoidStatement : public Statement{
 	public:
 		VoidStatement() : Statement(){}
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 

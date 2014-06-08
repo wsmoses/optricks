@@ -18,7 +18,7 @@ const AbstractClass* Literal::getFunctionReturnType(PositionID id, const std::ve
 	id.error("Literal cannot be used as function"+str(type));
 	return &voidClass;
 }
-const AbstractClass* Literal::getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const{
+const AbstractClass* Literal::getMyClass(RData& r, PositionID id) const{
 	id.error("Literal cannot be used as class"+str(type));
 	return &voidClass;
 }

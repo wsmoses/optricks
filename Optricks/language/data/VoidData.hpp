@@ -50,7 +50,7 @@ public:
 	/**
 	 * Returns the class that this represents, if it represents a class
 	 */
-	AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
+	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		id.error("Cannot use void as class");
 		exit(1);
 		//return voidClass;

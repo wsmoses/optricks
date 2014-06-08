@@ -26,6 +26,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_MAP:
 	case CLASS_STRLITERAL:
 	case CLASS_STR:
+	case CLASS_CSTRING:
 	case CLASS_CHAR:
 	case CLASS_SET:
 	case CLASS_CLASS:

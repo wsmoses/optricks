@@ -38,7 +38,7 @@ public:
 			args[i] = ac->type;
 		}
 		assert(returnV);
-		const AbstractClass* returnType = returnV->getMyClass(a, filePos, {});
+		const AbstractClass* returnType = returnV->getMyClass(a, filePos);
 		assert(returnType);
 		auto FT = llvm::FunctionType::get(returnType->type, args, false);
 		llvm::Function *F = a.getExtern(name, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);

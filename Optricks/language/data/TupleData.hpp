@@ -134,13 +134,10 @@ public:
 	/**
 	 * Returns the class that this represents, if it represents a class
 	 */
-	AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
-		if(args.size()!=0){
-			id.error("Cannot template non-templated class");
-		}
+	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		std::vector<const AbstractClass*> vec;
 		for(unsigned int i=0; i<inner.size(); i++){
-			auto tmp = inner[i]->getMyClass(r,id,{});
+			auto tmp = inner[i]->getMyClass(r,id);
 			vec.push_back(tmp);
 		}
 		return TupleClass::get(vec);

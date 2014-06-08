@@ -57,13 +57,10 @@ class E_TUPLE : public Statement{
 		};
 
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-			if(args.size()!=0){
-				id.compilerError("Cannot get tuple class with template error");
-			}
+		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			std::vector<const AbstractClass*> vec;
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec.push_back(values[i]->getMyClass(r, id,{}));
+				vec.push_back(values[i]->getMyClass(r, id));
 			}
 			return TupleClass::get(vec);
 		}
@@ -120,18 +117,15 @@ class E_NAMED_TUPLE : public ErrorStatement{
 		const AbstractClass* evaluate(RData& m) const override {
 			std::vector<const AbstractClass*> vec;
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec.push_back(values[i]->getMyClass(m, filePos, {}));
+				vec.push_back(values[i]->getMyClass(m, filePos));
 			}
 			return NamedTupleClass::get(vec,names);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
-			if(args.size()!=0){
-				id.compilerError("Template error");
-			}
+		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			std::vector<const AbstractClass*> vec;
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec.push_back(values[i]->getMyClass(r, id, args));
+				vec.push_back(values[i]->getMyClass(r, id));
 			}
 			assert(values.size()==vec.size());
 			assert(vec.size()==names.size());

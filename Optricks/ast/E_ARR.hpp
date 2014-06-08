@@ -20,7 +20,7 @@ class E_ARR : public ErrorStatement{
 			return T_ARR;
 		};
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{

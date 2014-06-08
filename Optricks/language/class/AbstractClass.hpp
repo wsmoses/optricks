@@ -13,7 +13,7 @@
 #include "../function/AbstractFunction.hpp"
 
 #define ABSTRACTCLASS_C_
-class AbstractClass: public Literal{
+class AbstractClass: public Literal, public MetaClass{
 	friend Scopable;
 	friend ReferenceClass;
 	friend LazyClass;
@@ -113,11 +113,13 @@ public:
 	virtual const AbstractClass* getLocalReturnClass(PositionID id, String s) const=0;
 	virtual bool hasLocalData(String s) const=0;
 	virtual const Data* getLocalData(RData& r,PositionID id, String s, const Data* instance) const=0;
-
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
+	const AbstractClass* resolveClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
 		if(args.size()!=0){
-			id.error("Cannot template a non-templated class");
+			id.error("Cannot template a non-template class");
 		}
+		return this;
+	}
+	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		return this;
 	}
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
@@ -136,26 +138,29 @@ public:
 	};
 };
 
-
-class BuiltinClassTemplate : public Data{
+//TODO FIX
+class BuiltinClassTemplate : public Data, public MetaClass{
 private:
 	const std::function<const AbstractClass*(RData&, PositionID,const std::vector<TemplateArg>&)> inlined;
 public:
 	BuiltinClassTemplate(const std::function<const AbstractClass*(RData&, PositionID,const std::vector<TemplateArg>&)>& ac) : Data(R_CLASSTEMPLATE),inlined(ac){
 	}
-	const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& a) const{
-		return inlined(r, id,a);
+	const AbstractClass* resolveClass(RData& r, PositionID id, const std::vector<TemplateArg>& args) const override final{
+		return inlined(r, id, args);
+	}
+	const AbstractClass* getMyClass(RData& r, PositionID id) const{
+		return resolveClass(r, id,{});
 	}
 	const Data* toValue(RData& r, PositionID id) const override final{
-		return getMyClass(r, id, {});
+		return getMyClass(r, id);
 	}
 	llvm::Value* getValue(RData& r, PositionID id) const{
-		return getMyClass(r, id, {})->getValue(r, id);
+		return getMyClass(r, id)->getValue(r, id);
 	}
 	const AbstractClass* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType!=CLASS_CLASS)
 			id.error("Cannot cast class 'class' to class '"+right->getName()+"'");
-		return getMyClass(r, id,{});
+		return getMyClass(r, id);
 	}
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
 		assert(instance==nullptr);
@@ -169,7 +174,7 @@ public:
 		return getValue(r,id);
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
-		return getMyClass(getRData(), id,{});
+		return getMyClass(getRData(), id);
 	}
 };
 
@@ -177,7 +182,7 @@ std::vector<const AbstractClass*>& T_ARGS::eval(RData& r, PositionID id) const{
 	if(!evaled){
 		const auto s = evals.size();
 		for(unsigned i=0; i<s; i++)
-			evals[i] = ((Statement*) evals[i])->getMyClass(r, id, {});
+			evals[i] = ((Statement*) evals[i])->getMyClass(r, id);
 	}
 	return evals;
 }

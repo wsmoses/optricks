@@ -22,7 +22,7 @@ class E_FUNCTION:public ErrorStatement{
 			returnV = nullptr;
 			//todo remove
 		}
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractFunction* evaluate(RData& a) const override{

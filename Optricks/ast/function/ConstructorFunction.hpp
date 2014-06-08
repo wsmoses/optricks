@@ -91,7 +91,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = myClass->getMyClass(a, filePos, {});
+		const AbstractClass* returnType = myClass->getMyClass(a, filePos);
 		assert(returnType);
 		if(returnType->classType!=CLASS_USER) filePos.error("Cannot make constructor for built-in types");
 		llvm::Type* r = returnType->type;

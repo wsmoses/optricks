@@ -34,7 +34,7 @@ class OClass: public ErrorStatement
 		}
 
 
-		const AbstractClass* getMyClass(RData& r, PositionID id, const std::vector<TemplateArg>& args)const{
+		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
@@ -99,12 +99,12 @@ void initClasses(){
 	ComplexClass::get(&doubleClass);
 	ComplexClass::get(&intLiteralClass);
 	ComplexClass::get(&floatLiteralClass);
-	convertClass<int>::convert(&LANG_M);
-	convertClass<short>::convert(&LANG_M);
-	convertClass<long>::convert(&LANG_M);
-	convertClass<long long>::convert(&LANG_M);
-	//convertClass<size_t>::convert(&LANG_M);
-	convertClass<int64_t>::convert(&LANG_M);
+	convertClass(int,&LANG_M);
+	convertClass(short,&LANG_M);
+	convertClass(long,&LANG_M);
+	convertClass(long long,&LANG_M);
+	//convertClass(size_t,&LANG_M);
+	convertClass(int64_t,&LANG_M);
 	//add_import_c_function(&LANG_M, malloc);
 	add_import_c_function(&LANG_M, clock);
 	add_import_c_function(&LANG_M, difftime);
@@ -120,7 +120,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}";
@@ -132,7 +132,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id,{});
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}" << endl;
@@ -179,7 +179,7 @@ void initClasses(){
 
 	LANG_M.addFunction(PositionID(0,0,"#str"),"scanf")->add(
 			new BuiltinInlineFunction(
-					new FunctionProto("scanf",{AbstractDeclaration(&stringLiteralClass)},&intClass,&stringLiteralClass),
+					new FunctionProto("scanf",{AbstractDeclaration(&stringLiteralClass)},&intClass,true),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args) -> Data*{
 			assert(args.size()>=1);
 			//TODO custom formatting for printf (and checks for literals / correct format / etc)

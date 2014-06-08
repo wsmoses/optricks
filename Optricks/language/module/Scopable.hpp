@@ -27,6 +27,11 @@ struct SCOPE_POS{
 	SCOPE_POS(SCOPE_TYPE t,unsigned int a):type(t),pos(a){};
 };
 
+class MetaClass{
+public:
+	virtual ~MetaClass(){};
+	virtual const AbstractClass* resolveClass(RData& r, PositionID id, const std::vector<TemplateArg>&) const=0;
+};
 #define SCOPABLE_C_
 class Scopable{
 private:
@@ -38,7 +43,7 @@ public:
 	std::vector<OverloadedFunction*> funcs;
 	std::vector<const Data*> vars;
 	std::vector<Scopable*> scopes;
-	std::vector<const Data*> classes;
+	std::vector<const MetaClass*> classes;
 public:
 	virtual ~Scopable(){};
 	Scopable(Scopable* above,String n=""):name(n),surroundingScope(above){};
@@ -144,7 +149,7 @@ public:
 	const Data* get(PositionID id, const String name, const T_ARGS&) const;
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
 	void addClass(PositionID id, AbstractClass* c);
-	void addClass(PositionID id, const Data* c,String n="");
+	void addClass(PositionID id, const MetaClass* c,String n="");
 	void addVariable(PositionID id, const String name,Data* d){
 		if(existsHere(name)) id.error("Cannot define variable "+name+" -- identifier already used at this scope");
 		mapping.insert(std::pair<const String,SCOPE_POS>(name,SCOPE_POS(SCOPE_VAR,vars.size())));
