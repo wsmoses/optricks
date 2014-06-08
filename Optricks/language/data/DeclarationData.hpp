@@ -12,7 +12,7 @@ class DeclarationData:public Data{
 public:
 	Declaration* const value;
 	DeclarationData(Declaration* const val):
-		Data(R_REF),value(val){
+		Data(R_DEC),value(val){
 		assert(val);
 	}
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{

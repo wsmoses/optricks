@@ -56,6 +56,7 @@
 #include <mpf2mpfr.h>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
@@ -318,6 +319,7 @@ enum DataType{
 	R_VOID,
 	R_CONST,
 	R_REF,
+	R_DEC,
 	R_LAZY,
 	R_LOC,
 	R_FUNCMAP,

@@ -169,40 +169,7 @@ public:
 		exit(1);
 	}
 
-	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
-		if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
-
-		auto tmp=this;
-				do{
-					auto fd = tmp->localMap.find(s);
-					if(fd!=tmp->localMap.end()){
-						unsigned start = tmp->start+fd->second;
-						assert(instance->type==R_LOC || instance->type==R_CONST);
-						assert(instance->getReturnType()==this);
-						if(instance->type==R_LOC){
-							Location* ld;
-							if(layout==PRIMITIVE_LAYOUT)
-								ld = ((const LocationData*)instance)->value->getInner(r, id, 0, start);
-							else{
-								ld = new StandardLocation(r.builder.CreateConstGEP2_32(
-										((const LocationData*)instance)->value->getValue(r,id),0,start));
-							}
-							return new LocationData(ld, tmp->localVars[fd->second]);
-						} else{
-							assert(instance->type==R_CONST);
-							llvm::Value* v = ((ConstantData*)instance)->value;
-							if(layout==PRIMITIVE_LAYOUT)
-								return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
-							else{
-								return new LocationData(new StandardLocation(r.builder.CreateConstGEP2_32(v, 0, start)), tmp->localVars[fd->second]);
-							}
-						}
-					}
-					tmp = (UserClass*)(tmp->superClass);
-				}while(tmp);
-			illegalLocal(id,s);
-			exit(1);
-	}
+	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final;
 	/*std::pair<AbstractClass*,unsigned int> getLocalVariable(PositionID id, String s) override final{
 		if(!final) id.compilerError("Cannot getLocalVariable() on unfinalized type");
 		auto tmp=this;

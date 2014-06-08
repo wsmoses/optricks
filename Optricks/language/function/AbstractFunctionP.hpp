@@ -368,7 +368,7 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 			else return r.builder.CreatePointerCast(myFunc, right->type);
 		}
 		else {
-			id.error("Single Function automatic generation of types has not been implemented...");
+			id.error("Single Function automatic generation of types has not been implemented... "+fc->getName()+" to "+right->getName());
 			exit(1);
 		}
 	}

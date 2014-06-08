@@ -8,12 +8,14 @@
 #ifndef REFERENCEDATA_HPP_
 #define REFERENCEDATA_HPP_
 #include "./Data.hpp"
+#include "../class/builtin/ReferenceClass.hpp"
 class ReferenceData:public Data{
 public:
 	const LocationData* const value;
 	ReferenceData(const LocationData* const val):
 		Data(R_REF),value(val){
 		assert(val);
+		assert(val->value->getName().length()>0);
 	}
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
 		id.error("Cannot use reference as class");

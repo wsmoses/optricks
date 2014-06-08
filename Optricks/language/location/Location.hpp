@@ -17,6 +17,7 @@ class Location{
 		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
+		virtual String getName()=0;
 };
 
 class StandardLocation : public Location{
@@ -24,6 +25,7 @@ class StandardLocation : public Location{
 	llvm::Value* position;
 	public:
 		~StandardLocation() override{};
+		String getName(){ return "StandardLocation"; }
 		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
@@ -49,6 +51,7 @@ private:
 	llvm::Type* type;
 public:
 	~LazyLocation() override{};
+	String getName(){ return "LazyLocation"; }
 	LazyLocation(void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):data(),position(p){
 		used = u;
 		assert(position);
@@ -116,8 +119,12 @@ private:
 				}
 				else v->insertBefore(found->first->getFirstNonPHI());*/
 				found->second = v;
+				assert(v);
 				return v;
-			} else return found->second;
+			} else{
+				assert(found->second);
+				return found->second;
+			}
 		}
 public:
 	llvm::Value* getValue(RData& r, PositionID id) override final{
@@ -142,6 +149,7 @@ public:
 				} else v = found->second;
 			}*/
 			data[me] = v;
+			assert(v);
 			return v;
 		}else return getFastValue(r,found,true);
 	}

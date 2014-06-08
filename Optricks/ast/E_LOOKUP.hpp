@@ -95,7 +95,8 @@ public:
 			return c->staticVariables.get(filePos, right, t_args);
 		} else {
 			//todo allow use of functions here
-			if(cla->hasLocalData(right)) return cla->getLocalData(a, filePos, right, eval);
+			if(cla->hasLocalData(right))
+				return cla->getLocalData(a, filePos, right, eval);
 			else return new ClassFunctionData(eval, right, t_args);
 		}
 		/*

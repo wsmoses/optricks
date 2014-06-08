@@ -222,6 +222,36 @@ void initClasses(){
 			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isBigEndian")->add(new BuiltinInlineFunction(new FunctionProto("isBigEndian",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE),&boolClass);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isSigned")->add(new BuiltinInlineFunction(new FunctionProto("isSigned",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE),&boolClass);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isInt")->add(new BuiltinInlineFunction(new FunctionProto("isInt",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE)),&boolClass);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isLittleEndian")->add(new BuiltinInlineFunction(new FunctionProto("isLittleEndian",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE)),&boolClass);
+		}), PositionID("#sdl",0,0));
+		AF->addLocalFunction("isUnsigned")->add(new BuiltinInlineFunction(new FunctionProto("isUnsigned",{AbstractDeclaration(AF)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE)),&boolClass);
+		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("bitSize")->add(new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
@@ -248,6 +278,23 @@ void initClasses(){
 		SDL_A(AUDIO_F32SYS, F32SYS);
 		SDL_A(AUDIO_F32, F32);
 #undef SDL_A
+
+
+		auto AS = new UserClass(&SDL->staticVariables,"AudioSpec",nullptr,PRIMITIVE_LAYOUT,false);
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),AS);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"freq",&c_intClass);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"format",AF);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"channels",&byteClass);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"silence",&byteClass);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"samples",&shortClass);
+		AS->addLocalVariable(PositionID("#sdl",0,0),"size",&intClass);
+		std::vector<const AbstractClass*> v= {&c_pointerClass,&c_pointerClass,&c_intClass};
+		AS->addLocalVariable(PositionID("#sdl",0,0),"callback",FunctionClass::get(&voidClass,v));//
+		AS->addLocalVariable(PositionID("#sdl",0,0),"userdata",&c_pointerClass);
+		AS->finalize(PositionID("#sdl",0,0));
+	}
+	{
+		auto F = Mix_LoadWAV_RW;
 	}
 }
 
