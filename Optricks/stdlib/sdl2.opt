@@ -1,0 +1,73 @@
+SDL_Init(0x10);
+
+extern lang.c.pointer SDL_RWFromFile(lang.c.string,lang.c.string);
+extern lang.c.pointer SDL_LoadWAV_RW(lang.c.pointer, lang.c.int, sdl.AudioSpec&, long&, int&)
+def SDL_LoadWAV(lang.c.string file, sdl.AudioSpec& spec, long& buf, lang.c.int& len){
+	return SDL_LoadWAV_RW(SDL_RWFromFile(file,'rb'),1,&spec,&buf,&len);
+}
+extern lang.c.pointer Mix_LoadWAV_RW(lang.c.pointer, lang.c.int);
+def Mix_LoadWAV(lang.c.string file){
+	return Mix_LoadWAV_RW(SDL_RWFromFile(file, "rb"), 1);
+}
+extern void Mix_FreeMusic(lang.c.pointer);
+extern void Mix_PlayMusic(lang.c.pointer, int loops=-1);
+extern bool Mix_PlayingMusic();
+extern lang.c.int Mix_OpenAudio(lang.c.int, sdl.AudioFormat, lang.c.int, lang.c.int);
+extern lang.c.int Mix_PlayChannelTimed(lang.c.int, lang.c.pointer, lang.c.int, lang.c.int);
+def Mix_PlayChannel(lang.c.int channel, lang.c.pointer chunk, lang.c.int loops){
+	return Mix_PlayChannelTimed(channel, chunk, loops, -1);
+}
+
+
+Mix_OpenAudio( 44100, sdl.AudioFormat.S16LSB, 2, 2048 );
+
+auto m = Mix_LoadWAV('dance.wav');
+//Mix_PlayMusic(m);
+Mix_PlayChannel(-1,m,0);
+
+
+
+extern void SDL_PauseAudio(lang.c.int)
+extern int SDL_OpenAudioDevice(lang.c.string, lang.c.int, sdl.AudioSpec&, sdl.AudioSpec&, lang.c.int)
+extern lang.c.string SDL_GetError();
+extern lang.c.int SDL_Init(int);
+extern void SDL_MixAudio(lang.c.pointer, long, int, lang.c.int);
+extern void SDL_MixAudioFormat(lang.c.pointer, long, sdl.AudioFormat, int, lang.c.int);
+extern lang.c.int SDL_OpenAudio(sdl.AudioSpec&, lang.c.pointer=null)
+extern void SDL_PauseAudioDevice(int, lang.c.int)
+extern void SDL_Delay(int);
+extern void SDL_CloseAudio();
+extern void SDL_FreeWAV(long);
+
+
+/*
+sdl.AudioSpec wav_spec;
+int wav_length;
+long wav_buffer;
+lang.c.string st='dance.wav';
+//lang.c.string st='beat.wav';
+//scanf("%s\n", &st);
+auto f = SDL_LoadWAV(st, &wav_spec, &wav_buffer, &wav_length);
+
+println(wav_spec.freq);
+println(wav_spec.format._data);
+println(wav_spec.channels);
+extern void fflush(lang.c.int);
+fflush(0);
+wav_spec.callback = def (lang.c.pointer udata, lang.c.pointer stream, lang.c.int len){
+	if(wav_length==0) return;
+	len = ((len > wav_length) ? wav_length : len);
+	SDL_MixAudioFormat(stream, wav_buffer, wav_spec.format, len, 128);
+	wav_buffer +=len;
+	wav_length -=len;
+//	printf("%d %d\n", wav_buffer, wav_length);
+};
+
+SDL_OpenAudio(&wav_spec);
+SDL_PauseAudio(0);
+while ( wav_length > 0 ) {
+	SDL_Delay(100);
+}
+SDL_CloseAudio();
+SDL_FreeWAV(wav_buffer);
+*/
