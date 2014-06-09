@@ -40,6 +40,13 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			return &voidClass;
 		}
 	}
+	case CLASS_ENUM:{
+		if(operation=="==" || operation=="!=") return &boolClass;
+		else {
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			return &voidClass;
+		}
+	}
 	case CLASS_STRLITERAL:{
 		if(operation=="[]") return &charClass;
 		if(dd->classType==CLASS_CHAR || dd->classType==CLASS_STRLITERAL || dd->classType==CLASS_INTLITERAL
@@ -419,6 +426,21 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	case CLASS_SCOPE:
 		filePos.compilerError("Scope should never be instantiated");
 		exit(1);
+		case CLASS_ENUM:{
+			if(dd->classType!=CLASS_ENUM){
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				return &VOID_DATA;
+			}
+			if(operation=="=="){
+				return new ConstantData(r.builder.CreateICmpEQ(value->getValue(r, filePos), ev->evalV(r, filePos)), &boolClass);
+			} else if(operation=="!="){
+				return new ConstantData(r.builder.CreateICmpNE(value->getValue(r, filePos), ev->evalV(r, filePos)), &boolClass);
+			}
+			else {
+				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+				return &VOID_DATA;
+			}
+		}
 	case CLASS_STRLITERAL:{
 		const StringLiteral* S = (const StringLiteral*)value;
 		if(operation=="[]"){

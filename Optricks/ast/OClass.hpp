@@ -326,6 +326,47 @@ void initClasses(){
 
 	}
 	{
+		auto MUS = new UserClass(&SDL->staticVariables,"MusicType",nullptr,PRIMITIVE_LAYOUT,false);
+				SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
+				const AbstractClass* T;
+				if(sizeof(Mix_MusicType)==sizeof(int))
+					T=&c_intClass;
+				else if(sizeof(Mix_MusicType)==sizeof(long))
+					T=&c_longClass;
+				else if(sizeof(Mix_MusicType)==sizeof(long long))
+					T=&c_longlongClass;
+				else{
+					PositionID("#sdl",0,0).compilerError("Could not match Mix_MusicType to c type");
+				}
+				MUS->addLocalVariable(PositionID("#sdl",0,0),"_data",T);
+				MUS->finalize(PositionID("#sdl",0,0));
+
+				MUS->addLocalFunction(":==")->add(new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(MUS),AbstractDeclaration(MUS)},&boolClass),
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==1);
+					llvm::Value* V1 = MUS->getLocalData(r, id, "_data",instance)->getValue(r, id);
+					llvm::Value* V2 = MUS->getLocalData(r, id, "_data",args[0]->evaluate(r))->getValue(r, id);
+					return new ConstantData(r.builder.CreateICmpEQ(V1,V2),&boolClass);
+				}), PositionID("#sdl",0,0));
+				MUS->addLocalFunction(":!=")->add(new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(MUS),AbstractDeclaration(MUS)},&boolClass),
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==1);
+					llvm::Value* V1 = MUS->getLocalData(r, id, "_data",instance)->getValue(r, id);
+					llvm::Value* V2 = MUS->getLocalData(r, id, "_data",args[0]->evaluate(r))->getValue(r, id);
+					return new ConstantData(r.builder.CreateICmpNE(V1,V2),&boolClass);
+				}), PositionID("#sdl",0,0));
+		#define SDL_A(A,B) MUS->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(getRData().builder.CreateInsertValue(llvm::UndefValue::get(MUS->type), llvm::ConstantInt::get(T->type,A,false), 0),MUS));
+				SDL_A(MUS_CMD, CMD);
+				SDL_A(MUS_NONE, NONE);
+				SDL_A(MUS_WAV, WAV);
+				SDL_A(MUS_MOD, MOD);
+				SDL_A(MUS_MID, MID);
+				SDL_A(MUS_OGG, OGG);
+				SDL_A(MUS_MP3, MP3);
+				SDL_A(MUS_MP3_MAD, MP3_MAD);
+				SDL_A(MUS_FLAC, FLAC);
+				SDL_A(MUS_MODPLUG, MODPLUG);
+		#undef SDL_A
 		auto F = Mix_LoadWAV_RW;
 	}
 }

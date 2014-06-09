@@ -36,7 +36,7 @@ class E_FUNCTION:public ErrorStatement{
 			return myFunction->getSingleProto()->returnType;
 		}
 		const AbstractClass* getReturnType() const override final{
-			assert(myFunction);
+			if(!myFunction) registerFunctionPrototype(getRData());
 			return myFunction->getSingleProto()->getFunctionClass();
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{

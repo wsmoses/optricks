@@ -42,6 +42,9 @@ class mix{
 
 	static class primitive music{
 		lang.c.pointer data;
+		def music(lang.c.string file){
+			this.data = (extern lang.c.pointer Mix_LoadMUS(lang.c.string))(file);
+		}
 		def void close(){
 			(extern void Mix_FreeMusic(music))(this);
 			this.data = null;
@@ -51,6 +54,62 @@ class mix{
 		}
 		static def bool isPlaying(){
 			return (extern bool Mix_PlayingMusic())()
+		}
+		static def setCommand(lang.c.string s){
+			return (extern lang.c.int Mix_SetMusicCMD(lang.c.string))(s);
+		}
+		//defaults to max
+		static def setVolume(lang.c.int i=128){
+			return (extern lang.c.int Mix_VolumeMusic(lang.c.int))(i);
+		}
+		static def getVolume(){
+			return music.setVolume(-1);
+		}
+		//fades & stops playing
+		static def fadeOut(int ms=2000){
+			return (extern lang.c.int Mix_FadeOutMusic(lang.c.int))(ms);
+		}
+		static def pause(){
+			(extern void Mix_PauseMusic())();
+		}
+		static def resume(){
+			(extern void Mix_ResumeMusic())();
+		}
+		static def stop(){
+			(extern lang.c.int Mix_HaltMusic())();
+		}
+		//rewinds to start
+		static def rewind(){
+			(extern void Mix_RewindMusic())();
+		}
+		//returns true if error
+		//MOD
+			//The double is cast to Uint16 and used for a pattern number in the module.
+			//Passing zero is similar to rewinding the song.
+		//OGG
+			//Jumps to position seconds from the beginning of the song.
+		//MP3
+			//Jumps to position seconds from the current position in the stream.
+			//So you may want to call Mix_RewindMusic before this.
+			//Does not go in reverse...negative values do nothing.
+		static def setPosition(double p){
+			auto V=(extern lang.c.int Mix_SetMusicPosition(double));
+			auto t=music.getMusicType();
+			if(t==sdl.MusicType.MP3 || t==sdl.MusicType.MP3_MAD){
+				music.rewind();
+				return V(p)==0;
+			} else if(t==sdl.MusicType.OGG){
+				return V(p)==0;
+			} else return false;
+		}
+		static def sdl.MusicType getMusicType(lang.c.pointer p=null){
+			return (extern sdl.MusicType Mix_GetMusicType(lang.c.pointer))(p);
+		}
+		def getMusicType(){
+			return music.getMusicType(this.data);
+		}
+		static def isPaused(){
+			return (extern lang.c.int Mix_PausedMusic())()==1;
 		}
 	};
 
