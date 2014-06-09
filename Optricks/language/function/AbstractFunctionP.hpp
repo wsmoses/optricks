@@ -178,6 +178,7 @@ const Evaluatable* SingleFunction::deLazyInline(RData& r, PositionID id, const E
 	}
 }
 llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, const AbstractClass* const t) {
+	assert(val);
 	if(t->classType==CLASS_LAZY){
 		llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 		const LazyClass* const lc = (const LazyClass*)t;
@@ -204,6 +205,7 @@ llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Data* val, c
 	}
 }
 llvm::Value* SingleFunction::fixLazy(RData& r, PositionID id, const Evaluatable* val, const AbstractClass* const t) {
+	assert(val);
 	if(t->classType==CLASS_LAZY){
 		llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 		const LazyClass* lc = (const LazyClass*)t;
@@ -282,7 +284,7 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 				id.error("No default argument available for argument "+str(i+1)+" for function "+proto->toString());
 				exit(1);
 			}
-			llvm::Value* V = fixLazy(r, id, proto->declarations[i].defaultValue, t);
+			llvm::Value* V = fixLazy(r, id, myDec.defaultValue, t);
 			assert(V);
 			assert(V->getType());
 			temp[i+(instance?1:0)] = V;

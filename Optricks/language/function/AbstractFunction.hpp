@@ -157,7 +157,7 @@ public:
 	}
 	const AbstractClass* getReturnType() const override final{
 		if(innerFuncs.size()==1) return (AbstractClass*) innerFuncs[0]->getSingleProto()->getFunctionClass();
-		PositionID(0,0,"#overload").compilerError("Cannot deduce return-type of overloaded function "+myName);
+		PositionID(0,0,"#overload").compilerError("Cannot deduce return-type of overloaded function "+myName+" "+str(innerFuncs.size()));
 		exit(1);
 	}
 	//TODO ALLOW TEMPLATE ARGS

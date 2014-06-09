@@ -788,6 +788,9 @@ public:
 				f->error("Cannot create subclass to final class");
 		}
 		UserClass* proto = new UserClass(data.mod, name, superC,primitive, isFinal);
+		if(outer && stat){
+			outer->proto->staticVariables.addClass(pos(), proto);
+		}
 		data.mod->addClass(pos(), proto);
 		OModule* classMod = new OModule(data.mod);
 		OClass* selfClass = new OClass(pos(), proto,(!stat)?outer:(nullptr));
