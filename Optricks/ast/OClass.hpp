@@ -368,6 +368,8 @@ void initClasses(){
 				SDL_A(MUS_MODPLUG, MODPLUG);
 		#undef SDL_A
 		auto F = Mix_LoadWAV_RW;
+	} {
+		auto R = opendir;
 	}
 }
 

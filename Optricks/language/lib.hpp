@@ -9,6 +9,35 @@
 #define LIB_HPP_
 #include "includes.hpp"
 
+String getExecutablePath(){
+	char resolved_path[PATH_MAX];
+#if defined(WIN32) || defined(_WIN32)
+	GetModuleFileName(nullptr,resolved_path,sizeof(resolved_path));
+	char* path_end = strrchr (resolved_path, '\\');
+	  if (path_end == NULL){
+			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
+			exit(1);
+		}
+	  ++path_end;
+	  *path_end = '\0';
+#else
+	  /* Read the target of /proc/self/exe.  */
+	  if (readlink ("/proc/self/exe", resolved_path, sizeof(resolved_path)) <= 0){
+			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
+			exit(1);
+		}
+	  /* Find the last occurence of a forward slash, the path separator.  */
+	  char* path_end = strrchr (resolved_path, '/');
+	  if (path_end == NULL){
+			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
+			exit(1);
+		}
+	  ++path_end;
+	  *path_end = '\0';
+#endif
+	return String(resolved_path);
+}
+
 template<typename T> constexpr T log2(T index){
 	return (index>1)?(log2(index/2)+1):0;
 }

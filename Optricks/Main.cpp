@@ -483,7 +483,7 @@ int main(int argc, char** argv){
 	std::vector<String> files =
 		{
 				//"./tmp"
-				"./stdlib/stdlib.opt"
+				getExecutablePath() +"stdlib/stdlib.opt"
 				};
 	llvm::InitializeNativeTarget();
 	//llvm::InitializeAllTargets();

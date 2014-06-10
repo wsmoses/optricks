@@ -985,10 +985,10 @@ public:
 			Statement* e = getNextStatement(ParseData(data.endWith, data.mod, false,PARSE_EXPR));
 			Statement* ret;
 			if(e->getToken()==T_PARENS){
-				auto IN = ((E_PARENS*)e)->inner;
+				auto INSIDE = ((E_PARENS*)e)->inner;
 				delete e;
 				ret = new E_FUNC_CALL(pos(), exp, std::vector<const Evaluatable*>(1,
-						(IN->getToken()==T_VOID)?nullptr:IN));
+						(INSIDE->getToken()==T_VOID)?nullptr:INSIDE));
 			}
 			else{
 				auto V = ((E_TUPLE*)e)->values;

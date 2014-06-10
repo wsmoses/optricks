@@ -25,7 +25,13 @@
 #ifdef WITH_ASSERTS
 #define NDEBUG
 #endif
+#if defined(WIN32) || defined(_WIN32)
+#include <Windows.h>
+#else
+#endif
+#include <unistd.h>
 #include <assert.h>
+#include <dirent.h>
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
