@@ -30,14 +30,14 @@ public:
 						return &VOID_DATA;}), PositionID(0,0,"#int"));*/
 		LANG_M.addFunction(PositionID(0,0,"#cstr"), "println")->add(
 				new CompiledFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						getRData().getExtern("puts",this, {&c_intClass})), PositionID(0,0,"#cstr"));
+						getRData().getExtern("puts",&c_intClass, {this})), PositionID(0,0,"#cstr"));
 		/*
 				LANG_M.addFunction(PositionID(0,0,"#cstr"),"println")->add(
 					new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==1);
 					llvm::Value* value = args[0]->evalV(r, id);
-					auto CU = r.getExtern("puts", this, {&c_intClass});
+					auto CU = r.getExtern("puts", &c_intClass, {this});
 					r.builder.CreateCall(CU, value);
 				return &VOID_DATA;}), PositionID(0,0,"#cstr"));
 		*/

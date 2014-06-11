@@ -10,6 +10,16 @@
 
 #include "../language/class/AbstractClass.hpp"
 
+bool hasLocalFunction(String s, const AbstractClass* cc){
+	switch(cc->classType){
+	case CLASS_USER:{
+		auto uc = (const UserClass*)cc;
+		return uc->hasLocalFunction(s);
+	}
+	default:
+		return false;
+	}
+}
 const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const AbstractClass* cc, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v){
 	switch(cc->classType){
 	case CLASS_USER:{

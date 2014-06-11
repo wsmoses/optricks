@@ -14,6 +14,15 @@
 #include "../data/LazyWrapperData.hpp"
 
 
+	CompiledFunction::CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
+		assert(fp->returnType->classType==CLASS_VOID || f->getReturnType()==fp->returnType->type);
+		assert(f->getFunctionType()->getNumParams()==fp->declarations.size());
+		assert(f->isVarArg()==fp->varArg);
+		for(unsigned i=0; i<fp->declarations.size(); i++){
+			assert(f->getFunctionType()->getParamType(i)==fp->declarations[i].declarationType->type);
+		}
+	}
+
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
 		assert(myFunc);
 		assert(myFunc->getReturnType());
@@ -98,8 +107,11 @@ std::vector<const Evaluatable*> SingleFunction::validatePrototypeInline(RData& r
 	std::vector<const Evaluatable*> arg2;
 	const auto ts = (as<=ds)?as:ds;
 	if(instance){
-		if(instance->getReturnType() != proto->declarations[0].declarationType)
-			instance = instance->castTo(r, proto->declarations[0].declarationType, id);
+		auto TMP = proto->declarations[0].declarationType;
+		if(TMP->classType==CLASS_REF) TMP = ((ReferenceClass*)TMP)->innerType;
+		if(instance->getReturnType() != TMP){
+			instance = instance->castTo(r, TMP, id);
+		}
 	}
 	for(unsigned int i = 0; i<ts; i++){
 		auto myDec = proto->declarations[i+(instance?1:0)];

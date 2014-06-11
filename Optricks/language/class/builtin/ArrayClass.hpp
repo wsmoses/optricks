@@ -61,6 +61,7 @@ public:
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
 		if(s=="carr") return &c_pointerClass;
+		if(s=="alloced" && len==0 && inner!=nullptr) return &intClass;
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);
@@ -69,7 +70,7 @@ public:
 		else return & intLiteralClass;
 	}
 	bool hasLocalData(String s) const override final{
-		return s=="length" || s=="carr";
+		return s=="length" || s=="carr" || (s=="alloced" && len==0 && inner!=nullptr);
 	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
 		//TODO reference count carr / make into int[len]&
@@ -78,6 +79,10 @@ public:
 			return new ConstantData(
 					r.builder.CreatePointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
 					&c_pointerClass);
+		}
+		if(len==0 && inner!=nullptr && s=="alloced"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 2)), &intClass);
 		}
 		if(s!="length"){
 			illegalLocal(id,s);

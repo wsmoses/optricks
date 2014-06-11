@@ -15,15 +15,22 @@
 UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject)
 	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(&objectClass):(supa),
 				t,CLASS_USER, fina,
+				(t==PRIMITIVEPOINTER_LAYOUT)?C_POINTERTYPE:(
 				(t==POINTER_LAYOUT)?(
 						(llvm::Type*) llvm::PointerType::getUnqual(llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
 		):(
 						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam))
 				)
-				),
+				)),
 						constructors(nam, nullptr),start(0),final(false)
 		{
-			if(t==PRIMITIVEPOINTER_LAYOUT) PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
+			if(t==PRIMITIVEPOINTER_LAYOUT){
+				PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
+				assert(supa==nullptr);
+				localMap["#data"]=localVars.size();
+				localVars.push_back(&c_pointerClass);
+				final = true;
+			}
 #ifdef NDEBUG
 			if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
 #endif
@@ -52,6 +59,17 @@ llvm::Value* UserClass::generateData(RData& r, PositionID id) const{
 }
 const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Data* instance) const {
 	if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
+	if(layout==PRIMITIVEPOINTER_LAYOUT){
+		if(s!="#data") illegalLocal(id,s);
+		assert(instance->type==R_LOC || instance->type==R_CONST);
+		assert(instance->getReturnType()==this);
+		if(instance->type==R_LOC){
+			return new LocationData(((LocationData*)instance)->value, &c_pointerClass);
+		} else {
+			assert(instance->type==R_CONST);
+			return new ConstantData(((ConstantData*)instance)->value, &c_pointerClass);
+		}
+	}
 	assert(instance);
 	auto tmp=this;
 			do{

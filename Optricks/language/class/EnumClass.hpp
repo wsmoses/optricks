@@ -16,17 +16,21 @@ private:
 	std::map<String, OverloadedFunction*> localFunctions;
 	std::map<String,UnaryFunction> preop;
 	std::map<String,UnaryFunction> postop;
-public:
-	mutable OverloadedFunction constructors;
+//public:
+//	mutable OverloadedFunction constructors;
 public:
 	friend AbstractClass;
-	const std::vector<String> names;
-	EnumClass(const Scopable* sc, String nam, const std::vector<String>& n)
-	: AbstractClass(sc,nam,nullptr,PRIMITIVE_LAYOUT,CLASS_ENUM,true,llvm::Type::getInt32Ty(llvm::getGlobalContext()))
-,constructors(nam, nullptr),names(n){
-		for(unsigned i=0; i<names.size(); i++)
-			this->staticVariables.addVariable(PositionID(0,0,"#enum"),names[i],new ConstantData(getInt32(i),this));
-
+	const std::vector<std::pair<int,String> > names;
+	EnumClass(const Scopable* sc, String nam, const std::vector<std::pair<int,String> >& n, PositionID id,llvm::Type* T=llvm::Type::getInt32Ty(llvm::getGlobalContext()))
+	: AbstractClass(sc,nam,nullptr,PRIMITIVE_LAYOUT,CLASS_ENUM,true,T)
+,names(n){
+		for(unsigned i=0; i<names.size(); i++){
+			for(unsigned j=0; j<i; j++){
+				if(names[i].first==names[j].first)
+					id.error("Enum with the same index "+names[i].second+" and "+names[j].second);
+			}
+			this->staticVariables.addVariable(PositionID(0,0,"#enum"),names[i].second,new ConstantData(llvm::ConstantInt::getSigned(T,(int64_t)(names[i].first)),this));
+		}
 		LANG_M.addFunction(PositionID(0,0,"#enum"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
@@ -35,7 +39,14 @@ public:
 						llvm::Value* V = args[0]->evalV(r, id);
 						if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
 							auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
-							for(const auto& a: this->names[C->getValue().getLimitedValue()]){
+							String s;
+							auto tmp = C->getValue().getLimitedValue();
+							for(unsigned i=0; i<this->names.size(); i++)
+								if(tmp==this->names[i].first){
+									s = this->names[i].second;
+									break;
+								}
+							for(const auto& a: s){
 								r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 							}
 						} else {
@@ -48,11 +59,11 @@ public:
 							for(unsigned i=0; i<names.size(); i++){
 								llvm::BasicBlock* TmpBB = r.CreateBlock("arrayPiece",StartBB);
 								r.builder.SetInsertPoint(TmpBB);
-								for(const auto& a: this->names[i]){
+								for(const auto& a: this->names[i].second){
 									r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 								}
 								r.builder.CreateBr(MergeBB);
-								Switch->addCase(getInt32(i), TmpBB);
+								Switch->addCase((llvm::ConstantInt*)llvm::ConstantInt::getSigned(T,(int64_t)(names[i].first)), TmpBB);
 							}
 							r.builder.SetInsertPoint(MergeBB);
 						}
@@ -66,7 +77,14 @@ public:
 				llvm::Value* V = args[0]->evalV(r, id);
 				if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
 					auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
-					for(const auto& a: this->names[C->getValue().getLimitedValue()]){
+					String s;
+					auto tmp = C->getValue().getLimitedValue();
+					for(unsigned i=0; i<this->names.size(); i++)
+						if(tmp==this->names[i].first){
+							s = this->names[i].second;
+							break;
+						}
+					for(const auto& a: s){
 						r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 					}
 					r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));
@@ -80,11 +98,11 @@ public:
 					for(unsigned i=0; i<names.size(); i++){
 						llvm::BasicBlock* TmpBB = r.CreateBlock("arrayPiece",StartBB);
 						r.builder.SetInsertPoint(TmpBB);
-						for(const auto& a: this->names[i]){
+						for(const auto& a: this->names[i].second){
 							r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 						}
 						r.builder.CreateBr(MergeBB);
-						Switch->addCase(getInt32(i), TmpBB);
+						Switch->addCase((llvm::ConstantInt*)llvm::ConstantInt::getSigned(T,(int64_t)(names[i].first)), TmpBB);
 					}
 					r.builder.SetInsertPoint(MergeBB);
 					r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));

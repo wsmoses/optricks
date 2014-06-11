@@ -9,7 +9,9 @@
 #define OCLASS_HPP_
 
 #include "../language/class/UserClass.hpp"
+#include "../language/class/EnumClass.hpp"
 #include "../language/class/builtin/NullClass.hpp"
+#include "../language/class/builtin/WrapperClass.hpp"
 #include "../language/ffi/F_Class.hpp"
 #include "../language/ffi/F_Function.hpp"
 #include "../language/ffi/F_Var.hpp"
@@ -326,36 +328,8 @@ void initClasses(){
 
 	}
 	{
-		auto MUS = new UserClass(&SDL->staticVariables,"MusicType",nullptr,PRIMITIVE_LAYOUT,false);
-				SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
-				const AbstractClass* T;
-				if(sizeof(Mix_MusicType)==sizeof(int))
-					T=&c_intClass;
-				else if(sizeof(Mix_MusicType)==sizeof(long))
-					T=&c_longClass;
-				else if(sizeof(Mix_MusicType)==sizeof(long long))
-					T=&c_longlongClass;
-				else{
-					PositionID("#sdl",0,0).compilerError("Could not match Mix_MusicType to c type");
-				}
-				MUS->addLocalVariable(PositionID("#sdl",0,0),"_data",T);
-				MUS->finalize(PositionID("#sdl",0,0));
-
-				MUS->addLocalFunction(":==")->add(new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(MUS),AbstractDeclaration(MUS)},&boolClass),
-						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-					assert(args.size()==1);
-					llvm::Value* V1 = MUS->getLocalData(r, id, "_data",instance)->getValue(r, id);
-					llvm::Value* V2 = MUS->getLocalData(r, id, "_data",args[0]->evaluate(r))->getValue(r, id);
-					return new ConstantData(r.builder.CreateICmpEQ(V1,V2),&boolClass);
-				}), PositionID("#sdl",0,0));
-				MUS->addLocalFunction(":!=")->add(new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(MUS),AbstractDeclaration(MUS)},&boolClass),
-						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-					assert(args.size()==1);
-					llvm::Value* V1 = MUS->getLocalData(r, id, "_data",instance)->getValue(r, id);
-					llvm::Value* V2 = MUS->getLocalData(r, id, "_data",args[0]->evaluate(r))->getValue(r, id);
-					return new ConstantData(r.builder.CreateICmpNE(V1,V2),&boolClass);
-				}), PositionID("#sdl",0,0));
-		#define SDL_A(A,B) MUS->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(getRData().builder.CreateInsertValue(llvm::UndefValue::get(MUS->type), llvm::ConstantInt::get(T->type,A,false), 0),MUS));
+		std::vector<std::pair<int,String>> E_D;
+		#define SDL_A(A,B) E_D.push_back(std::pair<int,String>(A,#B));
 				SDL_A(MUS_CMD, CMD);
 				SDL_A(MUS_NONE, NONE);
 				SDL_A(MUS_WAV, WAV);
@@ -367,9 +341,93 @@ void initClasses(){
 				SDL_A(MUS_FLAC, FLAC);
 				SDL_A(MUS_MODPLUG, MODPLUG);
 		#undef SDL_A
+		auto MUS = new EnumClass(&SDL->staticVariables,"MusicType",E_D,PositionID("#sdl",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(Mix_MusicType)));
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
 		auto F = Mix_LoadWAV_RW;
 	} {
 		auto R = opendir;
+
+#if defined(WIN32) || defined(_WIN32)
+		auto FD = new UserClass(&LANG_M,"FileData",nullptr,PRIMITIVE_LAYOUT,false);
+		LANG_M.addClass(PositionID("#dir",0,0),FD);
+#define ADD(A) FD->staticVariables.addVariable(PositionID("#dir",0,0),#A,new ConstantData(getInt32(A),&intClass));
+		ADD(FILE_ATTRIBUTE_ARCHIVE);
+		ADD(FILE_ATTRIBUTE_COMPRESSED);
+		ADD(FILE_ATTRIBUTE_DEVICE);
+		ADD(FILE_ATTRIBUTE_DIRECTORY);
+		ADD(FILE_ATTRIBUTE_ENCRYPTED);
+		ADD(FILE_ATTRIBUTE_HIDDEN);
+		//ADD(FILE_ATTRIBUTE_INTEGRITY_STREAM);
+		ADD(FILE_ATTRIBUTE_NORMAL);
+		ADD(FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+		//ADD(FILE_ATTRIBUTE_NO_SCRUB_DATA);
+		ADD(FILE_ATTRIBUTE_OFFLINE);
+		ADD(FILE_ATTRIBUTE_READONLY);
+		ADD(FILE_ATTRIBUTE_REPARSE_POINT);
+		ADD(FILE_ATTRIBUTE_SPARSE_FILE);
+		ADD(FILE_ATTRIBUTE_SYSTEM);
+		ADD(FILE_ATTRIBUTE_TEMPORARY);
+		ADD(FILE_ATTRIBUTE_VIRTUAL);
+#undef ADD
+		FD->addLocalVariable(PositionID("#dir",0,0),"attributes",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"creationTime",&longClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"lastAccessTime",&longClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"lastWriteTime",&longClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeHigh",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeLow",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"#reserved0",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"#reserved1",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"#name",new WrapperClass("#name",llvm::ArrayType::get(CHARTYPE,MAX_PATH)));
+		FD->addLocalVariable(PositionID("#dir",0,0),"#altName",new WrapperClass("#altName",llvm::ArrayType::get(CHARTYPE,14)));
+		FD->finalize(PositionID("#dir",0,0));
+		FD->addLocalFunction("getName")->add(new BuiltinInlineFunction(new FunctionProto("getName",{AbstractDeclaration(ReferenceClass::get(FD))},&c_stringClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			auto T = FD->getLocalData(r, id, "#reserved1", instance);
+			assert(T->type==R_LOC);
+			llvm::Value* V = ((LocationData*)T)->getMyLocation()->getPointer(r, id);
+			return new ConstantData(r.builder.CreatePointerCast(V, C_STRINGTYPE),&c_stringClass);
+		}), PositionID("#pos",0,0));
+		assert(llvm::DataLayout(getRData().lmod).getTypeAllocSize(FD->type)==sizeof(WIN32_FIND_DATA));
+		assert(sizeof(HANDLE)==sizeof(void*));
+		assert(sizeof(TCHAR)==sizeof(char));
+		assert(sizeof(LPCTSTR)==sizeof(char*));
+#else
+		auto DIR = new UserClass(&LANG_M,"dir",nullptr,PRIMITIVEPOINTER_LAYOUT,false);
+		LANG_M.addClass(PositionID("#dir",0,0),DIR);
+		DIR->constructors.add(new CompiledFunction(new FunctionProto("dir",{AbstractDeclaration(&c_stringClass)},DIR),
+				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));
+		//todo if primitive pointers are changed this must be changed to DIR->getLocal("#data");
+		DIR->addLocalFunction("close")->add(new CompiledFunction(new FunctionProto("close",{AbstractDeclaration(DIR)},DIR),
+				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));
+#endif
+		/*std::vector<std::pair<int,String>> E_D;
+		#define SDL_A(A,B) E_D.push_back(std::pair<int,String>(A,#B));
+				SDL_A(DT_UNKNOWN, UNKNOWN);
+				SDL_A(DT_REG, REGULAR);
+				SDL_A(DT_DIR, DIRECTORY);
+				SDL_A(DT_FIFO, FIFO);
+				SDL_A(DT_SOCK, SOCKET);
+				SDL_A(DT_CHR, CHAR);
+				SDL_A(DT_BLK, BLOCK);
+				SDL_A(DT_LNK, LINK);
+		#undef SDL_A
+		auto FT = new EnumClass(DIR->staticVariables,"FileType",E_D,PositionID("#dir",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(unsigned char)));
+		DIR->staticVariables.addClass(PositionID("#sdl",0,0),FT);*/
+
+		/*
+		auto AS = new UserClass(&SDL->staticVariables,"AudioSpec",nullptr,PRIMITIVE_LAYOUT,false);
+			SDL->staticVariables.addClass(PositionID("#sdl",0,0),AS);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"freq",&c_intClass);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"format",AF);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"channels",&byteClass);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"silence",&byteClass);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"samples",&shortClass);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"size",&intClass);
+			AS->addLocalVariable(PositionID("#sdl",0,0),"callback",FunctionClass::get(&voidClass,v));//
+			AS->addLocalVariable(PositionID("#sdl",0,0),"userdata",&c_pointerClass);
+			AS->finalize(PositionID("#sdl",0,0));
+		*/
 	}
 }
 

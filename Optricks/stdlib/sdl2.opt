@@ -1,3 +1,53 @@
+//windows only
+
+def lang.c.string copy(lang.c.string m){
+	auto len = (extern lang.c.size_t strlen(lang.c.string))(m)+1;
+	auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
+	(extern lang.c.string strcpy(lang.c.string,lang.c.string))(cp,m);
+	return cp;
+}
+
+extern void fflush(lang.c.pointer p=null);
+
+def ls(lang.c.string s){
+	println("STARTED")
+	fflush();
+	FileData f;
+	auto h = (extern lang.c.pointer FindFirstFile(lang.c.string,FileData&))(s,&f);
+	println('creating ar');
+	fflush()
+	lang.c.string[] ar = lang.c.string[](1);
+	println('created ar');
+	fflush()
+	do{
+		auto m = f.getName();
+		println(m);
+		fflush()
+		auto cp = copy(m);
+		println(cp);		
+		fflush()
+		if((f.attributes & FileData.FILE_ATTRIBUTE_DIRECTORY) == 0)
+			ar[]=cp;
+		printf("%d %d\n", ar.alloced, ar.length);
+		fflush()
+	}while((extern bool FindNextFile(lang.c.pointer,FileData&))(h,&f));
+	println('closing');
+	fflush()
+	//(extern void FindClose(lang.c.pointer))(h);
+	println('closed');
+	fflush()
+	print(ar.length);
+	fflush()
+	return ar;
+}
+
+def ar(int s){
+	int[] ar = int[](0);
+	for(int i=0; i<s; i++)
+		ar[]=i;
+	return ar;
+}
+
 
 extern lang.c.pointer SDL_RWFromFile(lang.c.string,lang.c.string);
 extern lang.c.pointer SDL_LoadWAV_RW(lang.c.pointer, lang.c.int, sdl.AudioSpec&, long&, int&)
@@ -49,7 +99,7 @@ class mix{
 			(extern void Mix_FreeMusic(music))(this);
 			this.data = null;
 		}
-		def void play(int loops=-1){
+		def void play(int loops=0){
 			(extern void Mix_PlayMusic(music, int))(this,loops);
 		}
 		static def bool isPlaying(){

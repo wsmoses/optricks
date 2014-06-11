@@ -236,7 +236,13 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	} else if(retType->classType==CLASS_ENUM){
 		auto (*FP)() = (int32_t (*)())(intptr_t)FPtr;
 		int32_t t = FP();
-		std::cout << ((const EnumClass*)retType)->names[t] << endl << flush;
+		auto EC = ((const EnumClass*)retType);
+		for(int i=0; i<EC->names.size(); i++){
+			if(EC->names[i].first==t){
+				std::cout << EC->names[i].second << endl << flush;
+				break;
+			}
+		}
 	}
 	/*else if(n->returnType==stringClass){
 		StringStruct (*FP)() = (StringStruct (*)())(intptr_t)FPtr;

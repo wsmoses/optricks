@@ -91,8 +91,7 @@ public:
 class CompiledFunction: public SingleFunction{
 private:
 public:
-	CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
-	}
+	CompiledFunction(FunctionProto* const fp, llvm::Function* const f);
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 

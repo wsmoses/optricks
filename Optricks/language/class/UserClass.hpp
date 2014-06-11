@@ -66,6 +66,15 @@ public:
 	}
 
 	inline llvm::Value* generateData(RData& r, PositionID id) const;
+	inline bool hasLocalFunction(String s) const{
+		auto tmp = this;
+		do{
+			auto find = tmp->localFunctions.find(s);
+			if(find!=tmp->localFunctions.end()) return true;
+			tmp = (const UserClass*)superClass;
+		}while(tmp);
+		return false;
+	}
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
 		auto tmp = this;
 		do{

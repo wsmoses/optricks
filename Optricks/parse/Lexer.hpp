@@ -183,7 +183,7 @@ public:
 		if(in<String>(BINARY_OPERATORS, temp)) f->error("Variable name is a binary operator");
 		return temp;
 	}
-	E_LOOKUP* getLookup(ParseData data, Statement* v, String name){
+	Statement* getLookup(ParseData data, Statement* v, String name){
 		if(name.length()==0) f->error("Name for lookup cannot be "+name);
 		f->trim(data.endWith);
 		E_LOOKUP* fixed = new E_LOOKUP(pos(), v, name,f->peek()=='{');
@@ -208,7 +208,23 @@ public:
 				f->trim(EOF);
 			}
 		}
-		return fixed;
+		//f->trim(data.endWith);
+		Statement* done = fixed;
+		if(f->peek()=='['){
+			f->read();
+			f->trim(EOF);
+			bool set=false;
+			while(f->peek()!=']'){
+				Statement* in=getNextStatement(data.getEndWith(EOF));
+				set = true;
+				pos().compilerError("Cannot parse A.B[4] as type");
+			}
+			f->read();
+			if(!set)
+				done = new E_UOP(pos(), "[]", done,UOP_POST);
+			//f->trim(data.endWith);
+		}
+		return done;
 	}
 	E_VAR* getNextVariable(ParseData data, bool allowsAuto, bool allowsTemplate){
 		auto tmp = getNextName(data.endWith);
@@ -415,13 +431,6 @@ public:
 			auto nextVariable = getNextName(data.endWith);
 			currentType = getLookup(data, currentType, nextVariable);
 			f->trim(data.endWith);
-			c = f->peek();
-			while(c=='<'||c=='['){
-				if(c=='<') f->error("Generic type parsing not implemented yet");
-				else{
-					f->error("Fixed-length Array type parsing not implemented yet");
-				}
-			}
 		}while(true);
 		while(true){
 			if(f->peek()=='&'){
@@ -443,6 +452,7 @@ public:
 				currentType = new E_UOP(pos(), "[]", currentType,UOP_POST);
 				f->trim(data.endWith);
 			} else{
+				//fully ignores int[5]
 				f->undoMarker(mark);
 				break;
 			}
@@ -842,7 +852,7 @@ public:
 		if(f->read()!='{') f->error("Need opening brace for enum definition");
 		f->trim(EOF);
 		//TODO should enums have local functions / static vars / inner classes / etc
-		std::vector<String> s;
+		std::vector<std::pair<int,String> > s;
 		while(true){
 			auto tmp = f->peek();
 			if(tmp=='}' || tmp==EOF) break;
@@ -862,13 +872,13 @@ public:
 					continue;
 				}
 				else{
-					s.push_back(f->getNextName(EOF));
+					s.push_back(std::pair<int,String>(s.size(),f->getNextName(EOF)));
 					f->trim(EOF);
 				}
 			}
 		}
 		if(f->read()!='}') f->error("Need closing brace for class definition");
-		EnumClass* proto = new EnumClass(data.mod, name, s);
+		EnumClass* proto = new EnumClass(data.mod, name, s,pos());
 		data.mod->addClass(pos(), proto);
 		while(f->peek()==';'){
 			f->read();
@@ -877,11 +887,11 @@ public:
 		return proto;
 	}
 	bool isValidType(ParseData data){
-		f->trim(data.endWith);
+		//f->trim(data.endWith);
 
 		auto s = f->getNextName(data.endWith);
 		if(s.length()==0) return false;
-		f->trim(data.endWith);
+		//f->trim(data.endWith);
 
 		auto fp = f->peek();
 		if(fp=='.'){
@@ -916,7 +926,7 @@ public:
 				}
 				f->read();
 			}
-			f->trim(data.endWith);
+			//f->trim(data.endWith);
 			fp = f->peek();
 		}
 		return true;
@@ -1137,7 +1147,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		}
 		else{
 			f->undoMarker(undoRead);
-			f->trim(data.endWith);
+			//f->trim(data.endWith);
 			//auto A = (char)f->peek();
 			//cerr << "A " << (int)A << " " << (char)A << endl << flush;
 			//cerr << "LAST " << (int)(f->last()) << " " << (char)(f->last()) << endl << flush;

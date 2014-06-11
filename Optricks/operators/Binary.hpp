@@ -1329,10 +1329,37 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 		} else if(operation=="[]="){
 			ArrayClass* AC = (ArrayClass*) cc;
-			llvm::Value* V = ev->evaluate(r)->castToV(r, AC->inner, filePos);
+			llvm::Value* INTO = ev->evaluate(r)->castToV(r, AC->inner, filePos);
+			llvm::Value* V = value->getValue(r, filePos);
 			assert(V);
-			filePos.compilerError("Array resizing to be determined");
-			exit(1);
+			auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
+			auto LENGTH = r.builder.CreateLoad(LENGTH_P);
+			auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
+			auto ALLOC = r.builder.CreateLoad(ALLOC_P);
+			auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
+			auto REALLOC = r.CreateBlockD("realloc", r.builder.GetInsertBlock()->getParent());
+			auto ADD = r.CreateBlockD("add", r.builder.GetInsertBlock()->getParent());
+			r.builder.CreateCondBr(r.builder.CreateICmpSGT(ALLOC,LENGTH),ADD,REALLOC);
+			r.builder.SetInsertPoint(REALLOC);
+			llvm::SmallVector<llvm::Type*,2> args(2);
+			args[0] = C_POINTERTYPE;
+			args[1] = C_SIZETTYPE;
+			llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
+			auto R_FUNC = r.getExtern("realloc",FT);
+			llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
+			auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+
+			auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateZExt(NEWLEN,C_SIZETTYPE));
+			auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
+			r.builder.CreateStore(NEW_P,DATA_P);
+			r.builder.CreateStore(NEWLEN,ALLOC_P);
+			r.builder.CreateBr(ADD);
+			r.builder.SetInsertPoint(ADD);
+			llvm::Value* I = r.builder.CreateLoad(DATA_P);
+			I = r.builder.CreateGEP(I, LENGTH);
+			r.builder.CreateStore(INTO, I);
+			r.builder.CreateStore(r.builder.CreateAdd(LENGTH, getInt32(1)),LENGTH_P);
+			return new ConstantData(INTO, AC->inner);
 		}
 		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
 		exit(1);

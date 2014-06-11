@@ -94,10 +94,15 @@ public:
 			}*/
 			return c->staticVariables.get(filePos, right, t_args);
 		} else {
-			//todo allow use of functions here
 			if(cla->hasLocalData(right))
 				return cla->getLocalData(a, filePos, right, eval);
-			else return new ClassFunctionData(eval, right, t_args);
+			else if(hasLocalFunction(right, cla)){
+				return new ClassFunctionData(eval, right, t_args);
+			}
+			else{
+				filePos.error("Could not find local '"+right+"' inside of class "+cla->getName());
+				return &VOID_DATA;
+			}
 		}
 		/*
 			SCOPE_TYPE varType = lT->getScopeType(filePos, right);
@@ -150,10 +155,6 @@ public:
 				return VOID;
 			}*/
 	}
-	/*Resolvable getMetadata(){
-			error("Cannot getMetadata of E_LOOKUP");
-			exit(1);
-		}*/
 };
 
 

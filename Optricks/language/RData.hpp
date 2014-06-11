@@ -97,7 +97,16 @@ struct RData{
 		inline llvm::Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
 		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
-			return (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
+			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
+			if(false){}
+#define MAP(X) else if(name==#X){ exec->updateGlobalMapping(F,(void*)(&X)); }
+#if defined(WIN32) || defined(_WIN32)
+			MAP(FindFirstFile)
+			MAP(FindNextFile)
+			MAP(FindClose)
+#endif
+#undef MAP
+			return F;
 		}
 		inline llvm::Value* getConstantCString(String name){
 			static std::map<String,llvm::Value*> M;
