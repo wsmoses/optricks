@@ -35,6 +35,7 @@ class IfStatement : public ErrorStatement{
 		const Token getToken() const override {
 			return T_IF;
 		}
+
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
 			then->collectReturns(vals,toBe);
 			if(finalElse) finalElse->collectReturns(vals,toBe);

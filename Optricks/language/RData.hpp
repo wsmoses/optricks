@@ -97,13 +97,21 @@ struct RData{
 		inline llvm::Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
 		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
+			assert(FT);
+			for(int i=0; i<FT->getNumParams(); i++)
+				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
+			assert(F);
 			if(false){}
 #define MAP(X) else if(name==#X){ exec->updateGlobalMapping(F,(void*)(&X)); }
 #if defined(WIN32) || defined(_WIN32)
 			MAP(FindFirstFile)
 			MAP(FindNextFile)
 			MAP(FindClose)
+//#else
+			MAP(opendir)
+			MAP(readdir)
+			MAP(closedir)
 #endif
 #undef MAP
 			return F;

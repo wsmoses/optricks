@@ -24,7 +24,6 @@ class ForEachLoop : public ErrorStatement{
 			ErrorStatement(id), theClass(NULL),localVariable(var), iterable(it),toLoop(tL){
 			name = n;
 		}
-
 		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}

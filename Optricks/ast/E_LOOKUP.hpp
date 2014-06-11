@@ -60,6 +60,7 @@ public:
 			exit(1);
 		}
 	}
+
 	void registerClasses() const override final{
 		left->registerClasses();
 	}
@@ -82,6 +83,7 @@ public:
 			return superC->getLocalReturnClass(filePos, right);
 		}
 	}
+
 	const Data* evaluate(RData& a) const override{
 		auto eval = left->evaluate(a);
 		const AbstractClass* cla = eval->getReturnType();

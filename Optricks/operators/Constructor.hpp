@@ -208,10 +208,19 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			exit(1);
 		}
 	}
-	case CLASS_LAZY:
-	case CLASS_REF:{
-		filePos.error("Lazy and Reference classes do not have constructors");
+	case CLASS_LAZY:{
+		filePos.error("Lazy classes do not have constructors");
 		exit(1);
+	}
+	case CLASS_REF:{
+		//const Data* d;
+		//if(args.size()!=1  || (d=args[0]->evaluate(r))->getReturnType()->classType!=CLASS_CPOINTER){
+			filePos.error("Reference classes do not have constructors");
+			return &VOID_DATA;
+		//}
+		//return new LocationData(new StandardLocation(r.builder.CreatePointerCast(d->getValue(r, filePos),type)),((const ReferenceClass*)this)->innerType);
+		//filePos.error("Lazy classes do not have constructors");
+		//exit(1);
 	}
 	case CLASS_USER:{
 		const UserClass* uc = (const UserClass*)this;

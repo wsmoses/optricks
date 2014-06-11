@@ -1251,6 +1251,13 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			return new LocationData(new StandardLocation(I), &charClass);
 		}
 		else if(operation=="==" || operation=="!="){
+			ev->evaluate(r);
+			if(dd->classType==CLASS_NULL){
+				if(operation=="==")
+					return new ConstantData(r.builder.CreateIsNull(value->getValue(r, filePos)),&boolClass);
+				else
+					return new ConstantData(r.builder.CreateIsNotNull(value->getValue(r, filePos)),&boolClass);
+			}
 			filePos.compilerError("TODO cstring"+operation);
 			exit(1);
 		}
@@ -1349,7 +1356,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
 			auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
-			auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateZExt(NEWLEN,C_SIZETTYPE));
+			uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
+			auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
+					llvm::ConstantInt::get(C_SIZETTYPE, s)));
 			auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
 			r.builder.CreateStore(NEW_P,DATA_P);
 			r.builder.CreateStore(NEWLEN,ALLOC_P);

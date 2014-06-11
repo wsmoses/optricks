@@ -19,7 +19,7 @@ class E_RETURN : public ErrorStatement{
 			ErrorStatement(id), inner(t), name(n), jump(j){ };
 		const Token getToken() const override{
 			return T_RETURN;
-		};
+		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe){
 			const AbstractClass* const n = (inner==nullptr || inner->getToken()==T_VOID)?((const AbstractClass*) &voidClass):(inner->getReturnType());
 			if(!toBe) vals.push_back(n);

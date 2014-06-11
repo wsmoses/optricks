@@ -23,6 +23,9 @@ class primitive random{
 	}
 
 }
+extern lang.c.int time(lang.c.pointer=null);
+extern void srand(lang.c.int=time());
+srand();
 def FOR(void% i, bool% b=true, void% c){
 	i();
 	while(b()){

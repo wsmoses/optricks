@@ -345,9 +345,9 @@ void initClasses(){
 		SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
 		auto F = Mix_LoadWAV_RW;
 	} {
-		auto R = opendir;
 
-#if defined(WIN32) || defined(_WIN32)
+
+#if 0 && (defined(WIN32) || defined(_WIN32))
 		auto FD = new UserClass(&LANG_M,"FileData",nullptr,PRIMITIVE_LAYOUT,false);
 		LANG_M.addClass(PositionID("#dir",0,0),FD);
 #define ADD(A) FD->staticVariables.addVariable(PositionID("#dir",0,0),#A,new ConstantData(getInt32(A),&intClass));
@@ -376,31 +376,75 @@ void initClasses(){
 		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeHigh",&intClass);
 		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeLow",&intClass);
 		FD->addLocalVariable(PositionID("#dir",0,0),"#reserved0",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"#reserved1",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"#name",new WrapperClass("#name",llvm::ArrayType::get(CHARTYPE,MAX_PATH)));
+		FD->addLocalVariable(PositionID("#dir",0,0),"#name",&intClass);
+		FD->addLocalVariable(PositionID("#dir",0,0),"#res",new WrapperClass("#name",llvm::ArrayType::get(CHARTYPE,MAX_PATH)));
 		FD->addLocalVariable(PositionID("#dir",0,0),"#altName",new WrapperClass("#altName",llvm::ArrayType::get(CHARTYPE,14)));
 		FD->finalize(PositionID("#dir",0,0));
-		FD->addLocalFunction("getName")->add(new BuiltinInlineFunction(new FunctionProto("getName",{AbstractDeclaration(ReferenceClass::get(FD))},&c_stringClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-			assert(args.size()==0);
-			auto T = FD->getLocalData(r, id, "#reserved1", instance);
-			assert(T->type==R_LOC);
-			llvm::Value* V = ((LocationData*)T)->getMyLocation()->getPointer(r, id);
-			return new ConstantData(r.builder.CreatePointerCast(V, C_STRINGTYPE),&c_stringClass);
-		}), PositionID("#pos",0,0));
 		assert(llvm::DataLayout(getRData().lmod).getTypeAllocSize(FD->type)==sizeof(WIN32_FIND_DATA));
 		assert(sizeof(HANDLE)==sizeof(void*));
 		assert(sizeof(TCHAR)==sizeof(char));
 		assert(sizeof(LPCTSTR)==sizeof(char*));
+		FD->addLocalFunction("getName")->add(new BuiltinInlineFunction(new FunctionProto("getName",{AbstractDeclaration(ReferenceClass::get(FD))},&c_stringClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			auto T = FD->getLocalData(r, id, "#name", instance);
+			assert(T->type==R_LOC);
+			llvm::Value* V = ((LocationData*)T)->getMyLocation()->getPointer(r, id);
+			return new ConstantData(r.builder.CreatePointerCast(V, C_STRINGTYPE),&c_stringClass);
+		}), PositionID("#pos",0,0));
 #else
+		/*
 		auto DIR = new UserClass(&LANG_M,"dir",nullptr,PRIMITIVEPOINTER_LAYOUT,false);
 		LANG_M.addClass(PositionID("#dir",0,0),DIR);
 		DIR->constructors.add(new CompiledFunction(new FunctionProto("dir",{AbstractDeclaration(&c_stringClass)},DIR),
 				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));
 		//todo if primitive pointers are changed this must be changed to DIR->getLocal("#data");
 		DIR->addLocalFunction("close")->add(new CompiledFunction(new FunctionProto("close",{AbstractDeclaration(DIR)},DIR),
-				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));
+				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));*/
+		LANG_M.addFunction(PositionID("#dir",0,0),"_posix_dir_next_name")->add(new BuiltinInlineFunction(new FunctionProto("_posix_dir_next_name",{AbstractDeclaration(&c_pointerClass)},&c_stringClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==1);
+			struct dirent TMP;
+			size_t beforeChar = (size_t)((size_t)(&(TMP.d_name))-(size_t)(&(TMP)));
+			//size_t charSize = sizeof(TMP.d_name);
+			//size_t afterChar = sizeof(TMP)-beforeChar-charSize;
+			auto TYPE_1 = llvm::ArrayType::get(CHARTYPE, sizeof(struct dirent));
+
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_POINTERTYPE;
+			auto READ = r.getExtern("readdir", llvm::FunctionType::get(llvm::PointerType::getUnqual(TYPE_1), t_args,true));
+			auto dirent_p = r.builder.CreateCall(READ,args[0]->evalV(r, id));
+			llvm::SmallVector<llvm::Value*,2> ar(2);
+			ar[0] = getInt32(0);
+			ar[1] = getInt32(beforeChar);
+			auto str = r.builder.CreateGEP(dirent_p,ar);
+			assert(str->getType()==C_STRINGTYPE);
+			return new ConstantData(str,&c_stringClass);
+		}), PositionID("#dir",0,0));
 #endif
+
+		std::vector<std::pair<int,String>> E_D;
+#define WINDOWS 0
+#define LINUX 1
+#define OSX 2
+		E_D.push_back(std::pair<int,String>(WINDOWS,"WINDOWS"));
+		E_D.push_back(std::pair<int,String>(LINUX,"LINUX"));
+		E_D.push_back(std::pair<int,String>(OSX,"OSX"));
+		auto OS_T = new EnumClass(&LANG_M,"os",E_D,PositionID("#os",0,0),byteClass.type);
+
+#if defined(WIN32) || defined(_WIN32)
+#define OS WINDOWS
+#elif defined(OSX)
+#define OS OSX
+#else
+#define OS LINUX
+#endif
+		OS_T->staticVariables.addVariable(PositionID("#os",0,0),"SELF",new ConstantData(llvm::ConstantInt::get(byteClass.type, OS, false),OS_T));
+		LANG_M.addClass(PositionID("#sdl",0,0),OS_T);
+#undef OS
+#undef LINUX
+#undef WINDOWS
+#undef OSX
 		/*std::vector<std::pair<int,String>> E_D;
 		#define SDL_A(A,B) E_D.push_back(std::pair<int,String>(A,#B));
 				SDL_A(DT_UNKNOWN, UNKNOWN);

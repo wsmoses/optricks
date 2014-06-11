@@ -29,6 +29,7 @@ class E_FUNC_CALL : public ErrorStatement{
 				exit(1);
 			}
 		}
+
 		const Token getToken() const override{
 			return T_FUNC_CALL;
 		};
@@ -52,6 +53,7 @@ class E_FUNC_CALL : public ErrorStatement{
 			return toCall->getFunctionReturnType(filePos,vals,false);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
+
 		const Data* evaluate(RData& a) const override{
 			const Data* tC = toCall->evaluate(a);
 			assert(tC);
