@@ -11,10 +11,10 @@ DEBUG = -g -ggdb
 STD = -std=c++11
 
 all: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG)
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -lGLU -lglut
 
 all-win: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp -lopengl32 -lglu32 -lglut
 
 clang-win: 
 	$(CLANG) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp
@@ -26,7 +26,7 @@ fast:
 	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -limagehlp
 
 release: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti
+	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti -lopengl32 -lglu32 -lglut
 
 release-win: 
 	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti -limagehlp

@@ -8,3 +8,8 @@ def cat(lang.c.string s){
         f.close();
 }
 
+def ls(lang.c.string s){
+	auto tmp = listdir(s);
+	for(int i=0; i<tmp.length; i++)
+		println(tmp[i])
+}

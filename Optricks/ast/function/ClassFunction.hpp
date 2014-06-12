@@ -76,7 +76,7 @@ class ClassFunction : public E_FUNCTION{
 			assert(returnType);
 			assert(returnType->type);
 			auto FT = llvm::FunctionType::get(returnType->type, args, false);
-			String nam = "!"+upperClass->getName()+"."+name;
+			String nam = "_opt"+upperClass->getName()+"."+name;
 			llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 			myFunction = new CompiledFunction(new FunctionProto(upperClass->getName()+"."+name, ad, returnType), F);
 

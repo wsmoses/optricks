@@ -12,7 +12,7 @@
 #define EXTERN_FUNC llvm::Function::ExternalLinkage
 #define VERIFY(A)
 //#define VERIFY(A) verifyFunction(A);
-//#include <GL/glut.h>
+#include <GL/glut.h>
 #undef VOID
 #define __cplusplus 201103L
 

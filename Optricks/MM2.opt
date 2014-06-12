@@ -4,9 +4,6 @@ def printdensity(int d):
 	elif  d > 020	print('.')
 	else         	print(' ')
 
-def abs2(complex z){
-    return z.real*z.real+z.imag*z.imag;
-}
 def int mand(complex z0){
 	auto z = z0
 	for(int iter=0; iter<1000; iter+=1)

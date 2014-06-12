@@ -1,7 +1,5 @@
 import 'sdl2.opt'
-/*def void print(int i, bool b=true){
-	(extern void printi(int i, bool b))(i,b);
-}*/
+
 /*
 def void test(){
 	int x = 7
@@ -10,11 +8,10 @@ def void test(){
 		print(x);
 	}
 }*/
+
 import 'file.opt';
 //import "string.opt"
 
-//import "file.opt";
-//extern int rand();
 /*
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
@@ -40,93 +37,46 @@ gen double range(double start=0, double stop, double step=1){
 gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
 }*/
-  
-def bool isNaN(double d){
-	return !(d==d);
-}
 
 def int min(int a,int b){
 	return (a<b)?a:b;
 }
 
 //auto hi="hello"
-//def void print(string s='c'){}
-/*def complex.complex(double a=0, double b=0){
-  this.real = a
-  this.imag = b
-}*/
 
-/*def void print(bool i, bool b=true){
-	(extern void printb(bool i, bool b))(i,b);
-}
-def void print(byte i, bool b=true){
-	(extern void printby(byte i, bool b))(i,b);
-}*/
-//	extern void putchar(char i);
-
-/*def void print(c_string i, bool b=true){
-	for a in i: putchar(a);
-	if(b) putchar('\n');
-}*/
-
-//def void print(string i, bool b=true){
-//	print(i._cstr,b);
-//}
-
-//extern void printc(complex i, bool b=true);
-
-/*def void print(complex i, bool b=true){
-	printc(i,b);
-}
-def void print(double i, bool b=true){
-	(extern void printd(double i, bool b))(i,b);
-}*/
-/*def void print(){
-	putchar('\n');
-}
-def void print(char i, bool b=true){
-	putchar(i);
-	if(b) putchar('\n');
-}*/
-extern double	tan		(double a);
-extern double	acos	(double a);
-extern double	asin	(double a);
-extern double	atan	(double a);
-extern double	atan2	(double a, double b);
-extern double	cosh	(double a);
-extern double	sinh	(double a);
-extern double	acosh	(double a);
-extern double	asinh	(double a);
-extern double	atanh	(double a);
-extern double	frexp	(double a);
-extern double	ldexp	(double a);
+extern double	tan		(double);
+extern double	acos	(double);
+extern double	asin	(double);
+extern double	atan	(double);
+extern double	atan2	(double, double);
+extern double	cosh	(double);
+extern double	sinh	(double);
+extern double	acosh	(double);
+extern double	asinh	(double);
+extern double	atanh	(double);
+extern double	frexp	(double);
+extern double	ldexp	(double);
 extern double	modf	(double, double&);
-extern double	expm1	(double a);
-extern int 		ilogb	(double a);
-extern double 	log1p	(double a);
-extern double 	logb	(double a);
-extern double	scalbn	(double	a);
-extern double	scalbln	(double a);
-extern double 	pow		(double a, double b);
-extern double	cbrt	(double a);
-extern double	erf		(double a);
-extern double	erfc	(double a);
-extern double	tgamma	(double a);
-extern double	lgamma	(double a);
-extern double	lround	(double a);
-extern double	llround	(double a);
-extern double	lrint	(double a);
-extern double	llrint	(double a);
-extern double	remainder(double a);
-extern double	remquo	(double a);
+extern double	expm1	(double);
+extern int 		ilogb	(double);
+extern double 	log1p	(double);
+extern double 	logb	(double);
+extern double	scalbn	(double);
+extern double	scalbln	(double);
+extern double 	pow		(double, double);
+extern double	cbrt	(double);
+extern double	erf		(double);
+extern double	erfc	(double);
+extern double	tgamma	(double);
+extern double	lgamma	(double);
+extern double	lround	(double);
+extern double	llround	(double);
+extern double	lrint	(double);
+extern double	llrint	(double);
+extern double	remainder(double);
+extern double	remquo	(double);
 
 //extern void qsort(lang.c.pointer ar, lang.c.size_t num, lang.c.size_t r, lang.c.pointer a);
-def lang.c.int intcmp(int a, int b){
-	if(a>b) return -1;
-	else if(a<b) return 1;
-	else return 0;
-}
-
 
 extern void exit(int i=0);
 def void quit(int i=0){ return exit(i); }
@@ -135,32 +85,12 @@ def complex conjugate(complex a){
 	a.imag*=-1;
 	return a;
 }
-/*
-def bool operator==(complex a, double b){
-	if(a.imag!=0) return false;
-	return a.real==b;
-}
-def bool operator==(double b, complex a){
-	if(a.imag!=0) return false;
-	return a.real==b;
-}
-def bool operator==(complex a, complex b){
-	if(a.imag!=b.imag) return false;
-	return a.real==b.real;
-}
-*/
+
 def complex exp(complex c){
 	complex z = cos(c.imag) + sin(c.imag)*1j;
 	return exp(c.real)*z
 }
-/*def complex cos(complex z){
-	return .5*(exp(1j*z)+exp(-1j*z));
-}*/
-/*
-def int operator ** (int a, int b){
-	return pow(a, b);
-};
-*/
+
 def int pow(int a, int b){
 	if(b<0) return 0;
 	elif(b==0) return 1;
@@ -173,31 +103,7 @@ def int pow(int a, int b){
 	} else return tmpow*tmpow*a;
 }
 
-
-//def complex pow(complex a, int b){
-//	return a**b;
-//}
 /*
-def double operator ** (double a, double b){
-	return pow(a, b);
-}
-*/
-
-/*def double complex.mag2( ) {
-	return this.real*this.real+this.imag*this.imag;
-}*/
-
-/*
-def int abs(int a){
-	return (a<0)?(-a):a;
-}
-def double abs(complex z){
-	return sqrt(z.real*z.real+z.imag*z.imag);
-}*/
-
-/*def double complex.mag(){
-	return sqrt(this.real*this.real+this.imag*this.imag);
-}
 def double complex.angle(){
 	return atan2(this.imag,this.real);
 }*/
@@ -208,9 +114,5 @@ def complex operator ** (complex a, double b){
 	return complex(cos(angle)*mag,sin(angle)*mag);
 }
 
-def double double.print(bool newline=true){
-	print(this,newline);
-	return this;
-}*/
 // */
 import "random.opt"

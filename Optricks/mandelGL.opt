@@ -1,32 +1,33 @@
-import "stdlib/Display.opt"
+import "stdlib/display.opt"
 
+double angle=0;
 def Color mand(complex z0){
 	complex z = z0
-	for iter in range(1000):
-		if( z.mag2() > 4 ){
-			double val = 
-			1-
+	for(int iter=0; iter<1000; iter++)
+		if( abs2(z) > 4 ){
+			double val = 1-
 			(iter +1 -log(.5*log(z.real**2+z.imag**2)/log(2))/log(2))/1000;
-			
 			val = 1-val*val;
 			return Color(val,val,.4+.6*val)
 		}
-		else z = z**6 + z0
+		else z = z*z + complex(cos(angle),sin(angle))
 	return Color(0,0,0);
 }
 
 def void display(){
 	glClear();
 	glBegin(0x0000);
-	auto y = range(-1.25,1.25,.04);
-	auto x = range(-2,1,.02);
-	for y in range(500):
-		for x in range(500):
-			glPixel((x-249)/250.,1-y/250.,mand(complex(-2.+3.*x/500., -1.25+2.5*y/500.)))
-//			glPixel(int((re-x.start)/(x.stop-x.start)*500),int((im-y.start)/(y.stop-y.start)*500),Color(255,0,0))
-//			glPixel(int((re-x.start)/(x.stop-x.start)*500),int((im-y.start)/(y.stop-y.start)*500),mand(complex(im,re)))
+	for(int y=0; y<500; y++)
+		for(int x=0; x<500; x++)
+			glPixel((x-249)/double(250),1-y/double(250),mand(complex(-2.+3.*double(x)/500., -1.25+2.5*double(y)/500.)))
 	glEnd();
 	glFlush();
 	glutSwapBuffers();
+	printf("%f\n", angle);
+	fflush();
 }
-Display(500,500,'hi',display);
+def idle(){
+	angle+=.1;
+	glutPostRedisplay();
+}
+Display(500,500,'hi',display,idle);

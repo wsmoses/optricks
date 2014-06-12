@@ -80,7 +80,8 @@ class OClass: public ErrorStatement
 					}
 					//TODO allow default in constructor
 				}
-				proto->finalize(filePos);
+				if(proto->layout!=PRIMITIVEPOINTER_LAYOUT)
+					proto->finalize(filePos);
 			}
 		}
 		void registerFunctionPrototype(RData& r) const override final{

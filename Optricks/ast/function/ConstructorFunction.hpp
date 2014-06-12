@@ -96,7 +96,7 @@ public:
 		if(returnType->classType!=CLASS_USER) filePos.error("Cannot make constructor for built-in types");
 		llvm::Type* r = returnType->type;
 		auto FT = llvm::FunctionType::get(r, args, false);
-		String nam = "!"+(returnType->getName());
+		String nam = "_opt"+(returnType->getName());
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		myFunction = new CompiledFunction(new FunctionProto(returnType->getName(), ad, returnType), F);
 		((const UserClass*)returnType)->constructors.add((SingleFunction*)myFunction, filePos);

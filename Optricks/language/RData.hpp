@@ -114,7 +114,8 @@ struct RData{
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)
-			MAP(stat);
+			MAP(stat)
+			MAP(glutInit)
 //#endif
 #undef MAP
 			return F;

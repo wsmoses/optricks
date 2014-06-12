@@ -29,7 +29,7 @@ def println(lang.c.string[] ar){
 extern void fflush(lang.c.pointer=null);
 
 
-def lang.c.string[] ls(lang.c.string s){
+def lang.c.string[] listdir(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
 	auto mlen = strlen(s);
 	bool end=s[mlen-1]=='/';

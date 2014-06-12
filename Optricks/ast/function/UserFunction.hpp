@@ -88,7 +88,7 @@ public:
 		assert(returnType);
 		assert(returnType->type);
 		auto FT = llvm::FunctionType::get(returnType->type, args, false);
-		String nam = "!"+((name.length()!=0)?name:"anon");
+		String nam = "_opt"+((name.length()!=0)?name:"anon");
 		llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
 		//TODO replace with long name
 		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
