@@ -14,7 +14,6 @@ def getInfo(lang.c.string s){
 def isFile(lang.c.string s){
 	FileStat fs;
 	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
-	println(s);
 	return fs.isFile();
 }
 
@@ -32,11 +31,7 @@ extern void fflush(lang.c.pointer=null);
 
 def lang.c.string[] ls(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
-		println('hey1')
-fflush()
 	auto mlen = strlen(s);
-		println('hey')
-fflush()
 	bool end=s[mlen-1]=='/';
 
 	auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
@@ -45,24 +40,19 @@ fflush()
 		if(st==null) break;
 
 		auto len = mlen+strlen(st)+(end?lang.c.size_t(1):lang.c.size_t(2));
-		println(st)
-fflush()
-		if(end)
-			printf("%s%s",s,st)
-		else
-			printf("%s/%s",s,st)
-		fflush()
-/*
 		auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
+
 		if(end)
 			sprintf(cp,"%s%s",s,st)
 		else
 			sprintf(cp,"%s/%s",s,st)
-		if(isFile(cp))
+
+		if(isFile(cp)) {
 			ar[]= cp;
-		else
+		}
+		else { 
 			(extern void free(lang.c.pointer))(cp);
-*/
+		}
 	}while(true);
 	(extern void closedir(lang.c.pointer))(dir);
 

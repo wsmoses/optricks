@@ -99,8 +99,6 @@
 				assert(V);
 				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 				assert(V);
-				r.builder.GetInsertBlock()->getParent()->dump();
-				cerr << endl << flush;
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
 		///register methods such as print / tostring / tofile / etc

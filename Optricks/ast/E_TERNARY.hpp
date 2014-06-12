@@ -62,6 +62,7 @@ class TernaryOperator : public ErrorStatement{
 		}
 		const Data* evaluate(RData& r) const override{
 			auto cond = condition->evaluate(r)->castToV(r,&boolClass,filePos);
+			assert(cond);
 			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(cond)){
 				if(c->isOne()){
 					return then->evaluate(r)->toValue(r,filePos);
@@ -85,6 +86,7 @@ class TernaryOperator : public ErrorStatement{
 			r.builder.SetInsertPoint(ThenBB);
 			//todo allow castToPointer as well as value
 			llvm::Value* ThenV = then->evaluate(r)->castToV(r, returnType, filePos);
+			assert(ThenV);
 			bool isSingleInstruction = ThenBB->getInstList().size()==0;
 			if(isSingleInstruction){
 				branch->setSuccessor(0,MergeBB);
@@ -98,13 +100,15 @@ class TernaryOperator : public ErrorStatement{
 			r.builder.SetInsertPoint(ElseBB);
 
 			llvm::Value* ElseV = finalElse->evaluate(r)->castToV(r, returnType, filePos);
+			assert(ElseV);
 			bool isSingleInstruction2 = ElseBB->getInstList().size()==0;
 			if(isSingleInstruction2){
 				if(isSingleInstruction){
-					branch->dropAllReferences();
+					branch->eraseFromParent();
 					r.DeleteBlock(ElseBB);
 					r.builder.SetInsertPoint(StartBB);
-					return new ConstantData(r.builder.CreateSelect(cond, ThenV,ElseV), returnType);
+					auto S = r.builder.CreateSelect(cond, ThenV,ElseV);
+					return new ConstantData(S , returnType);
 				} else {
 					branch->setSuccessor(1,MergeBB);
 					r.DeleteBlock(ElseBB);
