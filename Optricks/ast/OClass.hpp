@@ -414,12 +414,26 @@ void initClasses(){
 			t_args[0] = C_POINTERTYPE;
 			auto READ = r.getExtern("readdir", llvm::FunctionType::get(llvm::PointerType::getUnqual(TYPE_1), t_args,true));
 			auto dirent_p = r.builder.CreateCall(READ,args[0]->evalV(r, id));
+			auto BEGIN = r.builder.GetInsertBlock();
+			auto NOTNULL = r.CreateBlockD("notnull",r.builder.GetInsertBlock()->getParent());
+			auto MERGE = r.CreateBlockD("merge",r.builder.GetInsertBlock()->getParent());
+			r.builder.CreateCondBr(r.builder.CreateIsNull(dirent_p),MERGE,NOTNULL);
+			r.builder.SetInsertPoint(NOTNULL);
 			llvm::SmallVector<llvm::Value*,2> ar(2);
 			ar[0] = getInt32(0);
 			ar[1] = getInt32(beforeChar);
 			auto str = r.builder.CreateGEP(dirent_p,ar);
 			assert(str->getType()==C_STRINGTYPE);
-			return new ConstantData(str,&c_stringClass);
+			r.builder.CreateBr(MERGE);
+			r.builder.SetInsertPoint(MERGE);
+			auto PHI=r.builder.CreatePHI(c_stringClass.type,2);
+			assert(PHI);
+			assert(BEGIN);
+			PHI->addIncoming(llvm::ConstantPointerNull::get(C_STRINGTYPE),BEGIN);
+			assert(str);
+			assert(MERGE);
+			PHI->addIncoming(str,NOTNULL);
+			return new ConstantData(PHI,&c_stringClass);
 		}), PositionID("#dir",0,0));
 #endif
 
@@ -434,7 +448,7 @@ void initClasses(){
 
 #if defined(WIN32) || defined(_WIN32)
 #define OS WINDOWS
-#elif defined(OSX)
+#elif defined(__APPLE__)
 #define OS OSX
 #else
 #define OS LINUX

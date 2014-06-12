@@ -38,7 +38,7 @@ hi(r(12),&b,r(35))
  * TODO create allocation of global memory after function prototype but before built
  */
 
-void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
+void execF(Lexer& lexer, OModule* mod, Statement* n){
 	if(n==NULL) return;// NULL;
 	if(n->getToken()==T_IMPORT){
 		ImportStatement* import = (ImportStatement*)n;
@@ -47,11 +47,11 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 		String dir, file;
 		getDir(import->toImport, dir, file);
 		if(chdir(dir.c_str())!=0) import->error("Could not change directory to "+dir+"/"+file);
-		lexer.execFiles(true,{file}, NULL,debug,0);
+		lexer.execFiles(true,{file}, NULL,0);
 		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
 	}
-	if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
+	//if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n->registerClasses();
 	n->registerFunctionPrototype(getRData());
 	n->buildFunction(getRData());
@@ -125,7 +125,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n,bool debug){
 	else
 		getRData().builder.CreateRetVoid();
 	//cout << "testing cos" << cos(3) << endl << flush;
-	getRData().FinalizeFunction(F,debug);
+	getRData().FinalizeFunction(F);
 	//cout << "dumped" << endl << flush;
 	//getRData().lmod->dump();
 	//cerr << endl << flush;
@@ -386,11 +386,10 @@ int main(int argc, char** argv){
 	bool llvmIR = false;
 	bool interactive = false;
 	bool forceInt = false;
-	bool debug = false;
 	for(int i = 1; i<argc; ++i){
 		String s = String(argv[i]);
 		if(startsWithEq(s, "--debug")){
-			debug = testFor(s,"--debug");
+			getRData().debug = testFor(s,"--debug");
 		}
 		else if(s=="-ir" || s=="--ir") { llvmIR=true; }
 		else if(s=="-i") { forceInt = true; interactive = true; }
@@ -508,10 +507,10 @@ int main(int argc, char** argv){
 			cerr << "Commands not supported yet!" << endl << flush;
 			exit(1);
 		}
-		lexer.execFiles(true,files, outStream,debug,(output.length()==0)?1:((llvmIR)?2:3));
+		lexer.execFiles(true,files, outStream,(output.length()==0)?1:((llvmIR)?2:3));
 	}
 	else{
-		lexer.execFiles(true,files, outStream,debug,0);
+		lexer.execFiles(true,files, outStream,0);
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;
@@ -579,7 +578,7 @@ int main(int argc, char** argv){
 			bool first = true;
 			while(n->getToken()!=T_VOID){
 				first = false;
-				execF(lexer,lexer.myMod, n,debug);
+				execF(lexer,lexer.myMod, n);
 				st.done = false;
 				if(st.last()=='\n' || st.peek()=='\n') break;
 				bool reset = false;

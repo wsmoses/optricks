@@ -83,7 +83,7 @@ public:
 	}
 	std::vector<String> visitedFiles;
 	virtual ~Lexer(){};
-	void getStatements(bool global, bool debug, std::vector<String> fileNames,std::vector<Statement*>& stats){
+	void getStatements(bool global, std::vector<String> fileNames,std::vector<Statement*>& stats){
 		while(fileNames.size()>0){
 			String fileName = fileNames.back();
 			fileNames.pop_back();
@@ -103,21 +103,21 @@ public:
 				if(s->getToken()==T_IMPORT){
 					ImportStatement* import = (ImportStatement*)s;
 					std::vector<String> pl = {import->toImport};
-					getStatements(global, debug, pl, stats);
+					getStatements(global, pl, stats);
 					continue;
 				}
-				if(debug && s->getToken()!=T_VOID){
-					std::cout << s << ";" << endl << endl << flush;
-				}
+				//if(debug && s->getToken()!=T_VOID){
+				//	std::cout << s << ";" << endl << endl << flush;
+				//}
 				stats.push_back(s);
 			}
 			f = tmp;
 			if(chdir(cwd)!=0) pos().error("Could not change directory back to "+String(cwd));
 		}
 	}
-	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, bool debug, int toFile=0,unsigned int optLevel = 3){
+	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, int toFile=0,unsigned int optLevel = 3){
 		std::vector<Statement*> stats;
-		getStatements(global, debug, fileNames, stats);
+		getStatements(global, fileNames, stats);
 		for(auto& n: stats) n->registerClasses();
 		for(auto& n: stats){
 			n->registerFunctionPrototype(getRData());
@@ -134,8 +134,8 @@ public:
 		getRData().builder.SetInsertPoint(BB);
 		for(auto& n: stats) n->evaluate(getRData());
 		getRData().builder.CreateRetVoid();
-		getRData().FinalizeFunction(F,debug);
-		if(debug){
+		getRData().FinalizeFunction(F);
+		if(getRData().debug){
 			this->myMod->write(cerr);
 			getRData().lmod->dump();
 			cerr << endl << flush;
@@ -154,7 +154,7 @@ public:
 		//if(toFile>0) modOpt->run(*(getRData().lmod));
 		if(toFile>0) getRData().mpm.run(* getRData().lmod);
 
-		if(debug){
+		if(getRData().debug){
 			//getRData().lmod->dump();
 		}
 		if(toFile==3){

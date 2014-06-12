@@ -54,6 +54,7 @@
 #include <unordered_set>
 //#include <dlfcn.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include <limits.h> /* PATH_MAX */
 #include <gmp.h>

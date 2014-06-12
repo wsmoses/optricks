@@ -251,7 +251,7 @@ void RData::recursiveFinalize(LazyLocation* ll, std::map<llvm::BasicBlock*,std::
 		}while(PI!=E);
 	}
 }
-void RData::FinalizeFunction(llvm::Function* f,bool debug){
+void RData::FinalizeFunction(llvm::Function* f){
 	llvm::BasicBlock* Parent = builder.GetInsertBlock();
 	for(LazyLocation*& ll: flocs.find(f)->second){
 		//		ll->phi.

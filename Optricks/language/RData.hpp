@@ -66,6 +66,7 @@ struct RData{
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
 		llvm::ExecutionEngine* exec;
+		bool debug;
 		RData(): enableAsserts(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),
 				builder(llvm::getGlobalContext())
 		,fpm(lmod),mpm(){
@@ -77,6 +78,7 @@ struct RData{
 			pmb.OptLevel = 3;
 			pmb.populateFunctionPassManager(fpm);
 			pmb.populateModulePassManager(mpm);
+			debug = false;
 		};
 		llvm::PHINode* CreatePHI(llvm::Type *Ty, unsigned NumReservedValues, const llvm::Twine &Name = ""){
 			llvm::PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
@@ -126,7 +128,7 @@ struct RData{
 				return V;
 			}
 		}
-		void FinalizeFunctionD(llvm::Function* f,bool debug=false){
+		void FinalizeFunctionD(llvm::Function* f){
 			llvm::BasicBlock* Parent = builder.GetInsertBlock();
 			if(Parent) builder.SetInsertPoint(Parent);
 			if(debug){
@@ -157,7 +159,7 @@ struct RData{
 			pred.insert(std::pair<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> >(f,std::map<llvm::BasicBlock*,llvm::BasicBlock*>()));
 			return f;
 		}
-		void FinalizeFunction(llvm::Function* f,bool debug=false);
+		void FinalizeFunction(llvm::Function* f);
 		void DeleteBlock(llvm::BasicBlock* b){
 
 			b->removeFromParent();

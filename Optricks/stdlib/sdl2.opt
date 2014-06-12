@@ -20,18 +20,18 @@ def println(lang.c.string[] ar){
 //	println();
 }
 
-
+extern void fflush(lang.c.pointer=null);
 def lang.c.string[] ls(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
-	if(os.SELF==os.WINDOWS){
+//	if(os.SELF==os.WINDOWS){
 		auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
 		do{
 			auto st = _posix_dir_next_name(dir);
 			if(st==null) break;
-			println(st);
+			ar[]= add(s,st);
 		}while(true);
 		(extern void closedir(lang.c.pointer))(dir);
-	} else {
+//	} else {
 /*		FileData f;
 		auto h = (extern lang.c.pointer FindFirstFile(lang.c.string,FileData&))(add(s,'*'),&f);
 		do{
@@ -41,7 +41,7 @@ def lang.c.string[] ls(lang.c.string s){
 		}while((extern bool FindNextFile(lang.c.pointer,FileData&))(h,&f));
 		(extern void FindClose(lang.c.pointer))(h);
 */
-	}
+//	}
 	return ar;
 }
 
