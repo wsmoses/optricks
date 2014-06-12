@@ -9,6 +9,7 @@
 #define STRINGLITERALCLASSP_HPP_
 
 
+#include "../builtin/CStringClass.hpp"
 #include "./StringLiteralClass.hpp"
 #include "../../data/literal/StringLiteral.hpp"
 	StringLiteralClass::StringLiteralClass(bool b):
@@ -57,11 +58,49 @@
 				auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
 				llvm::SmallVector<llvm::Value*,1> m_args(args.size());
 				m_args[0] = r.getConstantCString(value);
+				assert(m_args[0]);
 				for(unsigned i=1; i<args.size(); i++){
 					m_args[i] = args[i]->evalV(r, id);
+					assert(m_args[i]);
 				}
 				llvm::Value* V = r.builder.CreateCall(CU, m_args);
 				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
+				return new ConstantData(V, &intClass);
+			}), PositionID(0,0,"#int"));
+
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"sprintf")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("sprintf",{AbstractDeclaration(&c_stringClass),AbstractDeclaration(this)},&intClass,true),
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()>=2);
+				//TODO custom formatting for printf (and checks for literals / correct format / etc)
+				assert(args[1]);
+				auto TP = args[1]->evaluate(r);
+				assert(TP);
+				assert(TP->type==R_STR);
+				const auto& value = ((const StringLiteral*) TP)->value;
+				llvm::SmallVector<llvm::Type*,2> t_args(2);
+				t_args[0] = C_STRINGTYPE;
+				t_args[1] = C_STRINGTYPE;
+				auto CU = r.getExtern("sprintf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+				llvm::SmallVector<llvm::Value*,2> m_args(args.size());
+				assert(args[0]);
+				m_args[0] = args[0]->evalV(r, id);
+				assert(m_args[0]);
+				m_args[1] = r.getConstantCString(value);
+				assert(m_args[1]);
+				for(unsigned i=2; i<args.size(); i++){
+					assert(args[i]);
+					m_args[i] = args[i]->evalV(r, id);
+					assert(m_args[i]);
+				}
+				llvm::Value* V = r.builder.CreateCall(CU, m_args);
+				assert(V);
+				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
+				assert(V);
+				r.builder.GetInsertBlock()->getParent()->dump();
+				cerr << endl << flush;
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
 		///register methods such as print / tostring / tofile / etc

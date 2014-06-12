@@ -473,19 +473,54 @@ void initClasses(){
 		auto FT = new EnumClass(DIR->staticVariables,"FileType",E_D,PositionID("#dir",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(unsigned char)));
 		DIR->staticVariables.addClass(PositionID("#sdl",0,0),FT);*/
 
-		/*
-		auto AS = new UserClass(&SDL->staticVariables,"AudioSpec",nullptr,PRIMITIVE_LAYOUT,false);
-			SDL->staticVariables.addClass(PositionID("#sdl",0,0),AS);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"freq",&c_intClass);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"format",AF);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"channels",&byteClass);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"silence",&byteClass);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"samples",&shortClass);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"size",&intClass);
-			AS->addLocalVariable(PositionID("#sdl",0,0),"callback",FunctionClass::get(&voidClass,v));//
-			AS->addLocalVariable(PositionID("#sdl",0,0),"userdata",&c_pointerClass);
-			AS->finalize(PositionID("#sdl",0,0));
-		*/
+		auto FileStat = new UserClass(&LANG_M,"FileStat",nullptr,PRIMITIVE_LAYOUT,false);
+		LANG_M.addClass(PositionID("#dir",0,0),FileStat);
+		FileStat->addLocalVariable(PositionID("#dir",0,0),"freq",new WrapperClass("",llvm::ArrayType::get(CHARTYPE, sizeof(struct stat))));
+		FileStat->finalize(PositionID("#sdl",0,0));
+#define DATA(name, stat_var, returnType)\
+		FileStat->addLocalFunction(#name)->add(new BuiltinInlineFunction(new FunctionProto(#name,{AbstractDeclaration(FileStat)},returnType),\
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+					assert(args.size()==0);\
+					assert(instance->type==R_LOC || instance->type==R_CONST);\
+					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);\
+					struct stat stat_tmp;\
+					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.stat_var))-(size_t)(&(stat_tmp))));\
+					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.stat_var))));\
+					return new ConstantData(r.builder.CreateZExtOrTrunc(r.builder.CreateLoad(D), (returnType)->type),returnType);\
+				}), PositionID("#dir",0,0));
+		DATA(getDev, st_dev, &intClass);
+		DATA(getMode, st_mode, &intClass);
+		DATA(getNLink, st_nlink, &intClass);
+		DATA(getUID, st_uid, &intClass);
+		DATA(getGID, st_gid, &intClass);
+		DATA(getSize, st_size, &intClass);
+		DATA(getAccessTime, st_atime, &intClass);
+		DATA(getModificationTime, st_mtime, &intClass);
+		DATA(getStatusTime, st_ctime, &intClass);
+#undef DATA
+
+		FileStat->addLocalFunction("isFile")->add(new BuiltinInlineFunction(new FunctionProto("isFile",{AbstractDeclaration(FileStat)},&boolClass),
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==0);
+					assert(instance->type==R_LOC || instance->type==R_CONST);
+					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);
+					struct stat stat_tmp;
+					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
+					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
+					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
+					return new ConstantData(r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false)),&boolClass);
+				}), PositionID("#dir",0,0));
+		FileStat->addLocalFunction("isDirectory")->add(new BuiltinInlineFunction(new FunctionProto("isDirectory",{AbstractDeclaration(FileStat)},&boolClass),
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==0);
+					assert(instance->type==R_LOC || instance->type==R_CONST);
+					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);
+					struct stat stat_tmp;
+					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
+					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
+					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
+					return new ConstantData(r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFDIR,false)),&boolClass);
+				}), PositionID("#dir",0,0));
 	}
 }
 

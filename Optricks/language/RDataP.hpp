@@ -268,6 +268,8 @@ void RData::FinalizeFunction(llvm::Function* f){
 	if(debug){
 		f->dump();
 		cerr << endl << flush;
+		cerr << "ENDPREV" << endl << flush;
+		fflush(0);
 	}
 	fpm.run(*f);
 	flocs.erase(f);

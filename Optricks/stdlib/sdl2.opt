@@ -3,12 +3,19 @@
 extern lang.c.size_t strlen(lang.c.string);
 extern lang.c.string strcpy(lang.c.string,lang.c.string);
 
-def lang.c.string add(lang.c.string m, lang.c.string l){
-	auto mlen = strlen(m);
-	auto len = mlen+strlen(l)+1;
-	auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
-	(extern lang.c.int sprintf(lang.c.string,lang.c.string,lang.c.string,lang.c.string))(cp,"%s%s",m,l)
-	return cp;
+def getInfo(lang.c.string s){
+	FileStat fs;
+	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
+	println(fs.isFile());
+	println(fs.isDirectory());
+	println(fs.getSize());
+
+}
+def isFile(lang.c.string s){
+	FileStat fs;
+	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
+	println(s);
+	return fs.isFile();
 }
 
 def println(lang.c.string[] ar){
@@ -21,27 +28,44 @@ def println(lang.c.string[] ar){
 }
 
 extern void fflush(lang.c.pointer=null);
+
+
 def lang.c.string[] ls(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
-//	if(os.SELF==os.WINDOWS){
-		auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
-		do{
-			auto st = _posix_dir_next_name(dir);
-			if(st==null) break;
-			ar[]= add(s,st);
-		}while(true);
-		(extern void closedir(lang.c.pointer))(dir);
-//	} else {
-/*		FileData f;
-		auto h = (extern lang.c.pointer FindFirstFile(lang.c.string,FileData&))(add(s,'*'),&f);
-		do{
-			auto m = f.getName();
-			if((f.attributes & FileData.FILE_ATTRIBUTE_DIRECTORY) == 0)
-				ar[]= add(s,m);
-		}while((extern bool FindNextFile(lang.c.pointer,FileData&))(h,&f));
-		(extern void FindClose(lang.c.pointer))(h);
+		println('hey1')
+fflush()
+	auto mlen = strlen(s);
+		println('hey')
+fflush()
+	bool end=s[mlen-1]=='/';
+
+	auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
+	do{
+		auto st = _posix_dir_next_name(dir);
+		if(st==null) break;
+
+		auto len = mlen+strlen(st)+(end?lang.c.size_t(1):lang.c.size_t(2));
+		println(st)
+fflush()
+		if(end)
+			printf("%s%s",s,st)
+		else
+			printf("%s/%s",s,st)
+		fflush()
+/*
+		auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
+		if(end)
+			sprintf(cp,"%s%s",s,st)
+		else
+			sprintf(cp,"%s/%s",s,st)
+		if(isFile(cp))
+			ar[]= cp;
+		else
+			(extern void free(lang.c.pointer))(cp);
 */
-//	}
+	}while(true);
+	(extern void closedir(lang.c.pointer))(dir);
+
 	return ar;
 }
 

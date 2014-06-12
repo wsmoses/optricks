@@ -110,11 +110,12 @@ struct RData{
 			MAP(FindFirstFile)
 			MAP(FindNextFile)
 			MAP(FindClose)
-//#else
+#endif
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)
-#endif
+			MAP(stat);
+//#endif
 #undef MAP
 			return F;
 		}
