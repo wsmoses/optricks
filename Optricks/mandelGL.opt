@@ -3,7 +3,7 @@ import "stdlib/display.opt"
 double angle=0;
 def Color mand(complex z0){
 	complex z = z0
-	for(int iter=0; iter<1000; iter++)
+	for(int iter=0; iter<500; iter++)
 		if( abs2(z) > 4 ){
 			double val = 1-
 			(iter +1 -log(.5*log(z.real**2+z.imag**2)/log(2))/log(2))/1000;

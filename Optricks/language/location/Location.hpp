@@ -17,7 +17,6 @@ class Location{
 		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
-		virtual String getName()=0;
 };
 
 class StandardLocation : public Location{
@@ -25,7 +24,6 @@ class StandardLocation : public Location{
 	llvm::Value* position;
 	public:
 		~StandardLocation() override{};
-		String getName(){ return "StandardLocation"; }
 		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
@@ -49,27 +47,23 @@ private:
 	std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> > phi;
 	llvm::Value* position;
 	llvm::Type* type;
+	String varName;
 public:
 	~LazyLocation() override{};
-	String getName(){ return "LazyLocation"; }
-	LazyLocation(void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):data(),position(p){
+	String getName(){ return varName; }
+	LazyLocation(String nam, void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):data(),position(p){
 		used = u;
+		varName = nam;
 		assert(position);
-#ifndef NDEBUG
 		llvm::Type* t;
-		if(auto pt = llvm::dyn_cast<llvm::PointerType>(p->getType())){
-			t = pt->getElementType();
-		} else assert(0 && "Cannot use non-pointer type for LazyLocation");
-		type = t;
-#else
+		assert(llvm::dyn_cast<llvm::PointerType>(p->getType()));
 		type = ((llvm::PointerType*) p->getType())->getElementType();
-#endif
 		assert(type);
-#ifndef NDEBUG
-		if(d!=NULL)
-		assert(d->getType()==type);
-#endif
-		if(b!=NULL) data[b] = d;
+		if(b!=NULL){
+			if(d!=NULL)
+				assert(d->getType()==type);
+			data[b] = d;
+		}
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
 	}
@@ -94,11 +88,22 @@ public:
 					r.builder.SetInsertPoint(me);
 				} else v = found->second;
 			}*/
-			r.builder.CreateStore(v,position);
+			llvm::Instruction* in;
+			if(r.hadBreak()){
+				in = & me->back();
+			} else in = nullptr;
+			auto STO = r.builder.CreateStore(v,position);
+			if(in) STO->moveBefore(in);
 			data[me] = NULL;
 		}else if(found->second!=NULL){
 			//there and usable -- load current into memory
-			r.builder.CreateStore(found->second,position);
+
+			llvm::Instruction* in;
+			if(r.hadBreak()){
+				in = & me->back();
+			} else in = nullptr;
+			auto STO = r.builder.CreateStore(found->second,position);
+			if(in) STO->moveBefore(in);
 			data[me] = NULL;
 			//TODO check if just can change iterator
 		}
@@ -108,21 +113,34 @@ public:
 private:
 		inline llvm::Value* getFastValue(RData& r, std::map<llvm::BasicBlock*,llvm::Value*>::iterator found,bool set=false){
 			if(found->second==NULL){
-				if(set) r.builder.SetInsertPoint(found->first);
+				llvm::BasicBlock* bb;
+				if(set){
+					bb = r.builder.GetInsertBlock();
+					r.builder.SetInsertPoint(found->first);
+				} else bb = nullptr;
+				assert(position);
+
+				llvm::Instruction* in;
+				if(r.hadBreak()){
+					in = & found->first->back();
+				} else in = nullptr;
 				auto v = r.builder.CreateLoad(position);
-				/*
-				LoadInst* v = new LoadInst(position);
-				if(Instruction* in = dyn_cast<Instruction>(position)){
-					BasicBlock* b = in->getParent();
-					if(b==found->first) v->insertAfter(in);
-					else v->insertBefore(found->first->getFirstNonPHI());
-				}
-				else v->insertBefore(found->first->getFirstNonPHI());*/
-				found->second = v;
+				if(in) v->moveBefore(in);
 				assert(v);
+				assert(v->getType()==type);
+
+				found->second = v;
+				if(bb) r.builder.SetInsertPoint(bb);
 				return v;
 			} else{
 				assert(found->second);
+				if(found->second->getType()!=type){
+					found->second->dump();
+					found->second->getType()->dump();
+					type->dump();
+					cerr << endl << flush;
+				}
+				assert(found->second->getType()==type);
 				return found->second;
 			}
 		}
@@ -132,24 +150,16 @@ public:
 		auto found = data.find(me);
 		if(found==data.end()){
 			//not there -- create and insert phi-node unusable
-			//BasicBlock* prev = r.pred.find(me->getParent())->second.find(me)->second;
+
 			llvm::Value* v=NULL;
-			//if(prev==NULL){
+
 			llvm::PHINode* n = r.CreatePHI(type, 1U/*,name*/);
 			phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >(me,std::pair<llvm::PHINode*,PositionID>(n,id)));
 			v = n;
-			/*} else {
-				auto found2 = data.find(prev);
-				if(found2==data.end())
-					id.error("Attempting to get value from variable that has not been set");
-				if(found2->second==NULL){
-					r.builder.SetInsertPoint(prev);
-					data[prev] = v = r.builder.CreateLoad(position);
-					r.builder.SetInsertPoint(me);
-				} else v = found->second;
-			}*/
-			data[me] = v;
+
 			assert(v);
+			assert(v->getType()==type);
+			data[me] = v;
 			return v;
 		}else return getFastValue(r,found,true);
 	}
@@ -158,6 +168,7 @@ public:
 		assert(v->getType()==type);
 		//v->setName(name);
 		llvm::BasicBlock* me = r.builder.GetInsertBlock();
+		assert(!r.hadBreak());
 		data[me] = v;
 	}
 	Location* getInner(RData& r, PositionID id, unsigned idx) override final{
@@ -170,14 +181,14 @@ public:
 	}
 };
 
-Location* getLazy(RData& r,llvm::Value* p, llvm::BasicBlock* b=nullptr,llvm::Value* d=nullptr,bool u = false){
+Location* getLazy(String name, RData& r,llvm::Value* p, llvm::BasicBlock* b=nullptr,llvm::Value* d=nullptr,bool u = false){
 	assert(p->getType()->isPointerTy());
 	llvm::Type* IT = ((llvm::PointerType*) p->getType())->getElementType();
 	assert(!IT->isVoidTy());
 	if(IT->isPointerTy() || IT->isIntegerTy() || IT->isHalfTy() || IT->isFloatTy()
 			|| IT->isDoubleTy() || IT->isX86_FP80Ty() || IT->isFP128Ty() || IT->isPPC_FP128Ty()
 			|| IT->isX86_MMXTy()){
-		return new LazyLocation(nullptr,r,p,b,d,u);
+		return new LazyLocation(name, nullptr,r,p,b,d,u);
 	} else{//todo allow structs
 		if(b && d){
 			auto Parent = r.builder.GetInsertBlock();

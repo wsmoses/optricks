@@ -100,7 +100,7 @@ class ClassFunction : public E_FUNCTION{
 
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT)){
 					assert(llvm::dyn_cast<llvm::PointerType>(AI->getType()));
-					Location* myLoc = getLazy(a,(llvm::Value*)AI,a.builder.GetInsertBlock(),nullptr);
+					Location* myLoc = getLazy("this",a, (llvm::Value*)AI,a.builder.GetInsertBlock(),nullptr);
 					module.setVariable(filePos, "this", new LocationData(myLoc, upperClass));
 				} else{
 					module.setVariable(filePos, "this", new ConstantData(AI, upperClass));

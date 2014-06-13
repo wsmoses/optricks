@@ -319,6 +319,7 @@ bool testFor(String toTest, String testing){
 	}
 }
 int main(int argc, char** argv){
+	//PlaySound("dance.wav",nullptr,SND_FILENAME | SND_ASYNC);
 	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
 		new BuiltinInlineFunction(
 				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),

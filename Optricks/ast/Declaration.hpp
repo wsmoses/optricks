@@ -128,7 +128,7 @@ public:
 			auto TheFunction = r.builder.GetInsertBlock()->getParent();
 			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
 			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
-			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,nullptr,nullptr),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(getLazy(variable.pointer.name,r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
 		return finished;
@@ -180,7 +180,7 @@ public:
 			auto TheFunction = r.builder.GetInsertBlock()->getParent();
 			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
 			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
-			variable.getMetadata().setObject(finished=new LocationData(getLazy(r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(getLazy(variable.pointer.name,r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
 

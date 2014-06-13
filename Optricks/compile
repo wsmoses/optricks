@@ -1,3 +1,4 @@
 #/bin/bash
 #./Optricks.exe mandle.opt -o - -ir | llc | as -S -o t.s
-./Optricks.exe $1 -o - -ir | llc | as; gcc a.out -o test.exe && rm a.out
+#./Optricks.exe $1 -o - -ir | llc | as; gcc a.out -o test.exe && rm a.out
+./Optricks.exe $1 -o - -ir | llc | as; gcc a.out  -lSDL2_mixer -static `sdl2-config --cflags --static-libs` -o test.exe && rm a.out

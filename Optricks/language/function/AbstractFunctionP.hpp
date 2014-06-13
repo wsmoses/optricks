@@ -95,7 +95,9 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 	for(const auto& a:args){
 		if(first) first=!first;
 		else s+=", ";
+		if(a)
 		s+=a->getReturnType()->getName();
+		else s+="<none>";
 	}
 	return s+")";
 }
@@ -612,7 +614,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS
 SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
 	assert(t_args.inUse==false);
-	for(const auto& a: args) a->getReturnType();
+	for(const auto& a: args) if(a) a->getReturnType();
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;

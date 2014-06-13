@@ -348,60 +348,28 @@ void initClasses(){
 	} {
 
 
-#if 0 && (defined(WIN32) || defined(_WIN32))
-		auto FD = new UserClass(&LANG_M,"FileData",nullptr,PRIMITIVE_LAYOUT,false);
+#if (defined(WIN32) || defined(_WIN32))
+		auto FD = new UserClass(&LANG_M,"SoundFlag",nullptr,PRIMITIVE_LAYOUT,false);
 		LANG_M.addClass(PositionID("#dir",0,0),FD);
-#define ADD(A) FD->staticVariables.addVariable(PositionID("#dir",0,0),#A,new ConstantData(getInt32(A),&intClass));
-		ADD(FILE_ATTRIBUTE_ARCHIVE);
-		ADD(FILE_ATTRIBUTE_COMPRESSED);
-		ADD(FILE_ATTRIBUTE_DEVICE);
-		ADD(FILE_ATTRIBUTE_DIRECTORY);
-		ADD(FILE_ATTRIBUTE_ENCRYPTED);
-		ADD(FILE_ATTRIBUTE_HIDDEN);
-		//ADD(FILE_ATTRIBUTE_INTEGRITY_STREAM);
-		ADD(FILE_ATTRIBUTE_NORMAL);
-		ADD(FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-		//ADD(FILE_ATTRIBUTE_NO_SCRUB_DATA);
-		ADD(FILE_ATTRIBUTE_OFFLINE);
-		ADD(FILE_ATTRIBUTE_READONLY);
-		ADD(FILE_ATTRIBUTE_REPARSE_POINT);
-		ADD(FILE_ATTRIBUTE_SPARSE_FILE);
-		ADD(FILE_ATTRIBUTE_SYSTEM);
-		ADD(FILE_ATTRIBUTE_TEMPORARY);
-		ADD(FILE_ATTRIBUTE_VIRTUAL);
+#define ADD(A) FD->staticVariables.addVariable(PositionID("#dir",0,0),#A,new ConstantData(getInt32(SND_##A),&intClass));
+		ADD(APPLICATION);
+		ADD(ALIAS);
+		ADD(ALIAS_ID);
+		ADD(ASYNC);
+		ADD(FILENAME);
+		ADD(LOOP);
+		ADD(MEMORY);
+		ADD(NODEFAULT);
+		ADD(NOSTOP);
+		ADD(NOWAIT);
+		ADD(PURGE);
+		ADD(RESOURCE);
+//		ADD(SENTRY);
+		ADD(SYNC);
+//		ADD(SYSTEM);
 #undef ADD
-		FD->addLocalVariable(PositionID("#dir",0,0),"attributes",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"creationTime",&longClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"lastAccessTime",&longClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"lastWriteTime",&longClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeHigh",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"fileSizeLow",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"#reserved0",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"#name",&intClass);
-		FD->addLocalVariable(PositionID("#dir",0,0),"#res",new WrapperClass("#name",llvm::ArrayType::get(CHARTYPE,MAX_PATH)));
-		FD->addLocalVariable(PositionID("#dir",0,0),"#altName",new WrapperClass("#altName",llvm::ArrayType::get(CHARTYPE,14)));
 		FD->finalize(PositionID("#dir",0,0));
-		assert(llvm::DataLayout(getRData().lmod).getTypeAllocSize(FD->type)==sizeof(WIN32_FIND_DATA));
-		assert(sizeof(HANDLE)==sizeof(void*));
-		assert(sizeof(TCHAR)==sizeof(char));
-		assert(sizeof(LPCTSTR)==sizeof(char*));
-		FD->addLocalFunction("getName")->add(new BuiltinInlineFunction(new FunctionProto("getName",{AbstractDeclaration(ReferenceClass::get(FD))},&c_stringClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-			assert(args.size()==0);
-			auto T = FD->getLocalData(r, id, "#name", instance);
-			assert(T->type==R_LOC);
-			llvm::Value* V = ((LocationData*)T)->getMyLocation()->getPointer(r, id);
-			return new ConstantData(r.builder.CreatePointerCast(V, C_STRINGTYPE),&c_stringClass);
-		}), PositionID("#pos",0,0));
-#else
-		/*
-		auto DIR = new UserClass(&LANG_M,"dir",nullptr,PRIMITIVEPOINTER_LAYOUT,false);
-		LANG_M.addClass(PositionID("#dir",0,0),DIR);
-		DIR->constructors.add(new CompiledFunction(new FunctionProto("dir",{AbstractDeclaration(&c_stringClass)},DIR),
-				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));
-		//todo if primitive pointers are changed this must be changed to DIR->getLocal("#data");
-		DIR->addLocalFunction("close")->add(new CompiledFunction(new FunctionProto("close",{AbstractDeclaration(DIR)},DIR),
-				getRData().getExtern("opendir",DIR,{&c_stringClass})),PositionID("#dir",0,0));*/
+#endif
 		LANG_M.addFunction(PositionID("#dir",0,0),"_posix_dir_next_name")->add(new BuiltinInlineFunction(new FunctionProto("_posix_dir_next_name",{AbstractDeclaration(&c_pointerClass)},&c_stringClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
@@ -436,7 +404,6 @@ void initClasses(){
 			PHI->addIncoming(str,NOTNULL);
 			return new ConstantData(PHI,&c_stringClass);
 		}), PositionID("#dir",0,0));
-#endif
 
 		std::vector<std::pair<int,String>> E_D;
 #define WINDOWS 0

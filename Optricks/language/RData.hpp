@@ -110,13 +110,18 @@ struct RData{
 			MAP(FindFirstFile)
 			MAP(FindNextFile)
 			MAP(FindClose)
+			MAP(PlaySound)
+			MAP(mciSendString)
+			MAP(CreateEvent)
+			MAP(ResetEvent)
 #endif
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)
 			MAP(stat)
+#ifdef USE_OPENGL
 			MAP(glutInit)
-//#endif
+#endif
 #undef MAP
 			return F;
 		}
@@ -145,7 +150,8 @@ struct RData{
 			if(b->getInstList().size()==0) return false;
 			return b->getInstList().back().isTerminator();
 		}
-		void recursiveFinalize(LazyLocation* ll, std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator toFix);
+		//TODO DO THIS
+		llvm::Value* getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, PositionID id);
 		void addJump(Jumpable* j){
 			jumps.push_back(j);
 		}

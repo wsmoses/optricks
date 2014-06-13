@@ -18,7 +18,6 @@ public:
 		//assert(cp->classType!=CLASS_FUNC);
 		//assert(cp->classType!=CLASS_GEN);
 		assert(cp->layout!=LITERAL_LAYOUT);
-		assert(val->getName().length()>0);
 	}
 	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		return value->getValue(r,id);
