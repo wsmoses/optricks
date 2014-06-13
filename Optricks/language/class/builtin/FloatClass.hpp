@@ -96,15 +96,17 @@ public:
 			//TODO force APInt to be right width/sign for value
 		}
 	}*/
-	inline const llvm::fltSemantics& getSemantics() const{
+	inline const llvm::fltSemantics* getSemantics() const{
 		switch(floatType){
-		case HalfTy: return llvm::APFloat::IEEEhalf;
-		case FloatTy: return llvm::APFloat::IEEEsingle;
-		case DoubleTy: return llvm::APFloat::IEEEdouble;
-		case X86_FP80Ty: return llvm::APFloat::x87DoubleExtended;
-		case FP128Ty: return llvm::APFloat::IEEEquad;
-		case PPC_FP128Ty: return llvm::APFloat::PPCDoubleDouble;
-		default: return llvm::APFloat::Bogus;
+		case HalfTy: return &llvm::APFloat::IEEEhalf;
+		case FloatTy: return &llvm::APFloat::IEEEsingle;
+		case DoubleTy: return &llvm::APFloat::IEEEdouble;
+		case X86_FP80Ty: return &llvm::APFloat::x87DoubleExtended;
+		case FP128Ty: return &llvm::APFloat::IEEEquad;
+		case PPC_FP128Ty: return &llvm::APFloat::PPCDoubleDouble;
+		default:
+			assert(0);
+			return &llvm::APFloat::Bogus;
 		}
 	}
 	inline unsigned getWidth() const{
@@ -121,22 +123,28 @@ public:
 		return r;
 	}
 	inline llvm::ConstantFP* getLargest (bool Negative=false) const {
-		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getLargest(getSemantics(),Negative));
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getLargest(*getSemantics(),Negative));
 	}
 	inline llvm::ConstantFP* getSmallest (bool Negative=false) const {
-		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallest(getSemantics(),Negative));
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallest(*getSemantics(),Negative));
 	}
 	inline llvm::ConstantFP* getSmallestNormalized (bool Negative=false) const {
-		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallestNormalized(getSemantics(),Negative));
+		return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat::getSmallestNormalized(*getSemantics(),Negative));
 	}
 	inline llvm::ConstantFP* getNaN() const{
-		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getNaN(getSemantics()));
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getNaN(*getSemantics()));
 	}
 	inline llvm::ConstantFP* getZero(PositionID id, bool negative=false) const override final{
-		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getZero(getSemantics(),negative));
+		assert(this);
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat::getZero(*getSemantics(),negative));
+
+		/*const llvm::fltSemantics& M = (this->getSemantics());
+		//cerr << M << endl << flush;
+		llvm::APFloat val = llvm::APFloat::getZero(M,negative);
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), val);*/
 	}
 	inline llvm::ConstantFP* getOne(PositionID id) const override final{
-		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(getSemantics(),1));
+		return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(*getSemantics(),1));
 	}
 	inline llvm::Constant* getEulerMasc(PositionID id) const{
 		mpfr_t e;
@@ -201,7 +209,7 @@ public:
 
 				mpfr_free_str(s);
 			} else id.compilerError("Error creating string for float to llvm conversion");
-			return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat(getSemantics(),out));
+			return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat(*getSemantics(),out));
 		}
 		else if(mpfr_nan_p(value)) return getNaN();
 		else if(mpfr_inf_p(value)){

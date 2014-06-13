@@ -80,12 +80,12 @@ llvm::Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, Pos
 			}
 			return r.builder.CreateFPExt(valueToCast, toCast->type);
 		}
-		case CLASS_COMPLEX:
-			if(((ComplexClass*)toCast)->innerClass->classType!=CLASS_FLOAT) id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName()+" inner type not float");
-			if(((FloatClass*)(((ComplexClass*)toCast)->innerClass))->getWidth()<getWidth()){
-			id.error("Cannot cast floating-point type "+getName()+" to "+toCast->getName()+ " width too small");
-			}
-			return r.builder.CreateInsertElement(llvm::ConstantVector::getSplat(2, getZero(id)), valueToCast, getInt32(0));
+		case CLASS_COMPLEX:{
+			const RealClass* ac = ((const ComplexClass*)toCast)->innerClass;
+			auto tmp = castTo(ac, r, id, valueToCast);
+			auto v = llvm::ConstantVector::getSplat(2, ac->getZero(id));
+			return r.builder.CreateInsertElement(v,tmp,getInt32(0));
+		}
 		case CLASS_RATIONAL:
 			id.error("Does not exist");
 			assert(0);

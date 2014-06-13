@@ -1,2 +1,2 @@
 #/bin/bash
-echo "println(double(12.33*`find . -name '*.*pp' | xargs cat | sed '/^\s*#/d;/^\s*$/d' | wc -l`));fflush()" | ./Optricks.exe - -ir
+echo "printf(\"%f\\n\",double(12.33*`find . -name '*.*pp' | xargs cat | sed '/^\s*#/d;/^\s*$/d' | wc -l`))" | ./Optricks.exe -
