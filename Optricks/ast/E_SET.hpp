@@ -49,11 +49,15 @@ class E_SET: public ErrorStatement{
 		};
 		const Data* evaluate(RData& r) const final override{
 			auto to = variable->evaluate(r);
-			if(to->type!=R_LOC){
+			Location* aloc;
+			if(to->type==R_LOC)
+				aloc = ((LocationData*)to)->getMyLocation();
+			else if(to->type==R_DEC)
+				aloc = ((DeclarationData*)to)->value->fastEvaluate(r)->getMyLocation();
+			else {
 				error("Cannot set a non-variable "+str(to->type));
-				exit(1);
+				return &VOID_DATA;
 			}
-			Location* aloc = ((LocationData*)to)->getMyLocation();
 			auto nex = value->evaluate(r)->castToV(r, to->getReturnType(), filePos);
 			aloc->setValue(nex,r);
 			return new ConstantData(nex,to->getReturnType());

@@ -110,7 +110,7 @@ public:
 		variable.buildFunction(r);
 		if(value) value->buildFunction(r);
 	};
-	const Data* fastEvaluate(RData& r){
+	const LocationData* fastEvaluate(RData& r){
 		if(finished) return finished;
 		getReturnType();
 		assert(returnType);
@@ -133,7 +133,7 @@ public:
 		//todo check lazy for globals
 		return finished;
 	}
-	const Data* evaluate(RData& r) const final override{
+	const LocationData* evaluate(RData& r) const final override{
 		if(finished){
 			if(value){
 				Location* aloc = finished->getMyLocation();
@@ -149,12 +149,12 @@ public:
 		if(isReference==1){
 			if(!D){
 				filePos.error("Cannot declare reference without value");
-				return &VOID_DATA;
+				exit(1);
 			}
 			auto RT = D->getReturnType();
 			if(D && RT->classType==CLASS_REF){
 				filePos.error("Cannot create reference of non-reference type "+RT->getName());
-				return &VOID_DATA;
+				exit(1);
 			}
 			const ReferenceData* R = (const ReferenceData*)D;
 			variable.getMetadata().setObject(R->value);

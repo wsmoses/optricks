@@ -150,7 +150,6 @@ llvm::Value* RData::getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, Positi
 			} else {
 				auto tmp = builder.GetInsertBlock();
 				builder.SetInsertPoint(b);
-				//todo.push_back(b);
 				llvm::PHINode* np = CreatePHI(ll->type, 1U/*,ll->name*/);
 				if(tmp) builder.SetInsertPoint(tmp);
 				ll->data[b] = np;//todo speed up

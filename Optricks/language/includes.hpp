@@ -356,6 +356,7 @@ enum DataType{
 };
 template<> String str<DataType>(DataType d){
 	switch(d){
+	case R_DEC: return "R_DEC";
 	case R_CLASSTEMPLATE: return "R_CLASSTEMPLATE";
 	case R_LAZY: return "R_LAZY";
 	case R_VOID: return "R_VOID";

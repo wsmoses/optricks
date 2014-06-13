@@ -1,15 +1,6 @@
-import 'sdl2.opt'
+//import 'sdl2.opt'
 
-/*
-def void test(){
-	int x = 7
-	if(rand()%2==0){
-		print(int(3));
-		print(x);
-	}
-}*/
-
-import 'file.opt';
+//import 'file.opt';
 //import "string.opt"
 
 /*
@@ -38,11 +29,10 @@ gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
 }*/
 
+/*
 def int min(int a,int b){
 	return (a<b)?a:b;
 }
-
-//auto hi="hello"
 
 extern double	tan		(double);
 extern double	acos	(double);
@@ -102,7 +92,7 @@ def int pow(int a, int b){
 		return tmpow*tmpow;
 	} else return tmpow*tmpow*a;
 }
-
+//*/
 /*
 def double complex.angle(){
 	return atan2(this.imag,this.real);
@@ -115,4 +105,4 @@ def complex operator ** (complex a, double b){
 }
 
 // */
-import "random.opt"
+//import "random.opt"
