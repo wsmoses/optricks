@@ -1,0 +1,20 @@
+def error(lang.c.string t){
+	println(t);
+	exit(1);
+}
+
+class primitive thread{
+	lang.c.pointer data;
+	def thread(function{long,long} f,long id){
+		if((extern lang.c.int pthread_create(lang.c.pointer&, lang.c.pointer=null, function{long,long}, long))(& this.data,,f,id)!=0){
+			error("Could not init thread");
+		}
+	}
+	def long join(){
+		long ret;
+		if((extern lang.c.int pthread_join(lang.c.pointer,long&))(this.data, &ret)!=0){
+			error("Could not join thread");
+		}
+		return ret;
+	}
+}

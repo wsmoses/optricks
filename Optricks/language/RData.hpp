@@ -93,6 +93,8 @@ struct RData{
 					cerr << erS << endl << flush;
 					exit(1);
 				}
+				for(const auto& a: toPut)
+					exec->updateGlobalMapping(a.first,a.second);
 				return exec;
 			}
 		}
@@ -113,6 +115,7 @@ struct RData{
 			return f;
 		}
 		inline llvm::Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
+		std::map<llvm::Function*, void*> toPut;
 		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
 			assert(FT);
@@ -121,9 +124,8 @@ struct RData{
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);
 			getExec();
-			assert(exec);
 			if(false){}
-#define MAP(X) else if(name==#X){ exec->updateGlobalMapping(F,(void*)(&X)); }
+#define MAP(X) else if(name==#X){ if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)

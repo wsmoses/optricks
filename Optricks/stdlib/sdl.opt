@@ -1,0 +1,164 @@
+extern lang.c.pointer SDL_RWFromFile(lang.c.string,lang.c.string);
+extern lang.c.pointer SDL_LoadWAV_RW(lang.c.pointer, lang.c.int, sdl.AudioSpec&, long&, int&)
+def SDL_LoadWAV(lang.c.string file, sdl.AudioSpec& spec, long& buf, lang.c.int& len){
+	return SDL_LoadWAV_RW(SDL_RWFromFile(file,'rb'),1,&spec,&buf,&len);
+}
+class mix{
+	static class primitive channel{
+		lang.c.int data;
+		def channel(lang.c.int freq=44100, sdl.AudioFormat format=sdl.AudioFormat.S16SYS, lang.c.int channels=2, lang.c.int chunksize=2048){
+			extern lang.c.int Mix_OpenAudio(lang.c.int, sdl.AudioFormat, lang.c.int, lang.c.int);
+			this.data = Mix_OpenAudio(freq,format,channels,chunksize);
+		}
+		// -1 is infinite loop / 0 is once / etc
+		// ticks is time to play in ms or -1 for infinite
+		def lang.c.int play(chunk c, lang.c.int loops=0, lang.c.int ticks=-1){
+			extern lang.c.int Mix_PlayChannelTimed(lang.c.int, chunk, lang.c.int, lang.c.int);
+			return Mix_PlayChannelTimed(this.data, c, loops, ticks);
+		}
+
+		def void close(){
+			(extern void Mix_CloseAudio())();
+		}
+		def isPlaying(){
+			return (extern lang.c.int Mix_Playing(lang.c.int))(this.data)==1;
+		}
+		static def countPlaying(){
+			return (extern lang.c.int Mix_Playing(lang.c.int))(-1);
+		}
+	}
+
+	static class primitive chunk{
+		lang.c.pointer data;
+		static def getWAV(lang.c.string file){
+			return (extern chunk Mix_LoadWAV_RW(lang.c.pointer, lang.c.int))(SDL_RWFromFile(file, "rb"), 1);	
+		} 
+		def void close(){
+			(extern void Mix_FreeChunk(lang.c.pointer))(this.data);
+			this.data = null;
+		}
+	};
+
+	static class primitive music{
+		lang.c.pointer data;
+		def music(lang.c.string file){
+			this.data = (extern lang.c.pointer Mix_LoadMUS(lang.c.string))(file);
+		}
+		def void close(){
+			(extern void Mix_FreeMusic(music))(this);
+			this.data = null;
+		}
+		def void play(int loops=0){
+			(extern void Mix_PlayMusic(music, int))(this,loops);
+		}
+		static def bool isPlaying(){
+			return (extern bool Mix_PlayingMusic())()
+		}
+		static def setCommand(lang.c.string s){
+			return (extern lang.c.int Mix_SetMusicCMD(lang.c.string))(s);
+		}
+		//defaults to max
+		static def setVolume(lang.c.int i=128){
+			return (extern lang.c.int Mix_VolumeMusic(lang.c.int))(i);
+		}
+		static def getVolume(){
+			return music.setVolume(-1);
+		}
+		//fades & stops playing
+		static def fadeOut(int ms=2000){
+			return (extern lang.c.int Mix_FadeOutMusic(lang.c.int))(ms);
+		}
+		static def pause(){
+			(extern void Mix_PauseMusic())();
+		}
+		static def resume(){
+			(extern void Mix_ResumeMusic())();
+		}
+		static def stop(){
+			(extern lang.c.int Mix_HaltMusic())();
+		}
+		//rewinds to start
+		static def rewind(){
+			(extern void Mix_RewindMusic())();
+		}
+		//returns true if error
+		//MOD
+			//The double is cast to Uint16 and used for a pattern number in the module.
+			//Passing zero is similar to rewinding the song.
+		//OGG
+			//Jumps to position seconds from the beginning of the song.
+		//MP3
+			//Jumps to position seconds from the current position in the stream.
+			//So you may want to call Mix_RewindMusic before this.
+			//Does not go in reverse...negative values do nothing.
+		static def setPosition(double p){
+			auto V=(extern lang.c.int Mix_SetMusicPosition(double));
+			auto t=music.getMusicType();
+			if(t==sdl.MusicType.MP3 || t==sdl.MusicType.MP3_MAD){
+				music.rewind();
+				return V(p)==0;
+			} else if(t==sdl.MusicType.OGG){
+				return V(p)==0;
+			} else return false;
+		}
+		static def sdl.MusicType getMusicType(lang.c.pointer p=null){
+			return (extern sdl.MusicType Mix_GetMusicType(lang.c.pointer))(p);
+		}
+		def getMusicType(){
+			return music.getMusicType(this.data);
+		}
+		static def isPaused(){
+			return (extern lang.c.int Mix_PausedMusic())()==1;
+		}
+	};
+
+}
+
+
+
+/*
+
+extern void SDL_PauseAudio(lang.c.int)
+extern int SDL_OpenAudioDevice(lang.c.string, lang.c.int, sdl.AudioSpec&, sdl.AudioSpec&, lang.c.int)
+extern lang.c.string SDL_GetError();
+extern lang.c.int SDL_Init(int);
+extern void SDL_MixAudio(lang.c.pointer, long, int, lang.c.int);
+extern void SDL_MixAudioFormat(lang.c.pointer, long, sdl.AudioFormat, int, lang.c.int);
+extern lang.c.int SDL_OpenAudio(sdl.AudioSpec&, lang.c.pointer=null)
+extern void SDL_PauseAudioDevice(int, lang.c.int)
+extern void SDL_Delay(int);
+extern void SDL_CloseAudio();
+extern void SDL_FreeWAV(long);
+*/
+
+/*
+sdl.AudioSpec wav_spec;
+int wav_length;
+long wav_buffer;
+lang.c.string st='dance.wav';
+//lang.c.string st='beat.wav';
+//scanf("%s\n", &st);
+auto f = SDL_LoadWAV(st, &wav_spec, &wav_buffer, &wav_length);
+
+println(wav_spec.freq);
+println(wav_spec.format._data);
+println(wav_spec.channels);
+extern void fflush(lang.c.int);
+fflush(0);
+wav_spec.callback = def (lang.c.pointer udata, lang.c.pointer stream, lang.c.int len){
+	if(wav_length==0) return;
+	len = ((len > wav_length) ? wav_length : len);
+	SDL_MixAudioFormat(stream, wav_buffer, wav_spec.format, len, 128);
+	wav_buffer +=len;
+	wav_length -=len;
+//	printf("%d %d\n", wav_buffer, wav_length);
+};
+
+SDL_OpenAudio(&wav_spec);
+SDL_PauseAudio(0);
+while ( wav_length > 0 ) {
+	SDL_Delay(100);
+}
+SDL_CloseAudio();
+SDL_FreeWAV(wav_buffer);
+*/

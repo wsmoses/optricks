@@ -1,0 +1,78 @@
+class primitive Color{
+	byte red;
+	byte green;
+	byte blue;
+	def Color(byte a, byte b, byte c){
+		this.red = a;
+		this.green = b;
+		this.blue = c;
+	}
+	def Color(double a, double b, double c){
+		this.red = byte(255*a);
+		this.green = byte(255*b);
+		this.blue = byte(255*c);
+	}
+}
+
+def void println(Color c){
+	print('(');
+	print(c.red);
+	print(', ');
+	print(c.green);
+	print(', ');
+	print(c.blue);
+	println(')');
+}
+def void print(Color c){
+	print('(');
+	print(c.red);
+	print(', ');
+	print(c.green);
+	print(', ');
+	print(c.blue);
+	println(')');
+}
+
+extern void glMatrixMode(int);
+extern void glLoadIdentity();
+extern void glFlush();
+extern void glutPostRedisplay();
+extern void glutDisplayFunc(function{void});
+extern void glutIdleFunc(function{void});
+class primitive_pointer Display{
+	def Display(int x, int y, lang.c.string s='MyText', function{void} disp=null, function{void} idle=null){
+	(extern void glutInitWindowSize(int x,int y))(x,y);
+	  (extern void glutCreateWindow(lang.c.string s))(s);
+	  (extern void glClearColor(double x=1,double y=1,double z=1,double a=0))();
+	  (extern void glShadeModel(int a=0x1D01))();
+	if(disp!=null) glutDisplayFunc(disp);
+	if(idle!=null) glutIdleFunc(idle);
+//	  (extern void glutReshapeFunc(auto a=_dispReshape))();
+	  (extern void glutMainLoop())();
+	}
+}
+
+int ZERO=0;
+(extern void glutInit(lang.c.int&, lang.c.pointer))(&ZERO,null);
+(extern void glutInitDisplayMode(int))(0x0002 | 0x0000);
+extern void glClear(int a=0x00004000);
+extern void glBegin(int a);
+extern void glEnd();
+extern void glutSwapBuffers();
+extern void glColor3ub(byte a, byte b, byte c);
+def void glColor(Color c){
+	glColor3ub(c.red,c.green,c.blue);
+}
+def void glColor((byte:red,byte:green,byte:blue) c){
+	glColor3ub(c.red,c.green,c.blue);
+}
+def void glColor(byte red,byte green,byte blue){
+	glColor3ub(red,green,blue);
+}
+
+def void glPixel(double x, double y, Color c){
+	glColor(c);
+//	print(x);
+//	print(y);
+	(extern void glVertex2d(double x, double y))(x,y);
+}
