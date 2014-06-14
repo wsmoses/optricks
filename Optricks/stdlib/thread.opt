@@ -11,7 +11,7 @@ class primitive thread{
 		}
 	}
 	def long join(){
-		long ret;
+		long ret=0;
 		if((extern lang.c.int pthread_join(lang.c.pointer,long&))(this.data, &ret)!=0){
 			error("Could not join thread");
 		}

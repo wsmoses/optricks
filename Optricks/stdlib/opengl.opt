@@ -50,11 +50,13 @@ class primitive_pointer Display{
 //	  (extern void glutReshapeFunc(auto a=_dispReshape))();
 	  (extern void glutMainLoop())();
 	}
+	static def init(){
+		int ZERO=0;
+		(extern void glutInit(lang.c.int&, lang.c.pointer))(&ZERO,null);
+		(extern void glutInitDisplayMode(int))(0x0002 | 0x0000);
+	}
 }
 
-int ZERO=0;
-(extern void glutInit(lang.c.int&, lang.c.pointer))(&ZERO,null);
-(extern void glutInitDisplayMode(int))(0x0002 | 0x0000);
 extern void glClear(int a=0x00004000);
 extern void glBegin(int a);
 extern void glEnd();

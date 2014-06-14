@@ -123,7 +123,7 @@ struct RData{
 				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);
-			getExec();
+			//getExec();
 			if(false){}
 #define MAP(X) else if(name==#X){ if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(opendir)
