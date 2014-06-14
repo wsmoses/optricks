@@ -1,6 +1,6 @@
-//import 'sdl2.opt'
+import 'sdl2.opt'
 
-//import 'file.opt';
+import 'file.opt';
 //import "string.opt"
 
 /*
@@ -29,7 +29,7 @@ gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
 }*/
 
-/*
+///*
 def int min(int a,int b){
 	return (a<b)?a:b;
 }
@@ -105,4 +105,4 @@ def complex operator ** (complex a, double b){
 }
 
 // */
-//import "random.opt"
+import "random.opt"

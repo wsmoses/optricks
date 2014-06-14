@@ -344,7 +344,6 @@ void initClasses(){
 		#undef SDL_A
 		auto MUS = new EnumClass(&SDL->staticVariables,"MusicType",E_D,PositionID("#sdl",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(Mix_MusicType)));
 		SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
-		auto F = Mix_LoadWAV_RW;
 	} {
 
 

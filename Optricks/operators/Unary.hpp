@@ -123,6 +123,9 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 	case CLASS_MAP:
 	case CLASS_STR:
 	case CLASS_SET:
+	case CLASS_ENUM:
+	case CLASS_WRAPPER:
+	case CLASS_CSTRING:
 	case CLASS_CLASS:{
 		if(false) return cc;
 		else{
@@ -148,8 +151,13 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		if(cc->classType==CLASS_REF) filePos.error("Cannot get reference of reference");
 		if(cc->classType==CLASS_LAZY) filePos.error("Cannot get reference of lazy");
 		else{
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for reference");
-			const LocationData* ld = (const LocationData*)value;
+			const LocationData* ld;
+			if(value->type==R_LOC)
+				ld = (const LocationData*)value;
+			else if(value->type==R_DEC)
+				ld = ((const DeclarationData*)value)->value->fastEvaluate(r);
+			else
+				filePos.error("Cannot use non-variable for reference");
 			return new ReferenceData(ld);
 		}
 	}
@@ -177,16 +185,26 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 		else if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateAdd(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateSub(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
@@ -275,16 +293,26 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		}
 		else if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateFAdd(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateFSub(toR, ic->getOne(filePos)), r);
 			return new ConstantData(toR, cc);
@@ -331,8 +359,13 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 			}
 		}
 		else if(operation=="++"){
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+cc->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+cc->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			L->setValue(r.builder.CreateAdd(toR, charClass.getOne()), r);
 			return new ConstantData(toR, &charClass);
@@ -358,6 +391,9 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 	case CLASS_MAP:
 	case CLASS_STR:
 	case CLASS_SET:
+	case CLASS_ENUM:
+	case CLASS_WRAPPER:
+	case CLASS_CSTRING:
 	case CLASS_CLASS:{
 		if(false) return cc;
 		else{
@@ -417,6 +453,9 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	case CLASS_MATHLITERAL:
 	case CLASS_STRLITERAL:
 	case CLASS_STR:
+	case CLASS_ENUM:
+	case CLASS_WRAPPER:
+	case CLASS_CSTRING:
 	case CLASS_SET:{
 		if(false) return cc;
 		else{
@@ -452,8 +491,13 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_INT:{
 		if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateAdd(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
@@ -461,8 +505,13 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateSub(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
@@ -497,8 +546,13 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_FLOAT:{
 		if(operation=="++"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateFAdd(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
@@ -506,8 +560,13 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else if(operation=="--"){
 			const RealClass* ic = (const RealClass*)cc;
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+ic->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateFSub(toR, ic->getOne(filePos));
 			L->setValue(toS, r);
@@ -520,16 +579,26 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	}
 	case CLASS_CHAR:{
 		if(operation=="++"){
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateAdd(toR, charClass.getOne());
 			L->setValue(toS, r);
 			return new ConstantData(toS, cc);
 		}
 		else if(operation=="--"){
-			if(value->type!=R_LOC) filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
-			auto L = ((const LocationData*)value)->value;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate(r)->value;
+			else
+				filePos.error("Cannot use non-variable for post operator "+operation+" in class '"+cc->getName()+"'");
 			llvm::Value* toR = L->getValue(r, filePos);
 			llvm::Value* toS = r.builder.CreateSub(toR, charClass.getOne());
 			L->setValue(toS, r);
@@ -564,6 +633,9 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_STRLITERAL:
 	case CLASS_STR:
 	case CLASS_SET:
+	case CLASS_ENUM:
+	case CLASS_WRAPPER:
+	case CLASS_CSTRING:
 	case CLASS_MATHLITERAL:{
 		if(false) return cc;
 		else{

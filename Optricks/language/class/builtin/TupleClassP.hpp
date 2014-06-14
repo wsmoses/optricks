@@ -12,6 +12,7 @@
 #include "./NamedTupleClass.hpp"
 #include "../../RData.hpp"
 #include "../../data/LocationData.hpp"
+#include "../../data/DeclarationData.hpp"
 
 inline llvm::Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		switch(toCast->classType){
@@ -73,7 +74,7 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 		illegalLocal(id,s);
 		exit(1);
 	}
-	assert(instance->type==R_LOC || instance->type==R_CONST || instance->type==R_TUPLE);
+	assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST || instance->type==R_TUPLE);
 	if(instance->type==R_TUPLE){
 		TupleData* td = (TupleData*)instance;
 		return td->inner[i]->castTo(r,innerTypes[i],id);
@@ -83,7 +84,11 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 		auto LD = ((const LocationData*)instance)->value;
 		if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
-	} else{
+	} else if(instance->type==R_DEC){
+		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+		if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
+		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
+	} else {
 		assert(instance->type==R_CONST);
 		llvm::Value* v = ((ConstantData*)instance)->value;
 		if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);

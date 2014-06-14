@@ -34,6 +34,8 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_FLOATLITERAL:
 	case CLASS_INTLITERAL:
 	case CLASS_RATIONAL:
+	case CLASS_ENUM:
+	case CLASS_WRAPPER:
 	case CLASS_VECTOR:{
 		filePos.error("Could not find constructor in class '"+getName()+"'");
 		exit(1);
@@ -107,6 +109,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		} else if(V->classType==CLASS_CSTRING){
 			//TODO cstring parse int
 			filePos.compilerError("parsing from cstring not implemented");
+			return &VOID_DATA;
 		} else if(V->classType==CLASS_STRLITERAL){
 			auto M = ((const StringLiteral*)d)->value;
 			mpz_t Z;

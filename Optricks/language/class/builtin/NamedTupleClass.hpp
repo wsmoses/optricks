@@ -9,6 +9,7 @@
 #define NAMEDTUPLECLASS_HPP_
 #include "./TupleClass.hpp"
 #include "../../data/LocationData.hpp"
+#include "../../data/DeclarationData.hpp"
 
 
 class NamedTupleClass: public TupleClass{
@@ -78,7 +79,7 @@ public:
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override final{
 		for(unsigned int i=0; i<innerNames.size(); i++)
 			if(innerNames[i]==s){
-				assert(instance->type==R_LOC || instance->type==R_CONST || instance->type==R_TUPLE);
+				assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST || instance->type==R_TUPLE);
 				if(instance->type==R_TUPLE){
 					TupleData* td = (TupleData*)instance;
 					return td->inner[i]->castTo(r,innerTypes[i],id);
@@ -88,7 +89,11 @@ public:
 					auto LD = ((const LocationData*)instance)->value;
 					if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
-				} else{
+				} else if(instance->type==R_DEC){
+					auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+					if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
+					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
+				} else {
 					assert(instance->type==R_CONST);
 					auto v = ((ConstantData*)instance)->value;
 					if(innerTypes.size()==1) return new ConstantData(v, innerTypes[0]);

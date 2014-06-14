@@ -14,6 +14,7 @@
 #include "../../data/literal/IntLiteral.hpp"
 #include "../../data/ConstantData.hpp"
 #include "../../data/LocationData.hpp"
+#include "../../data/DeclarationData.hpp"
 
 ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,llvm::VectorType::get(cType(inner),2)),innerClass(inner){
@@ -133,7 +134,7 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		illegalLocal(id,s);
 		exit(1);
 	}
-	assert(instance->type==R_IMAG || instance->type==R_LOC || instance->type==R_CONST);
+	assert(instance->type==R_IMAG || instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST);
 	assert(instance->getReturnType()==this);
 	if(instance->type==R_IMAG){
 		ImaginaryLiteral* cl = (ImaginaryLiteral*)instance;
@@ -145,9 +146,12 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		llvm::Value* v = ((ConstantData*)instance)->value;
 		return new ConstantData(r.builder.CreateExtractElement(v,getInt32((s=="real")?0:1)),innerClass);
 
-	} else {
-		assert(instance->type==R_LOC);
+	} else if(instance->type==R_LOC){
 		auto LD = ((const LocationData*)instance)->value;
+		return new LocationData(LD->getInner(r, id, 0, (s=="real")?0:1), innerClass);
+	} else {
+		assert(instance->type==R_DEC);
+		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
 		return new LocationData(LD->getInner(r, id, 0, (s=="real")?0:1), innerClass);
 	}
 	exit(1);

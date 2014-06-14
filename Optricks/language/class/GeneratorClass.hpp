@@ -9,7 +9,7 @@
 #define GENERATORCLASS_HPP_
 
 #include "../AbstractClass.hpp"
-
+//TODO COMPLETE AND ADD R_DEC
 class GeneratorClass: public AbstractClass{
 public:
 	static inline String str(const String nam, const AbstractClass* rT, const std::vector<std::pair<const AbstractClass*,String>>& a){
@@ -25,8 +25,8 @@ public:
 		if(len==1) return args[0].first->type;
 		llvm::SmallVector<llvm::Type*,0> ar(len);
 		for(unsigned int i=0; i<len; i++){
-			assert(args[i]->classType!=CLASS_LAZY);
-			assert(args[i]->classType!=CLASS_REF);
+			assert(args[i].first->classType!=CLASS_LAZY);
+			assert(args[i].first->classType!=CLASS_REF);
 			ar[i]=args[i].first->type;
 		}
 		return llvm::StructType::create(ar,llvm::StringRef(nam),false);

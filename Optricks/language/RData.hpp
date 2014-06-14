@@ -100,7 +100,7 @@ struct RData{
 		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
 			assert(FT);
-			for(int i=0; i<FT->getNumParams(); i++)
+			for(unsigned i=0; i<FT->getNumParams(); i++)
 				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);

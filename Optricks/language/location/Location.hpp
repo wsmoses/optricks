@@ -55,7 +55,6 @@ public:
 		used = u;
 		varName = nam;
 		assert(position);
-		llvm::Type* t;
 		assert(llvm::dyn_cast<llvm::PointerType>(p->getType()));
 		type = ((llvm::PointerType*) p->getType())->getElementType();
 		assert(type);

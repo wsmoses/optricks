@@ -241,8 +241,12 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
 				const Data* dat= d.first->vars[d.second->second.pos];
-				if(dat->type!=R_LOC) filePos.error("Cannot set value of non-variable '"+name+"'");
-				((const LocationData*)dat)->setValue(r, d2->getValue(r, filePos));
+				if(dat->type==R_LOC)
+					((const LocationData*)dat)->setValue(r, d2->getValue(r, filePos));
+				else if(dat->type==R_DEC)
+					((const DeclarationData*)dat)->value->fastEvaluate(r)->setValue(r, d2->getValue(r, filePos));
+				else
+					filePos.error("Cannot set value of non-variable '"+name+"'");
 				return;
 			}
 			default:
@@ -256,9 +260,12 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
 				const Data* dat= d.first->vars[d.second->second.pos];
-				if(dat->type!=R_LOC)
+				if(dat->type==R_LOC)
+					((const LocationData*)dat)->setValue(r, v);
+				else if(dat->type==R_DEC)
+					((const DeclarationData*)dat)->value->fastEvaluate(r)->setValue(r, v);
+				else
 					filePos.error("Cannot set value of non-variable '"+name+"'");
-				((const LocationData*)dat)->setValue(r, v);
 				return;
 			}
 			default:

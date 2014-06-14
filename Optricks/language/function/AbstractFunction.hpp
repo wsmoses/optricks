@@ -103,6 +103,7 @@ public:
 	}
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
+
 //CANNOT BE USED FOR LOCAL FUNCTIONS
 class BuiltinInlineFunction: public SingleFunction{
 private:
@@ -118,6 +119,14 @@ public:
 	}
 };
 
+template<decltype(llvm::Intrinsic::sqrt) A>
+class IntrinsicFunction: public SingleFunction{
+private:
+public:
+	IntrinsicFunction(FunctionProto* const fp):SingleFunction(fp,nullptr){};
+	llvm::Function* getSingleFunc() const override final;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
+};
 #define OVERLOADEDFUNC_C_
 class OverloadedFunction: public AbstractFunction{
 private:

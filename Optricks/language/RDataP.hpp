@@ -225,7 +225,6 @@ void RData::FinalizeFunction(llvm::Function* f){
 					llvm::BasicBlock* me = *PI;
 					np->addIncoming(getLastValueOf(ll,me,it->second.second),me);
 				}
-				llvm::Value* ret=np;
 				bool isSame = true;
 				llvm::Value* run=nullptr;
 				for(auto bi=np->block_begin(); bi!=np->block_end(); ++bi){
@@ -242,8 +241,6 @@ void RData::FinalizeFunction(llvm::Function* f){
 					}
 				}
 				if(isSame){
-					ret = run;
-
 					for(auto& a: ll->data){
 						if(a.second==np) a.second = run;
 					}

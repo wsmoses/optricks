@@ -237,7 +237,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		auto (*FP)() = (int32_t (*)())(intptr_t)FPtr;
 		int32_t t = FP();
 		auto EC = ((const EnumClass*)retType);
-		for(int i=0; i<EC->names.size(); i++){
+		for(unsigned i=0; i<EC->names.size(); i++){
 			if(EC->names[i].first==t){
 				std::cout << EC->names[i].second << endl << flush;
 				break;

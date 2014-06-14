@@ -11,6 +11,10 @@
 #include "../language/statement/Statement.hpp"
 #include "./E_VAR.hpp"
 #include "../language/location/Location.hpp"
+#include "../language/class/builtin/ReferenceClass.hpp"
+#include "../language/class/builtin/FunctionClass.hpp"
+#include "../language/class/builtin/LazyClass.hpp"
+#include "../language/data/ReferenceData.hpp"
 #include "../operators/Deconstructor.hpp"
 
 #define DECLR_P_
@@ -152,7 +156,7 @@ public:
 				exit(1);
 			}
 			auto RT = D->getReturnType();
-			if(D && RT->classType==CLASS_REF){
+			if(RT->classType!=CLASS_REF){
 				filePos.error("Cannot create reference of non-reference type "+RT->getName());
 				exit(1);
 			}

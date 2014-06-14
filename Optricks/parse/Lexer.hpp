@@ -215,7 +215,8 @@ public:
 			f->trim(EOF);
 			bool set=false;
 			while(f->peek()!=']'){
-				Statement* in=getNextStatement(data.getEndWith(EOF));
+				//Statement* in=
+				getNextStatement(data.getEndWith(EOF));
 				set = true;
 				pos().compilerError("Cannot parse A.B[4] as type");
 			}

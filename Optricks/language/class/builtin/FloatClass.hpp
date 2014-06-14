@@ -42,7 +42,7 @@ public:
 			V = r.builder.CreateFMul(V, V);
 			return new ConstantData(V, this);
 		}), PositionID(0,0,"#float"));
-#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new CompiledFunction(new FunctionProto(X,{AbstractDeclaration(this)},this),llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::Y, llvm::SmallVector<llvm::Type*,1>(1,type))), PositionID(0,0,"#float"));
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new IntrinsicFunction<llvm::Intrinsic::Y>(new FunctionProto(X,{AbstractDeclaration(this)},this)), PositionID(0,0,"#float"));
 		SINGLE_FUNC_DECLR("abs",fabs)
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
 		SINGLE_FUNC_DECLR("sin",sin)
@@ -68,6 +68,30 @@ public:
 				assert(args.size()==1);
 				auto V = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateFCmpUNO(V,V),&boolClass);}), PositionID(0,0,"#float"));
+
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
+						new BuiltinInlineFunction(
+								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						assert(args.size()>=1);
+						llvm::SmallVector<llvm::Type*,1> t_args(1);
+						t_args[0] = C_STRINGTYPE;
+						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+						r.builder.CreateCall2(CU, r.getConstantCString("%f"), args[0]->evalV(r, id));
+						return &VOID_DATA;
+					}), PositionID(0,0,"#float"));
+		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
+						new BuiltinInlineFunction(
+								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						assert(args.size()>=1);
+						llvm::SmallVector<llvm::Type*,1> t_args(1);
+						t_args[0] = C_STRINGTYPE;
+						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+						r.builder.CreateCall2(CU, r.getConstantCString("%f\n"), args[0]->evalV(r, id));
+						return &VOID_DATA;
+					}), PositionID(0,0,"#float"));
 }
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{

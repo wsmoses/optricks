@@ -34,6 +34,7 @@ class Statement : public Evaluatable{
 		 * Compiles the actual function
 		 */
 		virtual void buildFunction(RData& r) const = 0;
+		//virtual void resolveLazy(RData& r) const=0;
 		/**
 		 * Determines return-type of expression (and sub-expressions)
 		 */
@@ -76,6 +77,7 @@ class VoidStatement : public Statement{
 			PositionID(0,0,"#Void").error("Attempted evaluation of void statement");
 			exit(1);
 		}
+		//void resolveLazy(RData& r) const override final{}
 		const Token getToken() const override{
 			return T_VOID;
 		}

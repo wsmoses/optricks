@@ -122,6 +122,7 @@ class ForEachLoop : public ErrorStatement{
 				ra.builder.SetInsertPoint(NEXT.first);
 				const Data* v = j.endings[0].second;
 				//todo -- remove this
+				//todo add r_dec?
 				if(!(v->type==R_LOC || v->type==R_CONST))
 					filePos.error("Cannot use object designated as "+str(v->type)+" for iterable");
 				localVariable->pointer.setObject(v);//todo removed toLocation -- check if needed

@@ -43,43 +43,42 @@ def inc(int& a){
 }
 def void lazy(int% i){
        println("before: lazy");
-       printf("%d\n", i());
+       println(i());
        println("after: lazy");
 }
-/*
+
+def printr(int a){
+	println(a);
+}
+
 class T{
 static int a;
 static def test(){
-	int& a = & T.a;
-	a = 3;
-	printf("%d\n",a);
+	int a = 3;
+	println(a);
 	lazy(a++);
-	printf("%d\n",a);
+	println(a);
 }
 static def test2(){
 	int& a = & T.a;
 	a = 3;
-	printf("%d\n",a);
+	println(a);
 	lazy(a);
-	printf("%d\n",a);
-}
-static def printr(int a){
-	printf("%d\n", a);
+	println(a);
 }
 static def test3(){
 	int& a = & T.a;
 	a = 3;
-	printf("%d\n",a);
-	printr(a++);
-	printf("%d\n",a);
+	println(a);
+	println(a++);
+	println(a);
 }
 
 static def test4(){
-	int& a = & T.a;
-	a = 3;
-	printr(a);
+	int a = 3;
+	println(a);
 	inc(&a);
-	printr(a);
+	println(a);
 }
 }
-*/
+

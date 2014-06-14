@@ -384,6 +384,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	case CLASS_GEN:
 	case CLASS_SET:
 	case CLASS_MAP:
+	case CLASS_WRAPPER:
 	case CLASS_VOID:{
 		if(false) return cc;
 		else{
@@ -1376,6 +1377,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 	case CLASS_GEN:
 	case CLASS_SET:
 	case CLASS_MAP:
+	case CLASS_WRAPPER:
 	case CLASS_VOID:{
 		if(false) return cc;
 		else{

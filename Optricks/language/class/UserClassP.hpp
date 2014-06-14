@@ -61,10 +61,12 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 	if(!final) id.compilerError("Cannot getLocalData() on unfinalized type");
 	if(layout==PRIMITIVEPOINTER_LAYOUT){
 		if(s!="#data") illegalLocal(id,s);
-		assert(instance->type==R_LOC || instance->type==R_CONST);
+		assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST);
 		assert(instance->getReturnType()==this);
 		if(instance->type==R_LOC){
 			return new LocationData(((LocationData*)instance)->value, &c_pointerClass);
+		} else if(instance->type==R_DEC){
+			return new LocationData(((DeclarationData*)instance)->value->fastEvaluate(r)->value, &c_pointerClass);
 		} else {
 			assert(instance->type==R_CONST);
 			return new ConstantData(((ConstantData*)instance)->value, &c_pointerClass);
@@ -78,7 +80,7 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 					unsigned start = tmp->start+fd->second;
 					if(instance->type==R_DEC)
 						instance = ((const DeclarationData*)instance)->value->fastEvaluate(r);
-					assert(instance->type==R_LOC || instance->type==R_CONST
+					assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST
 							/*|| instance->type==R_REF*/);
 					assert(instance->getReturnType()==this);
 					if(instance->type==R_LOC){
@@ -90,6 +92,18 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 						else{
 							ld = new StandardLocation(r.builder.CreateConstGEP2_32(
 									((const LocationData*)instance)->value->getValue(r,id),0,start));
+							assert(ld);
+						}
+						return new LocationData(ld, tmp->localVars[fd->second]);
+					} else if(instance->type==R_DEC){
+						Location* ld;
+						if(layout==PRIMITIVE_LAYOUT){
+							ld = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value->getInner(r, id, 0, start);
+							assert(ld);
+						}
+						else{
+							ld = new StandardLocation(r.builder.CreateConstGEP2_32(
+									((const DeclarationData*)instance)->value->fastEvaluate(r)->value->getValue(r,id),0,start));
 							assert(ld);
 						}
 						return new LocationData(ld, tmp->localVars[fd->second]);

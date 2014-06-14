@@ -14,6 +14,27 @@
 #include "../data/LazyWrapperData.hpp"
 
 
+template<decltype(llvm::Intrinsic::sqrt) A>
+const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
+	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
+	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
+	else{
+		return new ConstantData(cal,proto->returnType);
+	}
+}
+
+template<decltype(llvm::Intrinsic::sqrt) A>
+llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
+	if(myFunc) return myFunc;
+	auto tmp=proto->declarations.size();
+	llvm::SmallVector<llvm::Type*,0> ar(tmp);
+	for(unsigned i=0; i<tmp; i++){
+		ar[i] = proto->declarations[i].declarationType->type;
+		assert(ar[i]);
+	}
+	return myFunc = llvm::Intrinsic::getDeclaration(getRData().lmod, A,ar);
+}
+
 	CompiledFunction::CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
 		assert(fp->returnType->classType==CLASS_VOID || f->getReturnType()==fp->returnType->type);
 		assert(f->getFunctionType()->getNumParams()==fp->declarations.size());
@@ -254,10 +275,15 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 		llvm::Value* T;
 		if(proto->declarations[0].declarationType->classType==CLASS_REF){
 			if(instance->type==R_CONST)
-				instance = ((const ConstantData*)instance)->toLocation(r);
-			else if(instance->type!=R_LOC)
+				T = ((const ConstantData*)instance)->toLocation(r)->value->getPointer(r, id);
+			else if(instance->type==R_LOC){
+				T = ((LocationData*)instance)->value->getPointer(r, id);
+			} else if(instance->type==R_DEC){
+				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->value->getPointer(r, id);
+			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
-			T = ((LocationData*)instance)->value->getPointer(r, id);
+				exit(1);
+			}
 		} else {
 			T = instance->getValue(r, id);
 		}
@@ -317,10 +343,15 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		llvm::Value* T;
 		if(proto->declarations[0].declarationType->classType==CLASS_REF){
 			if(instance->type==R_CONST)
-				instance = ((const ConstantData*)instance)->toLocation(r);
-			else if(instance->type!=R_LOC)
+				T = ((const ConstantData*)instance)->toLocation(r)->value->getPointer(r, id);
+			else if(instance->type==R_LOC){
+				T = ((LocationData*)instance)->value->getPointer(r, id);
+			} else if(instance->type==R_DEC){
+				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->value->getPointer(r, id);
+			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
-			T = ((LocationData*)instance)->value->getPointer(r, id);
+				exit(1);
+			}
 		} else {
 			T = instance->getValue(r, id);
 		}
