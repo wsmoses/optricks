@@ -84,6 +84,9 @@ struct RData{
 		llvm::ExecutionEngine* getExec(){
 			if(exec) return exec;
 			else{
+
+				llvm::InitializeNativeTarget();
+				//llvm::InitializeAllTargets();
 				String erS;
 				exec = llvm::EngineBuilder(lmod).setErrorStr(& erS).create();
 				if(!exec){
