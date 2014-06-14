@@ -11,30 +11,29 @@
 
 String getExecutablePath(){
 	char resolved_path[PATH_MAX];
+	char* path_end;
 #if defined(WIN32) || defined(_WIN32)
 	GetModuleFileName(nullptr,resolved_path,sizeof(resolved_path));
-	char* path_end = strrchr (resolved_path, '\\');
-	  if (path_end == NULL){
-			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
-			exit(1);
-		}
-	  ++path_end;
-	  *path_end = '\0';
+	path_end = strrchr (resolved_path, '\\');
+#elif defined(__APPLE__)
+	uint32_t size = sizeof(resolved_path);
+	if (_NSGetExecutablePath(resolved_path, &size) != 0)
+		fprintf(stderr, "Executable path buffer too small; need size %u\n", size);
+	path_end = strrchr (resolved_path, '/');
 #else
-	  /* Read the target of /proc/self/exe.  */
-	  if (readlink ("/proc/self/exe", resolved_path, sizeof(resolved_path)) <= 0){
-			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
-			exit(1);
-		}
-	  /* Find the last occurence of a forward slash, the path separator.  */
-	  char* path_end = strrchr (resolved_path, '/');
-	  if (path_end == NULL){
-			fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
-			exit(1);
-		}
-	  ++path_end;
-	  *path_end = '\0';
+	if (readlink ("/proc/self/exe", resolved_path, sizeof(resolved_path)) <= 0){
+		fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
+		exit(1);
+	}
+	path_end = strrchr (resolved_path, '/');
 #endif
+
+	if (path_end == NULL){
+		fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
+		exit(1);
+	}
+	++path_end;
+	*path_end = '\0';
 	return String(resolved_path);
 }
 

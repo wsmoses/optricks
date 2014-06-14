@@ -22,6 +22,7 @@ ifneq (,$(findstring MINGW, $(UNAME)))
 	OPENGL += -lopengl32 -lglu32 -lglut
 else ifeq ($(UNAME), Darwin)
 	OPENGL += -I/opt/X11/include -framework OpenGL -framework GLUT -framework Cocoa
+	GCC = g++-4.9
 else
 	OPENGL += -lGLU -lglut
 endif
@@ -69,4 +70,4 @@ release-no-sdl:
 release-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static-libgcc -static-libstdc++

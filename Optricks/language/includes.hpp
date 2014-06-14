@@ -30,7 +30,8 @@
 #if defined(WIN32) || defined(_WIN32)
 #include <Windows.h>
 #include <mmsystem.h>
-#else
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
 #endif
 #include <unistd.h>
 #include <assert.h>
