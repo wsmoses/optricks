@@ -51,8 +51,10 @@ class primitive_pointer Display{
 	  (extern void glutMainLoop())();
 	}
 	static def init(){
-		int ZERO=0;
-		(extern void glutInit(lang.c.int&, lang.c.pointer))(&ZERO,null);
+		int fakeargc=1;
+		lang.c.string[] ar = lang.c.string[](1);
+		ar[0] = 'fake';
+		(extern void glutInit(lang.c.int&, lang.c.pointer))(&fakeargc,ar.carr);
 		(extern void glutInitDisplayMode(int))(0x0002 | 0x0000);
 	}
 }

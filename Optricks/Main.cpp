@@ -499,8 +499,9 @@ int main(int argc, char** argv){
 		};
 	if(!interactive){
 		if(command==""){
-			files.push_back(files[0]);
-			files[0]=file;
+			auto t = files.size()-1;
+			files.push_back(files[t]);
+			files[t]=file;
 		}
 		else{
 			cerr << "Commands not supported yet!" << endl << flush;

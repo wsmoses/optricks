@@ -93,8 +93,12 @@ struct RData{
 					cerr << erS << endl << flush;
 					exit(1);
 				}
-				for(const auto& a: toPut)
+				for(const auto& a: toPut){
+					assert(exec);
+					assert(a.first);
+					assert(a.second);
 					exec->updateGlobalMapping(a.first,a.second);
+				}
 				return exec;
 			}
 		}
@@ -125,7 +129,7 @@ struct RData{
 			assert(F);
 			//getExec();
 			if(false){}
-#define MAP(X) else if(name==#X){ if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
+#define MAP(X) else if(name==#X){ assert((void*)(&X)); if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)
