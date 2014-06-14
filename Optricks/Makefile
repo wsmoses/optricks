@@ -3,35 +3,77 @@ CLANG = clang++ --analyze
 
 CC = $(GCC)
 
+FLAGS = -lmpfr -lgmp ${CPPFLAGS} ${CFLAGS} ${LDFLAGS}
+
+LLVM = `llvm-config --cppflags --libs all` `llvm-config --ldflags` -lm -lz
+
+UNAME := $(shell uname)
+
+OPENGL = -DUSE_OPENGL
+
+SDL = -DUSE_SDL -lSDL2_mixer -lSDL2_image `sdl2-config --cflags --libs`
+
+RELEASE = -O3 -static-libgcc -DNDEBUG
+#RELEASE = -O3 -static-libgcc -DNDEBUG -static
+
+ifneq (,$(findstring MINGW, $(UNAME)))
+	LLVM += -limagehlp
+	SDL += -lWinmm
+	OPENGL += -lopengl32 -lglu32 -lglut
+else ifeq ($(UNAME), Darwin)
+	OPENGL += -I/opt/X11/include -framework OpenGL -framework GLUT -framework Cocoa
+else
+	OPENGL += -lGLU -lglut
+endif
+
 #LIB = `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -lSDL2_mixer -lSDL2_image `sdl2-config --cflags --libs`
-LIB = -DUSE_OPENGL `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -Wl,--whole-archive -lSDL2_mixer -Wl,--no-whole-archive `sdl2-config --cflags --static-libs`
+#LIB = -DUSE_OPENGL `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -Wl,--whole-archive -lSDL2_mixer -Wl,--no-whole-archive `sdl2-config --cflags --static-libs`
+#LIB = `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -Wl,--whole-archive -lSDL2_mixer -Wl,--no-whole-archive `sdl2-config --cflags --static-libs`
 #LIB = -Wl,-Bstatic `llvm-config --cppflags --libs all` `llvm-config --ldflags` ${CPPFLAGS} ${LDFLAGS} -lmpfr -lgmp -lm -lz -Wl,-Bdynamic -Wl,--whole-archive -lSDL2_mixer -Wl,--no-whole-archive -Wl,-Bstatic `sdl2-config --cflags --static-libs`
+
+LIB = $(FLAGS) $(LLVM) $(OPENGL) $(SDL)
 
 DEBUG = -g -ggdb
 
 STD = -std=c++11
 
 all: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -lGLU -lglut
+	@echo "Enabled  OpenGL"
+	@echo "Enabled  SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(DEBUG)
 
-all-win: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp -lopengl32 -lglu32 -lglut
+no-graphics:
+	@echo "Disabled OpenGL"
+	@echo "Enabled  SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(SDL) $(DEBUG)
 
-clang-win: 
-	$(CLANG) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -limagehlp
+no-sdl:	
+	@echo "Enabled  OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(DEBUG)
 
-ddebug: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) $(DEBUG) -DNDEBUG
+bare:
+	@echo "Disabled OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(DEBUG)
 
-fast: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -limagehlp
+release-all: 
+release:
+	@echo "Enabled  OpenGL"
+	@echo "Enabled  SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE)
 
-release: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static -DNDEBUG -fno-rtti 
+release-no-graphics:
+	@echo "Disabled OpenGL"
+	@echo "Enabled  SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(SDL) $(RELEASE)
 
-release-win: 
-	$(CC) $(STD) Main.cpp -o Optricks $(LIB) -O3 -static-libgcc -static-libstdc++ -DNDEBUG -fno-rtti -limagehlp
+release-no-sdl:	
+	@echo "Enabled  OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(RELEASE) -static
 
-func:
-	gcc -c containers/basic_functions.hpp -o containers/basic_functions.o
-#	ar ruv libbasic_functions.a containers/basic_functions.o
+release-bare:
+	@echo "Disabled OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static

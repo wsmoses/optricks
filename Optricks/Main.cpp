@@ -490,7 +490,13 @@ int main(int argc, char** argv){
 		{
 				//"./tmp"
 				getExecutablePath() +"stdlib/stdlib.opt"
-				};
+#ifdef USE_SDL
+				,getExecutablePath() +"stdlib/sdl.opt"
+#endif
+#ifdef USE_OPENGL
+				,getExecutablePath() +"stdlib/opengl.opt"
+#endif
+		};
 	llvm::InitializeNativeTarget();
 	//llvm::InitializeAllTargets();
 	String erS;

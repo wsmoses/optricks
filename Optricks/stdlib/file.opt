@@ -36,3 +36,62 @@ class primitive File{
 	}
 
 };
+
+extern lang.c.size_t strlen(lang.c.string);
+extern lang.c.string strcpy(lang.c.string,lang.c.string);
+
+def getInfo(lang.c.string s){
+	FileStat fs;
+	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
+	println(fs.isFile());
+	println(fs.isDirectory());
+	println(fs.getSize());
+
+}
+def isFile(lang.c.string s){
+	FileStat fs;
+	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
+	return fs.isFile();
+}
+
+def println(lang.c.string[] ar){
+//	print('[');
+	for(int i=0; i<ar.length; i++){
+//		if(i!=0) print(', ');
+		println(ar[i]);
+	}
+//	println();
+}
+
+extern void fflush(lang.c.pointer=null);
+
+
+def lang.c.string[] listdir(lang.c.string s){
+	lang.c.string[] ar = lang.c.string[](0);
+	auto mlen = strlen(s);
+	bool end=s[mlen-1]=='/';
+
+	auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
+	do{
+		auto st = _posix_dir_next_name(dir);
+		if(st==null) break;
+
+		auto len = mlen+strlen(st)+(end?lang.c.size_t(1):lang.c.size_t(2));
+		auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
+
+		if(end)
+			sprintf(cp,"%s%s",s,st)
+		else
+			sprintf(cp,"%s/%s",s,st)
+
+		if(isFile(cp)) {
+			ar[]= cp;
+		}
+		else { 
+			(extern void free(lang.c.pointer))(cp);
+		}
+	}while(true);
+	(extern void closedir(lang.c.pointer))(dir);
+
+	return ar;
+}

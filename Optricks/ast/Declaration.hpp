@@ -202,11 +202,7 @@ void initFuncsMeta(RData& rd){
 	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
 	//TODO begin conversion of constructors to generators
 	{
-	//Data* glutIn(Data*::getFunction(o_glutInit,new FunctionProto("glutInit",voidClass)));
-	//LANG_M->addPointer(PositionID(0,0,"<start.glutInit>"),"glutInit",glutIn)->funcs.add(glutIn,rd,PositionID(0,0,"<start.glutInit>"));
 	}
-	LANG_M->addStaticVariable(PositionID(0,0,"<start.NULL>"),"null",new ConstantData(
-			ConstantPointerNull::get(C_POINTERTYPE),NullClass::get()));
 	{
 		FunctionProto* intIntP = new FunctionProto("int",intClass);
 		intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),doubleClass,NULL,false,NULL));

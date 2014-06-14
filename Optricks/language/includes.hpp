@@ -12,7 +12,9 @@
 #define EXTERN_FUNC llvm::Function::ExternalLinkage
 #define VERIFY(A)
 //#define VERIFY(A) verifyFunction(A);
+#ifdef USE_OPENGL
 #include <GL/glut.h>
+#endif
 #undef VOID
 #define __cplusplus 201103L
 
@@ -63,10 +65,12 @@
 #include <mpfr.h>
 #include <mpf2mpfr.h>
 
+#ifdef USE_SDL
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
+#endif
 
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/ExecutionEngine/JIT.h>

@@ -104,23 +104,35 @@ struct RData{
 				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);
+			assert(exec);
 			if(false){}
 #define MAP(X) else if(name==#X){ exec->updateGlobalMapping(F,(void*)(&X)); }
-#if defined(WIN32) || defined(_WIN32)
-			MAP(FindFirstFile)
-			MAP(FindNextFile)
-			MAP(FindClose)
-			MAP(PlaySound)
-			MAP(mciSendString)
-			MAP(CreateEvent)
-			MAP(ResetEvent)
-#endif
 			MAP(opendir)
 			MAP(readdir)
 			MAP(closedir)
 			MAP(stat)
 #ifdef USE_OPENGL
+//#pragma message "Using OpenGL"
 			MAP(glutInit)
+#else
+//#pragma message "Not Using OpenGL"
+#endif
+#ifdef USE_SDL
+//#pragma message "Using SDL"
+#if defined(WIN32) || defined(_WIN32)
+			MAP(PlaySound)
+			MAP(mciSendString)
+			MAP(CreateEvent)
+			MAP(ResetEvent)
+#endif
+			MAP(SDL_Init)
+			MAP(SDL_InitSubSystem)
+			MAP(SDL_Quit)
+			MAP(SDL_QuitSubSystem)
+			MAP(SDL_GetError)
+			MAP(SDL_ClearError)
+#else
+//#pragma message "Not Using SDL"
 #endif
 #undef MAP
 			return F;

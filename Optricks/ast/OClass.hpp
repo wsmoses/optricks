@@ -205,7 +205,7 @@ void initClasses(){
 			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 			return new ConstantData(V, &intClass);
 		}), PositionID(0,0,"#int"));
-
+#ifdef USE_SDL
 	auto SDL = new ScopeClass(&LANG_M, PositionID("#init",0,0), "sdl");
 	{
 		auto AF = new UserClass(&SDL->staticVariables,"AudioFormat",nullptr,PRIMITIVE_LAYOUT,false);
@@ -344,7 +344,9 @@ void initClasses(){
 		#undef SDL_A
 		auto MUS = new EnumClass(&SDL->staticVariables,"MusicType",E_D,PositionID("#sdl",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(Mix_MusicType)));
 		SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
-	} {
+	}
+#endif
+	{
 
 
 #if (defined(WIN32) || defined(_WIN32))

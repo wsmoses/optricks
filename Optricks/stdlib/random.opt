@@ -36,7 +36,7 @@ def repeat(void% a, int b){
 def repeat10(void% a){
 	for(int i=0; i<10; i++) a();
 }
-
+/*
 
 def inc(int& a){
 	a++;
@@ -82,3 +82,4 @@ static def test4(){
 }
 }
 
+*/
