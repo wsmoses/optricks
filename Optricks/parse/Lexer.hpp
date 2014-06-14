@@ -142,6 +142,8 @@ public:
 		}
 		if(toFile>0)
 			llvm::verifyModule(* getRData().lmod);
+		//flush function mappings
+		getRData().getExec();
 		//auto modOpt = new PassManager();
 		//FunctionPassManager* fnOpt = new FunctionPassManager(getRData().lmod);
 

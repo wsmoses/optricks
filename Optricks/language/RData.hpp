@@ -127,7 +127,9 @@ struct RData{
 				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);
+			assert(F->getLinkage()==llvm::GlobalVariable::ExternalLinkage);
 			//getExec();
+
 			if(false){}
 #define MAP(X) else if(name==#X){ assert((void*)(&X)); if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(opendir)
