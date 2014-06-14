@@ -11,30 +11,33 @@
 
 String getExecutablePath(){
 	char resolved_path[PATH_MAX];
-	char* path_end;
+	uint32_t size = sizeof(resolved_path);
 #if defined(WIN32) || defined(_WIN32)
-	GetModuleFileName(nullptr,resolved_path,sizeof(resolved_path));
-	path_end = strrchr (resolved_path, '\\');
+	#define SEP '\\'
+	size = GetModuleFileName(nullptr,resolved_path,sizeof(resolved_path));
 #elif defined(__APPLE__)
 	uint32_t size = sizeof(resolved_path);
-	if (_NSGetExecutablePath(resolved_path, &size) != 0)
+	if (_NSGetExecutablePath(resolved_path, &size) ==-1)
 		fprintf(stderr, "Executable path buffer too small; need size %u\n", size);
-	path_end = strrchr (resolved_path, '/');
+	#define SEP '/'
 #else
-	if (readlink ("/proc/self/exe", resolved_path, sizeof(resolved_path)) <= 0){
+	auto numBytes = readlink ("/proc/self/exe", resolved_path, sizeof(resolved_path));
+	if(numBytes==-1){
 		fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
 		exit(1);
 	}
-	path_end = strrchr (resolved_path, '/');
+	size = (uint32_t)numBytes;
+	resolved_path[size]='\0';
+	#define SEP '/'
 #endif
+	assert(resolved_path[size]=='\0');
+	do{
+		assert(size>0);
+		size--;
+	}while(resolved_path[size]!=SEP);
 
-	if (path_end == NULL){
-		fprintf (stderr, "Cannot find path to executable: %s\n", strerror (errno));
-		exit(1);
-	}
-	++path_end;
-	*path_end = '\0';
-	return String(resolved_path);
+	/* size+1 as to include the final slash */
+	return String(resolved_path, size+1);
 }
 
 template<typename T> constexpr T log2(T index){
