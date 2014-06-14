@@ -79,6 +79,15 @@ struct RData{
 			pmb.populateFunctionPassManager(fpm);
 			pmb.populateModulePassManager(mpm);
 			debug = false;
+
+			llvm::InitializeNativeTarget();
+			//llvm::InitializeAllTargets();
+			String erS;
+			exec = llvm::EngineBuilder(lmod).setErrorStr(& erS).create();
+			if(!exec){
+				cerr << erS << endl << flush;
+				exit(1);
+			}
 		};
 		llvm::PHINode* CreatePHI(llvm::Type *Ty, unsigned NumReservedValues, const llvm::Twine &Name = ""){
 			llvm::PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
@@ -131,6 +140,12 @@ struct RData{
 			MAP(SDL_QuitSubSystem)
 			MAP(SDL_GetError)
 			MAP(SDL_ClearError)
+			MAP(SDL_ClearError)
+			MAP(Mix_OpenAudio)
+			MAP(Mix_PlayChannelTimed)
+			MAP(Mix_CloseAudio)
+			MAP(Mix_Playing)
+			MAP(Mix_LoadWAV_RW)
 #else
 //#pragma message "Not Using SDL"
 #endif

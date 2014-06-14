@@ -497,14 +497,6 @@ int main(int argc, char** argv){
 				,getExecutablePath() +"stdlib/opengl.opt"
 #endif
 		};
-	llvm::InitializeNativeTarget();
-	//llvm::InitializeAllTargets();
-	String erS;
-	getRData().exec = llvm::EngineBuilder(getRData().lmod).setErrorStr(& erS).create();
-	if(!getRData().exec){
-		cerr << erS << endl << flush;
-		exit(1);
-	}
 	if(!interactive){
 		if(command==""){
 			files.push_back(files[0]);

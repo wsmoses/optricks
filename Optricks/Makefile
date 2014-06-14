@@ -61,19 +61,19 @@ release-all:
 release:
 	@echo "Enabled  OpenGL"
 	@echo "Enabled  SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE)
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++
 
 release-no-graphics:
 	@echo "Disabled OpenGL"
 	@echo "Enabled  SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(SDL) $(RELEASE)
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++
 
 release-no-sdl:	
 	@echo "Enabled  OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(RELEASE) -static
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(RELEASE) -static-libgcc -static-libstdc++
 
 release-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++

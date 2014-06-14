@@ -1,5 +1,3 @@
-import "stdlib/display.opt"
-
 double angle=0;
 def Color mand(complex z0){
 	complex z = z0

@@ -41,14 +41,7 @@ public:
 		const AbstractClass* returnType = returnV->getMyClass(a, filePos);
 		assert(returnType);
 		auto FT = llvm::FunctionType::get(returnType->type, args, false);
-		llvm::Function *F = a.getExtern(name, FT);//a.CreateFunctionD(nam,FT, EXTERN_FUNC);
-		/*if(nam=="printi") a.exec->addGlobalMapping(F, (void*)(&printi));
-		else if(nam=="printd") a.exec->addGlobalMapping(F, (void*)(&printd));
-		else if(nam=="printb") a.exec->addGlobalMapping(F, (void*)(&printb));
-		else if(nam=="printby") a.exec->addGlobalMapping(F, (void*)(&printby));
-		else if(nam=="prints") a.exec->addGlobalMapping(F, (void*)(&prints));
-		else if(nam=="printc") a.exec->addGlobalMapping(F, (void*)(&printc));
-		else*/
+		llvm::Function *F = a.getExtern(name, FT);
 		if(F->getName().str()!=name){
 			filePos.error("Cannot extern function due to name in use "+name+" was replaced with "+F->getName().str());
 		}
