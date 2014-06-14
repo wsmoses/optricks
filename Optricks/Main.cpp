@@ -129,7 +129,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	//cout << "dumped" << endl << flush;
 	//getRData().lmod->dump();
 	//cerr << endl << flush;
-	void *FPtr = getRData().exec->getPointerToFunction(F);
+	void *FPtr = getRData().getExec()->getPointerToFunction(F);
 	//cout << "ran" << endl << flush;
 
 	//TODO introduce new error literal
@@ -319,6 +319,8 @@ bool testFor(String toTest, String testing){
 	}
 }
 int main(int argc, char** argv){
+	llvm::InitializeNativeTarget();
+	//llvm::InitializeAllTargets();
 	//PlaySound("dance.wav",nullptr,SND_FILENAME | SND_ASYNC);
 	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
 		new BuiltinInlineFunction(

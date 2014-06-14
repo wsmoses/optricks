@@ -59,13 +59,13 @@ struct RData{
 		std::vector<Jumpable*> jumps;
 		std::map<llvm::Function*,std::vector<LazyLocation*> > flocs;
 		std::map<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> > pred;
+		llvm::ExecutionEngine* exec;
 	public:
 		bool enableAsserts;
 		llvm::Module* lmod;
 		llvm::IRBuilder<> builder;
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
-		llvm::ExecutionEngine* exec;
 		bool debug;
 		RData(): enableAsserts(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),
 				builder(llvm::getGlobalContext())
@@ -80,15 +80,19 @@ struct RData{
 			pmb.populateModulePassManager(mpm);
 			debug = false;
 
-			llvm::InitializeNativeTarget();
-			//llvm::InitializeAllTargets();
-			String erS;
-			exec = llvm::EngineBuilder(lmod).setErrorStr(& erS).create();
-			if(!exec){
-				cerr << erS << endl << flush;
-				exit(1);
-			}
 		};
+		llvm::ExecutionEngine* getExec(){
+			if(exec) return exec;
+			else{
+				String erS;
+				exec = llvm::EngineBuilder(lmod).setErrorStr(& erS).create();
+				if(!exec){
+					cerr << erS << endl << flush;
+					exit(1);
+				}
+				return exec;
+			}
+		}
 		llvm::PHINode* CreatePHI(llvm::Type *Ty, unsigned NumReservedValues, const llvm::Twine &Name = ""){
 			llvm::PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
 			assert(p);
@@ -113,6 +117,7 @@ struct RData{
 				assert(FT->getParamType(i));
 			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(F);
+			getExec();
 			assert(exec);
 			if(false){}
 #define MAP(X) else if(name==#X){ exec->updateGlobalMapping(F,(void*)(&X)); }

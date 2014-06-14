@@ -169,8 +169,7 @@ public:
 			//				WriteBitcodeToFile(getRData().lmod, file);
 			//				getRData().lmod->print(raw_stream, 0);
 		} else {
-			assert(getRData().exec);
-			void *FPtr = getRData().exec->getPointerToFunction(F);
+			void *FPtr = getRData().getExec()->getPointerToFunction(F);
 			void (*FP)() = (void (*)())(intptr_t)FPtr;
 			FP();
 		}
