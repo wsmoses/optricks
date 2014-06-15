@@ -91,8 +91,7 @@ llvm::Value* FloatClass::castTo(const AbstractClass* const toCast, RData& r, Pos
 			assert(0);
 			exit(1);
 		default:
-			id.error("Does not exist");
-			assert(0);
+			id.error("Cannot cast float type ("+getName()+") to "+toCast->getName());
 			exit(1);
 		}
 		id.error("Internal Compiler Error - Cannot castTo of LiteralClass -- todo not luterak");
