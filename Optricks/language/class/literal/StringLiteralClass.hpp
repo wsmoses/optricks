@@ -31,7 +31,6 @@ public:
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
-		//todo allow complex/floats as well
 		assert(hasCast(a));
 		assert(hasCast(b));
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;

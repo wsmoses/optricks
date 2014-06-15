@@ -66,7 +66,6 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		for (llvm::Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
 				++AI, ++Idx) {
 			((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
-			//todo should have this be location?
 			if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
 				args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
 			else
@@ -641,7 +640,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS
 		exit(1);
 	}
 }
-//TODO allow for first arg to be ignored
+
 SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
 	assert(t_args.inUse==false);

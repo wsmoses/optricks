@@ -173,18 +173,22 @@ llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::
 		llvm::ValueHandleBase::ValueIsRAUWd(target, run);
 
 	std::vector<llvm::PHINode*> p;
+#if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+	for(auto I = target->use_begin(), E = target->use_end(); I != E; ++I){
+#else
 	for(auto I = target->user_begin(), E = target->user_end(); I != E; ++I){
+#endif
 		auto U = (*I);
 		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U))
-			p.push_back(C);
+			if(C!=target)
+				p.push_back(C);
 	}
 	target->replaceAllUsesWith(run);
-	for(auto& a: p) phiRecur(V,idx,a,prop);
 	target->eraseFromParent();
+	for(auto& a: p) phiRecur(V,idx,a,prop);
 	return run;
 }
 
-//TODO do this
 llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id){
 	assert(b);
 	auto ll = V[idx];
@@ -212,7 +216,6 @@ llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, 
 			llvm::pred_iterator E = pred_end(b);
 			//NO DEFINITION
 			if(PI==E){
-				//TODO CAUSE UNDEF ERROR
 				id.warning("Variable "+ll->getName()+" undefined");
 				return llvm::UndefValue::get(ll->type);
 			} else {
@@ -253,7 +256,6 @@ void RData::FinalizeFunction(llvm::Function* f){
 			llvm::pred_iterator E = pred_end(b);
 			//NO DEFINITION
 			if(PI==E){
-				//TODO CAUSE UNDEF ERROR
 				it->second.second.warning("Variable "+ll->getName()+" undefined");
 				auto run = llvm::UndefValue::get(ll->type);
 				phiRecur(V, idx, np, run);

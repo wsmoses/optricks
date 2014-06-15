@@ -5,13 +5,11 @@
  *      Author: Billy
  */
 //TODO allow returning references, but forbid returning local reference
-//TODO add templates with default args
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
 //TODO print/println floatLiteral/float
 //TODO FIX typeof w/ templates
 //TODO create website that finds best price considering sales tax / student discount /etc
 //TODO nullptr/choice{vector}
-//TODO enum class
 /*
  *
 def r(int a){
@@ -566,7 +564,6 @@ int main(int argc, char** argv){
 		//st.force("'hello'[0];\n");
 		//st.force("for i in range(,10): print(i);\n");
 
-		//TODO for(auto a = (0,1); a._1< 7; a = (a._0,a._1+1)) print(a._1)
 		//TODO (global)
 		//st.force("(int,int) a; a = (3,4); print(a._0);\n");
 		//st.force("int[] ar=[3,1,4,1,5,9,2,6];qsort(ar.carr,8,4,lambda int& a, int& b: lang.c.int(a-b));\n");
