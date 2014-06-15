@@ -1,0 +1,29 @@
+
+/* The following will print an ASCII Mandelbrot Set. */
+/* Feel free to add your own code and try it out */
+def printdensity((int:d,double:ab2) s):
+    printf("<td style='width:5px;height:5px;background-color:rgb(%d,0,0);'></td>", (s.d + 1 - log(log2(s.ab2)/2))*255/1000);
+
+def (int,double) mand(complex z0){
+	auto z = z0
+	for(int iter=0; iter<1000; iter++){
+	    double ab = abs2(z)
+		if( ab > 4 ) return (iter,ab)
+		else z = z*z + z0
+	}
+	return (1000,abs2(z))
+}
+
+def mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1, double ymax=1, double ystep=.04){
+    println('<table cellspacing="0" cellpadding="0">')
+	for(auto im=ymin;im < ymax;im+=ystep){
+	    print('<tr>')
+		for(auto re=xmin;re < xmax;re+=xstep)
+			printdensity(mand(complex(re,im)))
+		println('</tr>')
+	}
+    println('</table>')
+}
+
+mandel()
+

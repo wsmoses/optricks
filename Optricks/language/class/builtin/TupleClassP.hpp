@@ -15,7 +15,8 @@
 #include "../../data/DeclarationData.hpp"
 
 inline llvm::Value* TupleClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
-		switch(toCast->classType){
+	if(toCast==this) return valueToCast;
+	switch(toCast->classType){
 		case CLASS_TUPLE:
 		case CLASS_NAMED_TUPLE:{
 			TupleClass* tc = (TupleClass*)toCast;
@@ -35,12 +36,14 @@ inline llvm::Value* TupleClass::castTo(const AbstractClass* const toCast, RData&
 					break;
 				}
 			}
-			llvm::Value* res;
 			if(i==innerTypes.size()){
-				return res = valueToCast;
+				if(type==toCast->type)
+					return valueToCast;
+				else
+					return r.builder.CreateBitCast(valueToCast, toCast->type);
 			}
 			else{
-				res = llvm::UndefValue::get(tc->type);
+				llvm::Value* res = llvm::UndefValue::get(tc->type);
 				for(unsigned j=0; j<i; j++)
 					r.builder.CreateInsertValue(res, r.builder.CreateExtractValue(valueToCast,j),j);
 				for( ; i<innerTypes.size(); i++)
