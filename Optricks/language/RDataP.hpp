@@ -117,57 +117,6 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 	}
 }
 
-/*void phiRecur(LazyLocation* ll, llvm::PHINode* target, llvm::Value* replace){
-	assert(target);
-	assert(replace);
-	assert(target->getType()==replace->getType());
-	for(auto& a: ll->data){
-		if(a.second==target){
-			a.second = replace;
-		}
-	}
-
-	if (target->HasValueHandle)
-		llvm::ValueHandleBase::ValueIsRAUWd(target, replace);
-
-	while (!target->use_empty()) {
-		llvm::Use &U = * target->UseList;
-
-		if (auto *C = llvm::dyn_cast<llvm::Constant>(U.getUser())) {
-			if (!llvm::isa<llvm::GlobalValue>(C)) {
-				C->replaceUsesOfWithOnConstant(target, replace, &U);
-				continue;
-			}
-		}
-		U.set(target);
-		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U.getUser())){
-			bool isSame = true;
-			llvm::Value* run=nullptr;
-			for(auto bi=C->block_begin(); bi!=C->block_end(); ++bi){
-				auto val = C->getIncomingValueForBlock(*bi);
-				if(val==C) continue;
-				else if(run==nullptr){
-					run = val;
-					continue;
-				} else if(run==val){
-					continue;
-				} else if(llvm::dyn_cast<llvm::UndefValue>(val)){
-					continue;
-				} else {
-					isSame = false;
-					break;
-				}
-			}
-			if(isSame){
-				if(run) phiRecur(ll, C, run);
-				else phiRecur(ll, C, llvm::UndefValue::get(C->getType()));
-			}
-		}
-	}
-	target->eraseFromParent();
-}*/
-
-
 llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop){
 	assert(target);
 	bool isSame = true;
@@ -223,18 +172,14 @@ llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::
 	if (target->hasValueHandle())
 		llvm::ValueHandleBase::ValueIsRAUWd(target, run);
 
-	while (!target->use_empty()) {
-		llvm::Use &U = * target->use_begin();
-		if (auto *C = llvm::dyn_cast<llvm::Constant>(U.getUser())) {
-			if (!llvm::isa<llvm::GlobalValue>(C)) {
-				C->replaceUsesOfWithOnConstant(target, run, &U);
-				continue;
-			}
-		}
-		U.set(run);
-		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U.getUser()))
-			phiRecur(V, idx, C, prop);
+	std::vector<llvm::PHINode*> p;
+	for(auto I = target->user_begin(), E = target->user_end(); I != E; ++I){
+		auto U = (*I);
+		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U))
+			p.push_back(C);
 	}
+	target->replaceAllUsesWith(run);
+	for(auto& a: p) phiRecur(V,idx,a,prop);
 	target->eraseFromParent();
 	return run;
 }

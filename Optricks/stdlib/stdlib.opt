@@ -1,6 +1,7 @@
 import 'file.opt';
 import 'thread.opt';
 import 'unix.opt';
+import "random.opt"
 //import "string.opt"
 
 /*
@@ -105,4 +106,3 @@ def complex operator ** (complex a, double b){
 }
 
 // */
-import "random.opt"
