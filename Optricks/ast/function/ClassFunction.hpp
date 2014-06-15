@@ -22,6 +22,10 @@ class ClassFunction : public E_FUNCTION{
 		,staticF(st),surroundingClass(a)
 		,built(false)
 		{
+			if(name=="iterator"){
+				filePos.error("Name 'iterator' is reserved for generators");
+				exit(1);
+			}
 			module.addVariable(filePos,"this",&VOID_DATA);
 		}
 		void registerFunctionPrototype(RData& a) const override final{
@@ -37,6 +41,8 @@ class ClassFunction : public E_FUNCTION{
 				else tA = upperClass;
 				ad.push_back(AbstractDeclaration(tA, "this"));
 				args[0] = tA->type;
+				ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
+				module.setVariable(filePos, "this", TEMP);
 			}
 			for(unsigned i=0; i<declaration.size(); i++){
 				const auto& b = declaration[i];
@@ -46,8 +52,7 @@ class ClassFunction : public E_FUNCTION{
 				args[i+(staticF?0:1)] = ac->type;
 				assert(ac->type);
 			}
-			ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
-			module.setVariable(filePos, "this", TEMP);
+
 
 			for (unsigned Idx = 0; Idx < declaration.size(); Idx++) {
 				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
@@ -118,12 +123,13 @@ class ClassFunction : public E_FUNCTION{
 					);
 				} else {
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(AI,ad[Idx+(staticF?0:1)].declarationType))->toLocation(a)
+						(new ConstantData(AI,ad[Idx+(staticF?0:1)].declarationType))->toLocation(a,ad[Idx+(staticF?0:1)].declarationVariable)
 					);
 				}
 			}
 
 			if(Parent) a.builder.SetInsertPoint( Parent );
+			for(auto& d: declaration) d->registerFunctionPrototype(a);
 			methodBody->registerFunctionPrototype(a);
 		};
 		void buildFunction(RData& a) const override final{
@@ -149,6 +155,7 @@ class ClassFunction : public E_FUNCTION{
 			if(Parent) a.builder.SetInsertPoint( Parent );
 			auto tmp = a.popJump();
 			assert(tmp== &j);
+			for(auto& d: declaration) d->buildFunction(a);
 			methodBody->buildFunction(a);
 		};
 

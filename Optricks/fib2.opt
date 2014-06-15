@@ -1,16 +1,17 @@
-def int fib(int x){
+def fib(int x){
 	if x<=2 return 1
-	int f1 = 1
-	int f2 = 1
+	long f1 = 1
+	long f2 = 1
 	for(int i=2;i<x;i++){
-		auto t = f1+f2
+		long t = f1+f2
 		f1 = f2
 		f2 = t
 	}
 	return f2
 }
 
-for i in range(1,450){
-	print(i)
-	print(fib(i))
+//for i in range(1,450){
+for(int i=1;i<450;i++){
+	println(i)
+	println(fib(i))
 }

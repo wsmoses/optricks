@@ -12,6 +12,8 @@
 #include "./Declaration.hpp"
 #include "./function/E_GEN.hpp"
 #include "../language/location/Location.hpp"
+#include "../language/class/GeneratorClass.hpp"
+#include "../operators/LocalFuncs.hpp"
 
 class ForEachLoop : public ErrorStatement{
 	public:
@@ -48,7 +50,7 @@ class ForEachLoop : public ErrorStatement{
 			return &voidClass;
 		}
 		E_GEN* setUp(RData& ra) const{
-			filePos.compilerError("For-each loops not implemented");
+			filePos.fatalError("For loops disabled");
 			exit(1);
 			/*if(iterable->getToken()==T_FUNC_CALL){
 				E_FUNC_CALL* func = (E_FUNC_CALL*)iterable;
@@ -64,97 +66,86 @@ class ForEachLoop : public ErrorStatement{
 					}
 					return myGen;
 				}
-			}*/
+			}
+			//*/
 
-			/*
+			///*
 			const Data* toEv = iterable->evaluate(ra);
 			const AbstractClass* iterC = toEv->getReturnType();
-			E_GEN* myGen = (E_GEN*)(iterC->getLocalFunction(filePos,"iterator",std::vector<const AbstractClass*>()).getPointer());
+			if(iterC->classType!=CLASS_GEN){
+				toEv = getLocalFunction(ra, filePos,"iterator",toEv, NO_TEMPLATE, {});
+				iterC = toEv->getReturnType();
+				assert(iterC->classType==CLASS_GEN);
+			}
+			const GeneratorClass* gen = (const GeneratorClass*)iterC;
 
-			if(iterC->isGen){
-				Value* tv = toEv->getValue(ra,filePos);
-				if(myGen->thisPointer.module!=NULL){
-					const AbstractClass* genClass = myGen->self->getSelfClass(filePos);
-					assert(genClass!=NULL);
-					Data* self = new ConstantData(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(0)), genClass);
-					if(iterC->layout==PRIMITIVEPOINTER_LAYOUT || iterC->layout==POINTER_LAYOUT) myGen->thisPointer.setObject(self);
-					else myGen->thisPointer.setObject(self->toLocation(ra));
 
-					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
-						myGen->prototype->declarations[i]->variable->getMetadata().setObject(
-								new ConstantData(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(i+1)), iterC->getDataClass(i+1, filePos)));
-					}
-				}
-				else{
-					for(unsigned int i = 0; i<myGen->prototype->declarations.size(); ++i){
-						myGen->prototype->declarations[i]->variable->pointer.setObject(
-								new ConstantData(ra.builder.CreateExtractValue(tv, ArrayRef<unsigned>(i)),iterC->getDataClass(i, filePos)));
-					}
-				}
-			} else{
-				if(myGen->thisPointer.module!=NULL){
-					if(iterC->layout==PRIMITIVEPOINTER_LAYOUT || iterC->layout==POINTER_LAYOUT)
-						myGen->thisPointer.setObject(toEv->toValue(ra,filePos));
-					else myGen->thisPointer.setObject(toEv->toLocation(ra));
-				}
-				for(auto& a: myGen->prototype->declarations){
-					if(a->value==NULL || a->value->getToken()==T_VOID) error("iterator generator has non-optional arguments");
-					a->variable->pointer.setObject(a->value->evaluate(ra));
-				}
+			//todo create
+			E_GEN* myGen = gen->myGen;
+
+			if(myGen->surroundingClass && !myGen->staticF){
+				myGen->module.setVariable(filePos, "this",gen->getLocalData(ra, filePos,"this",toEv));
+			}
+
+			for (unsigned Idx = 0; Idx < myGen->declaration.size(); Idx++) {
+				const Data* dat = gen->getLocalData(ra, filePos, gen->innerTypes[Idx].second,toEv);
+				const AbstractClass* clast = myGen->myFunction->getSingleProto()->declarations[Idx].declarationType;
+				myGen->declaration[Idx]->variable.getMetadata().setObject(dat);
 			}
 			return myGen;
-			*/
+			//*/
 		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
-			/*
 			E_GEN* myGen = setUp(ra);
 			myGen->buildFunction(ra);
-			Jumpable j("", GENERATOR, NULL, NULL, theClass);
+			Jumpable j(name, GENERATOR, nullptr,NULL, NULL, theClass);
 			ra.addJump(&j);
 			myGen->methodBody->evaluate(ra);
 			if(ra.popJump()!= &j) error("Did not receive same func jumpable created (j foreach)");
 			//Function* TheFunction;
-			BasicBlock *END = ra.CreateBlock("endLoop");
+			llvm::BasicBlock *END = ra.CreateBlock("endLoop");
 			ra.builder.CreateBr(END);
 			if(j.endings.size()==1){
-				std::pair<BasicBlock*,BasicBlock*> NEXT = j.resumes[0];
+				std::pair<llvm::BasicBlock*,llvm::BasicBlock*> NEXT = j.resumes[0];
 				ra.builder.SetInsertPoint(NEXT.first);
 				const Data* v = j.endings[0].second;
 				//todo -- remove this
 				//todo add r_dec?
-				if(!(v->type==R_LOC || v->type==R_CONST))
-					filePos.error("Cannot use object designated as "+str(v->type)+" for iterable");
+				//if(!(v->type==R_LOC || v->type==R_CONST || v->type==R_DEC))
+				//	filePos.error("Cannot use object designated as "+str(v->type)+" for iterable");
 				localVariable->pointer.setObject(v);//todo removed toLocation -- check if needed
 				assert(NEXT.second);
 				assert(END);
-				Jumpable k(name, LOOP, NEXT.second, END, NULL);
+				Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/
+						nullptr, NEXT.second, END, NULL);
 				ra.addJump(&k);
 				toLoop->evaluate(ra);
 				if(ra.popJump()!= &k) error("Did not receive same func jumpable created (k foreach)");
 				if(!ra.hadBreak()) ra.builder.CreateBr(NEXT.second);
 			}
 			else{
-				Type* functionReturnType = theClass->type;
-				BasicBlock* INLOOP = ra.CreateBlock("toLoop");
-				BasicBlock* TODECIDE = ra.CreateBlock("decide");
+				llvm::Type* functionReturnType = theClass->type;
+				llvm::BasicBlock* INLOOP = ra.CreateBlock("toLoop");
+				llvm::BasicBlock* TODECIDE = ra.CreateBlock("decide");
 				ra.builder.SetInsertPoint(INLOOP);
-				PHINode* val = ra.CreatePHI(functionReturnType, (unsigned)(j.endings.size()),"val");
-				PHINode* ind = ra.CreatePHI(IntegerType::get(getGlobalContext(),32), (unsigned)(j.endings.size()),"ind");
+				llvm::PHINode* val = ra.CreatePHI(functionReturnType, (unsigned)(j.endings.size()),"val");
+				llvm::PHINode* ind = ra.CreatePHI(llvm::IntegerType::get(llvm::getGlobalContext(),32), (unsigned)(j.endings.size()),"ind");
 				localVariable->pointer.setObject(new ConstantData(val, theClass));
 				assert(TODECIDE);
 				assert(END);
-				Jumpable k(name, LOOP, TODECIDE, END, NULL);
+				Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/
+						nullptr, TODECIDE, END, NULL);
 				ra.addJump(&k);
 				toLoop->evaluate(ra);
 				if(ra.popJump()!= &k) error("Did not receive same func jumpable created (k2 foreach)");
 				if(!ra.hadBreak()) ra.builder.CreateBr(TODECIDE);
 				ra.builder.SetInsertPoint(TODECIDE);
-				SwitchInst* swit = ra.builder.CreateSwitch(ind, END, (unsigned)(j.endings.size()));
+				llvm::SwitchInst* swit = ra.builder.CreateSwitch(ind, END, (unsigned)(j.endings.size()));
 				for(unsigned int i = 0; i<j.endings.size(); i++){
-					std::pair<BasicBlock*,BasicBlock*> NEXT = j.resumes[i];
+					std::pair<llvm::BasicBlock*,llvm::BasicBlock*> NEXT = j.resumes[i];
 					ra.builder.SetInsertPoint(NEXT.first);
-					Value* v = (j.endings[i].second)->getValue(ra,filePos);
+					llvm::Value* v = (j.endings[i].second)->getValue(ra,filePos);
 					val->addIncoming(v, NEXT.first);
 					ind->addIncoming(getInt32(i), NEXT.first);
 					ra.builder.CreateBr(INLOOP);
@@ -162,7 +153,7 @@ class ForEachLoop : public ErrorStatement{
 				}
 			}
 			ra.builder.SetInsertPoint(END);
-			*/
+
 			return &VOID_DATA;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{

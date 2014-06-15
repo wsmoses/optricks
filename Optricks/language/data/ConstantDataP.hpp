@@ -13,10 +13,10 @@
 #include "../class/builtin/BoolClass.hpp"
 #include "LocationData.hpp"
 
-const LocationData* ConstantData::toLocation(RData& r) const{
+const LocationData* ConstantData::toLocation(RData& r, String name) const{
 	//TODO complete ConstantData toLocation
 	auto L = r.builder.CreateAlloca(value->getType(), nullptr);
-	return new LocationData(getLazy("<constant>",r,L,r.builder.GetInsertBlock(),value), type);
+	return new LocationData(getLazy(name,r,L,r.builder.GetInsertBlock(),value), type);
 }
 
 ConstantData* ConstantData::getTrue(){

@@ -40,6 +40,7 @@ class StandardLocation : public Location{
 
 //todo have actual lazy
 class LazyLocation: public Location{
+public:
 	friend RData;
 private:
 	bool used;

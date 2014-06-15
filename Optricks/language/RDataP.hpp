@@ -117,9 +117,132 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 	}
 }
 
+/*void phiRecur(LazyLocation* ll, llvm::PHINode* target, llvm::Value* replace){
+	assert(target);
+	assert(replace);
+	assert(target->getType()==replace->getType());
+	for(auto& a: ll->data){
+		if(a.second==target){
+			a.second = replace;
+		}
+	}
+
+	if (target->HasValueHandle)
+		llvm::ValueHandleBase::ValueIsRAUWd(target, replace);
+
+	while (!target->use_empty()) {
+		llvm::Use &U = * target->UseList;
+
+		if (auto *C = llvm::dyn_cast<llvm::Constant>(U.getUser())) {
+			if (!llvm::isa<llvm::GlobalValue>(C)) {
+				C->replaceUsesOfWithOnConstant(target, replace, &U);
+				continue;
+			}
+		}
+		U.set(target);
+		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U.getUser())){
+			bool isSame = true;
+			llvm::Value* run=nullptr;
+			for(auto bi=C->block_begin(); bi!=C->block_end(); ++bi){
+				auto val = C->getIncomingValueForBlock(*bi);
+				if(val==C) continue;
+				else if(run==nullptr){
+					run = val;
+					continue;
+				} else if(run==val){
+					continue;
+				} else if(llvm::dyn_cast<llvm::UndefValue>(val)){
+					continue;
+				} else {
+					isSame = false;
+					break;
+				}
+			}
+			if(isSame){
+				if(run) phiRecur(ll, C, run);
+				else phiRecur(ll, C, llvm::UndefValue::get(C->getType()));
+			}
+		}
+	}
+	target->eraseFromParent();
+}*/
+
+
+llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop){
+	assert(target);
+	bool isSame = true;
+	llvm::Value* run=nullptr;
+	for(auto bi=target->block_begin(); bi!=target->block_end(); ++bi){
+		auto val = target->getIncomingValueForBlock(*bi);
+		if(val==target) continue;
+		else if(llvm::dyn_cast<llvm::UndefValue>(val)){
+			continue;
+		} else if(run==val){
+			continue;
+		} else if(run==nullptr){
+			run = val;
+			continue;
+		} else {
+			isSame = false;
+			break;
+		}
+	}
+	if(!isSame) return target;
+	if(!run){
+		bool warned=false;
+		for(unsigned i=0; i<V.size(); i++)
+		for(auto& a: V[i]->phi){
+			if(a.second.first==target){
+				a.second.second.warning("Variable "+V[i]->getName()+" undefined");
+				warned = true;
+				break;
+			}
+		}
+		if(!warned){
+			PositionID("#unknown",0,0).warning("Unknown variable undefined");
+		}
+		run = llvm::UndefValue::get(target->getType());
+	}
+
+	assert(target->getType()==run->getType());
+	if(!prop){
+		for(auto& a: V[idx]->data){
+			if(a.second==target){
+				a.second = run;
+			}
+		}
+	} else {
+		for(unsigned i=idx; i<V.size(); i++)
+		for(auto& a: V[i]->data){
+			if(a.second==target){
+				a.second = run;
+			}
+		}
+	}
+
+	if (target->hasValueHandle())
+		llvm::ValueHandleBase::ValueIsRAUWd(target, run);
+
+	while (!target->use_empty()) {
+		llvm::Use &U = * target->use_begin();
+		if (auto *C = llvm::dyn_cast<llvm::Constant>(U.getUser())) {
+			if (!llvm::isa<llvm::GlobalValue>(C)) {
+				C->replaceUsesOfWithOnConstant(target, run, &U);
+				continue;
+			}
+		}
+		U.set(run);
+		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U.getUser()))
+			phiRecur(V, idx, C, prop);
+	}
+	target->eraseFromParent();
+	return run;
+}
+
 //TODO do this
-llvm::Value* RData::getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, PositionID id){
+llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id){
 	assert(b);
+	auto ll = V[idx];
 	assert(ll);
 	auto found = ll->data.find(b);
 	if(found!=ll->data.end()){
@@ -133,11 +256,11 @@ llvm::Value* RData::getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, Positi
 	} else {
 		assert(ll->phi.find(b)==ll->phi.end());
 		if(llvm::BasicBlock* prev = b->getUniquePredecessor()){
-			auto V = getLastValueOf(ll,prev,id);
-			ll->data[prev] = V;
-			assert(V);
-			assert(V->getType()==ll->type);
-			return V;
+			auto Va = getLastValueOf(V,idx,prev,id);
+			ll->data[prev] = Va;
+			assert(Va);
+			assert(Va->getType()==ll->type);
+			return Va;
 		} else {
 
 			llvm::pred_iterator PI = pred_begin(b);
@@ -156,36 +279,9 @@ llvm::Value* RData::getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, Positi
 
 				for(; PI!=E; ++PI){
 					llvm::BasicBlock* me = *PI;
-					np->addIncoming(getLastValueOf(ll,me,id),me);
+					np->addIncoming(getLastValueOf(V,idx,me,id),me);
 				}
-				llvm::Value* ret=np;
-				bool isSame = true;
-				llvm::Value* run=nullptr;
-				for(auto bi=np->block_begin(); bi!=np->block_end(); ++bi){
-					auto val = np->getIncomingValueForBlock(*bi);
-					if(val==np) continue;
-					else if(run==nullptr){
-						run = val;
-						continue;
-					} else if(run==val){
-						continue;
-					} else {
-						isSame = false;
-						break;
-					}
-				}
-				if(isSame){
-					assert(run);
-					ret = run;
-					for(auto& a: ll->data){
-						if(a.second==np) a.second = run;
-					}
-					np->replaceAllUsesWith(run);
-					np->eraseFromParent();
-				} else {
-			//		auto toRet = ll->phi.insert(std::pair<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >
-			//			(b, std::pair<llvm::PHINode*,PositionID>(np,PositionID("#recur",0,0))));
-				}
+				llvm::Value* ret=phiRecur(V, idx, np,false);
 				assert(ret);
 				assert(ret->getType()==ll->type);
 				return ret;
@@ -196,7 +292,9 @@ llvm::Value* RData::getLastValueOf(LazyLocation* ll, llvm::BasicBlock* b, Positi
 
 void RData::FinalizeFunction(llvm::Function* f){
 	//llvm::BasicBlock* Parent = builder.GetInsertBlock();
-	for(LazyLocation*& ll: flocs.find(f)->second){
+	auto V = flocs.find(f)->second;
+	for(unsigned idx = 0; idx < V.size(); ++idx){
+		auto ll = V[idx];
 		//		ll->phi.
 		std::vector<llvm::PHINode*> todo;
 		for(std::map<llvm::BasicBlock*,std::pair<llvm::PHINode*,PositionID> >::iterator it = ll->phi.begin(); it!=ll->phi.end(); ++it){
@@ -213,43 +311,15 @@ void RData::FinalizeFunction(llvm::Function* f){
 				//TODO CAUSE UNDEF ERROR
 				it->second.second.warning("Variable "+ll->getName()+" undefined");
 				auto run = llvm::UndefValue::get(ll->type);
-
-				for(auto& a: ll->data){
-					if(a.second==np) a.second = run;
-				}
-				np->replaceAllUsesWith(run);
-				np->eraseFromParent();
+				phiRecur(V, idx, np, run);
 			} else {
 
 				for(; PI!=E; ++PI){
 					llvm::BasicBlock* me = *PI;
-					np->addIncoming(getLastValueOf(ll,me,it->second.second),me);
+					np->addIncoming(getLastValueOf(V,idx,me,it->second.second),me);
 				}
-				bool isSame = true;
-				llvm::Value* run=nullptr;
-				for(auto bi=np->block_begin(); bi!=np->block_end(); ++bi){
-					auto val = np->getIncomingValueForBlock(*bi);
-					if(val==np) continue;
-					else if(run==nullptr){
-						run = val;
-						continue;
-					} else if(run==val){
-						continue;
-					} else {
-						isSame = false;
-						break;
-					}
-				}
-				if(isSame){
-					for(auto& a: ll->data){
-						if(a.second==np) a.second = run;
-					}
-					np->replaceAllUsesWith(run);
-					np->eraseFromParent();
-				}
+				phiRecur(V, idx, np, true);
 			}
-//			todo.push_back(it->second.first)
-//				recursiveFinalize(ll,it);
 		}
 		if(!ll->used){
 			if(llvm::Instruction* u = llvm::dyn_cast<llvm::Instruction>(ll->position)) u->eraseFromParent();
@@ -275,25 +345,5 @@ void RData::FinalizeFunction(llvm::Function* f){
 	//cerr << endl << flush;
 	//cerr << "done finalizing function" << endl << flush;
 }
-/*
 
-		void RData::FinalizeFunction(Function* f,bool debug=false){
-			BasicBlock* Parent = builder.GetInsertBlock();
-			if(Parent) builder.SetInsertPoint(Parent);
-			if(debug){
-				f->dump();
-				cerr << endl << flush;
-			}
-
-
-
-			fpm.run(*f);
-			flocs.erase(f);
-			pred.erase(f);
-			if(debug){
-				f->dump();
-				cerr << endl << flush;
-			}
-		}
- */
 #endif /* RDATAP_HPP_ */

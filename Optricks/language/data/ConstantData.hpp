@@ -20,7 +20,7 @@ public:
 	inline const ConstantData* toValue(RData& r,PositionID id) const override final{
 		return this;
 	}
-	const LocationData* toLocation(RData& r) const override final;
+	const LocationData* toLocation(RData& r, String name) const override final;
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 	static ConstantData* getTrue();
 	static ConstantData* getFalse();

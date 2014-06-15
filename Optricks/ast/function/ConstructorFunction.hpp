@@ -39,7 +39,7 @@ public:
 		assert(uc->classType==CLASS_USER);
 		auto UC = (const UserClass*)uc;
 		if(uc->layout==PRIMITIVE_LAYOUT)
-			module.setVariable(filePos, "this",(new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra));
+			module.setVariable(filePos, "this",(new ConstantData( UC->generateData(ra, filePos), uc))->toLocation(ra,"this"));
 		else
 			module.setVariable(filePos, "this",new ConstantData( UC->generateData(ra, filePos), uc));
 		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
@@ -61,6 +61,7 @@ public:
 		auto tmp = ra.popJump();
 		assert(tmp== &j);
 
+		for(auto& d: declaration) d->buildFunction(ra);
 		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
@@ -111,12 +112,13 @@ public:
 				);
 			} else {
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a)
+					(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a,ad[Idx].declarationVariable)
 				);
 			}
 		}
 
 		if(Parent!=NULL) a.builder.SetInsertPoint( Parent );
+		for(auto& d: declaration) d->registerFunctionPrototype(a);
 		methodBody->registerFunctionPrototype(a);
 	}
 };

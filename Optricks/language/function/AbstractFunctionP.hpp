@@ -275,7 +275,7 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 		llvm::Value* T;
 		if(proto->declarations[0].declarationType->classType==CLASS_REF){
 			if(instance->type==R_CONST)
-				T = ((const ConstantData*)instance)->toLocation(r)->value->getPointer(r, id);
+				T = ((const ConstantData*)instance)->toLocation(r, "this")->value->getPointer(r, id);
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){
@@ -343,7 +343,7 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		llvm::Value* T;
 		if(proto->declarations[0].declarationType->classType==CLASS_REF){
 			if(instance->type==R_CONST)
-				T = ((const ConstantData*)instance)->toLocation(r)->value->getPointer(r, id);
+				T = ((const ConstantData*)instance)->toLocation(r, "this")->value->getPointer(r, id);
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){

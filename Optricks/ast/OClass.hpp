@@ -451,7 +451,7 @@ void initClasses(){
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
 					assert(args.size()==0);\
 					assert(instance->type==R_LOC || instance->type==R_CONST);\
-					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);\
+					auto P = ((LLVMData*)instance)->toLocation(r,"this")->value->getPointer(r, id);\
 					struct stat stat_tmp;\
 					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.stat_var))-(size_t)(&(stat_tmp))));\
 					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.stat_var))));\
@@ -472,7 +472,7 @@ void initClasses(){
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==0);
 					assert(instance->type==R_LOC || instance->type==R_CONST);
-					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);
+					auto P = ((LLVMData*)instance)->toLocation(r,"this")->value->getPointer(r, id);
 					struct stat stat_tmp;
 					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
 					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
@@ -483,7 +483,7 @@ void initClasses(){
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==0);
 					assert(instance->type==R_LOC || instance->type==R_CONST);
-					auto P = ((LLVMData*)instance)->toLocation(r)->value->getPointer(r, id);
+					auto P = ((LLVMData*)instance)->toLocation(r,"this")->value->getPointer(r, id);
 					struct stat stat_tmp;
 					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
 					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));

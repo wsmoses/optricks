@@ -46,6 +46,7 @@ public:
 		auto tmp = a.popJump();
 		assert(tmp== &j);
 
+		for(auto& d: declaration) d->buildFunction(a);
 		methodBody->buildFunction(a);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
@@ -106,12 +107,13 @@ public:
 				);
 			} else {
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a)
+					(new ConstantData(AI,ad[Idx].declarationType))->toLocation(a,ad[Idx].declarationVariable)
 				);
 			}
 		}
 
 		if(Parent) a.builder.SetInsertPoint( Parent );
+		for(auto& d: declaration) d->registerFunctionPrototype(a);
 		methodBody->registerFunctionPrototype(a);
 	}
 };

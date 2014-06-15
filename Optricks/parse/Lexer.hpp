@@ -677,7 +677,7 @@ public:
 					}
 				}
 				if(temp=="gen")
-					func = new E_GEN(pos(), data.mod,name);//arguments, funcName, returnName, methodBody);
+					func = new E_GEN(pos(), data.mod,name,false,nullptr);//arguments, funcName, returnName, methodBody);
 				else
 					func = new UserFunction(pos(), data.mod,name);//arguments, funcName, returnName, methodBody);
 
@@ -705,9 +705,7 @@ public:
 				}
 				else{
 					if(temp=="gen"){
-						pos().compilerError("Class-based generators not implemented yet");
-						exit(1);
-						//func = new E_GEN(tmp, arguments, funcName, returnName, methodBody,methodName.back().first, Resolvable(module,"this",pos()));
+						func = new E_GEN(pos(), data.mod, methodName.back().first, staticF, funcName);//arguments, funcName, returnName, methodBody);
 					}
 					else
 						func = new ClassFunction(pos(), data.mod, methodName.back().first, staticF, funcName);

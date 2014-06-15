@@ -20,6 +20,7 @@ public:
 	}
 	void buildFunction(RData& a) const override final{
 		registerFunctionPrototype(a);
+		for(auto& d: declaration) d->buildFunction(a);
 		assert(methodBody==nullptr);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
@@ -49,6 +50,7 @@ public:
 		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 		if(Parent) a.builder.SetInsertPoint( Parent );
+		for(auto& d: declaration) d->registerFunctionPrototype(a);
 	}
 };
 

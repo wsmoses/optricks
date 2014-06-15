@@ -29,7 +29,7 @@ public:
 		return value;
 	}
 	const ConstantData* toValue(RData& r,PositionID id) const override final;
-	inline const LocationData* toLocation(RData& r) const override final{
+	inline const LocationData* toLocation(RData& r, String name) const override final{
 		return this;
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
