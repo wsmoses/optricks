@@ -22,14 +22,18 @@ public:
 		return s+")";
 	}
 	static inline llvm::Type* getTupleType(const std::vector<const AbstractClass*>& args){
+
+		static Mapper<const AbstractClass*, llvm::Type*> map;
+		llvm::Type*& fc = map.get(args);
+		if(fc!=nullptr) return fc;
 		const auto len = args.size();
-		if(len==1) return args[0]->type;
+		if(len==1) return fc = args[0]->type;
 		llvm::SmallVector<llvm::Type*,0> ar(len);
 		for(unsigned int i=0; i<len; i++){
 			assert(args[i]->classType!=CLASS_LAZY);
 			ar[i]=args[i]->type;
 		}
-		return llvm::StructType::create(ar,llvm::StringRef(str(args)),false);
+		return fc = llvm::StructType::create(ar,llvm::StringRef(str(args)),false);
 	}
 	const std::vector<const AbstractClass*> innerTypes;
 protected:
