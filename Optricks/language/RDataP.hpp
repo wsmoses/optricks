@@ -117,8 +117,9 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 	}
 }
 
-llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop){
+llvm::Value* RData::phiRecur(std::set<llvm::PHINode*> done, std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop){
 	assert(target);
+	if(!done.insert(target).second) return target;
 	bool isSame = true;
 	llvm::Value* run=nullptr;
 	for(auto bi=target->block_begin(); bi!=target->block_end(); ++bi){
@@ -169,27 +170,26 @@ llvm::Value* RData::phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::
 		}
 	}
 
-	if (target->hasValueHandle())
-		llvm::ValueHandleBase::ValueIsRAUWd(target, run);
-
 	std::vector<llvm::PHINode*> p;
 #if defined(LLVM_VERSION_MAJOR) && LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-	for(auto I = target->use_begin(), E = target->use_end(); I != E; ++I){
+	for(auto I = target->use_begin(),  E = target->use_end();  I != E; ++I){
 #else
 	for(auto I = target->user_begin(), E = target->user_end(); I != E; ++I){
 #endif
 		auto U = (*I);
 		if(auto * C = llvm::dyn_cast<llvm::PHINode>(U))
-			if(C!=target)
+			if(C!=target){
 				p.push_back(C);
+			}
 	}
 	target->replaceAllUsesWith(run);
+	//TODO add back recursion, but without sigsegv
+	//for(auto& a: p) phiRecur(done,V,idx,a,prop);
 	target->eraseFromParent();
-	for(auto& a: p) phiRecur(V,idx,a,prop);
 	return run;
 }
 
-llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id){
+llvm::Value* RData::getLastValueOf(std::set<llvm::PHINode*> done,std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id){
 	assert(b);
 	auto ll = V[idx];
 	assert(ll);
@@ -205,7 +205,7 @@ llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, 
 	} else {
 		assert(ll->phi.find(b)==ll->phi.end());
 		if(llvm::BasicBlock* prev = b->getUniquePredecessor()){
-			auto Va = getLastValueOf(V,idx,prev,id);
+			auto Va = getLastValueOf(done,V,idx,prev,id);
 			ll->data[prev] = Va;
 			assert(Va);
 			assert(Va->getType()==ll->type);
@@ -227,9 +227,9 @@ llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, 
 
 				for(; PI!=E; ++PI){
 					llvm::BasicBlock* me = *PI;
-					np->addIncoming(getLastValueOf(V,idx,me,id),me);
+					np->addIncoming(getLastValueOf(done,V,idx,me,id),me);
 				}
-				llvm::Value* ret=phiRecur(V, idx, np,false);
+				llvm::Value* ret=phiRecur(done,V, idx, np,false);
 				assert(ret);
 				assert(ret->getType()==ll->type);
 				return ret;
@@ -241,6 +241,7 @@ llvm::Value* RData::getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, 
 void RData::FinalizeFunction(llvm::Function* f){
 	//llvm::BasicBlock* Parent = builder.GetInsertBlock();
 	auto V = flocs.find(f)->second;
+	std::set<llvm::PHINode*> done;
 	for(unsigned idx = 0; idx < V.size(); ++idx){
 		auto ll = V[idx];
 		//		ll->phi.
@@ -258,14 +259,14 @@ void RData::FinalizeFunction(llvm::Function* f){
 			if(PI==E){
 				it->second.second.warning("Variable "+ll->getName()+" undefined");
 				auto run = llvm::UndefValue::get(ll->type);
-				phiRecur(V, idx, np, run);
+				phiRecur(done,V, idx, np, run);
 			} else {
 
 				for(; PI!=E; ++PI){
 					llvm::BasicBlock* me = *PI;
-					np->addIncoming(getLastValueOf(V,idx,me,it->second.second),me);
+					np->addIncoming(getLastValueOf(done,V,idx,me,it->second.second),me);
 				}
-				phiRecur(V, idx, np, true);
+				phiRecur(done,V, idx, np, true);
 			}
 		}
 		if(!ll->used){

@@ -193,8 +193,8 @@ struct RData{
 			if(b->getInstList().size()==0) return false;
 			return b->getInstList().back().isTerminator();
 		}
-		llvm::Value* phiRecur(std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop);
-		llvm::Value* getLastValueOf(std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id);
+		llvm::Value* phiRecur(std::set<llvm::PHINode*> done, std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop);
+		llvm::Value* getLastValueOf(std::set<llvm::PHINode*> done, std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id);
 		void addJump(Jumpable* j){
 			jumps.push_back(j);
 		}
