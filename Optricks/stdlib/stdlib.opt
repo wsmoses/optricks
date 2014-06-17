@@ -2,6 +2,7 @@ import 'file.opt';
 import 'thread.opt';
 import 'unix.opt';
 import "random.opt"
+import 'image.opt'
 //import "string.opt"
 
 /*

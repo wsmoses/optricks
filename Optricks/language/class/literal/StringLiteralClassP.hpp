@@ -101,6 +101,39 @@
 				assert(V);
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"fprintf")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("fprintf",{AbstractDeclaration(&c_pointerClass),AbstractDeclaration(this)},&intClass,true),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()>=2);
+			//TODO custom formatting for printf (and checks for literals / correct format / etc)
+			assert(args[1]);
+			auto TP = args[1]->evaluate(r);
+			assert(TP);
+			assert(TP->type==R_STR);
+			const auto& value = ((const StringLiteral*) TP)->value;
+			llvm::SmallVector<llvm::Type*,2> t_args(2);
+			t_args[0] = C_POINTERTYPE;
+			t_args[1] = C_STRINGTYPE;
+			auto CU = r.getExtern("fprintf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+			llvm::SmallVector<llvm::Value*,2> m_args(args.size());
+			assert(args[0]);
+			m_args[0] = args[0]->evalV(r, id);
+			assert(m_args[0]);
+			m_args[1] = r.getConstantCString(value);
+			assert(m_args[1]);
+			for(unsigned i=2; i<args.size(); i++){
+				assert(args[i]);
+				m_args[i] = args[i]->evalV(r, id);
+				assert(m_args[i]);
+			}
+			llvm::Value* V = r.builder.CreateCall(CU, m_args);
+			assert(V);
+			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
+			assert(V);
+			return new ConstantData(V, &intClass);
+		}), PositionID(0,0,"#int"));
 		///register methods such as print / tostring / tofile / etc
 		//check to ensure that you can pass mpz_t like that instead of using _init
 	}

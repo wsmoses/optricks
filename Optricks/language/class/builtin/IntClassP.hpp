@@ -134,7 +134,7 @@ inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r
 		return r.builder.CreateInsertElement(v,tmp,getInt32(0));
 	}
 	default:
-		id.error("Cannot cast integer type ("+getName()+") to "+toCast->getName());
+		id.error("Cannot cast type '"+getName()+"' to "+toCast->getName());
 		exit(1);
 	}
 }

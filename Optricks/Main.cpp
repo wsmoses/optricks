@@ -485,8 +485,8 @@ int main(int argc, char** argv){
 	//initializeBaseFunctions(rdata);
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
-		{
-				//"./tmp"
+	{};
+/*		{
 				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
@@ -495,6 +495,7 @@ int main(int argc, char** argv){
 				,getExecutablePath() +"stdlib/opengl.opt"
 #endif
 		};
+*/
 	if(!interactive){
 		if(command==""){
 			auto t = files.size()-1;
@@ -567,6 +568,7 @@ int main(int argc, char** argv){
 		//TODO (global)
 		//st.force("(int,int) a; a = (3,4); print(a._0);\n");
 		//st.force("int[] ar=[3,1,4,1,5,9,2,6];qsort(ar.carr,8,4,lambda int& a, int& b: lang.c.int(a-b));\n");
+		st.force("(byte,byte)\n");
 		while(true){
 			st.enableOut = true;
 			st.trim(EOF);

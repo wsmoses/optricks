@@ -169,6 +169,16 @@ void initClasses(){
 			}
 			return ArrayClass::get(args[0], 0);
 		}),"array");
+	LANG_M.addClass(PositionID(0,0,"#tuple"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+		if(args.size()==0) {
+			id.error("Must use template class 'tuple' with at least one argument - found "+str(args.size()));
+			return nullptr;
+			}
+		std::vector<const AbstractClass*> ar;
+		for(unsigned i=0; i<args.size(); i++)
+			ar.push_back(args[i]);
+			return TupleClass::get(ar);
+		}),"tuple");
 	LANG_M.addClass(PositionID(0,0,"#function"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			if(args.size()==0) {
 				id.error("Must use template class 'function' with at least one argument - found "+str(args.size()));

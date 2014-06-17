@@ -430,8 +430,7 @@ public:
 	}*/
 
 	void error(String a = "Compile error", /*String b="", String c="", String d="",*/ bool end=false){
-		cerr << a /*<< b << c << d*/ << " at " << fileName << " on line " << readChars.size() << " character " << readChars.back().size() << endl << flush;
-		if(end) exit(1);
+		pos().error(a, end);
 	}
 
 	//bool startsWith(String s){

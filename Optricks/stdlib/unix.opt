@@ -1,9 +1,9 @@
 def cat(lang.c.string s){
         File f = File(s,'r');
-        auto t = f.getc();
-        while(t!=-1){
+	while(true){
+	        auto t = f.read();
+		if(t==-1) break;
                 print(chr(t));
-                t = f.getc();
         }
         f.close();
 }

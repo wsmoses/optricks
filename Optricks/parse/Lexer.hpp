@@ -59,6 +59,9 @@ public:
 	inline ParseData getEndWith(char c) const{
 		return ParseData(c, mod, operatorCheck, loc);
 	}
+	inline ParseData getExpr() const{
+		return ParseData(endWith,mod, operatorCheck, PARSE_EXPR);
+	}
 	inline ParseData getLoc(ParseLoc c) const{
 		return ParseData(endWith,mod, operatorCheck, c);
 	}
@@ -211,7 +214,7 @@ public:
 		}
 		//f->trim(data.endWith);
 		Statement* done = fixed;
-		if(f->peek()=='['){
+		/*if(f->peek()=='['){
 			f->read();
 			f->trim(EOF);
 			bool set=false;
@@ -225,7 +228,7 @@ public:
 			if(!set)
 				done = new E_UOP(pos(), "[]", done,UOP_POST);
 			//f->trim(data.endWith);
-		}
+		}*/
 		return done;
 	}
 	E_VAR* getNextVariable(ParseData data, bool allowsAuto, bool allowsTemplate){
@@ -375,6 +378,7 @@ public:
 		trim(EOF);
 		if(f->done || !isStartType(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
 		char tc = f->peek();
+		Statement* currentType;
 		if(!isStartName(tc)){
 			if(tc=='('){
 				f->read();
@@ -403,21 +407,25 @@ public:
 				}
 				f->read();
 				if(has==1){
-					return new E_NAMED_TUPLE(pos(), cp1, nam);
+					currentType = new E_NAMED_TUPLE(pos(), cp1, nam);
 				} else {
-					return new E_TUPLE(cp1);
+					currentType = new E_TUPLE(cp1);
 				}
+				pos().warning(str(currentType->getToken()));
 			} else if(tc=='{'){
 				f->read();
+				currentType = nullptr;
 				f->error("Cannot parse map/set types yet");
 			} else {
 				f->read();
-				assert(tc=='[');
-				f->error("Cannot parse variable-length array types yet");
+				f->error("Unknown start to type '"+str(tc)+"'");
+				currentType = nullptr;
 			}
+		} else currentType = nullptr;
+		if(currentType==nullptr){
+			currentType = getNextVariable(data, allowsAuto, true);
+			if(!currentType) return nullptr;
 		}
-		Statement* currentType = getNextVariable(data, allowsAuto, true);
-		if(!currentType) return nullptr;
 		do{
 			trim(data);
 			auto marker = f->getMarker();
@@ -888,34 +896,82 @@ public:
 	}
 	bool isValidType(ParseData data){
 		//f->trim(data.endWith);
-
-		auto s = f->getNextName(data.endWith);
-		if(s.length()==0) return false;
-		//f->trim(data.endWith);
-
 		auto fp = f->peek();
-		if(fp=='.'){
-			f->read();
-			return isValidType(data);
-		} else if(fp=='{'){
-			f->read();
-			f->trim(EOF);
-			while(true){
-				auto z = f->peek();
-				if(z==EOF){
-					pos().error("Unclosed '{' for template", false);
-					return false;
-				}
-				else if(z=='}'){
-					f->read();
-					break;
-				} else if(z==','){
-					f->read();
+		if(isStartName(fp)){
+			auto s = f->getNextName(data.endWith);
+			if(s.length()==0) return false;
+			fp = f->peek();
+			if(fp=='.'){
+				f->read();
+				return isValidType(data);
+			} else if(fp=='{'){
+				f->read();
+				f->trim(EOF);
+				while(true){
+					auto z = f->peek();
+					if(z==EOF){
+						pos().error("Unclosed '{' for template", false);
+						return false;
+					}
+					else if(z=='}'){
+						f->read();
+						break;
+					} else if(z==','){
+						f->read();
+						f->trim(EOF);
+					}
+					if(!isValidType(data.getEndWith(EOF))) return false;
 					f->trim(EOF);
 				}
-				if(!isValidType(data.getEndWith(EOF))) return false;
-				f->trim(EOF);
 			}
+		} else {
+			if(fp=='('){
+				f->read();
+				f->trim(EOF);
+				while(true){
+					auto z = f->peek();
+					if(z==EOF){
+						pos().error("Unclosed '{' for template", false);
+						return false;
+					}
+					else if(z==')'){
+						f->read();
+						break;
+					} else if(z==','){
+						f->read();
+						f->trim(EOF);
+					}
+					if(!isValidType(data.getEndWith(EOF))) return false;
+					f->trim(EOF);
+					if(f->peek()==':'){
+						if(f->getNextName(EOF).length()==0) return false;
+						f->trim(EOF);
+					}
+				}
+			} else if(fp=='{'){
+				f->read();
+				f->trim(EOF);
+				while(true){
+					auto z = f->peek();
+					if(z==EOF){
+						pos().error("Unclosed '{' for template", false);
+						return false;
+					}
+					else if(z=='}'){
+						f->read();
+						break;
+					} else if(z==','){
+						f->read();
+						f->trim(EOF);
+					}
+					if(!isValidType(data.getEndWith(EOF))) return false;
+					f->trim(EOF);
+					if(f->peek()==':'){
+						if(!isValidType(data.getEndWith(EOF))) return false;
+						f->trim(EOF);
+					}
+				}
+			} else return false;
 		}
 		while((fp=='&' || fp=='%' || fp=='[')){
 			if(f->read()=='['){
@@ -939,7 +995,6 @@ public:
 			return exp;
 		}
 		char tchar = f->peek();
-		if(tchar=='{') return exp;
 		if(tchar=='['){
 			f->read();
 			std::vector<Statement*> stack;
@@ -961,7 +1016,7 @@ public:
 				}
 				if(f->trim(data.endWith)) f->error("Uncompleted '[' index",true);
 				if(!done) break;
-				stack.push_back(getNextStatement(data.getLoc(PARSE_EXPR)));
+				stack.push_back(getNextStatement(data.getExpr()));
 			}
 			if(f->done)	f->error("Uncompleted '[' array 2",true);
 			char te;
@@ -970,7 +1025,7 @@ public:
 			f->trim(data.endWith);
 			auto mark = f->getMarker();
 			if(f->peek()=='=' && (f->read()||true) && f->peek()!='='){
-				Statement* op2 = getNextStatement(data);
+				Statement* op2 = getNextStatement(data.getExpr());
 				if(nex->getToken()==T_UOP){
 					//append operator
 					E_UOP* u = (E_UOP*)nex;
@@ -1018,12 +1073,6 @@ public:
 			if(!semi) return operatorCheck(data, ret);
 			else return ret;
 		}
-		else if(tchar=='{'){
-			f->read();
-			f->trim(data.endWith);
-			pos().compilerError(" '{' operatorCheck not implemented yet");
-			exit(1);
-		}
 		else if (tchar=='?'){
 			f->read();
 			f->trim(data.endWith);
@@ -1034,26 +1083,6 @@ public:
 			Statement* op2 = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
 			return new TernaryOperator(pos(), exp, op1, op2);
 		}
-		//TODO implement generics
-		/*
-			else if(tchar=='<'){
-				f->read();
-				tchar = f->peek();
-				if(tchar=='<' || tchar=='=' || tchar=='>'){
-					f->write(tchar);
-					f->write('<');
-				}
-				else{
-					f->trim(endWith);
-					String name = f->getNextName(endWith);
-					if(name.length()==0){
-						f->writeString(name);
-						f->write(' ');
-
-					}
-					tchar = f->peek();
-				}
-			}*/
 		String tmp = f->getNextOperator(data.endWith);
 
 		if(tmp.length()==0) return exp;
@@ -1062,12 +1091,6 @@ public:
 		if(tmp=="!") {
 			return new E_UOP(pos(), "!", exp, UOP_POST);
 		}
-		//TODO implement generics
-		/*
-			else if (tmp == "<"){
-				//equality and check
-			}
-		 */ //TODO implement custom operators (a and b,  r if g else b )
 		else if (tmp=="."){
 			String name = getNextName(data.endWith);
 			fixed = getLookup(data, exp, name);
@@ -1195,7 +1218,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		case '7':
 		case '8':
 		case '9':{
-			Literal* num = f->readNumber(data.endWith);
+			auto num = f->readNumber(data.endWith);
 			trim(data);
 			semi  = false;
 			if(!f->done && f->peek()==';'){ semi = true; }
@@ -1219,19 +1242,29 @@ Statement* Lexer::getNextStatement(ParseData data){
 		case '[':
 		case '(':{
 			auto undoRead = f->getMarker();
+			auto fp = f->peek();
+			assert(fp=='(' || fp=='[' || fp=='{');
+			if((fp=='(' || fp=='{') && data.allowsDec() && isValidType(data)){
+				f->trim(data.endWith);
+				if(!(f->interactive && f->last()=='\n') && isStartName(f->peek()) ){
+					f->undoMarker(undoRead);
+					return getNextDeclaration(data);
+				}
+			}
+			f->undoMarker(undoRead);
 			char open = f->read();
 			char close = (open=='{')?'}':((open=='[')?']':')');
 			trim(data);
 			//E_ARR* arr = new E_ARR(pos());
 			std::vector<Statement*> values;
 			std::vector<Statement*> seconds;
-			Statement* temp;
 			char te;
 			if(f->peek()==close) f->read();
 			else{
-				temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
 				forceAr = false;
-				while(temp->getToken()!=T_EOF){
+				while(true){
+					auto temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+					if(temp->getToken()==T_EOF) break;
 					values.push_back(temp);
 					f->trim(EOF);
 					if(f->peek()==':'){
@@ -1251,8 +1284,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 					if(!comma){
 						f->error("Missing , in inline array or wrong end char",true);
 					}
-					if(f->trim(data.endWith)) f->error("Uncompleted '(' array",true);
-					temp = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+					if(f->trim(EOF)) f->error("Uncompleted '(' array",true);
 				}
 				if(open=='(' && !forceAr && values.size()==1){
 					Statement* temp = values[0];
@@ -1279,28 +1311,14 @@ Statement* Lexer::getNextStatement(ParseData data){
 							((Statement*)(new E_ARR(pos(), values))) //todo change to E_SET
 			);
 
+			pos().warning("TODO - " + str(values.size())+" "+str(arr->getToken()));
 
-
-			auto start = f->getMarker();
 			trim(data);
-			if(data.allowsDec() && (!f->interactive || f->last()!='\n') && start!=f->getMarker() && isStartName(f->peek()) ){
-				//auto tmp = f->getMarker();
-				f->undoMarker(undoRead);
-				//TODO FIX HERE TEMPLATES / lazy / ref
-				//String s = String(tmp-undoRead, ' ');
-				//while(f->getMarker()!=tmp) s[f->getMarker()-tmp]=f->read();
-				//cerr << s << endl << flush;
-				f->undoMarker(undoRead);
-
-				return getNextDeclaration(data);
-			} else {
-				trim(data);
-				semi  = false;
-				if(!f->done && f->peek()==';'){ semi = true; }
-				trim(data);
-				if(data.operatorCheck && !semi) return operatorCheck(data, arr);
-				else return arr;
-			}
+			semi  = false;
+			if(!f->done && f->peek()==';'){ semi = true; }
+			trim(data);
+			if(data.operatorCheck && !semi) return operatorCheck(data, arr);
+			else return arr;
 		}
 		case '+':
 		case '-':
