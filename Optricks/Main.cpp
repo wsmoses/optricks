@@ -106,6 +106,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
 		retType = &voidClass;
+		getRData().builder.CreateRetVoid();
 	} else if(retType->classType!=CLASS_VOID){
 		llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
 		F->mutateType(llvm::PointerType::getUnqual(FT));

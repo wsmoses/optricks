@@ -116,7 +116,7 @@ class ClassFunction : public E_FUNCTION{
 			for (;Idx != declaration.size(); ++AI, ++Idx) {
 				assert(Idx < declaration.size());
 				assert(declaration[Idx]);
-				((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
+				((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx+(staticF?0:1)].declarationVariable));
 				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
 					declaration[Idx]->variable.getMetadata().setObject(
 						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx+(staticF?0:1)].declarationType)->innerType)

@@ -117,7 +117,10 @@ inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r
 		if(n_width>s_width){
 			return r.builder.CreateSExt(valueToCast,nex->type);
 		}
-		else if(n_width<s_width) id.error("Cannot cast integer type of width "+str(getWidth())+" to integer type of width"+str(nex->getWidth()));
+		else if(n_width<s_width){
+			id.error("Cannot cast integer type of width "+str(getWidth())+" to integer type of width "+str(nex->getWidth()));
+			return r.builder.CreateTrunc(valueToCast, nex->type);
+		}
 		assert(n_width==s_width);
 		return valueToCast;
 		//}

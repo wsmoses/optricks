@@ -1,0 +1,137 @@
+class primitive Image{
+	(byte:r,byte:g,byte:b)[][] data;
+	def Image(int w, int h){
+		this.data = (byte:r,byte:g,byte:b)[][](w);
+		for(int i=0; i<w; i++){
+			auto tmp = (byte:r,byte:g,byte:b)[](h);
+			for(int j=0; j<h; j++)
+				tmp[j] = (0,0,0);
+			this.data[i] = tmp;
+		}
+	}
+//	def :[](int a){
+//		return data[a];
+//	}
+	def getWidth(){
+		return this.data.length;
+	}
+	def getHeight(){
+		return this.data[0].length;
+	}
+	def outputPPM(lang.c.string s){
+		File f = File(s,'wb')
+		this.outputPPM(f)
+		f.close()
+	}
+	def outputPPM(File f){
+		fprintf(f.f, "P6 %d %d\n", this.data.length, this.data[0].length);
+		for(int i=0; i<this.data.length; i++)
+		for(int j=0; j<this.data[0].length; j++){
+			f.write(this.data[i,j].r)
+			f.write(this.data[i,j].g)
+			f.write(this.data[i,j].b)
+		}
+	}
+	def outputBMP(lang.c.string s){
+		File f = File(s,'wb')
+		this.outputBMP(f)
+		f.close()
+	}
+	def outputBMP(File f){
+		short w = short(this.getWidth());
+		short h = short(this.getHeight());
+
+		// BM
+		f.write(0x42);
+		f.write(0x4D);
+
+		auto size = 26+3*w*h
+		// SIZE OF BMP
+		f.write(byte(size));
+		f.write(byte(size >>>  8));
+		f.write(byte(size >>> 16));
+		f.write(byte(size >>> 32));
+
+		//DPI 3780
+		//BI_RGB = 0
+
+		// RESERVED (creator1)?
+		f.write(0x00);
+		f.write(0x00);
+
+		// RESERVED (creator2)
+		f.write(0x00);
+		f.write(0x00);
+
+		// offset of pixel data
+		f.write(0x1A);
+		f.write(0x00);
+		f.write(0x00);
+		f.write(0x00);
+
+
+		//size of DIB header
+		f.write(0x0C);
+		f.write(0x00);
+		f.write(0x00);
+		f.write(0x00);
+	
+		//width unsigned 16bit
+		printf("%d %02x %02x %d %d\n", w, byte(w), byte(w >>> 8),byte(w),byte(w>>>8))
+		printf("%d %02x %02x %d %d\n", h, byte(h), byte(h >>> 8),byte(h),byte(h>>>8))
+
+//		extern lang.c.size_t fwrite(short&, lang.c.size_t, lang.c.size_t, File);
+//		fwrite(&w, 2, 1, f);
+//		fwrite(&h, 2, 1, f);
+
+		f.write(byte(w));
+		f.write(byte(w >>> 8));
+	
+		//height unsigned 16 bit
+		f.write(byte(h));
+		f.write(byte(h >>> 8));
+	
+		//number of color planes
+		f.write(0x01);
+		f.write(0x00);
+
+		//bits per pixel
+		f.write(0x18);
+		f.write(0x00);
+
+		//BGR bottom right to left
+		for(int j=h-1; ;j--){
+			for(int i=0; i<w; i++){
+				f.write(this.data[i,j].b)
+				f.write(this.data[i,j].g)
+				f.write(this.data[i,j].r)
+			}
+			if(j==0) break;
+		}
+	
+	}
+
+}
+
+def readHex(lang.c.string s, int i=int(inf)){
+	auto f = File(s, 'rb');
+	do{
+		auto tmp = f.read();
+		if(tmp==-1) break;
+		else printf("%02x ", tmp);
+		if(i==0) break;
+		i--;
+	}while(true);
+	f.close();
+}
+
+def println(Image w){
+//	auto c = File.popen('convert ppm:- png:-');
+//	w.outputPPM(c);
+//	do{
+//		auto tmp = c.getc();
+//		if(tmp==-1) break;
+//		print(tmp);
+//	} while(true);
+//	print("<img src='data:image/png;base64,'");
+}
