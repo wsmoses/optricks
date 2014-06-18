@@ -206,14 +206,3 @@ def readHex(lang.c.string s, int i=int(inf)){
 	}while(true);
 	f.close();
 }
-
-def println(Image w){
-//	auto c = File.popen('convert ppm:- png:-');
-//	w.outputPPM(c);
-//	do{
-//		auto tmp = c.getc();
-//		if(tmp==-1) break;
-//		print(tmp);
-//	} while(true);
-//	print("<img src='data:image/png;base64,'");
-}

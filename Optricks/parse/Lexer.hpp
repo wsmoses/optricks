@@ -948,6 +948,7 @@ public:
 					if(!isValidType(data.getEndWith(EOF))) return false;
 					f->trim(EOF);
 					if(f->peek()==':'){
+						f->read();
 						if(f->getNextName(EOF).length()==0) return false;
 						f->trim(EOF);
 					}
@@ -971,6 +972,7 @@ public:
 					if(!isValidType(data.getEndWith(EOF))) return false;
 					f->trim(EOF);
 					if(f->peek()==':'){
+						f->read();
 						if(!isValidType(data.getEndWith(EOF))) return false;
 						f->trim(EOF);
 					}
