@@ -42,10 +42,10 @@ public:
 		const AbstractClass* returnType = returnV->getMyClass(a, filePos);
 		assert(returnType);
 		auto FT = llvm::FunctionType::get(returnType->type, args, false);
-		llvm::Function *F = a.getExtern(name, FT);
-		if(F->getName().str()!=name){
-			filePos.error("Cannot extern function due to name in use "+name+" was replaced with "+F->getName().str());
-		}
+		auto F = a.getExtern(name, FT);
+		//if(F->getName().str()!=name){
+		//	filePos.error("Cannot extern function due to name in use "+name+" was replaced with "+F->getName().str());
+		//}
 		//todo have full name
 		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);

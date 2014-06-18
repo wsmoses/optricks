@@ -40,7 +40,7 @@ public:
 	 * Otherwise it returns the type of the callFunctioning class
 	 */
 	//virtual AbstractClass* isClassFunction() const=0;
-	virtual llvm::Function* getValue(RData& r, PositionID id) const=0;
+	virtual llvm::Constant* getValue(RData& r, PositionID id) const=0;
 	const ConstantData* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	AbstractFunction():Data(R_FUNC){};
 };
@@ -50,19 +50,19 @@ class SingleFunction: public AbstractFunction{
 	//friend OverloadedFunction;
 protected:
 	FunctionProto* const proto;
-	mutable llvm::Function* myFunc;
+	mutable llvm::Constant* myFunc;
 public:
 	inline FunctionProto* getSingleProto() const{
 		return proto;
 	}
-	virtual llvm::Function* getSingleFunc() const{
+	virtual llvm::Constant* getSingleFunc() const{
 		assert(myFunc);
 		return myFunc;
 	}
-	SingleFunction(FunctionProto* const fp, llvm::Function* const f):AbstractFunction(),proto(fp), myFunc(f){
+	SingleFunction(FunctionProto* const fp, llvm::Constant* const f):AbstractFunction(),proto(fp), myFunc(f){
 		assert(fp);
-		if(f)
-		assert(f->getReturnType());
+		//if(f)
+		//assert(f->getReturnType());
 	};
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 		return proto->returnType;
@@ -76,7 +76,7 @@ public:
 	inline FunctionProto* getFunctionProto(PositionID id) const override{
 		return proto;
 	}
-	inline llvm::Function* getValue(RData& r, PositionID id) const override{
+	inline llvm::Constant* getValue(RData& r, PositionID id) const override{
 		return myFunc;
 	}
 	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data*& instance) const;
@@ -91,7 +91,7 @@ public:
 class CompiledFunction: public SingleFunction{
 private:
 public:
-	CompiledFunction(FunctionProto* const fp, llvm::Function* const f);
+	CompiledFunction(FunctionProto* const fp, llvm::Constant* const f);
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 
@@ -179,7 +179,7 @@ public:
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
 		return getBestFit(id,NO_TEMPLATE, args, instance!=nullptr)->callFunction(r,id,args, instance);
 	}
-	llvm::Function* getValue(RData& r, PositionID id) const override final{
+	llvm::Constant* getValue(RData& r, PositionID id) const override final{
 		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();
 		else{
 			id.error("Could not get single unique function in overloaded function");

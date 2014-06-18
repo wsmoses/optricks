@@ -118,18 +118,18 @@ struct RData{
 			llvm::Function* f = llvm::Function::Create(FT,L,llvm::Twine(name),lmod);
 			return f;
 		}
-		inline llvm::Function* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
+		void error(String s);
+		inline llvm::Constant* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
 		std::map<llvm::Function*, void*> toPut;
-		inline llvm::Function* getExtern(String name, llvm::FunctionType* FT, String lib=""){
+		inline llvm::Constant* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
 			assert(FT);
 			for(unsigned i=0; i<FT->getNumParams(); i++)
 				assert(FT->getParamType(i));
-			auto F = (llvm::Function*) lmod->getOrInsertFunction(llvm::StringRef(name), FT);
-			assert(F);
-			assert(F->getLinkage()==llvm::GlobalVariable::ExternalLinkage);
+			auto G = lmod->getOrInsertFunction(llvm::StringRef(name), FT);
+			assert(G);
 			//getExec();
-
+if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			if(false){}
 #define MAP(X) else if(name==#X){ assert((void*)(&X)); if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(opendir)
@@ -166,7 +166,8 @@ struct RData{
 //#pragma message "Not Using SDL"
 #endif
 #undef MAP
-			return F;
+		}
+			return G;
 		}
 		inline llvm::Value* getConstantCString(String name){
 			static std::map<String,llvm::Value*> M;

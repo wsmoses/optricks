@@ -24,7 +24,7 @@ public:
 		registerFunctionPrototype(ra);
 
 		llvm::BasicBlock* Parent = ra.builder.GetInsertBlock();
-		llvm::Function* F = myFunction->getSingleFunc();
+		llvm::Function* F = ((llvm::Function*) myFunction->getSingleFunc());
 		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
 		ra.addJump(&j);

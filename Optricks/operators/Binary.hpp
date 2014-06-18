@@ -9,6 +9,7 @@
 #define BINARY_HPP_
 
 #include "../language/class/AbstractClass.hpp"
+#include "../language/class/builtin/IntClass.hpp"
 #include "../language/class/builtin/VectorClass.hpp"
 #include "../language/class/builtin/CStringClass.hpp"
 #include "../language/evaluatable/CastEval.hpp"
@@ -483,6 +484,11 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.CreateBr(MergeBB);
 				Switch->addCase(getInt32(i), TmpBB);
 			}
+			r.builder.SetInsertPoint(ErrorBB);
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_STRINGTYPE;
+			auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+			r.builder.CreateCall2(CU, r.getConstantCString("Illegal string index %d in "+str(D->value.size())), V);
 			r.builder.SetInsertPoint(MergeBB);
 			return new ConstantData(PHI, &charClass);
 		} else if(operation=="+"){
@@ -1327,6 +1333,12 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					r.builder.CreateBr(MergeBB);
 					Switch->addCase(getInt32(i), TmpBB);
 				}
+				r.builder.SetInsertPoint(ErrorBB);
+				llvm::SmallVector<llvm::Type*,1> t_args(1);
+				t_args[0] = C_STRINGTYPE;
+				auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+				r.builder.CreateCall2(CU, r.getConstantCString("Illegal array index %d in "+str(D->inner.size())), V);
+				r.error("");
 				r.builder.SetInsertPoint(MergeBB);
 				return new ConstantData(PHI, RT);
 			} else {

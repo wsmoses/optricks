@@ -16,6 +16,22 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_SCOPE:
 		filePos.compilerError("Scope should never be instantiated");
 		exit(1);
+	case CLASS_CHAR:{
+		if(args.size()==1){
+			const Data* d = args[0]->evaluate(r);
+			if(d->type==R_STR){
+				StringLiteral* s = (StringLiteral*)d;
+				char c;
+				if(s->value.size()!=1){
+					filePos.error("Cannot convert string of length "+str(s->value.size())+" to char");
+					c = '\0';
+				} else c = s->value[0];
+				return new ConstantData(charClass.getValue(c), &charClass);
+			} else if(d->getReturnType()->classType==CLASS_CHAR){
+				return d->toValue(r, filePos);
+			}
+		}
+	}
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -27,7 +43,6 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_STRLITERAL:
 	case CLASS_STR:
 	case CLASS_CSTRING:
-	case CLASS_CHAR:
 	case CLASS_SET:
 	case CLASS_CLASS:
 	case CLASS_MATHLITERAL:
@@ -89,8 +104,16 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		return new ConstantData(p, this);
 	}
 	case CLASS_INT:{
+		const Data* d;
+		if(args.size()==2){
+			d = args[0]->evaluate(r);
+			const Data* d2 = args[1]->evaluate(r);
+			auto V = d->getReturnType();
+			if(d2->getReturnType()->classType==CLASS_BOOL && V->classType==CLASS_INT){
+				return new ConstantData(r.builder.CreateZExtOrTrunc(d->getValue(r, filePos),type), this);
+			}
+		} else if(args.size()==1) d = args[0]->evaluate(r);
 		if(args.size()!=1 ) filePos.error("Could not find valid constructor in bool");
-		const Data* d = args[0]->evaluate(r);
 		auto V = d->getReturnType();
 		const IntClass* T = (const IntClass*)this;
 		if(V->classType==CLASS_STR){

@@ -137,7 +137,9 @@ class ClassFunction : public E_FUNCTION{
 			built = true;
 			registerFunctionPrototype(a);
 			llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
-			a.builder.SetInsertPoint(&(myFunction->getSingleFunc()->getEntryBlock()));
+			assert((myFunction->getSingleFunc()));
+			assert(llvm::dyn_cast<llvm::Function>(myFunction->getSingleFunc()));
+			a.builder.SetInsertPoint(&(((llvm::Function*) myFunction->getSingleFunc())->getEntryBlock()));
 			Jumpable j(name, FUNC, &module, nullptr,nullptr,myFunction->getSingleProto()->returnType);
 			a.addJump(&j);
 			methodBody->evaluate(a);
@@ -150,8 +152,7 @@ class ClassFunction : public E_FUNCTION{
 					a.builder.CreateRetVoid();
 				else error("Could not find return statement");
 			}
-
-			a.FinalizeFunction(myFunction->getSingleFunc());
+			a.FinalizeFunction(((llvm::Function*) myFunction->getSingleFunc()));
 			if(Parent) a.builder.SetInsertPoint( Parent );
 			auto tmp = a.popJump();
 			assert(tmp== &j);

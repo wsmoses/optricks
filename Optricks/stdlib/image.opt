@@ -37,9 +37,14 @@ class primitive Image{
 		this.outputBMP(f)
 		f.close()
 	}
-	def outputBMP(File f){
-		short w = short(this.getWidth());
-		short h = short(this.getHeight());
+	def outputHTML(lang.c.string width=null, lang.c.string height=null){
+		print("<img style='");
+		if(width!=null) printf("width:%s;",width);
+		if(height!=null) printf("height:%s;",height);
+		print("' src='data:image/bmp;base64,")
+		Base64File f = Base64File();
+		auto w = this.getWidth();
+		auto h = this.getHeight();
 
 		// BM
 		f.write(0x42);
@@ -47,10 +52,10 @@ class primitive Image{
 
 		auto size = 26+3*w*h
 		// SIZE OF BMP
-		f.write(byte(size));
-		f.write(byte(size >>>  8));
-		f.write(byte(size >>> 16));
-		f.write(byte(size >>> 32));
+		f.write(lang.c.int(size & 0xff));
+		f.write(lang.c.int((size >>>  8) & 0xff ));
+		f.write(lang.c.int((size >>>  16) & 0xff ));
+		f.write(lang.c.int((size >>>  24) & 0xff ));
 
 		//DPI 3780
 		//BI_RGB = 0
@@ -77,19 +82,13 @@ class primitive Image{
 		f.write(0x00);
 	
 		//width unsigned 16bit
-		printf("%d %02x %02x %d %d\n", w, byte(w), byte(w >>> 8),byte(w),byte(w>>>8))
-		printf("%d %02x %02x %d %d\n", h, byte(h), byte(h >>> 8),byte(h),byte(h>>>8))
 
-//		extern lang.c.size_t fwrite(short&, lang.c.size_t, lang.c.size_t, File);
-//		fwrite(&w, 2, 1, f);
-//		fwrite(&h, 2, 1, f);
-
-		f.write(byte(w));
-		f.write(byte(w >>> 8));
+		f.write(lang.c.int(w & 0xff));
+		f.write(lang.c.int((w >>> 8) & 0xff));
 	
 		//height unsigned 16 bit
-		f.write(byte(h));
-		f.write(byte(h >>> 8));
+		f.write(lang.c.int(h & 0xff));
+		f.write(lang.c.int((h >>> 8) & 0xff));
 	
 		//number of color planes
 		f.write(0x01);
@@ -101,10 +100,93 @@ class primitive Image{
 
 		//BGR bottom right to left
 		for(int j=h-1; ;j--){
-			for(int i=0; i<w; i++){
-				f.write(this.data[i,j].b)
-				f.write(this.data[i,j].g)
-				f.write(this.data[i,j].r)
+			int i;
+			for(i=0; i<w; i++){
+				f.write(lang.c.int(this.data[i,j].b,true))
+				f.write(lang.c.int(this.data[i,j].g,true))
+				f.write(lang.c.int(this.data[i,j].r,true))
+			}
+			//pad rows to multiple of 4 bytes
+			i*=3;
+			while(i%4 !=0){
+				f.write(0);
+				i++;
+			}
+			if(j==0) break;
+		}
+		f.close();
+		print("'>");
+	
+	}
+	def outputBMP(File f){
+		auto w = this.getWidth();
+		auto h = this.getHeight();
+
+		// BM
+		f.write(0x42);
+		f.write(0x4D);
+
+		auto size = 26+3*w*h
+		// SIZE OF BMP
+		f.write(lang.c.int(size & 0xff));
+		f.write(lang.c.int((size >>>  8) & 0xff ));
+		f.write(lang.c.int((size >>>  16) & 0xff ));
+		f.write(lang.c.int((size >>>  24) & 0xff ));
+
+		//DPI 3780
+		//BI_RGB = 0
+
+		// RESERVED (creator1)?
+		f.write(0x00);
+		f.write(0x00);
+
+		// RESERVED (creator2)
+		f.write(0x00);
+		f.write(0x00);
+
+		// offset of pixel data
+		f.write(0x1A);
+		f.write(0x00);
+		f.write(0x00);
+		f.write(0x00);
+
+
+		//size of DIB header
+		f.write(0x0C);
+		f.write(0x00);
+		f.write(0x00);
+		f.write(0x00);
+	
+		//width unsigned 16bit
+
+		f.write(lang.c.int(w & 0xff));
+		f.write(lang.c.int((w >>> 8) & 0xff));
+	
+		//height unsigned 16 bit
+		f.write(lang.c.int(h & 0xff));
+		f.write(lang.c.int((h >>> 8) & 0xff));
+	
+		//number of color planes
+		f.write(0x01);
+		f.write(0x00);
+
+		//bits per pixel
+		f.write(0x18);
+		f.write(0x00);
+
+		//BGR bottom right to left
+		for(int j=h-1; ;j--){
+			int i;
+			for(i=0; i<w; i++){
+				f.write(lang.c.int(this.data[i,j].b,true))
+				f.write(lang.c.int(this.data[i,j].g,true))
+				f.write(lang.c.int(this.data[i,j].r,true))
+			}
+			//pad rows to multiple of 4 bytes
+			i*=3;
+			while(i%4 !=0){
+				f.write(0);
+				i++;
 			}
 			if(j==0) break;
 		}

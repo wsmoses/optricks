@@ -19,8 +19,8 @@ class primitive File{
                 this.flush();
                 (extern lang.c.int fclose(lang.c.pointer))(this.f);
         };
-	def write(byte c){
-		(extern lang.c.int fputc(byte,lang.c.pointer))(c, this.f);
+	def write(lang.c.int c){
+		(extern lang.c.int fputc(lang.c.int,lang.c.pointer))(c, this.f);
 		return this;
 	};
         def print(char c){
@@ -42,6 +42,48 @@ class primitive File{
 		return (extern lang.c.int fgetc(lang.c.pointer))(this.f);
 	}
 
+};
+
+class primitive Base64File{
+	int buf;
+	byte len;
+	def Base64File(){
+		this.len = 0;
+		this.buf = 0;
+	}
+	static def encode(int b){
+		return ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'][b];
+	}
+        def void close(){
+		if(this.len!=0){
+			if(this.len==1) this.buf << 16;
+			if(this.len==2) this.buf << 8;
+			auto idx1 = this.buf >> 18;
+			auto idx2 = (this.buf >> 12) & 0b111111;
+			auto idx3 = (this.buf >> 6) & 0b111111;
+			auto idx4 = this.buf & 0b111111;
+			print(Base64File.encode(idx1));
+			print(Base64File.encode(idx2));
+			print(Base64File.encode(idx3));
+			print(Base64File.encode(idx4));
+		}
+        };
+	def write(lang.c.int c){
+		this.buf = (this.buf << 8) | c;
+		this.len++;
+		if(this.len==3){
+			auto idx1 = this.buf >> 18;
+			auto idx2 = (this.buf >> 12) & 0b111111;
+			auto idx3 = (this.buf >> 6) & 0b111111;
+			auto idx4 = this.buf & 0b111111;
+			print(Base64File.encode(idx1));
+			print(Base64File.encode(idx2));
+			print(Base64File.encode(idx3));
+			print(Base64File.encode(idx4));
+			this.buf = 0;
+			this.len = 0;
+		}
+	};
 };
 
 extern lang.c.size_t strlen(lang.c.string);

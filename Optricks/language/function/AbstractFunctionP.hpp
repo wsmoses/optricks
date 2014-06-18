@@ -25,28 +25,33 @@ const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std:
 
 template<decltype(llvm::Intrinsic::sqrt) A>
 llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
-	if(myFunc) return myFunc;
+	if(myFunc) return (llvm::Function*)myFunc;
 	auto tmp=proto->declarations.size();
 	llvm::SmallVector<llvm::Type*,0> ar(tmp);
 	for(unsigned i=0; i<tmp; i++){
 		ar[i] = proto->declarations[i].declarationType->type;
 		assert(ar[i]);
 	}
-	return myFunc = llvm::Intrinsic::getDeclaration(getRData().lmod, A,ar);
+	llvm::Function* F = llvm::Intrinsic::getDeclaration(getRData().lmod, A,ar);
+	myFunc = F;
+	return F;
 }
 
-	CompiledFunction::CompiledFunction(FunctionProto* const fp, llvm::Function* const f):SingleFunction(fp,f){
-		assert(fp->returnType->classType==CLASS_VOID || f->getReturnType()==fp->returnType->type);
-		assert(f->getFunctionType()->getNumParams()==fp->declarations.size());
-		assert(f->isVarArg()==fp->varArg);
+	CompiledFunction::CompiledFunction(FunctionProto* const fp, llvm::Constant* const f):SingleFunction(fp,f){
+		assert(llvm::dyn_cast<llvm::PointerType>(f->getType()));
+		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*)f->getType())->getElementType()));
+		assert(fp->returnType->classType==CLASS_VOID || llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*)f->getType())->getElementType())->getReturnType()==fp->returnType->type);
+		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*)f->getType())->getElementType())->getNumParams()==fp->declarations.size());
+		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*)f->getType())->getElementType())->isVarArg()==fp->varArg);
 		for(unsigned i=0; i<fp->declarations.size(); i++){
-			assert(f->getFunctionType()->getParamType(i)==fp->declarations[i].declarationType->type);
+			assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*)f->getType())->getElementType())->getParamType(i)==fp->declarations[i].declarationType->type);
 		}
 	}
 
 	const Data* CompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
 		assert(myFunc);
-		assert(myFunc->getReturnType());
+		assert(llvm::dyn_cast<llvm::PointerType>(myFunc->getType()));
+		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*) myFunc->getType())->getElementType()));
 		llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else{
@@ -55,15 +60,15 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 	}
 
 	llvm::Function* BuiltinInlineFunction::getSingleFunc() const{
-		if(myFunc!=nullptr) return myFunc;
+		if(myFunc!=nullptr) return (llvm::Function*)myFunc;
 		myFunc = getF(proto);
 		llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
-		llvm::BasicBlock* BB = getRData().CreateBlockD("entry", myFunc);
+		llvm::BasicBlock* BB = getRData().CreateBlockD("entry", ((llvm::Function*)myFunc));
 		getRData().builder.SetInsertPoint(BB);
 
 		unsigned Idx = 0;
 		std::vector<const Evaluatable*> args;
-		for (llvm::Function::arg_iterator AI = myFunc->arg_begin(); Idx != myFunc->arg_size();
+		for (llvm::Function::arg_iterator AI = ((llvm::Function*)myFunc)->arg_begin(); Idx != ((llvm::Function*)myFunc)->arg_size();
 				++AI, ++Idx) {
 			((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
 			if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
@@ -81,9 +86,9 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 				getRData().builder.CreateRet(V);
 			}
 		}
-		getRData().FinalizeFunctionD(myFunc);
+		getRData().FinalizeFunctionD((llvm::Function*)myFunc);
 		if(Parent) getRData().builder.SetInsertPoint( Parent );
-		return myFunc;
+		return (llvm::Function*)myFunc;
 	}
 
 inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){

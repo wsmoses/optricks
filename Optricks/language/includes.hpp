@@ -391,6 +391,25 @@ template<> String str<DataType>(DataType d){
 	}
 	return "unknown DATATYPE";
 }
+
+template<> String str<llvm::GlobalValue::LinkageTypes>(llvm::GlobalValue::LinkageTypes d){
+	switch(d){
+#define CASE(X) case llvm::GlobalValue::LinkageTypes::X: return #X;
+CASE(ExternalLinkage)
+CASE(AvailableExternallyLinkage)
+CASE(LinkOnceAnyLinkage)
+CASE(LinkOnceODRLinkage)
+CASE(WeakAnyLinkage)
+CASE(WeakODRLinkage)
+CASE(AppendingLinkage)
+CASE(InternalLinkage)
+CASE(PrivateLinkage)
+CASE(ExternalWeakLinkage)
+CASE(CommonLinkage)
+#undef CASE
+	}
+	return "unknown LinkageType";
+}
 enum MathConstant{
 	MATH_PI,
 	MATH_EULER_MASC,

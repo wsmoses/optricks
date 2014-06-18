@@ -32,7 +32,7 @@ public:
 		assert(returnV==nullptr);
 
 		llvm::BasicBlock* Parent = ra.builder.GetInsertBlock();
-		llvm::Function* F = myFunction->getSingleFunc();
+		llvm::Function* F = ((llvm::Function*) myFunction->getSingleFunc());
 		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 
 		auto uc = myFunction->getSingleProto()->returnType;

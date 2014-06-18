@@ -10,10 +10,21 @@
 
 #include "RData.hpp"
 #include "./class/AbstractClass.hpp"
+#include "./class/builtin/IntClass.hpp"
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
-inline llvm::Function* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
+
+		void RData::error(String s){
+			auto CU = getExtern("putchar", &c_intClass, {&c_intClass});
+			for(const auto& a: s)
+				builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
+
+			auto EX = getExtern("exit", &c_intClass, {&c_intClass});
+			builder.CreateCall(EX, llvm::ConstantInt::get(c_intClass.type, 1,false));
+			builder.CreateUnreachable();
+		}
+inline llvm::Constant* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
 	llvm::SmallVector<llvm::Type*,0> args(A.size());
 	for(unsigned i = 0; i<A.size(); i++){
 		assert(A[i]);
@@ -239,6 +250,7 @@ llvm::Value* RData::getLastValueOf(std::set<llvm::PHINode*> done,std::vector<Laz
 }
 
 void RData::FinalizeFunction(llvm::Function* f){
+	assert(f);
 	//llvm::BasicBlock* Parent = builder.GetInsertBlock();
 	auto V = flocs.find(f)->second;
 	std::set<llvm::PHINode*> done;
