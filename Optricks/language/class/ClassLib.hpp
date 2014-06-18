@@ -81,6 +81,35 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 			id.compilerError("GetMin 2-1d has not been implemented");
 			exit(1);
 		}
+	} else if(a->classType==CLASS_TUPLE || a->classType==CLASS_NAMED_TUPLE){
+		const TupleClass* ta = (const TupleClass*)a;
+		const TupleClass* tb = (const TupleClass*)b;
+		if(ta->innerTypes.size()!=tb->innerTypes.size()){
+			id.error("No valid minimum return type of "+ta->getName()+" "+tb->getName());
+			exit(1);
+		}
+		std::vector<const AbstractClass*> mc;
+		for(unsigned i=0; i<ta->innerTypes.size(); i++){
+			mc.push_back(getMin(ta->innerTypes[i],tb->innerTypes[i],id));
+		}
+		if(b->classType==CLASS_TUPLE && a->classType==CLASS_TUPLE){
+			return TupleClass::get(mc);
+		} else if(b->classType==CLASS_NAMED_TUPLE && a->classType==CLASS_NAMED_TUPLE){
+			auto nta = (const NamedTupleClass*)a;
+			auto ntb = (const NamedTupleClass*)b;
+			for(unsigned i=0; i<ta->innerTypes.size(); i++){
+				if(nta->innerNames[i]!=ntb->innerNames[i]){
+					id.error("No valid minimum return type of "+ta->getName()+" "+tb->getName());
+					exit(1);
+				}
+			}
+			return NamedTupleClass::get(mc, nta->innerNames);
+		} else {
+			if(b->classType==CLASS_NAMED_TUPLE)
+				return NamedTupleClass::get(mc, ((const NamedTupleClass*)b)->innerNames);
+			else
+				return NamedTupleClass::get(mc, ((const NamedTupleClass*)a)->innerNames);
+		}
 	}
 	id.compilerError("GetMin 2 has not been implemented "+a->getName()+" "+b->getName());
 	exit(1);

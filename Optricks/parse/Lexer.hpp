@@ -1037,7 +1037,7 @@ public:
 					delete u;
 				} else {
 					//TODO ternary operator #[#] = #
-					pos().warning("TODO ternary operator #[#] = #");
+					//pos().warning("TODO ternary operator #[#] = #");
 					nex = new E_SET(pos(), nex,op2);
 				}
 			} else f->undoMarker(mark);
