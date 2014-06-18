@@ -15,21 +15,24 @@
 class TupleData:public Data{
 public:
 	const std::vector<const Data*> inner;
-	TupleData(const std::vector<const Data*>& vec):Data(R_TUPLE),inner(vec){};
+	TupleData(const std::vector<const Data*>& vec):Data(R_TUPLE),inner(vec){
+	};
 	const AbstractClass* getReturnType() const override final{
-		std::vector<const AbstractClass*> vec;
+		std::vector<const AbstractClass*> vec(inner.size());
 		unsigned int i;
 		for(i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getReturnType();
+			vec[i] = tmp;
 			if(tmp->classType!=CLASS_CLASS) break;
-			vec.push_back(tmp);
 		}
 		if(i==inner.size()) return &classClass;
 		else{
+			i++;
 			for(; i<inner.size(); i++){
-				auto tmp = inner[i]->getReturnType();
-				vec.push_back(tmp);
+				vec[i] = inner[i]->getReturnType();
 			}
+			std::cout << inner.size() << " " << vec.size() << endl << flush;
+			assert(vec.size()==inner.size());
 			return TupleClass::get(vec);
 		}
 	}
@@ -47,16 +50,22 @@ public:
 		return new ConstantData(v, tc);
 	}
 	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
-		std::vector<const AbstractClass*> vec;
+		std::vector<const AbstractClass*> vec(inner.size());
 		unsigned int i;
 		for(i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getReturnType();
+			vec[i] = tmp;
 			if(tmp->classType!=CLASS_CLASS) break;
-			vec.push_back(tmp);
 		}
 		if(i==inner.size()){
 			return getMyClass(r, id)->getValue(r, id);
+		} else {
+			i++;
+			for(; i<inner.size(); i++){
+				vec[i] = inner[i]->getReturnType();
+			}
 		}
+		assert(vec.size()==inner.size());
 		auto t = TupleClass::get(vec);
 		llvm::Value* v = llvm::UndefValue::get(t->type);
 		for(unsigned int i=0; i<inner.size(); i++){
@@ -66,16 +75,22 @@ public:
 		return v;
 	}
 	const Data* toValue(RData& r,PositionID id) const override final{
-		std::vector<const AbstractClass*> vec;
+		std::vector<const AbstractClass*> vec(inner.size());
 		unsigned int i;
 		for(i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getReturnType();
+			vec[i] = tmp;
 			if(tmp->classType!=CLASS_CLASS) break;
-			vec.push_back(tmp);
 		}
 		if(i==inner.size()){
 			return getMyClass(r, id);
+		} else {
+			i++;
+			for(; i<inner.size(); i++){
+				vec[i] = inner[i]->getReturnType();
+			}
 		}
+		assert(vec.size()==inner.size());
 		auto t = TupleClass::get(vec);
 		llvm::Value* v = llvm::UndefValue::get(t->type);
 		for(unsigned int i=0; i<inner.size(); i++){
@@ -153,11 +168,11 @@ public:
 	 * Returns the class that this represents, if it represents a class
 	 */
 	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		std::vector<const AbstractClass*> vec;
+		std::vector<const AbstractClass*> vec(inner.size());
 		for(unsigned int i=0; i<inner.size(); i++){
-			auto tmp = inner[i]->getMyClass(r,id);
-			vec.push_back(tmp);
+			vec[i] = inner[i]->getMyClass(r,id);
 		}
+		assert(vec.size()==inner.size());
 		return TupleClass::get(vec);
 	}
 };
