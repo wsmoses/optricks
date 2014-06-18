@@ -389,7 +389,7 @@ public:
 				while(f->peek()!=')'){
 					Statement* s = getNextType(data.getEndWith(EOF),true);
 					if(!s) pos().error("Cannot have auto class inside of tuple");
-					cp1.push_back(s);
+					else cp1.push_back(s);
 					f->trim(EOF);
 					String st = "";
 					if(f->peek()==':'){
@@ -1284,17 +1284,21 @@ Statement* Lexer::getNextStatement(ParseData data){
 						forceAr = true;
 					}
 					else comma = false;
-					if(f->trim(data.endWith)) f->error("Uncompleted inline array",true);
+					if(f->trim(data.endWith)){
+						pos().error("Uncompleted inline array");
+						break;
+					}
 
 					if(f->peek()==close) break;
 					if(!comma){
-						f->error("Missing , in inline array or wrong end char",true);
+						pos().error("Missing , in inline array or wrong end char");
+						break;
 					}
-					if(f->trim(EOF)) f->error("Uncompleted '(' array",true);
+					if(f->trim(EOF)) pos().error("Uncompleted '(' array");
 				}
 				if(open=='(' && !forceAr && values.size()==1){
 					Statement* temp = values[0];
-					if((te = f->read())!=close) f->error("Cannot end inline paren with "+
+					if((te = f->read())!=close) pos().error("Cannot end inline paren with "+
 							String(1,te)+" instead of "+String(1,close)
 					);
 					temp = new E_PARENS(temp);

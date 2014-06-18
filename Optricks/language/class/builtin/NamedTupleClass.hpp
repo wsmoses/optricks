@@ -25,16 +25,6 @@ public:
 		}
 		return s+")";
 	}
-	static inline llvm::Type* getTupleType(const std::vector<const AbstractClass*>& args,const std::vector<String>& b){
-		const auto len = args.size();
-		if(len==1) return args[0]->type;
-		llvm::SmallVector<llvm::Type*,2> ar(len);
-		for(unsigned int i=0; i<len; i++){
-			assert(args[i]->classType!=CLASS_LAZY);
-			ar[i]=args[i]->type;
-		}
-		return llvm::StructType::create(ar,llvm::StringRef(str(args,b)),false);
-	}
 	const std::vector<String> innerNames;
 private:
 	NamedTupleClass(const std::vector<const AbstractClass*>& args,const std::vector<String>& b):
@@ -120,6 +110,7 @@ public:
 		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) id.error(toStr("Cannot cast named tuple class of length ",innerTypes.size()," to named tuple class of length ",tc->innerTypes.size()));
 		llvm::Value* V =llvm:: UndefValue::get(toCast->type);
+		assert(valueToCast->getType()==type);
 		for(unsigned i=0; i<innerTypes.size(); i++){
 			if(innerNames[i]!=tc->innerNames[i]) id.error("Cannot cast named tuple "+getName()+" to "+tc->getName());
 			llvm::Value* M = innerTypes[i]->castTo(tc->innerTypes[i], r, id, r.builder.CreateExtractElement(valueToCast, getInt32(i)));
