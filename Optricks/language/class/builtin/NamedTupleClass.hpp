@@ -38,7 +38,7 @@ public:
 	const std::vector<String> innerNames;
 private:
 	NamedTupleClass(const std::vector<const AbstractClass*>& args,const std::vector<String>& b):
-		TupleClass(args,CLASS_NAMED_TUPLE),innerNames(b){
+		TupleClass(args,CLASS_NAMED_TUPLE,str(args,b)),innerNames(b){
 		///register methods such as print / tostring / tofile / etc
 		assert(args.size()==b.size());
 		for(unsigned int i=0; i<b.size(); i++){

@@ -399,7 +399,12 @@ public:
 						if(has==0 || has==1) has = 1;
 						else f->error("Cannot have partially named tuple");
 					} else has = 2;
-					if(has==1) nam.push_back(st);
+					if(has==1){
+						for(unsigned i=0; i<nam.size(); i++)
+							if(st==nam[i])
+								pos().error("Cannot have named tuple with repeated name");
+						nam.push_back(st);
+					}
 					if(f->peek()==','){
 						f->read();
 						f->trim(EOF);
@@ -411,7 +416,6 @@ public:
 				} else {
 					currentType = new E_TUPLE(cp1);
 				}
-				pos().warning(str(currentType->getToken()));
 			} else if(tc=='{'){
 				f->read();
 				currentType = nullptr;
@@ -1303,15 +1307,39 @@ Statement* Lexer::getNextStatement(ParseData data){
 				if((te = f->read())!=close) f->error("Cannot end inline array with "+
 						String(1,te)+" instead of "+String(1,close));
 			}
-			//todo allow e_map
+
 			if(open=='(' && seconds.size()>0 && values.size()!=seconds.size())
 				f->error("Cannot have partially-named tuple",true);
-			Statement* arr = (open=='(')?((Statement*)(new E_TUPLE(values))):(
-					(open=='[')?((Statement*)(new E_ARR(pos(), values))):
-							((Statement*)(new E_ARR(pos(), values))) //todo change to E_SET
-			);
-
-			pos().warning("TODO - " + str(values.size())+" "+str(arr->getToken()));
+			Statement* arr;
+			if(open=='('){
+				if(seconds.size()>0){
+					std::vector<String> names;
+					for(unsigned j=0; j<seconds.size(); j++){
+						String st;
+						if(seconds[j]->getToken()!=T_VAR){
+							pos().error("Must use simple name for named tuple class");
+							st = "_"+str(j);
+						} else{
+							E_VAR* ev = (E_VAR*)seconds[j];
+							assert(ev->t_args.inUse==false);
+							st = ev->pointer.name;
+							delete ev;
+						}
+						for(unsigned i=0; i<names.size(); i++)
+							if(st==names[i])
+								pos().error("Cannot have named tuple with repeated name");
+						names.push_back(st);
+					}
+					arr = new E_NAMED_TUPLE(pos(), values, names);
+				} else
+					arr = new E_TUPLE(values);
+			} else if(open=='['){
+				arr = new E_ARR(pos(), values);
+			} else {
+				assert(open=='{');
+				pos().compilerError("Set/map creation has not been implemented");
+				exit(1);
+			}
 
 			trim(data);
 			semi  = false;

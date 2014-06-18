@@ -53,58 +53,42 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	n->registerClasses();
 	n->registerFunctionPrototype(getRData());
 	n->buildFunction(getRData());
-	const AbstractClass* retType = n->getReturnType();
+	//const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
-	llvm::Type* type;
-	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION) type=VOIDTYPE;
-	else type = retType->type;
-	assert(type!=NULL);
-	if(n->getToken()!=T_DECLARATION && retType->classType == CLASS_COMPLEX &&
-		(	((const ComplexClass*)retType)->innerClass->classType!=CLASS_INTLITERAL
-			&& ((const ComplexClass*)retType)->innerClass->classType!=CLASS_FLOATLITERAL
-			)
-			){
-		n = new E_FUNC_CALL(PositionID(0,0,"#main"), new E_VAR(Resolvable(mod, "println",PositionID(0,0,"#main")), false), {n});
-		n->registerClasses();
-		n->registerFunctionPrototype(getRData());
-		n->buildFunction(getRData());
-		//n->checkTypes();
-		type = VOIDTYPE;
-	}
-	llvm::FunctionType* FT = llvm::FunctionType::get(type, llvm::SmallVector<llvm::Type*,0>(0), false);
+	llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
 	llvm::Function* F = getRData().CreateFunction("",FT,EXTERN_FUNC);
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(getRData());
-		if(dat->type==R_INT){
-			IntLiteral* i = (IntLiteral*)dat;
-			i->toStream(std::cout);
-			std::cout << endl << flush;
-			F->eraseFromParent();
-			return;
-		} else if(dat->type==R_FLOAT){
-			FloatLiteral* i = (FloatLiteral*)dat;
-			i->toStream(std::cout);
-			std::cout << endl << flush;
-			F->eraseFromParent();
-			return;
-		} else if(dat->type==R_IMAG){
-			ImaginaryLiteral* i = (ImaginaryLiteral*)dat;
-			i->toStream(std::cout);
-			std::cout << endl << flush;
-			F->eraseFromParent();
-			return;
-		} else if(dat->type==R_STR){
-			StringLiteral* i = (StringLiteral*)dat;
-			std::cout << "'";
-			for(const auto & a:i->value){
-				if(a==0) std::cout << "\\0";
-				else if(a=='\'') std::cout << "\\'";
-				else std::cout << a;
-			}
-			std::cout << "'" << endl << flush;
-			return;
-		} /*else if(dat->type==R_ARRAY){
+	if(dat->type==R_INT){
+		IntLiteral* i = (IntLiteral*)dat;
+		i->toStream(std::cout);
+		std::cout << endl << flush;
+		F->eraseFromParent();
+		return;
+	} else if(dat->type==R_FLOAT){
+		FloatLiteral* i = (FloatLiteral*)dat;
+		i->toStream(std::cout);
+		std::cout << endl << flush;
+		F->eraseFromParent();
+		return;
+	} else if(dat->type==R_IMAG){
+		ImaginaryLiteral* i = (ImaginaryLiteral*)dat;
+		i->toStream(std::cout);
+		std::cout << endl << flush;
+		F->eraseFromParent();
+		return;
+	} else if(dat->type==R_STR){
+		StringLiteral* i = (StringLiteral*)dat;
+		std::cout << "'";
+		for(const auto & a:i->value){
+			if(a==0) std::cout << "\\0";
+			else if(a=='\'') std::cout << "\\'";
+			else std::cout << a;
+		}
+		std::cout << "'" << endl << flush;
+		return;
+	} /*else if(dat->type==R_ARRAY){
 			ArrayData* i = (ArrayData*)dat;
 			std::cout << "[";
 			bool first = true;
@@ -117,33 +101,32 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 			std::cout << "'" << endl << flush;
 			return;
 		}*/
-//	Value* v = dat.getValue(lexer.rdata);
-	if( type!=VOIDTYPE)
+
+	const AbstractClass* retType = (dat->type==R_VOID)?(&voidClass):(dat->getReturnType());
+
+	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
+		retType = &voidClass;
+	} else if(retType->classType!=CLASS_VOID){
+		llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
+		F->mutateType(llvm::PointerType::getUnqual(FT));
 		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
-	else
-		getRData().builder.CreateRetVoid();
-	//cout << "testing cos" << cos(3) << endl << flush;
+	} else getRData().builder.CreateRetVoid();
+
 	getRData().FinalizeFunction(F);
-	//cout << "dumped" << endl << flush;
-	//getRData().lmod->dump();
-	//cerr << endl << flush;
+
 	void *FPtr = getRData().getExec()->getPointerToFunction(F);
-	//cout << "ran" << endl << flush;
 
 	//TODO introduce new error literal
-	if(dat->type==R_VOID) retType = &voidClass;
 
 #ifndef NDEBUG
-	if(dat->type==R_VOID){
-		if(retType->classType!=CLASS_VOID)
-			cerr << "Mismatched types: void " << retType->getName() << endl << flush;
+	if(F->getReturnType()!=retType->type){
+		F->getReturnType()->dump();
+		retType->type->dump();
+		cerr << "Mismatched types: void " << retType->getName() << endl << flush;
 		assert(retType->classType==CLASS_VOID);
-	} else{
-		if(retType != dat->getReturnType())
-			cerr << "Mismatched types: "<< dat->getReturnType()->getName()<< " " << retType->getName() << endl << flush;
-		assert(retType == dat->getReturnType());
 	}
 #endif
+	assert(F->getReturnType()==retType->type);
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		std::cout << retType->getName() << "(" << FP() << ")" << endl << flush;
@@ -153,7 +136,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		AbstractClass* cp = (AbstractClass*)(FP());
 		if(cp)
 			std::cout <<  "class{" << cp << ", '"<< cp->getName() << "'}" << endl << flush;
-	}else if(type==VOIDTYPE || retType->classType==CLASS_VOID){
+	}else if(retType->classType==CLASS_VOID){
 		void (*FP)() = (void (*)())(intptr_t)FPtr;
 		FP();
 		std::cout << flush;
@@ -319,9 +302,9 @@ bool testFor(String toTest, String testing){
 int main(int argc, char** argv){
 	//PlaySound("dance.wav",nullptr,SND_FILENAME | SND_ASYNC);
 	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
-		new BuiltinInlineFunction(
-				new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
-		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			new BuiltinInlineFunction(
+					new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
+					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		if(!getRData().enableAsserts) return &VOID_DATA;
 		std::vector<const Evaluatable*> EV;
@@ -356,23 +339,23 @@ int main(int argc, char** argv){
 	LANG_M.addFunction(PositionID(0,0,"#str"),"typeof")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("typeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&classClass),
-			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
-			assert(args.size()==1);
-			return args[0]->getReturnType();
-			//const Data* D = args[0]->evaluate(r);
-		}), PositionID(0,0,"#int"));
+					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
+		assert(args.size()==1);
+		return args[0]->getReturnType();
+		//const Data* D = args[0]->evaluate(r);
+	}), PositionID(0,0,"#int"));
 	LANG_M.addFunction(PositionID(0,0,"#str"),"sizeof")->add(
-				new BuiltinInlineFunction(
-						new FunctionProto("sizeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&intLiteralClass),
-				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
-				assert(args.size()==1);
-				const AbstractClass* a = args[0]->getReturnType();
-				if(a->classType==CLASS_CLASS)
-					a = args[0]->evaluate(r)->getMyClass(r, id);
-				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
-				return new IntLiteral(s);
-				//const Data* D = args[0]->evaluate(r);
-			}), PositionID(0,0,"#int"));
+			new BuiltinInlineFunction(
+					new FunctionProto("sizeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&intLiteralClass),
+					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
+		assert(args.size()==1);
+		const AbstractClass* a = args[0]->getReturnType();
+		if(a->classType==CLASS_CLASS)
+			a = args[0]->evaluate(r)->getMyClass(r, id);
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
+		return new IntLiteral(s);
+		//const Data* D = args[0]->evaluate(r);
+	}), PositionID(0,0,"#int"));
 
 	/*LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
 			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
@@ -485,8 +468,9 @@ int main(int argc, char** argv){
 	//initializeBaseFunctions(rdata);
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
-	{};
-/*		{
+	//{};
+	///*
+	 		{
 				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
@@ -495,7 +479,7 @@ int main(int argc, char** argv){
 				,getExecutablePath() +"stdlib/opengl.opt"
 #endif
 		};
-*/
+	// */
 	if(!interactive){
 		if(command==""){
 			auto t = files.size()-1;
@@ -568,7 +552,7 @@ int main(int argc, char** argv){
 		//TODO (global)
 		//st.force("(int,int) a; a = (3,4); print(a._0);\n");
 		//st.force("int[] ar=[3,1,4,1,5,9,2,6];qsort(ar.carr,8,4,lambda int& a, int& b: lang.c.int(a-b));\n");
-		st.force("(byte,byte)\n");
+		//st.force("(byte,byte)\n");
 		while(true){
 			st.enableOut = true;
 			st.trim(EOF);

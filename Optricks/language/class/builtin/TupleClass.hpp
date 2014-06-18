@@ -37,8 +37,8 @@ public:
 	}
 	const std::vector<const AbstractClass*> innerTypes;
 protected:
-	TupleClass(const std::vector<const AbstractClass*>& args,ClassType ct=CLASS_TUPLE):
-		AbstractClass(nullptr,str(args),nullptr,PRIMITIVE_LAYOUT,ct,true,getTupleType(args)),innerTypes(args){
+	TupleClass(const std::vector<const AbstractClass*>& args,ClassType ct=CLASS_TUPLE,String s=""):
+		AbstractClass(nullptr,(s.length()==0)?(str(args)):s,nullptr,PRIMITIVE_LAYOUT,ct,true,getTupleType(args)),innerTypes(args){
 		assert(ct==CLASS_TUPLE || ct==CLASS_NAMED_TUPLE);
 		///register methods such as print / tostring / tofile / etc
 	}
