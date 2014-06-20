@@ -118,6 +118,10 @@ public:
 		if(finished) return finished;
 		getReturnType();
 		assert(returnType);
+		if(returnType->layout==LITERAL_LAYOUT){
+			filePos.error("Cannot get value of literal, please wrap with finite class like int/string");
+			exit(1);
+		}
 		assert(returnType->type);
 		if(isReference == 1){
 			filePos.error("Cannot find references early");

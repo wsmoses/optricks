@@ -641,35 +641,39 @@ public:
 				trim(EOF);
 				mark = f->getMarker();
 			} else f->undoMarker(mark);
-			auto returnNameTemp = getNextType(data,true);
-			f->trim(EOF);
-			if(returnNameTemp){
-				auto nex = f->peek();
-				if(!isStartName(nex)){
-					f->undoMarker(mark);
-					returnNameTemp = nullptr;
+			Statement* returnNameTemp;
+			if(f->peek()!=':'){
+				returnNameTemp = getNextType(data,true);
+				f->trim(EOF);
+				if(returnNameTemp){
+					auto nex = f->peek();
+					if(!(isStartName(nex) || nex==':')){
+						f->undoMarker(mark);
+						returnNameTemp = nullptr;
+					}
 				}
-			}
+			} else returnNameTemp = nullptr;
 
 			std::vector<std::pair<String,PositionID> > methodName;
-			bool isOperator = false;
-			while(isStartName(f->peek())){
-				String method = getNextName(EOF);
+			while(isStartName(f->peek()) || f->peek()==':'){
+				String method;
+				if(f->peek()==':'){
+					f->read();
+					f->trim(EOF);
+					method = String(1,':')+f->getNextOperator(EOF);
+					while(f->peek()=='[' || f->peek()=='%' || f->peek()==']') method+=String(1,f->read())+f->getNextOperator(data.endWith);
+					f->trim(EOF);
+					methodName.push_back(std::pair<String,PositionID>(method,pos()));
+					break;
+				} else method = getNextName(EOF);
 				if(method.length()==0) break;
 				f->trim(EOF);
 				auto mark = f->getMarker();
 				bool op = f->getNextOperator(EOF)==".";
 				if(!op) f->undoMarker(mark);
 				f->trim(EOF);
-				if(method=="operator"){
-					String t = f->getNextOperator(data.endWith);
-					while(f->peek()=='[' || f->peek()=='%' || f->peek()==']') t+=String(1,f->read())+f->getNextOperator(data.endWith);
-					method = "~"+t;
-					f->trim(EOF);
-					isOperator = true;
-				}
 				methodName.push_back(std::pair<String,PositionID>(method,pos()));
-				if(isOperator || !op) break;
+				if(!op) break;
 			}
 			E_FUNCTION* func;
 			if(methodName.size()<=1 && outer==nullptr){
@@ -677,16 +681,9 @@ public:
 				if(methodName.size()==0) name = "";
 				else{
 					assert(methodName.size()==1);
-					if(isOperator){
-						pos().error("Operator overloading not implemented yet");
-						exit(1);
-						assert(methodName[0].first.length()>0);
-						name = ":"+methodName[0].first;
-					} else {
-						data.mod->addFunction(pos(), methodName[0].first);
-						assert(methodName[0].first.length()>0);
-						name = methodName[0].first;
-					}
+					data.mod->addFunction(pos(), methodName[0].first);
+					assert(methodName[0].first.length()>0);
+					name = methodName[0].first;
 				}
 				if(temp=="gen")
 					func = new E_GEN(pos(), data.mod,name,false,nullptr);//arguments, funcName, returnName, methodBody);
@@ -1298,9 +1295,9 @@ Statement* Lexer::getNextStatement(ParseData data){
 				}
 				if(open=='(' && !forceAr && values.size()==1){
 					Statement* temp = values[0];
-					if((te = f->read())!=close) pos().error("Cannot end inline paren with "+
+					if((te = f->peek())!=close) pos().error("Cannot end inline paren with "+
 							String(1,te)+" instead of "+String(1,close)
-					);
+					); else f->read();
 					temp = new E_PARENS(temp);
 					trim(data);
 					semi  = false;

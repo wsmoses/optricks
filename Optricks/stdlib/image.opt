@@ -9,9 +9,9 @@ class primitive Image{
 			this.data[i] = tmp;
 		}
 	}
-//	def :[](int a){
-//		return data[a];
-//	}
+	def auto :[](int a){
+		return this.data[a];
+	}
 	def getWidth(){
 		return this.data.length;
 	}

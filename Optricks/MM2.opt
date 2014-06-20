@@ -1,22 +1,6 @@
-def printdensity(int d):
-	if    d > 999	print('*')
-	elif  d > 200	print('+')
-	elif  d > 020	print('.')
-	else         	print(' ')
-
-def int mand(complex z0){
-	auto z = z0
-	for(int iter=0; iter<1000; iter+=1)
-		if( abs2(z) > 4 ) return iter
-		else z = z*z + z0
-	return 1000
-}
-
-def mandel(double xmin=-2, double xmax=1, double xstep=.02, double ymin=-1, double ymax=1, double ystep=.04){
-	for(double im=ymin;im<ymax;im+=ystep){
-		for(double re=xmin;re<xmax;re+=xstep)
-			printdensity(mand(complex(re,im)))
-		print('\n')
-	}
-}
-mandel()
+(int,int) t1 = (7,10);
+(int:x,int:y) pos = t1; // valid
+(int:z,int:q) oth = t1; // valid
+(double:x,double:y) pos2 = pos; // valid
+//pos = pos2 // invalid cannot cast double to int
+oth = pos // invalid the names (x,y) do not match (z,q)

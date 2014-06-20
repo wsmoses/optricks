@@ -1,22 +1,7 @@
-class primitive_pointer File{
-    def File(lang.c.string s, lang.c.string t='r'){
-    this = (extern File fopen(lang.c.string, lang.c.string b))(s,t);
-    };
-    def void flush(){
-        (extern void fflush(File a))(this);
-    };
-    def void close(){
-        this.flush();
-        (extern lang.c.int fclose(File a))(this);
-    };
-};
-/*
-(int:x,int:y) pos = (4,5);
-(int:x,int:y) pos2 = (4,5);
-(int:x,int:y) pos3 = pos+pos2;
-def operator+((int:x,int:y) a, (int:x,int:y) b){
-	return (a.x+b.x,a.y+b.y);
+def File.:<<(int i){
+	fprintf(this.f,"%d", i);
 }
-print(pos3.x);
-print(pos3.y);
-*/
+File f = File('hi.txt','w')
+
+f << 128;
+f.close();
