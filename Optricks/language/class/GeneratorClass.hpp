@@ -18,7 +18,7 @@ public:
 		if(tC) s+=tC->getName();
 		s+= nam+"',"+rT->getName();
 		for(const auto& b: args){
-			s+=","+b.second+":"+b.first->getName();
+			s+=",'"+b.second+"':"+b.first->getName();
 		}
 		return s+"}";
 	}
@@ -43,12 +43,7 @@ public:
 	const AbstractClass* thisClass;
 public:
 	const AbstractClass* returnClass;
-	GeneratorClass(const E_GEN* m, const String name, const AbstractClass* rT, const AbstractClass* tClass, const std::vector<std::pair<const AbstractClass*,String>>& args):
-		AbstractClass(nullptr,str(name,rT, tClass, args),nullptr,PRIMITIVE_LAYOUT,CLASS_GEN,true,getGeneratorType(name, tClass, args)),innerTypes(args){
-		myGen = m;
-		thisClass = tClass;
-		returnClass = rT;
-	}
+	GeneratorClass(const E_GEN* m, const String name, const AbstractClass* rT, const AbstractClass* tClass, const std::vector<std::pair<const AbstractClass*,String>>& args);
 public:
 	const E_GEN* myGen;
 	inline bool hasCast(const AbstractClass* const toCast) const{

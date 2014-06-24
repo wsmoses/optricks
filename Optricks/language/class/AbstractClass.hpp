@@ -60,6 +60,8 @@ public:
 	}
 
 	String getName() const{
+		assert(this);
+		cerr << name << endl << flush;
 		if(myScope==nullptr) return name;
 		else{
 			auto s = myScope->getScopeName();

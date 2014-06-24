@@ -18,6 +18,7 @@
 #include "./class/builtin/ComplexClassP.hpp"
 #include "./class/builtin/CPointerClass.hpp"
 #include "./class/builtin/ArrayClassP.hpp"
+#include "./class/GeneratorClassP.hpp"
 #include "./class/UserClassP.hpp"
 #include "./class/literal/IntLiteralClassP.hpp"
 #include "./class/literal/FloatLiteralClassP.hpp"
