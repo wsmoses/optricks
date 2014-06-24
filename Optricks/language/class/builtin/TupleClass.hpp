@@ -33,7 +33,7 @@ public:
 			assert(args[i]->classType!=CLASS_LAZY);
 			ar[i]=args[i]->type;
 		}
-		return fc = llvm::StructType::create(ar,llvm::StringRef(str(args)),false);
+		return fc = llvm::StructType::get(llvm::getGlobalContext(),ar,false);
 	}
 	const std::vector<const AbstractClass*> innerTypes;
 protected:

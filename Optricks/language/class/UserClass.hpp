@@ -213,11 +213,11 @@ public:
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
+		if(this==toCast) return valueToCast;
 		if(toCast->classType!=CLASS_USER){
 			id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());
 			exit(1);
 		}
-		if(this==toCast) return valueToCast;
 		if(layout==PRIMITIVE_LAYOUT || toCast->layout==PRIMITIVE_LAYOUT){
 			id.error("Cannot promote user-defined primitive types");
 			exit(1);

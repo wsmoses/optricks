@@ -342,7 +342,9 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 	const auto as = args.size();
 	const auto ds = proto->declarations.size();
 	if(as+(instance?1:0)>ds) id.error("Gave too many arguments to function "+proto->toString());
-
+	if(ds==0){
+		return V;
+	}
 	if(instance){
 		llvm::Value* T;
 		if(proto->declarations[0].declarationType->classType==CLASS_REF){
@@ -362,7 +364,36 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		if(T->getType()!= proto->declarations[0].declarationType->type)
 			T = r.builder.CreatePointerCast(T, proto->declarations[0].declarationType->type);
 		assert(T != NULL);
+		if(ds==1) return T;
+		else {
+			assert(V);
+			assert(V->getType());
+			assert(llvm::dyn_cast<llvm::StructType>(V->getType()));
+			assert(llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements()==ds);
+		}
+		assert(0<llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements());
 		V = r.builder.CreateInsertValue(V, T, 0);
+		assert(V);
+	} else if(ds==1){
+		auto myDec = proto->declarations[0];
+		const AbstractClass* const t = myDec.declarationType;
+		llvm::Value* temp;
+		if(args[0]==nullptr){
+			if(myDec.defaultValue==nullptr){
+				id.error("No default argument available for argument "+str(1));
+				exit(1);
+			}
+			temp = fixLazy(r, id, myDec.defaultValue, t);
+		}
+		else{
+			temp = fixLazy(r, id, args[0], t);
+		}
+		return temp;
+	} else{
+		assert(V);
+		assert(V->getType());
+		assert(llvm::dyn_cast<llvm::StructType>(V->getType()));
+		assert(llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements()==ds);
 	}
 	for(unsigned int i = 0; i<as; i++){
 		auto myDec = proto->declarations[i+(instance?1:0)];
@@ -378,8 +409,9 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		else{
 			temp = fixLazy(r, id, args[i], t);
 		}
+		assert(i+(instance?1:0)<llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements());
 		V = r.builder.CreateInsertValue(V, temp, i+(instance?1:0));
-		assert(V != NULL);
+		assert(V);
 	}
 	for(unsigned int i = as; i+(instance?1:0)<ds; i++){
 		auto myDec = proto->declarations[i+(instance?1:0)];
@@ -388,7 +420,9 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 			id.error("Error: No default argument available for argument "+str(i+1));
 			exit(1);
 		}
+		assert(i<llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements());
 		V = r.builder.CreateInsertValue(V, fixLazy(r, id, myDec.defaultValue, t), i);
+		assert(V);
 	}
 	return V;
 }
@@ -456,6 +490,10 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	return F;
 }
 
+llvm::Function* GeneratorFunction::getSingleFunc() const{
+		if(myFunc!=nullptr) return (llvm::Function*)myFunc;
+		return (llvm::Function*)(myFunc = createGeneratorFunction(proto, getRData(), filePos));
+}
 const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) const{
 	auto gt=proto->getGeneratorType();
 	llvm::Value* V = llvm::UndefValue::get(gt->type);

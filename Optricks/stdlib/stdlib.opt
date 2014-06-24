@@ -4,8 +4,11 @@ import 'unix.opt';
 import "random.opt"
 import 'image.opt'
 //import "string.opt"
+;
+gen int getOne(){
+	yield 7;
+}
 
-/*
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
 		for(int i = start; i<stop; i+=step)
@@ -29,7 +32,7 @@ gen double range(double start=0, double stop, double step=1){
 
 gen int range(double end){
 	for(int i = 0; i<end; i++) yield i;
-}*/
+}
 
 ///*
 def int min(int a,int b){

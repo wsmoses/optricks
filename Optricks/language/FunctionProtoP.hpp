@@ -10,13 +10,16 @@
 #include "FunctionProto.hpp"
 #include "./class/builtin/FunctionClass.hpp"
 #include "./class/UserClass.hpp"
+#include "./class/GeneratorClass.hpp"
 
 
-FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va):name(n),declarations(a), returnType(r),varArg(va){
+FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va,const GeneratorClass* g):name(n),declarations(a), returnType(r),varArg(va){
+	generatorType = g;
 	assert(r);
 	//assert(r->getName().length()>0);
 }
 FunctionProto::FunctionProto(String n, const AbstractClass* r,bool va):name(n),declarations(), returnType(r),varArg(va){
+	generatorType = nullptr;
 	//if(r)
 		//assert(r->getName().length()>0);
 }
@@ -82,14 +85,7 @@ String FunctionProto::toString() const{
 	return t+")";
 }
 
-const AbstractClass* FunctionProto::getGeneratorType(){
-	static UserClass* generatorType=nullptr;
-	if(generatorType==nullptr){
-		generatorType = new UserClass(NULL,name,NULL,PRIMITIVE_LAYOUT,true);
-		for(const auto& a: declarations){
-			generatorType->addLocalVariable(PositionID(0,0,"<start.getTypedef>"), a.declarationVariable, a.declarationType);
-		}
-	}
+const GeneratorClass*& FunctionProto::getGeneratorType(){
 	return generatorType;
 }
 

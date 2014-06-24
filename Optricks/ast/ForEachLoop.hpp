@@ -17,13 +17,12 @@
 
 class ForEachLoop : public ErrorStatement{
 	public:
-		AbstractClass* theClass;
 		E_VAR* localVariable;
 		Statement* iterable;
 		Statement* toLoop;
 		String name;
 		ForEachLoop(PositionID id, E_VAR* var, Statement* it,Statement* tL, String n="") :
-			ErrorStatement(id), theClass(NULL),localVariable(var), iterable(it),toLoop(tL){
+			ErrorStatement(id), localVariable(var), iterable(it),toLoop(tL){
 			name = n;
 		}
 		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
@@ -49,9 +48,7 @@ class ForEachLoop : public ErrorStatement{
 		const AbstractClass* getReturnType() const override{
 			return &voidClass;
 		}
-		E_GEN* setUp(RData& ra) const{
-			filePos.fatalError("For loops disabled");
-			exit(1);
+		const E_GEN* setUp(RData& ra) const{
 			/*if(iterable->getToken()==T_FUNC_CALL){
 				E_FUNC_CALL* func = (E_FUNC_CALL*)iterable;
 				std::pair<std::vector<Value*>,const Data* > tempVal = func->getArgs(ra);
@@ -81,7 +78,7 @@ class ForEachLoop : public ErrorStatement{
 
 
 			//todo create
-			E_GEN* myGen = gen->myGen;
+			const E_GEN* myGen = gen->myGen;
 
 			if(myGen->surroundingClass && !myGen->staticF){
 				myGen->module.setVariable(filePos, "this",gen->getLocalData(ra, filePos,"this",toEv));
@@ -89,7 +86,7 @@ class ForEachLoop : public ErrorStatement{
 
 			for (unsigned Idx = 0; Idx < myGen->declaration.size(); Idx++) {
 				const Data* dat = gen->getLocalData(ra, filePos, gen->innerTypes[Idx].second,toEv);
-				const AbstractClass* clast = myGen->myFunction->getSingleProto()->declarations[Idx].declarationType;
+				assert(dat->getReturnType()==myGen->myFunction->getSingleProto()->declarations[Idx].declarationType);
 				myGen->declaration[Idx]->variable.getMetadata().setObject(dat);
 			}
 			return myGen;
@@ -97,24 +94,21 @@ class ForEachLoop : public ErrorStatement{
 		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
-			E_GEN* myGen = setUp(ra);
+			auto myGen = setUp(ra);
 			myGen->buildFunction(ra);
+			auto theClass = myGen->myFunction->getSingleProto()->returnType;
 			Jumpable j(name, GENERATOR, nullptr,NULL, NULL, theClass);
 			ra.addJump(&j);
 			myGen->methodBody->evaluate(ra);
 			if(ra.popJump()!= &j) error("Did not receive same func jumpable created (j foreach)");
 			//Function* TheFunction;
 			llvm::BasicBlock *END = ra.CreateBlock("endLoop");
-			ra.builder.CreateBr(END);
+			if(!ra.hadBreak()) ra.builder.CreateBr(END);
 			if(j.endings.size()==1){
 				std::pair<llvm::BasicBlock*,llvm::BasicBlock*> NEXT = j.resumes[0];
 				ra.builder.SetInsertPoint(NEXT.first);
 				const Data* v = j.endings[0].second;
-				//todo -- remove this
-				//todo add r_dec?
-				//if(!(v->type==R_LOC || v->type==R_CONST || v->type==R_DEC))
-				//	filePos.error("Cannot use object designated as "+str(v->type)+" for iterable");
-				localVariable->pointer.setObject(v);//todo removed toLocation -- check if needed
+				localVariable->pointer.setObject(v->toValue(ra, filePos));
 				assert(NEXT.second);
 				assert(END);
 				Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/

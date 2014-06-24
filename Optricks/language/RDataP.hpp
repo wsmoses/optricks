@@ -79,12 +79,14 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump==GENERATOR){
 					llvm::BasicBlock* cur = builder.GetInsertBlock();
+					assert(jumps[i]->returnType);
 					if(jumps[i]->returnType->classType==CLASS_VOID){
 						if(val->type!=R_VOID && val->getReturnType()->classType!=CLASS_VOID) id.error("Cannot return something in function requiring void");
 						jumps[i]->endings.push_back(std::pair<llvm::BasicBlock*,const Data*>(cur, &VOID_DATA));
 					}
 					else jumps[i]->endings.push_back(std::pair<llvm::BasicBlock*,const Data*>(cur, val->castTo(*this, jumps[i]->returnType, id)));
-					builder.CreateBr(jumps[i]->end);//TODO DECREMENT ALL COUNTS BEFORE HERE
+					//assert(jumps[i]->end);
+					//builder.CreateBr(jumps[i]->end);//TODO DECREMENT ALL COUNTS BEFORE HERE
 					llvm::BasicBlock *RESUME = CreateBlock("postReturn",cur);
 					jumps[i]->resumes.push_back(std::pair<llvm::BasicBlock*,llvm::BasicBlock*>(cur,RESUME));
 					builder.SetInsertPoint(RESUME);

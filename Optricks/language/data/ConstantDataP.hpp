@@ -57,10 +57,6 @@ ConstantData::ConstantData(llvm::Value* const val, const AbstractClass* const cp
 
 llvm::Value* ConstantData::castToV(RData& r, const AbstractClass* const right, const PositionID id) const {
 	if(type == right) return value;
-	if((type->layout==POINTER_LAYOUT && right->layout==POINTER_LAYOUT) || (type->layout==PRIMITIVEPOINTER_LAYOUT && right->layout==PRIMITIVEPOINTER_LAYOUT)){
-		if(type->hasSuper(right)) return value;
-		else id.error("Cannot cast value of type "+type->getName()+" to "+right->getName());
-	}
 	return type->castTo(right, r, id, value);
 }
 

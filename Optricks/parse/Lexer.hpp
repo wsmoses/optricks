@@ -617,6 +617,23 @@ public:
 		return new DoWhileLoop(pos(), cond, blocks);
 		//TODO implement do loop naming
 	}
+	Statement* getSwitch(ParseData data, bool read=false){
+		if(!read && f->getNextName(data.endWith)!="switch") f->error("Could not find 'switch' in lambda function");
+		if(f->trim(EOF)) f->error("Uncompleted switch statement");
+		/*
+		auto SWITCH = new SwitchStatement(pos(), data.mod);
+		if(!f->done) parseArguments(SWITCH->declaration, ParseData(EOF, & SWITCH->module, true,PARSE_LOCAL),':');
+		if(f->trim(EOF)) f->error("Switch without body");
+		if(!f->done && f->peek()==':'){
+			f->read();
+			if(f->trim(EOF)) f->error("Lambda Function without body (c)");
+		}
+		LAMBDA->methodBody = getNextBlock(ParseData(data.endWith, & SWITCH->module,true,PARSE_LOCAL));
+		return SWITCH;
+		*/
+		pos().compilerError("Switch statement not allowed yet");
+		exit(1);
+	}
 	Statement* getLambdaFunction(ParseData data, bool read=false){
 		if(!read && f->getNextName(data.endWith)!="lambda") f->error("Could not find 'lambda' in lambda function");
 		if(f->trim(EOF)) f->error("Uncompleted lambda function");
@@ -686,7 +703,7 @@ public:
 					name = methodName[0].first;
 				}
 				if(temp=="gen")
-					func = new E_GEN(pos(), data.mod,name,false,nullptr);//arguments, funcName, returnName, methodBody);
+					func = new E_GEN(pos(), data.mod,name,true,nullptr);//arguments, funcName, returnName, methodBody);
 				else
 					func = new UserFunction(pos(), data.mod,name);//arguments, funcName, returnName, methodBody);
 
@@ -1141,6 +1158,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="while") return getWhileLoop(data,true);
 		else if(temp=="do") return getDoLoop(data,true);
 		else if(temp=="lambda") return getLambdaFunction(data,true);
+		else if(temp=="switch") return getSwitch(data,true);
 		else if(temp=="gen" || temp=="def" || temp=="inl" || temp=="extern") return getFunction(data,temp);
 		else if(temp=="import"){
 			trim(data);

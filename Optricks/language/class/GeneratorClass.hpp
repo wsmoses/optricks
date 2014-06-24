@@ -9,17 +9,12 @@
 #define GENERATORCLASS_HPP_
 
 #include "./AbstractClass.hpp"
-//TODO COMPLETE AND ADD R_DEC
+
+#define GEN_C_
 class GeneratorClass: public AbstractClass{
 public:
-	static inline String str(const String nam, const AbstractClass* rT, const AbstractClass* tC, const std::vector<std::pair<const AbstractClass*,String>>& a){
-		String s= "generator{'";
-		if(tC) s+=tC->getName();
-		s+= nam+"',"+rT->getName();
-		for(const auto& b: a){
-			s+=","+b.second+":"+b.first->getName();
-		}
-		return s+"}";
+	static inline String str(const String nam){
+		return "generator{'"+nam+"'}";
 	}
 	static inline llvm::Type* getGeneratorType(const String nam, const AbstractClass* tC, const std::vector<std::pair<const AbstractClass*,String>>& args){
 		auto len = args.size();
@@ -40,14 +35,14 @@ public:
 	}
 	const std::vector<std::pair<const AbstractClass*,String>> innerTypes;
 	const AbstractClass* thisClass;
-protected:
-	GeneratorClass(E_GEN* m, const String name, const AbstractClass* rT, const AbstractClass* tClass, const std::vector<std::pair<const AbstractClass*,String>>& args):
-		AbstractClass(nullptr,str(name, rT, tClass, args),nullptr,PRIMITIVE_LAYOUT,CLASS_GEN,true,getGeneratorType(name, tClass, args)),innerTypes(args){
+public:
+	GeneratorClass(const E_GEN* m, const String name, const AbstractClass* rT, const AbstractClass* tClass, const std::vector<std::pair<const AbstractClass*,String>>& args):
+		AbstractClass(nullptr,str(name),nullptr,PRIMITIVE_LAYOUT,CLASS_GEN,true,getGeneratorType(name, tClass, args)),innerTypes(args){
 		myGen = m;
 		thisClass = tClass;
 	}
 public:
-	E_GEN* myGen;
+	const E_GEN* myGen;
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		return toCast == this || toCast->classType==CLASS_VOID;
 	}
@@ -73,24 +68,60 @@ public:
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
 		assert(instance->type==R_LOC || instance->type==R_CONST);
 		assert(instance->getReturnType()==this);
-		if(instance->type==R_CONST){
-			llvm::Value* v = ((ConstantData*)instance)->value;
+		if(thisClass && innerTypes.size()==0){
+			if(s!="this"){
+				illegalLocal(id,s);
+				return &VOID_DATA;
+			} else if(instance->type==R_LOC){
+				auto LD = ((const LocationData*)instance)->value;
+				return new LocationData(LD, thisClass);
+			} else if(instance->type==R_DEC){
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				return new LocationData(LD, thisClass);
+			} else {
+				assert(instance->type==R_CONST);
+				llvm::Value* v = ((ConstantData*)instance)->value;
+				return new ConstantData(v, thisClass);
+			}
+		} else if(innerTypes.size()==1 && !thisClass){
+			if(s!=innerTypes[0].second){
+				illegalLocal(id,s);
+				return &VOID_DATA;
+			}
+			if(instance->type==R_LOC){
+				auto LD = ((const LocationData*)instance)->value;
+				return new LocationData(LD, innerTypes[0].first);
+			} else if(instance->type==R_DEC){
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				return new LocationData(LD, innerTypes[0].first);
+			} else {
+				assert(instance->type==R_CONST);
+				llvm::Value* v = ((ConstantData*)instance)->value;
+				return new ConstantData(v, innerTypes[0].first);
+			}
+		} else {
+			unsigned i;
 			if(s=="this"){
 				if(!thisClass){
 					illegalLocal(id,s);
 					return &VOID_DATA;
-				} else return new ConstantData(r.builder.CreateExtractElement(v,getInt32(0)),this);
+				} else i=0;
+			} else{
+				for(i = 0; i<innerTypes.size(); i++)
+					if(innerTypes[i].second==s) break;
+				if(thisClass) i++;
 			}
-
-			for(unsigned i = 0; i<innerTypes.size(); i++)
-				if(innerTypes[i].second==s)
-					return new ConstantData(r.builder.CreateExtractElement(v,getInt32(i+(thisClass?1:0))),this);
-			illegalLocal(id,s);
-			return &VOID_DATA;
-		} else {
-			assert(instance->type==R_LOC);
-			id.compilerError("Location framework not complete -- generator");
-			exit(1);
+			if(instance->type==R_LOC){
+				auto LD = ((const LocationData*)instance)->value;
+				return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i].first);
+			} else if(instance->type==R_DEC){
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i].first);
+			} else {
+				assert(instance->type==R_CONST);
+				llvm::Value* v = ((ConstantData*)instance)->value;
+				return new ConstantData(r.builder.CreateExtractValue(v,i),innerTypes[i].first);
+			}
 		}
 	}
 	inline bool noopCast(const AbstractClass* const toCast) const override{

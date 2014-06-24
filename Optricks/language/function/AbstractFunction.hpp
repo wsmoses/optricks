@@ -98,9 +98,11 @@ public:
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id);
 class GeneratorFunction: public SingleFunction{
 public:
-	GeneratorFunction(FunctionProto* const fp, RData& r, PositionID id):
-		SingleFunction(fp,createGeneratorFunction(fp,r,id)){
+	PositionID filePos;
+	GeneratorFunction(FunctionProto* const fp, PositionID id):
+		SingleFunction(fp,nullptr), filePos(id){
 	}
+	llvm::Function* getSingleFunc() const override final;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 

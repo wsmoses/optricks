@@ -11,6 +11,7 @@
 #include "../../language/statement/Statement.hpp"
 #include "./E_FUNCTION.hpp"
 #include "../../language/class/ClassLib.hpp"
+#include "../../language/class/GeneratorClass.hpp"
 #include "../../language/location/Location.hpp"
 #define E_GEN_C_
 class E_GEN : public E_FUNCTION{
@@ -21,6 +22,9 @@ public:
 	Statement* surroundingClass;
 	E_GEN(PositionID id, OModule* sur, String n,bool st,Statement* sc):
 		E_FUNCTION(id,OModule(sur),n),built(false),staticF(st),surroundingClass(sc){
+		if(!surroundingClass) assert(staticF);
+		else if(!staticF)
+			module.addVariable(filePos,"this",&VOID_DATA);
 	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
@@ -76,15 +80,16 @@ public:
 	}
 	void registerFunctionPrototype(RData& a) const override{
 
-		filePos.compilerError("Generators not implemented");
-/*
+//		filePos.compilerError("Generators not implemented");
+
 		if(myFunction) return;
 
 		llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
 		//llvm::SmallVector<llvm::Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 		std::vector<AbstractDeclaration> ad;
-		auto upperClass = surroundingClass->getMyClass(a, filePos);
+		auto upperClass = (surroundingClass)?(surroundingClass->getMyClass(a, filePos)):nullptr;
 		if(!staticF){
+			assert(upperClass);
 			const AbstractClass* tA;
 			if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT))
 				tA = ReferenceClass::get(upperClass);
@@ -94,11 +99,13 @@ public:
 			ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
 			module.setVariable(filePos, "this", TEMP);
 		}
+		std::vector<std::pair<const AbstractClass*,String>> V;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(a, filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
+			V.push_back(std::pair<const AbstractClass*,String>(ac, b->variable.pointer.name));
 		//	args[i+(staticF?0:1)] = ac->type;
 			assert(ac->type);
 		}
@@ -130,43 +137,29 @@ public:
 		}
 		assert(returnType);
 		assert(returnType->type);
-		//auto FT = llvm::FunctionType::get(returnType->type, args, false);
-		String nam = "_opt"+upperClass->getName()+"."+name;
-		//llvm::Function *F = a.CreateFunction(nam,FT, LOCAL_FUNC);
-		myFunction = new IterFunction(new FunctionProto(upperClass->getName()+"."+name, ad, returnType), F);
 
-		if(staticF){
-			upperClass->staticVariables.addFunction(filePos, name, nullptr)->add(myFunction, filePos);
-		} else{
-			if(upperClass->classType!=CLASS_USER){
-				filePos.error("Cannot create class method for built-in type");
-				exit(1);
-			}
-			((UserClass*)upperClass)->addLocalFunction(name)->add(myFunction, filePos);
-		}
-		if(registereD) return;
-		registereD = true;
+		String nam;
+		if(upperClass) nam = upperClass->getName()+"."+name;
+		else nam = name;
+		auto FP = new FunctionProto(nam, ad, returnType, false/*var arg*/,new GeneratorClass(this, nam, returnType, (!staticF)?upperClass:nullptr, V));
+		myFunction = new GeneratorFunction(FP, filePos);
 
-		self->pointer.addFunction();
-		std::vector<const AbstractClass*> cp;
-		const AbstractClass* ret = (returnV)?(returnV->getSelfClass(filePos)):(nullptr);
-		methodBody->collectReturns(cp,myFunction->getSingleProto()->returnType);
-		if(!ret){
-			if(cp.size()==0){
-				filePos.error("Cannot have auto-returning generator with no yield statements");
-				ret=voidClass;
+		if(surroundingClass){
+			if(staticF){
+				upperClass->staticVariables.addFunction(filePos, name, nullptr)->add(myFunction, filePos);
+			} else{
+				if(upperClass->classType!=CLASS_USER){
+					filePos.error("Cannot create class method for built-in type");
+					exit(1);
+				}
+				((UserClass*)upperClass)->addLocalFunction(name)->add(myFunction, filePos);
 			}
-			else{
-				const AbstractClass* c = getMin(cp, filePos);
-				assert(c);
-				if(c->classType==CLASS_VOID) filePos.error("Cannot have void yields");
-				ret = c;
-			}
+		} else {
+			module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 		}
-		//TODO use ret to build generator
-		//*/
-		for(auto& d: declaration) d->buildFunction(a);
-		methodBody->buildFunction(a);
+
+		for(auto& d: declaration) d->registerFunctionPrototype(a);
+		methodBody->registerFunctionPrototype(a);
 	};
 	void buildFunction(RData& a) const override final{
 		registerFunctionPrototype(a);

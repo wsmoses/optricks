@@ -144,6 +144,12 @@ class ReferenceClass;
 class LazyClass;
 #endif
 
+
+#ifndef GEN_C_
+#define GEN_C_
+class GeneratorClass;
+#endif
+
 #ifndef ABSTRACTCLASS_C_
 #define ABSTRACTCLASS_C_
 class AbstractClass;

@@ -18,10 +18,11 @@ class FunctionProto{
 		const String name;
 		const std::vector<AbstractDeclaration> declarations;
 		const AbstractClass* const returnType;
+		const GeneratorClass* generatorType;
 		bool varArg;
-		FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va=false);
+		FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va=false,const GeneratorClass* g=nullptr);
 		FunctionProto(String n, const AbstractClass* r=nullptr,bool va=false);
-		const AbstractClass* getGeneratorType();
+		const GeneratorClass*& getGeneratorType();
 		FunctionClass* getFunctionClass() const;
 		/*
 		 * Checks if this can be casted to F, and how well

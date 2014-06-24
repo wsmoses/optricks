@@ -197,10 +197,15 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		llvm::Value* phiRecur(std::set<llvm::PHINode*> done, std::vector<LazyLocation*>& V, unsigned idx, llvm::PHINode* target,bool prop);
 		llvm::Value* getLastValueOf(std::set<llvm::PHINode*> done, std::vector<LazyLocation*>& V, unsigned idx, llvm::BasicBlock* b, PositionID id);
 		void addJump(Jumpable* j){
+			assert(j);
+			if(/*j->toJump==FUNC || */j->toJump==GENERATOR)
+				assert(j->returnType);
 			jumps.push_back(j);
 		}
 		Jumpable* popJump(){
+			assert(jumps.size()>0);
 			auto a = jumps.back();
+			assert(a);
 			jumps.pop_back();
 			return a;
 		}
