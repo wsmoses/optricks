@@ -251,7 +251,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_USER:{
 		const UserClass* uc = (const UserClass*)this;
 		//TODO consider alloc'ing first, then passing
-		return uc->constructors.getBestFit(filePos, NO_TEMPLATE, args,false)->callFunction(r, filePos, args,nullptr);
+		return uc->constructors.getBestFit(filePos, args,false)->callFunction(r, filePos, args,nullptr);
 	}
 	}
 }

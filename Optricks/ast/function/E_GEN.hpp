@@ -141,7 +141,7 @@ public:
 		String nam;
 		if(upperClass) nam = upperClass->getName()+"."+name;
 		else nam = name;
-		auto FP = new FunctionProto(nam, ad, returnType, false/*var arg*/,new GeneratorClass(this, nam, returnType, (!staticF)?upperClass:nullptr, V));
+		auto FP = new FunctionProto(nam, ad, new GeneratorClass(this, nam, returnType, (!staticF)?upperClass:nullptr, V), false/*var arg*/);
 		myFunction = new GeneratorFunction(FP, filePos);
 
 		if(surroundingClass){

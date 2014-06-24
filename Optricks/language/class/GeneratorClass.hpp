@@ -13,8 +13,14 @@
 #define GEN_C_
 class GeneratorClass: public AbstractClass{
 public:
-	static inline String str(const String nam){
-		return "generator{'"+nam+"'}";
+	static inline String str(const String nam, const AbstractClass* rT, const AbstractClass* tC,const std::vector<std::pair<const AbstractClass*,String>>& args){
+		String s= "generator:" + nam + "{'";
+		if(tC) s+=tC->getName();
+		s+= nam+"',"+rT->getName();
+		for(const auto& b: args){
+			s+=","+b.second+":"+b.first->getName();
+		}
+		return s+"}";
 	}
 	static inline llvm::Type* getGeneratorType(const String nam, const AbstractClass* tC, const std::vector<std::pair<const AbstractClass*,String>>& args){
 		auto len = args.size();
@@ -36,10 +42,12 @@ public:
 	const std::vector<std::pair<const AbstractClass*,String>> innerTypes;
 	const AbstractClass* thisClass;
 public:
+	const AbstractClass* returnClass;
 	GeneratorClass(const E_GEN* m, const String name, const AbstractClass* rT, const AbstractClass* tClass, const std::vector<std::pair<const AbstractClass*,String>>& args):
-		AbstractClass(nullptr,str(name),nullptr,PRIMITIVE_LAYOUT,CLASS_GEN,true,getGeneratorType(name, tClass, args)),innerTypes(args){
+		AbstractClass(nullptr,str(name,rT, tClass, args),nullptr,PRIMITIVE_LAYOUT,CLASS_GEN,true,getGeneratorType(name, tClass, args)),innerTypes(args){
 		myGen = m;
 		thisClass = tClass;
+		returnClass = rT;
 	}
 public:
 	const E_GEN* myGen;
@@ -128,7 +136,7 @@ public:
 		return toCast == this || toCast->classType==CLASS_VOID;
 	}
 	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
-		if(toCast!=this) id.error("Cannot cast between generator objects");
+		if(toCast!=this) id.error("Cannot cast between generator objects "+getName()+" "+toCast->getName());
 		return valueToCast;
 	}
 

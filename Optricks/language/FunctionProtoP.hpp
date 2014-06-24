@@ -13,13 +13,11 @@
 #include "./class/GeneratorClass.hpp"
 
 
-FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va,const GeneratorClass* g):name(n),declarations(a), returnType(r),varArg(va){
-	generatorType = g;
+FunctionProto::FunctionProto(String n, const std::vector<AbstractDeclaration>& a, const AbstractClass* r,bool va):name(n),declarations(a), returnType(r),varArg(va){
 	assert(r);
 	//assert(r->getName().length()>0);
 }
 FunctionProto::FunctionProto(String n, const AbstractClass* r,bool va):name(n),declarations(), returnType(r),varArg(va){
-	generatorType = nullptr;
 	//if(r)
 		//assert(r->getName().length()>0);
 }
@@ -83,10 +81,6 @@ String FunctionProto::toString() const{
 	}
 	if(varArg) t+=",...";
 	return t+")";
-}
-
-const GeneratorClass*& FunctionProto::getGeneratorType(){
-	return generatorType;
 }
 
 

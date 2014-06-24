@@ -26,7 +26,7 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 class AbstractFunction: public Data{
 public:
 	virtual ~AbstractFunction(){};
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	const AbstractClass* getMyClass(RData& r, PositionID id) const override {
 		id.error("Cannot use function as class");
 		exit(1);
 	}
@@ -103,6 +103,8 @@ public:
 		SingleFunction(fp,nullptr), filePos(id){
 	}
 	llvm::Function* getSingleFunc() const override final;
+
+	const AbstractClass* getMyClass(RData& r, PositionID id) const override;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 
@@ -172,14 +174,14 @@ public:
 	}
 	//TODO ALLOW TEMPLATE ARGS
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const{
-		return getBestFit(id,NO_TEMPLATE, args, isClassMethod)->getSingleProto()->returnType;
+		return getBestFit(id,args, isClassMethod)->getSingleProto()->returnType;
 	}
-	SingleFunction* getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args, bool isClassMethod) const;
-	SingleFunction* getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
+	SingleFunction* getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod) const;
+	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
 
 	//TODO ALLOW TEMPLATE ARGS
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		return getBestFit(id,NO_TEMPLATE, args, instance!=nullptr)->callFunction(r,id,args, instance);
+		return getBestFit(id,args, instance!=nullptr)->callFunction(r,id,args, instance);
 	}
 	llvm::Constant* getValue(RData& r, PositionID id) const override final{
 		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();

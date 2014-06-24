@@ -31,12 +31,11 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 				localVars.push_back(&c_pointerClass);
 				final = true;
 			}
-#ifdef NDEBUG
 			if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
-#endif
 			if(isObject){
 				localVars.push_back(&intClass);
 				final = true;
+				assert(superClass==nullptr);
 			}
 		};
 
@@ -140,6 +139,5 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 		illegalLocal(id,s);
 		exit(1);
 }
-
 
 #endif /* USERCLASSP_HPP_ */

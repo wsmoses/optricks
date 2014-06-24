@@ -39,7 +39,7 @@ public:
 		do{
 			auto find = tmp->postop.find(s);
 			if(find!=tmp->postop.end()) return find->second;
-			tmp = (const UserClass*)superClass;
+			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
 		id.error("Could not find unary post-operator '"+s+"' in class '"+getName()+"'");
 		exit(1);
@@ -49,17 +49,38 @@ public:
 		do{
 			auto find = tmp->preop.find(s);
 			if(find!=tmp->preop.end()) return find->second;
-			tmp = (const UserClass*)superClass;
+			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
 		id.error("Could not find unary pre-operator '"+s+"' in class '"+getName()+"'");
 		exit(1);
+	}
+	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
+		auto tmp = this;
+		do{
+			auto find = tmp->localFunctions.find(s);
+			if(find!=tmp->localFunctions.end()){
+				if(!t_args.inUse)
+					return find->second->getBestFit(id, v, true);
+				else
+					return find->second->getBestFit(id, t_args.evals, true);
+			}
+			tmp = (const UserClass*)(tmp->superClass);
+		}while(tmp);
+		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		return nullptr;
+		//exit(1);
 	}
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const AbstractClass*>& v) const{
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,t_args, v,true);
-			tmp = (const UserClass*)superClass;
+			if(find!=tmp->localFunctions.end()) {
+				if(!t_args.inUse)
+					return find->second->getBestFit(id, v, true);
+				else
+					return find->second->getBestFit(id, t_args.evals, true);
+			}
+			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
 		exit(1);
@@ -71,20 +92,9 @@ public:
 		do{
 			auto find = tmp->localFunctions.find(s);
 			if(find!=tmp->localFunctions.end()) return true;
-			tmp = (const UserClass*)superClass;
+			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
 		return false;
-	}
-	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
-		auto tmp = this;
-		do{
-			auto find = tmp->localFunctions.find(s);
-			if(find!=tmp->localFunctions.end()) return find->second->getBestFit(id,t_args, v,true);
-			tmp = (const UserClass*)superClass;
-		}while(tmp);
-		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
-		return nullptr;
-		//exit(1);
 	}
 	void finalize(PositionID id){
 		assert(!final);

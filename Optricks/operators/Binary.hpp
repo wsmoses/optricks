@@ -399,6 +399,9 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 		exit(1);
 	}
 	case CLASS_USER:{
+		if(dd->classType==CLASS_NULL && (operation=="==" || operation=="!=")){
+			return &boolClass;
+		}
 		const UserClass* uc = (const UserClass*)cc;
 		return uc->getLocalFunction(filePos, ":"+operation, NO_TEMPLATE, std::vector<const AbstractClass*>({cc, dd}))->getSingleProto()->returnType;
 	}
@@ -1157,9 +1160,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			&& (operation=="==" || operation=="!=")){
 			auto T = ev->evalV(r, filePos);
 			assert(llvm::dyn_cast<llvm::PointerType>(T->getType()));
-			auto NU = llvm::ConstantPointerNull::get((llvm::PointerType*) T->getType());
-			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(T,NU), &boolClass);
-			else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
+			if(operation=="==") return new ConstantData(
+					r.builder.CreateIsNull(T), &boolClass);
+			else return new ConstantData(r.builder.CreateIsNotNull(T), &boolClass);
 		}
 		else{
 			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -1403,6 +1406,14 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		exit(1);
 	}
 	case CLASS_USER:{
+
+		if(dd->classType==CLASS_NULL && (cc->layout==POINTER_LAYOUT || cc->layout==PRIMITIVEPOINTER_LAYOUT)){
+			if(operation=="=="){
+				return new ConstantData(r.builder.CreateIsNull(value->getValue(r, filePos)), &boolClass);
+			} else if (operation=="!="){
+				return new ConstantData(r.builder.CreateIsNotNull(value->getValue(r, filePos)), &boolClass);
+			}
+		}
 		const UserClass* uc = (const UserClass*)cc;
 		return uc->getLocalFunction(filePos, ":"+operation, NO_TEMPLATE, {ev})->callFunction(r, filePos, {ev},value);
 	}

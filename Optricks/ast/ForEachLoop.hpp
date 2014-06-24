@@ -17,11 +17,11 @@
 
 class ForEachLoop : public ErrorStatement{
 	public:
-		E_VAR* localVariable;
+		E_VAR localVariable;
 		Statement* iterable;
 		Statement* toLoop;
 		String name;
-		ForEachLoop(PositionID id, E_VAR* var, Statement* it,Statement* tL, String n="") :
+		ForEachLoop(PositionID id, const E_VAR& var, Statement* it,Statement* tL, String n="") :
 			ErrorStatement(id), localVariable(var), iterable(it),toLoop(tL){
 			name = n;
 		}
@@ -96,7 +96,7 @@ class ForEachLoop : public ErrorStatement{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
 			auto myGen = setUp(ra);
 			myGen->buildFunction(ra);
-			auto theClass = myGen->myFunction->getSingleProto()->returnType;
+			auto theClass = ((GeneratorClass*)myGen->myFunction->getSingleProto()->returnType)->returnClass;
 			Jumpable j(name, GENERATOR, nullptr,NULL, NULL, theClass);
 			ra.addJump(&j);
 			myGen->methodBody->evaluate(ra);
@@ -108,7 +108,7 @@ class ForEachLoop : public ErrorStatement{
 				std::pair<llvm::BasicBlock*,llvm::BasicBlock*> NEXT = j.resumes[0];
 				ra.builder.SetInsertPoint(NEXT.first);
 				const Data* v = j.endings[0].second;
-				localVariable->pointer.setObject(v->toValue(ra, filePos));
+				localVariable.pointer.setObject(v->toValue(ra, filePos));
 				assert(NEXT.second);
 				assert(END);
 				Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/
@@ -125,7 +125,7 @@ class ForEachLoop : public ErrorStatement{
 				ra.builder.SetInsertPoint(INLOOP);
 				llvm::PHINode* val = ra.CreatePHI(functionReturnType, (unsigned)(j.endings.size()),"val");
 				llvm::PHINode* ind = ra.CreatePHI(llvm::IntegerType::get(llvm::getGlobalContext(),32), (unsigned)(j.endings.size()),"ind");
-				localVariable->pointer.setObject(new ConstantData(val, theClass));
+				localVariable.pointer.setObject(new ConstantData(val, theClass));
 				assert(TODECIDE);
 				assert(END);
 				Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/

@@ -472,7 +472,7 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r, PositionID id){
 	llvm::SmallVector<llvm::Type*,0> args(fp->declarations.size());
 	for(unsigned i = 0; i<args.size(); i++) args[i] = fp->declarations[i].declarationType->type;
-	auto gt = fp->getGeneratorType()->type;
+	auto gt = fp->returnType->type;
 	llvm::FunctionType *FT = llvm::FunctionType::get(gt, args, false);
 	llvm::Function* F = r.CreateFunctionD(fp->name,FT,LOCAL_FUNC);
 	llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
@@ -490,12 +490,16 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	return F;
 }
 
+const AbstractClass* GeneratorFunction::getMyClass(RData& r, PositionID id) const {
+	return proto->returnType;
+}
+
 llvm::Function* GeneratorFunction::getSingleFunc() const{
 		if(myFunc!=nullptr) return (llvm::Function*)myFunc;
 		return (llvm::Function*)(myFunc = createGeneratorFunction(proto, getRData(), filePos));
 }
 const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) const{
-	auto gt=proto->getGeneratorType();
+	auto gt=proto->returnType;
 	llvm::Value* V = llvm::UndefValue::get(gt->type);
 	return new ConstantData(validatePrototypeStruct(r,id,args,instance,V),gt);
 }
@@ -506,7 +510,7 @@ llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const ri
 	case CLASS_FUNC:{
 		//todo .. have cast (no-op) wrapper on this
 		FunctionClass* fc = (FunctionClass*)right;
-		return getBestFit(id, NO_TEMPLATE, fc->argumentTypes,false)->castToV(r, right, id);
+		return getBestFit(id, fc->argumentTypes,false)->castToV(r, right, id);
 	}
 	case CLASS_CPOINTER:
 		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
@@ -571,8 +575,7 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 	else return false;
 }
 
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
-	assert(t_args.inUse==false);
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;
@@ -684,9 +687,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS
 	}
 }
 
-SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const T_ARGS& t_args, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
+SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
-	assert(t_args.inUse==false);
 	for(const auto& a: args) if(a) a->getReturnType();
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){

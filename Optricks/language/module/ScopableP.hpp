@@ -60,8 +60,10 @@ void Scopable::addClass(PositionID id, const MetaClass* c, String s){
 			return f.first->vars[f.second->second.pos]->getReturnType();
 		}
 		case SCOPE_FUNC:{
-			assert(t_args.inUse==false);
-			return f.first->funcs[f.second->second.pos]->getReturnType();
+			if(!t_args.inUse)
+				return f.first->funcs[f.second->second.pos]->getReturnType();
+			else
+				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.evals, false)->getReturnType();
 		}
 		case SCOPE_CLASS:
 			return &classClass;//classClass
@@ -76,8 +78,10 @@ const AbstractClass* Resolvable::getReturnType(const T_ARGS& t_args) const{
 	if(d.first==nullptr) return &voidClass;
 	switch(d.second->second.type){
 		case SCOPE_FUNC:{
-			assert(t_args.inUse==false);
-			return d.first->funcs[d.second->second.pos]->getReturnType();
+			if(!t_args.inUse)
+				return d.first->funcs[d.second->second.pos]->getReturnType();
+			else
+				return d.first->funcs[d.second->second.pos]->getBestFit(filePos, t_args.evals, false)->getReturnType();
 		}
 		case SCOPE_CLASS:{
 			return &classClass;
@@ -96,8 +100,10 @@ const Data* Resolvable::getObject(RData& r, const T_ARGS& t_args) const{
 	if(d.first==nullptr) return &VOID_DATA;
 	switch(d.second->second.type){
 		case SCOPE_FUNC:{
-			assert(t_args.inUse==false);
-			return d.first->funcs[d.second->second.pos];
+			if(!t_args.inUse)
+				return d.first->funcs[d.second->second.pos];
+			else
+				return d.first->funcs[d.second->second.pos]->getBestFit(filePos, t_args.evals, false);
 		}
 		case SCOPE_CLASS:{
 			if(t_args.inUse)
@@ -150,8 +156,11 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 	const AbstractClass* ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
-			assert(t_args.inUse==false);
-			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args, fp,nullptr);
+			SingleFunction* d;
+			if(!t_args.inUse){
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
+			} else
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.evals,false);
 			ret = d->getSingleProto()->returnType;
 			break;
 		}
@@ -175,13 +184,15 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 	std::pair<const Data*,SCOPE_TYPE> ret;
 	switch(f.second->second.type){
 		case SCOPE_FUNC:{
-			assert(t_args.inUse==false);
-			SingleFunction* d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args, fp,nullptr);
+			SingleFunction* d;
+			if(!t_args.inUse){
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
+			} else
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.evals,false);
 			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
 			break;
 		}
 		case SCOPE_CLASS:{
-			assert(t_args.inUse==false);
 			auto d = f.first->classes[f.second->second.pos];
 			const AbstractClass* R;
 			if(t_args.inUse) R = d->resolveClass(getRData(), id, t_args.eval(getRData(), id));
@@ -207,8 +218,10 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 			assert(t_args.inUse==false);
 			return f.first->vars[f.second->second.pos];
 		case SCOPE_FUNC:
-			assert(t_args.inUse==false);
-			return f.first->funcs[f.second->second.pos];
+			if(!t_args.inUse)
+				return f.first->funcs[f.second->second.pos];
+			 else
+				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.evals,false);
 		case SCOPE_CLASS:
 			//TODO reconsider?
 			if(t_args.inUse)

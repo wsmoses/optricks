@@ -580,11 +580,11 @@ public:
 			//TODO CLEANUP FOREACH MODULES
 			OModule* nmod = new OModule(data.mod);
 			nmod->addVariable(pos(), iterName,&VOID_DATA);
-			E_VAR* variable = new E_VAR( Resolvable(nmod,iterName,pos()), false);
+			PositionID var = pos();
 			Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
 			//return new ForEachLoop(new E_VAR(module->addPointer(iterName,nullptr,nullptr,nullptr,nullptr,nullptr)),iterable,blocks,"");
 			//TODO implement for loop naming
-			return new ForEachLoop(pos(),variable, iterable, blocks);
+			return new ForEachLoop(pos(),E_VAR( Resolvable(nmod,iterName,var), false), iterable, blocks);
 		}
 	}
 	Statement* getWhileLoop(ParseData data, bool read=false){

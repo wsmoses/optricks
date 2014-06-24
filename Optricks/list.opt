@@ -30,4 +30,8 @@ class List{
 
 List l = List()
 l.append(5)
-for i in l: print(i)
+l.append(1)
+l.append(4)
+l.append(1)
+l.append(3)
+for i in l: println(i)
