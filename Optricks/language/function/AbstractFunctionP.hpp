@@ -379,7 +379,7 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		auto myDec = proto->declarations[0];
 		const AbstractClass* const t = myDec.declarationType;
 		llvm::Value* temp;
-		if(args[0]==nullptr){
+		if(args.size()==0 || args[0]==nullptr){
 			if(myDec.defaultValue==nullptr){
 				id.error("No default argument available for argument "+str(1));
 				exit(1);
