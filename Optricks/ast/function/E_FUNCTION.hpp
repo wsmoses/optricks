@@ -22,6 +22,7 @@ class E_FUNCTION:public ErrorStatement{
 			returnV = nullptr;
 			//todo remove
 		}
+		void reset() const override final{}
 		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}

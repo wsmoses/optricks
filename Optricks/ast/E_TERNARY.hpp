@@ -20,6 +20,7 @@ class TernaryOperator : public ErrorStatement{
 			ErrorStatement(a), condition(cond), then(th), finalElse(stat){
 		}
 
+		void reset() const override final{ condition->reset(); then->reset(); if(finalElse) finalElse->reset(); }
 		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}

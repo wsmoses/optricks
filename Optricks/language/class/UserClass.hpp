@@ -62,7 +62,7 @@ public:
 				if(!t_args.inUse)
 					return find->second->getBestFit(id, v, true);
 				else
-					return find->second->getBestFit(id, t_args.evals, true);
+					return find->second->getBestFit(id, t_args.eval(getRData(), id), true);
 			}
 			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
@@ -78,7 +78,7 @@ public:
 				if(!t_args.inUse)
 					return find->second->getBestFit(id, v, true);
 				else
-					return find->second->getBestFit(id, t_args.evals, true);
+					return find->second->getBestFit(id, t_args.eval(getRData(), id), true);
 			}
 			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);

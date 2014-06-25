@@ -17,6 +17,9 @@ class Block : public ErrorStatement{
 		void registerClasses() const override final{
 			for(auto& a: values) a->registerClasses();
 		}
+		void reset() const override final{
+			for(auto& a: values) a->reset();
+		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
 			for(auto& a:values) a->collectReturns(vals, toBe);
 		}

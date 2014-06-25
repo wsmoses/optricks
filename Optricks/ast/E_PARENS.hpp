@@ -10,6 +10,8 @@ public:
 	const Token getToken() const override{
 		return T_PARENS;
 	};
+
+	void reset() const override final{ inner->reset(); }
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe){
 		inner->collectReturns(vals, toBe);
 	}

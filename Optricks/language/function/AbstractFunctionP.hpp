@@ -108,6 +108,7 @@ String toClassArgString(String funcName, const std::vector<const AbstractClass*>
 	String s=funcName+"(";
 	bool first=true;
 	for(const auto& a:args){
+		assert(a);
 		if(first) first=!first;
 		else s+=", ";
 		s+=a->getName();

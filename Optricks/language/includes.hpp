@@ -455,9 +455,11 @@ struct TemplateArg {
 #include "lib.hpp"
 
 struct T_ARGS {
+private:
+	mutable std::vector<const AbstractClass*> evals;
+public:
 	bool inUse;
 	bool evaled;
-	mutable std::vector<const AbstractClass*> evals;
 	T_ARGS(bool in):inUse(in),evaled(false){}
 	void add(Statement* a){
 		evals.push_back((const AbstractClass*)a);

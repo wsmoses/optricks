@@ -15,6 +15,11 @@ class E_FUNC_CALL : public ErrorStatement{
 		E_FUNC_CALL(PositionID a, Statement* t, const std::vector<const Evaluatable*>& val) : ErrorStatement(a),
 				toCall(t), vals(val){
 		};
+
+		void reset() const override final{
+			for(auto& a:vals) if(a) ((const Statement*)a)->reset();
+			toCall->reset();
+		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			assert(isClassMethod==false);
 			auto type=getReturnType();

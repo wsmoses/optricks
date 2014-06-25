@@ -29,6 +29,7 @@ public:
 		llvm::Value* evalV(RData& r,PositionID id) const override final{
 			return getValue(r,id);
 		}
+		void reset() const override final{}
 		virtual const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const =0;
 		/**
 		 * Returns the class that this represents, if it represents a class

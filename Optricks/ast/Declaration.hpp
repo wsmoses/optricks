@@ -114,6 +114,9 @@ public:
 		variable.buildFunction(r);
 		if(value) value->buildFunction(r);
 	};
+	void reset() const override final{
+		finished = nullptr;
+	}
 	const LocationData* fastEvaluate(RData& r){
 		if(finished) return finished;
 		getReturnType();
@@ -145,7 +148,9 @@ public:
 		if(finished){
 			if(value){
 				Location* aloc = finished->getMyLocation();
+				assert(aloc);
 				llvm::Value* nex = value->evaluate(r)->castToV(r, returnType, filePos);
+				assert(nex);
 				aloc->setValue(nex,r);
 				incrementCount(r, filePos, finished);
 			}

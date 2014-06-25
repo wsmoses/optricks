@@ -92,9 +92,17 @@ class ForEachLoop : public ErrorStatement{
 			return myGen;
 			//*/
 		}
+
+		void reset() const override final{
+			iterable->reset();
+			toLoop->reset();
+		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
 			auto myGen = setUp(ra);
+			for(auto& a: myGen->declaration)
+				a->reset();
+			myGen->methodBody->reset();
 			myGen->buildFunction(ra);
 			auto theClass = ((GeneratorClass*)myGen->myFunction->getSingleProto()->returnType)->returnClass;
 			Jumpable j(name, GENERATOR, nullptr,NULL, NULL, theClass);

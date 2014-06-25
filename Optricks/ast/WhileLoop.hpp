@@ -24,6 +24,10 @@ class WhileLoop : public ErrorStatement{
 			name = n;
 		}
 
+		void reset() const override final{
+			condition->reset();
+			statement->reset();
+		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			id.error("While-loop cannot act as function");
 			exit(1);

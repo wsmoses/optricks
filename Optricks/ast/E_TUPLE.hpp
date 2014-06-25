@@ -12,25 +12,16 @@
 class E_TUPLE : public Statement{
 	public:
 		std::vector<Statement*> values;
-		AbstractClass* myClass;
+		//AbstractClass* myClass;
 		virtual ~E_TUPLE(){};
-		E_TUPLE(const std::vector<Statement*>& a) :Statement(),values(a),myClass(NULL) { };
+		E_TUPLE(const std::vector<Statement*>& a) :Statement(),values(a)/*,myClass(NULL)*/ { };
 		const  Token getToken() const override{
 			return T_TUPLE;
 		};
 
-		/*String getFullName() override{
-			if(myClass!=NULL) return myClass->name;
-			String s="(";
-			bool first = true;
-			for(auto& a:values){
-				if(first){
-					first = false;
-				} else s+=",";
-				s+=a->getFullName();
-			}
-			return s+")";
-		}*/
+		void reset() const override final{
+			for(auto& a: values) a->reset();
+		}
 		const Data* evaluate(RData& m) const override {
 			std::vector<const Data*> vec(values.size());
 			for(unsigned i=0; i<values.size(); i++)
@@ -107,6 +98,10 @@ class E_NAMED_TUPLE : public ErrorStatement{
 					assert(b[i]!=b[j]);
 			}
 		};
+
+		void reset() const override final{
+			for(auto& a: values) a->reset();
+		}
 		const  Token getToken() const override{
 			return T_NAMED_TUPLE;
 		};

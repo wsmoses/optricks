@@ -121,29 +121,12 @@ public:
 		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
 	const AbstractClass* getClass(PositionID id, const String name, const T_ARGS&) const;
-	/*
-	AbstractClass*& getClass(PositionID id, const String name){
-		auto f = find(id,name);
-		if(f.second->second.type!=SCOPE_CLASS) id.error(name+" found at current scope, but not correct variable type -- needed class");
-		return f.first->classes[f.second->second.pos];
-	}*/
-	/*OverloadedFunction* getStaticFunction(PositionID id, const String name) const{
-		auto f = find(id,name);
-		if(f.second->second.type!=SCOPE_FUNC) id.error(name+" found at current scope, but not correct variable type -- needed non-class function");
-		return f.first->funcs[f.second->second.pos];
-	}*/
-	//inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const std::vector<const AbstractClass*>& fp) const;
+
 	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const T_ARGS& t_args, const std::vector<const Evaluatable*>& fp) const;
 	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const T_ARGS&, const std::vector<const AbstractClass*>& fp) const;
 
 	const Data* getVariable(PositionID id, const String name) const;
 	void setVariable(PositionID id, const String name, const Data* da);
-		/*
-	const Data*& getVariable(PositionID id, const String name){
-		auto f = find(id,name);
-		if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
-		return f.first->vars[f.second->second.pos];
-	}*/
 
 	const AbstractClass* getReturnClass(PositionID id, const String name, const T_ARGS&) const;
 	const Data* get(PositionID id, const String name, const T_ARGS&) const;

@@ -20,6 +20,10 @@ class E_ARR : public ErrorStatement{
 			return T_ARR;
 		};
 
+		void reset() const override final{
+			for(auto& a: values)
+				a->reset();
+		}
 		const AbstractClass* getMyClass(RData& r, PositionID id)const{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}

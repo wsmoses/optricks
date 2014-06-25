@@ -28,6 +28,9 @@ class E_VAR : public VariableReference {
 		const Token getToken() const override{
 			return T_VAR;
 		}
+
+		void reset() const override final{
+		}
 		const Resolvable getMetadata() const
 		//final override
 		{

@@ -38,6 +38,7 @@ public:
 		value->buildFunction(r);
 	};
 
+	void reset() const override final{ value->reset(); }
 	const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 		auto t = value->getMyClass(r, id);
 		if(pre==UOP_POST){

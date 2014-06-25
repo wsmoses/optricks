@@ -49,6 +49,7 @@ class Statement : public Evaluatable{
 		//	id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);}; /*(RData& r){
 		//	return evaluate(r).getMyClass(r);
 		//}*/
+		virtual void reset() const=0;
 		llvm::Value* evalCastV(RData& r,const AbstractClass* c, PositionID id);
 		Statement(){};
 		virtual const Token getToken() const = 0;
@@ -73,6 +74,7 @@ class VoidStatement : public Statement{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 
+		void reset() const override final{}
 		const Data* evaluate(RData& a) const override{
 			PositionID(0,0,"#Void").error("Attempted evaluation of void statement");
 			exit(1);

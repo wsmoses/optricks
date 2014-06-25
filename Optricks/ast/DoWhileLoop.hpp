@@ -21,6 +21,11 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id)const{
 		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 	}
+
+	void reset() const override final{
+		condition->reset();
+		statement->reset();
+	}
 	DoWhileLoop(PositionID a, Statement * cond, Statement* stat,String n="") :
 		ErrorStatement(a),
 		condition(cond), statement(stat){

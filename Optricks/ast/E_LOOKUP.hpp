@@ -28,6 +28,9 @@ public:
 			left(a), right(b),filePos(id){};
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}
+	void reset() const override final{
+		left->reset();
+	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod)const override final{
 		assert(isClassMethod==false);
 		const AbstractClass* cla= left->getReturnType();

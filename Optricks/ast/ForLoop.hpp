@@ -37,6 +37,13 @@ class ForLoop : public ErrorStatement{
 			id.error("for-loop cannot act as function");
 			exit(1);
 		}
+
+		void reset() const override final{
+			if(initialize!=NULL && initialize->getToken()!= T_VOID) initialize->reset();
+			if(condition!=NULL && condition->getToken()!= T_VOID) condition->reset();
+			if(increment!=NULL && increment->getToken()!= T_VOID) increment->reset();
+			toLoop->reset();
+		}
 		const Token getToken() const override {
 			return T_FOR;
 		}
