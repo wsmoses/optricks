@@ -11,6 +11,7 @@
 #include "../language/class/UserClass.hpp"
 #include "../language/class/EnumClass.hpp"
 #include "../language/class/builtin/NullClass.hpp"
+#include "../language/class/builtin/PriorityQueueClass.hpp"
 #include "../language/class/builtin/WrapperClass.hpp"
 #include "../language/ffi/F_Class.hpp"
 #include "../language/ffi/F_Function.hpp"
@@ -103,6 +104,7 @@ void initClasses(){
 	ComplexClass::get(&doubleClass);
 	ComplexClass::get(&intLiteralClass);
 	ComplexClass::get(&floatLiteralClass);
+	ArrayClass::get(nullptr);
 	convertClass(int,&LANG_M);
 	convertClass(short,&LANG_M);
 	convertClass(long,&LANG_M);
@@ -168,8 +170,25 @@ void initClasses(){
 				id.error("Must use template class 'array' with one argument");
 				return nullptr;
 			}
-			return ArrayClass::get(args[0], 0);
+			return ArrayClass::get(args[0]);
 		}),"array");
+
+	LANG_M.addClass(PositionID(0,0,"#priorityqueue"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+			//if(args.size()==0) return ComplexClass::get(&doubleClass);
+			if(args.size()!=1){
+				id.error("Must use template class 'PriorityQueue' with one argument");
+				return nullptr;
+			}
+			return PriorityQueueClass::get(args[0]);
+		}),"PriorityQueue");
+	LANG_M.addClass(PositionID(0,0,"#map"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+			//if(args.size()==0) return ComplexClass::get(&doubleClass);
+			if(args.size()!=2){
+				id.error("Must use template class 'map' with one argument");
+				return nullptr;
+			}
+			return HashMapClass::get(args[0], args[1]);
+		}),"map");
 	LANG_M.addClass(PositionID(0,0,"#tuple"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 		if(args.size()==0) {
 			id.error("Must use template class 'tuple' with at least one argument - found "+str(args.size()));

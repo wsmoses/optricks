@@ -147,7 +147,7 @@ public:
 							LU->value = C->fixOrderOfOperations();
 							return LU;
 						}
-					} else if(L->getToken()==T_LITERAL){
+					} else if(L->getToken()==T_DATA){
 						Data* D = (Data*)L;
 						if(D->type==R_INT){
 							IntLiteral* IL = (IntLiteral*)D;
@@ -193,7 +193,7 @@ public:
 					LU->value = C;
 					return LU;
 				}
-			} else if(L->getToken()==T_LITERAL){
+			} else if(L->getToken()==T_DATA){
 				Data* D = (Data*)L;
 				if(D->type==R_INT){
 					IntLiteral* IL = (IntLiteral*)D;

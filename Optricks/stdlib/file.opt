@@ -103,15 +103,6 @@ def isFile(lang.c.string s){
 	return fs.isFile();
 }
 
-def println(lang.c.string[] ar){
-//	print('[');
-	for(int i=0; i<ar.length; i++){
-//		if(i!=0) print(', ');
-		println(ar[i]);
-	}
-//	println();
-}
-
 extern void fflush(lang.c.pointer=null);
 
 

@@ -1,21 +1,38 @@
 /*
- * ArrayClassP.hpp
+ * PriorityQueueClass.hpp
  *
- *  Created on: Mar 8, 2014
+ *  Created on: Jun 27, 2014
  *      Author: Billy
  */
 
-#ifndef ARRAYCLASSP_HPP_
-#define ARRAYCLASSP_HPP_
+#ifndef PRIORITYQUEUECLASS_HPP_
+#define PRIORITYQUEUECLASS_HPP_
 
-#include "./ArrayClass.hpp"
-#include "../../data/ArrayData.hpp"
-ArrayClass::ArrayClass(const AbstractClass* a):
-		AbstractClass(nullptr,str(a),nullptr,PRIMITIVE_LAYOUT,CLASS_ARRAY,true,getArrayType(a)),inner(a){
-		if(a){
-			assert(a->classType!=CLASS_LAZY);
-			assert(a->classType!=CLASS_REF);
-		}
+#include "../AbstractClass.hpp"
+#include "./IntClass.hpp"
+class PriorityQueueClass: public AbstractClass{
+public:
+	static inline String str(const AbstractClass* const d){
+		assert(d);
+		return "PriorityQueue{"+d->getName()+"}";
+	}
+	static inline llvm::Type* getPriorityQueueType(const AbstractClass* const d){
+		assert(d);
+		llvm::SmallVector<llvm::Type*,4> ar(4);
+		ar[0] = /* Counts (for garbage collection) */ intClass.type;
+		ar[1] = /* Length of array */ intClass.type;
+		ar[2] = /* Amount of memory allocated */ intClass.type;
+		ar[3] = /* Actual data */ llvm::PointerType::getUnqual(d->type);
+		return llvm::PointerType::getUnqual(llvm::StructType::create(ar,llvm::StringRef(str(d)),false));
+	}
+	const AbstractClass* inner;
+protected:
+	PriorityQueueClass(const AbstractClass* a):
+		AbstractClass(nullptr,str(a),nullptr,PRIMITIVE_LAYOUT,CLASS_PRIORITYQUEUE,true,getPriorityQueueType(a)),inner(a){
+		assert(a->classType!=CLASS_LAZY);
+		assert(a->classType!=CLASS_REF);
+		assert(inner);
+
 		LANG_M.addFunction(PositionID(0,0,"#array"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -154,27 +171,95 @@ ArrayClass::ArrayClass(const AbstractClass* a):
 		}), PositionID(0,0,"#complex"));
 		///register methods such as print / tostring / tofile / etc
 	}
-llvm::Value* ArrayClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
-	if(toCast==this) return valueToCast;
-	if(toCast->classType!=CLASS_ARRAY){
-		id.error("Cannot cast type '"+getName()+"' to "+toCast->getName());
+public:
+	inline bool hasCast(const AbstractClass* const toCast) const{
+		switch(toCast->classType){
+		case CLASS_PRIORITYQUEUE: {
+			auto tc = (const PriorityQueueClass*)toCast;
+			return inner->hasCast(tc->inner);
+		}
+		case CLASS_VOID: return true;
+		default:
+			return false;
+		}
+	}
+
+	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
+		if(s=="carr") return &c_pointerClass;
+		else if(s=="alloced") return &intClass;
+		else if(s=="length") return &intClass;
+		else{
+			illegalLocal(id,s);
+			exit(1);
+		}
+	}
+	bool hasLocalData(String s) const override final{
+		return s=="length" || s=="carr" || s=="alloced";
+	}
+	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
+		//TODO reference count carr / make into int[len]&
+		if(s=="carr"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(
+					r.builder.CreatePointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
+					&c_pointerClass);
+		} else if(s=="alloced"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 2)), &intClass);
+		} else if(s=="length"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)), &intClass);
+		} else {
+			illegalLocal(id,s);
+			exit(1);
+		}
+	}
+	inline bool noopCast(const AbstractClass* const toCast) const override{
+		switch(toCast->classType){
+		case CLASS_PRIORITYQUEUE: {
+			auto tc = (PriorityQueueClass*)toCast;
+			return inner->noopCast(tc->inner);
+		}
+		case CLASS_VOID: return true;
+		default:
+			return false;
+		}
+	}
+	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
+		if(toCast==this) return valueToCast;
+		if(toCast->classType!=CLASS_PRIORITYQUEUE){
+			id.error("Cannot cast type '"+getName()+"' to "+toCast->getName());
+			exit(1);
+		}
+		auto AR = (const PriorityQueueClass*)toCast;
+		if(!inner->hasCast(AR->inner)){
+			id.error("Cannot cast type '"+getName()+"' to "+toCast->getName());
+			exit(1);
+		}
+		if(inner->noopCast(AR->inner)){
+			return r.builder.CreatePointerCast(valueToCast, type);
+		}
+		id.compilerError("Casting priority queue types has not been implemented "+toCast->getName());
 		exit(1);
 	}
-	if(!inner){
-		return toCast->callFunction(r, id, {}, nullptr)->getValue(r,id);
+	int compare(const AbstractClass* const a, const AbstractClass* const b) const{
+		assert(hasCast(a));
+		assert(hasCast(b));
+		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
+		else if(a->classType==CLASS_VOID) return 1;
+		else if(b->classType==CLASS_VOID) return -1;
+		auto fa = (PriorityQueueClass*)a;
+		auto fb = (PriorityQueueClass*)b;
+		return inner->compare(fa->inner, fb->inner);
 	}
-	auto AR = (const ArrayClass*)toCast;
-	if(!AR->inner || !inner->hasCast(AR->inner)){
-		id.error("Cannot cast type '"+getName()+"' to "+toCast->getName());
-		exit(1);
+	static PriorityQueueClass* get(const AbstractClass* args) {
+		assert(args);
+		static std::map<const AbstractClass*,PriorityQueueClass*> mp;
+		auto tmp = mp.find(args);
+		if(tmp==mp.end()){
+			return mp[args] = new PriorityQueueClass(args);
+		} else return tmp->second;
 	}
-	if(inner->noopCast(AR->inner)){
-		return r.builder.CreatePointerCast(valueToCast, type);
-	}
-	cerr << this << " " << toCast << endl << flush;
-	id.compilerError("Casting array types has not been implemented "+toCast->getName());
-	exit(1);
-}
+};
 
-
-#endif /* ARRAYCLASSP_HPP_ */
+#endif /* PRIORITYQUEUECLASS_HPP_ */

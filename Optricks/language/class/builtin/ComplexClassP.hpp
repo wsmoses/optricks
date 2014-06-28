@@ -18,12 +18,12 @@
 
 ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 		AbstractClass(nullptr,name, nullptr,PRIMITIVE_LAYOUT,CLASS_COMPLEX,true,llvm::VectorType::get(cType(inner),2)),innerClass(inner){
-		assert(inner);
-		assert(inner->classType!=CLASS_COMPLEX);
-		assert(inner->classType==CLASS_INT || inner->classType==CLASS_FLOAT || inner->classType==CLASS_INTLITERAL || inner->classType==CLASS_FLOATLITERAL);
+		assert(innerClass);
+		assert(innerClass->classType!=CLASS_COMPLEX);
+		assert(innerClass->classType==CLASS_INT || innerClass->classType==CLASS_FLOAT || innerClass->classType==CLASS_INTLITERAL || innerClass->classType==CLASS_FLOATLITERAL);
 		if(reg) LANG_M.addClass(PositionID(0,0,"#complex"),this);
 		LANG_M.addFunction(PositionID(0,0,"#complex"),"print")->add(
-			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&floatLiteralClass),
+			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
@@ -35,7 +35,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			return &VOID_DATA;
 		}), PositionID(0,0,"#complex"));
 		LANG_M.addFunction(PositionID(0,0,"#complex"),"println")->add(
-			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&floatLiteralClass),
+			new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			const Data* D = args[0]->evaluate(r);
@@ -47,7 +47,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 			r.builder.CreateCall(CU, getInt32('\n'));
 			return &VOID_DATA;
 		}), PositionID(0,0,"#complex"));
-		if(inner->classType==CLASS_FLOATLITERAL){
+		if(innerClass->classType==CLASS_FLOATLITERAL){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},&floatLiteralClass),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -79,7 +79,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 				}
 				return out;
 			}), PositionID(0,0,"#complex"));
-		} else if(inner->classType==CLASS_INTLITERAL){
+		} else if(innerClass->classType==CLASS_INTLITERAL){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},&intLiteralClass),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -96,7 +96,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 				return out;
 			}), PositionID(0,0,"#complex"));
 		}
-		else if(inner->classType==CLASS_FLOAT){
+		else if(innerClass->classType==CLASS_FLOAT){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs",{AbstractDeclaration(this)},innerClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -116,7 +116,7 @@ ComplexClass::ComplexClass(String name, const RealClass* inner, bool reg):
 				V = r.builder.CreateFAdd(r.builder.CreateExtractElement(V, getInt32(0)),r.builder.CreateExtractElement(V, getInt32(1)));
 				return new ConstantData(V, innerClass);
 			}), PositionID(0,0,"#complex"));
-		} else if(inner->classType==CLASS_INT){
+		} else if(innerClass->classType==CLASS_INT){
 			LANG_M.addFunction(PositionID(0,0,"#complex"),"abs2")->add(
 				new BuiltinInlineFunction(new FunctionProto("abs2",{AbstractDeclaration(this)},innerClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -138,7 +138,14 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 	assert(instance->getReturnType()==this);
 	if(instance->type==R_IMAG){
 		ImaginaryLiteral* cl = (ImaginaryLiteral*)instance;
-		if(s=="real") return new ConstantData(innerClass->getZero(id), innerClass);
+		if(s=="real"){
+			if(innerClass->classType==CLASS_INTLITERAL)
+				return &ZERO_LITERAL;
+			else if(innerClass->classType==CLASS_FLOATLITERAL)
+				return &ZEROF_LITERAL;
+			else
+				return new ConstantData(innerClass->getZero(id), innerClass);
+		}
 		else{
 			return cl->imag->castTo(r, innerClass, id);
 		}

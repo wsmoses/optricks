@@ -36,5 +36,6 @@
 #include "./statement/StatementP.hpp"
 #include "./location/LocationP.hpp"
 #include "../operators/Constructor.hpp"
+#include "../operators/BinaryP.hpp"
 #include "../operators/DeconstructorP.hpp"
 #endif /* POST_HPP_ */

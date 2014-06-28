@@ -48,6 +48,8 @@ public:
 		else if(b->classType==CLASS_VOID) return -1;
 		if(a==this) return (b==this)?0:-1;
 		else if(b==this) return 1;
+		if(a->classType==CLASS_INTLITERAL) return (b->classType==CLASS_INTLITERAL)?0:-1;
+		else if(b->classType==CLASS_INTLITERAL) return 1;
 		if(a->classType==CLASS_INT) return (b->classType==CLASS_INT)?0:-1;
 		else if(b->classType==CLASS_INT) return 1;
 		if(a->classType==CLASS_FLOATLITERAL) return (b->classType==CLASS_FLOATLITERAL)?0:-1;
@@ -56,7 +58,10 @@ public:
 		else if(b->classType==CLASS_FLOAT) return 1;
 		if(a->classType==CLASS_RATIONAL) return (b->classType==CLASS_RATIONAL)?0:-1;
 		else if(b->classType==CLASS_RATIONAL) return 1;
-		if(a->classType==CLASS_COMPLEX) return (b->classType==CLASS_COMPLEX)?compare(((const ComplexClass*)a)->innerClass, ((const ComplexClass*)b)->innerClass):-1;
+		if(a->classType==CLASS_COMPLEX)
+			return (b->classType==CLASS_COMPLEX)?
+					compare(((const ComplexClass*)a)->innerClass, ((const ComplexClass*)b)->innerClass):
+					-1;
 		else{
 			assert(b->classType==CLASS_COMPLEX);
 			return 1;

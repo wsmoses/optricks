@@ -46,9 +46,11 @@ public:
 			return std::pair<AbstractClass*,unsigned int>(this,0);
 		}*/
 	bool noopCast(const AbstractClass* const toCast) const override{
+		assert(innerClass);
 		return (toCast->classType==CLASS_COMPLEX && innerClass->noopCast(((ComplexClass*)toCast)->innerClass))|| toCast->classType==CLASS_VOID;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
+		assert(innerClass);
 		return (toCast->classType==CLASS_COMPLEX && innerClass->hasCast(((ComplexClass*)toCast)->innerClass))|| toCast->classType==CLASS_VOID;
 	}
 

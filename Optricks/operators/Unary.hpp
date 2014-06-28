@@ -483,7 +483,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		exit(1);
 	case CLASS_VECTOR:{
 		filePos.compilerError("Vector postops not implemented");
-		exit(1);
+		return &VOID_DATA;
 		//const VectorClass* vc = (const VectorClass*)cc;
 		//VectorClass::get(getPostopReturnType(filePos, vc->inner, operation), vc->len);
 		//return fdafsda;
@@ -519,18 +519,18 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else{
 			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
-			exit(1);
+			return &VOID_DATA;
 		}
 	}
 	case CLASS_RATIONAL:{
 		//todo
 		filePos.compilerError("Must finish implementing rational class");
-		exit(1);
+		return &VOID_DATA;
 	}
 	case CLASS_COMPLEX:{
 		//todo
 		filePos.compilerError("Complex postops not implemented");
-		exit(1);
+		return &VOID_DATA;
 		if(operation=="++"){
 			//todo setstruct for location info
 		}
@@ -539,7 +539,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else{
 			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
-			exit(1);
+			return &VOID_DATA;
 		}
 		break;
 	}
@@ -574,7 +574,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else{
 			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
-			exit(1);
+			return &VOID_DATA;
 		}
 	}
 	case CLASS_CHAR:{
@@ -606,7 +606,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		}
 		else{
 			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
-			exit(1);
+			return &VOID_DATA;
 		}
 	}
 	case CLASS_CLASS:{
@@ -615,7 +615,7 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 		} else if(operation=="%"){
 			return LazyClass::get(value->getMyClass(r, filePos));
 		} else if(operation=="[]"){
-			return ArrayClass::get(value->getMyClass(r, filePos),0);
+			return ArrayClass::get(value->getMyClass(r, filePos));
 		}
 	}
 	case CLASS_BOOL:
@@ -634,13 +634,15 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_STR:
 	case CLASS_SET:
 	case CLASS_ENUM:
+	case CLASS_HASHMAP:
+	case CLASS_PRIORITYQUEUE:
 	case CLASS_WRAPPER:
 	case CLASS_CSTRING:
 	case CLASS_MATHLITERAL:{
 		if(false) return cc;
 		else{
 			filePos.error("Could not find unary post-operation '"+operation+"' in class '"+cc->getName()+"'");
-			exit(1);
+			return &VOID_DATA;
 		}
 	}
 	case CLASS_LAZY:

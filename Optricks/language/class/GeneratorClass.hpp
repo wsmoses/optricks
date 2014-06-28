@@ -14,9 +14,9 @@
 class GeneratorClass: public AbstractClass{
 public:
 	static inline String str(const String nam, const AbstractClass* rT, const AbstractClass* tC,const std::vector<std::pair<const AbstractClass*,String>>& args){
-		String s= "generator:" + nam + "{'";
-		if(tC) s+=tC->getName();
-		s+= nam+"',"+rT->getName();
+		String s= "generator{'";
+		if(tC) s+=tC->getName()+".";
+		s+= nam+"':"+rT->getName();
 		for(const auto& b: args){
 			s+=",'"+b.second+"':"+b.first->getName();
 		}

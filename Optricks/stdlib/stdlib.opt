@@ -4,10 +4,6 @@ import 'unix.opt';
 import "random.opt"
 import 'image.opt'
 //import "string.opt"
-;
-gen int getOne(){
-	yield 7;
-}
 
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
@@ -21,6 +17,15 @@ gen int range(int start=0,int stop,int step=1){
 gen int range(int end){
 	for(int i = 0; i<end; i++) yield i;
 }
+
+/*
+gen map(range{int} it, function{int,int} a){
+	for i in it:
+		yield a(i);
+}
+*/
+
+
 gen double range(double start=0, double stop, double step=1){
 	if(step>0)
 		for(auto i = start; i<stop; i+=step)

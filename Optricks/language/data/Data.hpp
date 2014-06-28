@@ -40,7 +40,7 @@ public:
 		void registerClasses() const override final{};
 		void registerFunctionPrototype(RData& r) const override final{};
 		void buildFunction(RData& r) const override final{};
-		const Token getToken() const override{ return T_LITERAL; };
+		const Token getToken() const override{ return T_MAP; };
 };
 
 #endif /* DATA_HPP_ */

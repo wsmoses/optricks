@@ -479,14 +479,20 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(r.lmod->getContext(), "entry", F);
 	r.builder.SetInsertPoint(BB);
-	assert(llvm::dyn_cast<llvm::VectorType>(gt)!=nullptr);
-	llvm::Value* V = llvm::UndefValue::get(gt);
-	auto const tmp=fp->declarations.size();
-	unsigned Idx = 0;
-	for (llvm::Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
-			++AI, ++Idx)
-		V = r.builder.CreateInsertValue(V, (llvm::Value*)AI, llvm::SmallVector<unsigned int,1>({Idx}));
-	r.builder.CreateRet(V);
+	if(args.size()==0)
+		r.builder.CreateRetVoid();
+	else if(args.size()==1)
+		r.builder.CreateRet(F->arg_begin());
+	else {
+		assert(llvm::dyn_cast<llvm::StructType>(gt)!=nullptr);
+		llvm::Value* V = llvm::UndefValue::get(gt);
+		auto const tmp=fp->declarations.size();
+		unsigned Idx = 0;
+		for (llvm::Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
+				++AI, ++Idx)
+			V = r.builder.CreateInsertValue(V, (llvm::Value*)AI, llvm::SmallVector<unsigned int,1>({Idx}));
+		r.builder.CreateRet(V);
+	}
 	if(Parent) r.builder.SetInsertPoint(Parent);
 	return F;
 }

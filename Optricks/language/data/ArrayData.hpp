@@ -8,7 +8,6 @@
 #ifndef ARRAYDATA_HPP_
 #define ARRAYDATA_HPP_
 
-
 #include "Data.hpp"
 #include "../class/builtin/ArrayClass.hpp"
 #include "../class/ClassLib.hpp"
@@ -23,12 +22,13 @@ public:
 		std::vector<const AbstractClass*> vec;
 		const AbstractClass* A = (inner.size()==0)?nullptr:inner[0]->getReturnType();
 		for(unsigned i=1; i<inner.size(); i++){
-			A = getMin(A, inner[0]->getReturnType(),filePos);
+			A = getMin(A, inner[i]->getReturnType(),filePos);
 		}
-		return ArrayClass::get(A, inner.size());
+		return ArrayClass::get(A);
 	}
-	inline Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
+		if(getReturnType()==right) return this;
 		return new ConstantData(castToV(r, right, id), right);
 	}
 	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
@@ -47,16 +47,12 @@ public:
 		return new ArrayData(vec, filePos);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		if(right->classType!=CLASS_ARRAY
-						&& right->classType!=CLASS_NAMED_TUPLE){
-					id.error("Cannot cast array literal to '"+right->getName()+"'");
+		if(right->classType!=CLASS_ARRAY){
+			id.error("Cannot cast array literal to '"+right->getName()+"'");
 			exit(1);
 		}
 		ArrayClass* tc = (ArrayClass*)right;
-		if(tc->len!=0){
-			id.compilerError("Cannot create array[len]");
-			exit(1);
-		}
+		//TODO have an "empty" slot
 		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
 		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
 		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
@@ -86,7 +82,7 @@ public:
 		if(a->classType==CLASS_VOID) return true;
 		if(a->classType!=CLASS_ARRAY) return false;
 		ArrayClass* tc = (ArrayClass*)a;
-		if(tc->len!=0 && tc->len!=inner.size()) return false;
+		//if(tc->len!=0 && tc->len!=inner.size()) return false;
 		for(unsigned int i=0; i<inner.size(); i++){
 			if(!inner[i]->hasCastValue(tc->inner)) return false;
 		}
@@ -123,11 +119,9 @@ public:
 	}
 
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b)const override{
-		id.error("Tuple array act as function");
+		id.error("Cannot use array as function");
 		exit(1);
 	}
 };
-
-
 
 #endif /* ARRAYDATA_HPP_ */

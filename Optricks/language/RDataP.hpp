@@ -14,9 +14,32 @@
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
-
+/*
+bool RData::conditionalError(llvm::Value* V, String s, PositionID id){
+	assert(V);
+	if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
+		if(C->isOne()){
+			error(s,id);
+			return true;
+		}
+		else{
+			return false;
+		}
+	} else {
+		auto FUNCT = builder.GetInsertBlock()->getParent();
+		auto ERROR_B = CreateBlockD("ERROR", FUNCT);
+		auto NO_ERROR_B = CreateBlockD("NO_ERROR", FUNCT);
+		builder.CreateCondBr(V, ERROR_B, NO_ERROR_B);
+		builder.SetInsertPoint(ERROR_B);
+		error(s,id);
+		builder.SetInsertPoint(NO_ERROR_B);
+		return false;
+	}
+}*/
 		void RData::error(String s){
 			auto CU = getExtern("putchar", &c_intClass, {&c_intClass});
+			//std::stringstream ss;
+			//ss << s << " at " << id.fileName << ":" << id.lineN << ":" << id.charN << endl;
 			for(const auto& a: s)
 				builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 

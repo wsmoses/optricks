@@ -42,7 +42,7 @@ public:
 	const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
 		auto t = value->getMyClass(r, id);
 		if(pre==UOP_POST){
-			if(operation=="[]") return ArrayClass::get(t,0);
+			if(operation=="[]") return ArrayClass::get(t);
 			if(operation=="&") return ReferenceClass::get(t);
 			if(operation=="%") return LazyClass::get(t);
 		}
@@ -54,7 +54,7 @@ public:
 		const AbstractClass* ac;
 		const AbstractClass* V = value->getReturnType();
 		if(V->classType==CLASS_CLASS && operation=="[]" && pre==UOP_POST){
-			return ArrayClass::get(value->getMyClass(getRData(), id), 0);
+			return ArrayClass::get(value->getMyClass(getRData(), id));
 		}
 		if(pre==UOP_PRE)
 			return getPreopReturnType(filePos, V, operation);

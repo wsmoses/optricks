@@ -9,6 +9,7 @@
 #define CONSTRUCTOR_HPP_
 
 #include "../language/includes.hpp"
+#include "../language/class/builtin/HashMapClass.hpp"
 
 const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std::vector<const Evaluatable*>& args, const Data* instance) const{
 	assert(instance==nullptr);
@@ -55,25 +56,32 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		filePos.error("Could not find constructor in class '"+getName()+"'");
 		exit(1);
 	}
+	case CLASS_PRIORITYQUEUE:
 	case CLASS_ARRAY:{
-		if(args.size()!=1 ) filePos.error("Could not find valid constructor in array");
-		auto L = args[0]->evaluate(r);
-		auto V = L->getReturnType();
+		if(args.size()>1 ) filePos.error("Could not find valid constructor in array");
+
 		llvm::Value* LEN;
-		if(V->classType==CLASS_INT){
-			llvm::Value* M = L->getValue(r, filePos);
-			const IntClass* I = (const IntClass*)V;
-			auto Im = I->getWidth();
-			if(Im==32) LEN = M;
-			else if(32>Im){
-				LEN = r.builder.CreateSExt(M, type);
-			} else{
-				LEN = r.builder.CreateTrunc(M, type);
+		if(args.size()==0)
+			LEN = getInt32(3);
+		else {
+			auto L = args[0]->evaluate(r);
+			auto V = L->getReturnType();
+			if(V->classType==CLASS_INT){
+				llvm::Value* M = L->getValue(r, filePos);
+				const IntClass* I = (const IntClass*)V;
+				//TODO do error check if < 0
+				auto Im = I->getWidth();
+				if(Im==32) LEN = M;
+				else if(32>Im){
+					LEN = r.builder.CreateSExt(M, type);
+				} else{
+					LEN = r.builder.CreateTrunc(M, type);
+				}
+			} else if(V->classType==CLASS_INTLITERAL){
+				const IntLiteral* IL = (const IntLiteral*)L;
+				assert(intClass.getWidth()==32);
+				LEN = intClass.getValue(filePos, IL->value);
 			}
-		} else if(V->classType==CLASS_INTLITERAL){
-			const IntLiteral* IL = (const IntLiteral*)L;
-			assert(intClass.getWidth()==32);
-			LEN = intClass.getValue(filePos, IL->value);
 		}
 		const ArrayClass* tc = (const ArrayClass*)this;
 		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
@@ -81,12 +89,55 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
 				tc->inner->type, llvm::ConstantInt::get(ic, s), LEN);
 		r.builder.Insert(v);
-		/*
-		 //TODO EMPTY
-		 for(unsigned i = 0; i<inner.size(); i++){
-			r.builder.CreateStore(inner[i]->castToV(r, tc->inner, id),
-					r.builder.CreateConstGEP1_32(v, i));
-		}*/
+
+		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
+		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
+		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+						tmp, llvm::ConstantInt::get(ic, s));
+		r.builder.Insert(p);
+		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
+				r.builder.CreateConstGEP2_32(p, 0,0));
+		r.builder.CreateStore(getInt32(0),
+				r.builder.CreateConstGEP2_32(p, 0,1));
+		r.builder.CreateStore(LEN,
+				r.builder.CreateConstGEP2_32(p, 0,2));
+		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
+		r.builder.CreateStore(v,G);
+		return new ConstantData(p, this);
+	}
+	case CLASS_HASHMAP:{
+		if(args.size()>1 ) filePos.error("Could not find valid constructor in array");
+		llvm::Value* LEN;
+		if(args.size()==0){
+
+		} else {
+			auto L = args[0]->evaluate(r);
+			auto V = L->getReturnType();
+			if(V->classType==CLASS_INT){
+				llvm::Value* M = L->getValue(r, filePos);
+				const IntClass* I = (const IntClass*)V;
+				auto Im = I->getWidth();
+				if(Im==32) LEN = M;
+				else if(32>Im){
+					LEN = r.builder.CreateSExt(M, type);
+				} else{
+					LEN = r.builder.CreateTrunc(M, type);
+				}
+			} else if(V->classType==CLASS_INTLITERAL){
+				const IntLiteral* IL = (const IntLiteral*)L;
+				assert(intClass.getWidth()==32);
+				LEN = intClass.getValue(filePos, IL->value);
+			}
+		}
+		const HashMapClass* tc = (const HashMapClass*)this;
+		auto ST = llvm::StructType::get(tc->key->type,tc->value->type,nullptr);
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(ST);
+		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
+		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
+				ST, llvm::ConstantInt::get(ic, s), LEN);
+		r.builder.Insert(v);
+
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
 		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);

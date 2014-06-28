@@ -66,6 +66,15 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 					V = r.builder.CreateSelect(r.builder.CreateICmpSLT(V, this->getZero(id)), r.builder.CreateNeg(V),V);
 					return new ConstantData(V, this);
 		}), PositionID(0,0,"#int"));
+
+		LANG_M.addFunction(PositionID(0,0,"#int"),"urem")->add(
+					new BuiltinInlineFunction(new FunctionProto("urem",{AbstractDeclaration(this),AbstractDeclaration(this)},this),
+					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==2);
+					llvm::Value* V = args[0]->evalV(r, id);
+					llvm::Value* V2 = args[1]->evalV(r, id);
+					return new ConstantData(r.builder.CreateURem(V, V2), this);
+		}), PositionID(0,0,"#int"));
 		/*
 		LANG_M.addFunction(PositionID(0,0,"#int"),"print")->add(
 			new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),

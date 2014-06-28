@@ -10,7 +10,7 @@
 
 enum Token {
 	T_EOF = 0,
-	T_LITERAL = 1,
+	T_DATA = 1,
 	T_EXT = 2,
 	T_DEF = 3,
 	T_ARR = 4,
@@ -20,7 +20,7 @@ enum Token {
 	T_UOP = 8,
 	T_KEY_FUNC = 14,
 	T_FUNC = 15,
-	T_O_ARR = 17,
+	T_MAP = 17,
 	T_SEP = 18,
 	T_PARENS = 19,
 	T_FUNC_CALL = 20,

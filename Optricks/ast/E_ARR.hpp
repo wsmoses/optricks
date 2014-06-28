@@ -57,12 +57,12 @@ class E_ARR : public ErrorStatement{
 		};
 		const AbstractClass* getReturnType() const override{
 			if(values.size()==0){
-				return ArrayClass::get(nullptr,0);
+				return ArrayClass::get(nullptr);
 			}
 			const AbstractClass* a=values[0]->getReturnType();
 			for(unsigned i=0; i<values.size(); i++)
 				a = getMin(a, values[i]->getReturnType(), filePos);
-			return ArrayClass::get(a, values.size());
+			return ArrayClass::get(a);
 		}
 };
 

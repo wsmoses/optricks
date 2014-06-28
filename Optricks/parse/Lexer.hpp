@@ -25,6 +25,7 @@
 #include "../ast/E_VAR.hpp"
 #include "../ast/E_SET.hpp"
 #include "../ast/E_TUPLE.hpp"
+#include "../ast/E_MAP.hpp"
 #include "../ast/E_PARENS.hpp"
 #include "../ast/E_TERNARY.hpp"
 #include "../ast/E_PARENS.hpp"
@@ -418,8 +419,32 @@ public:
 				}
 			} else if(tc=='{'){
 				f->read();
-				currentType = nullptr;
-				f->error("Cannot parse map/set types yet");
+				f->trim(EOF);
+
+				Statement* s = getNextType(data.getEndWith(EOF),true);
+				if(!s) pos().error("Cannot have auto class inside of map");
+				f->trim(EOF);
+				Statement* st;
+				if(f->peek()==':'){
+					f->read();
+					st = getNextType(data.getEndWith(EOF),true);
+					if(!st) pos().error("Cannot have auto class inside of map");
+					f->trim(EOF);
+				} else st=nullptr;
+
+				if(f->peek()!='}'){
+					if(st)
+						pos().error("Map type does not end");
+					else
+						pos().error("Set type does not end");
+					exit(1);
+				} else f->read();
+				if(st){
+					currentType = new E_MAP(pos(),{std::pair<Statement*,Statement*>(s,st)});
+				} else {
+					pos().compilerError("Cannot read set types (yet)");
+					currentType = nullptr;
+				}
 			} else {
 				f->read();
 				f->error("Unknown start to type '"+str(tc)+"'");
@@ -928,7 +953,6 @@ public:
 				while(true){
 					auto z = f->peek();
 					if(z==EOF){
-						pos().error("Unclosed '{' for template", false);
 						return false;
 					}
 					else if(z=='}'){
@@ -949,7 +973,6 @@ public:
 				while(true){
 					auto z = f->peek();
 					if(z==EOF){
-						pos().error("Unclosed '{' for template", false);
 						return false;
 					}
 					else if(z==')'){
@@ -970,27 +993,24 @@ public:
 			} else if(fp=='{'){
 				f->read();
 				f->trim(EOF);
-				while(true){
-					auto z = f->peek();
-					if(z==EOF){
-						pos().error("Unclosed '{' for template", false);
-						return false;
-					}
-					else if(z=='}'){
-						f->read();
-						break;
-					} else if(z==','){
-						f->read();
-						f->trim(EOF);
-					}
+
+				auto z = f->peek();
+				if(z==EOF){
+					return false;
+				}
+				if(!isValidType(data.getEndWith(EOF))){
+					return false;
+				}
+				f->trim(EOF);
+				if(f->peek()==':'){
+					f->read();
 					if(!isValidType(data.getEndWith(EOF))) return false;
 					f->trim(EOF);
-					if(f->peek()==':'){
-						f->read();
-						if(!isValidType(data.getEndWith(EOF))) return false;
-						f->trim(EOF);
-					}
 				}
+				z = f->peek();
+				if(z=='}'){
+					f->read();
+				} else return false;
 			} else return false;
 		}
 		while((fp=='&' || fp=='%' || fp=='[')){
@@ -1325,12 +1345,12 @@ Statement* Lexer::getNextStatement(ParseData data){
 					else return temp;
 				}
 				if(f->done) f->error("Uncompleted inline 2");
-				if((te = f->read())!=close) f->error("Cannot end inline array with "+
+				if((te = f->read())!=close) f->error("Cannot end inline map/set/array/tuple with "+
 						String(1,te)+" instead of "+String(1,close));
 			}
 
 			if(open=='(' && seconds.size()>0 && values.size()!=seconds.size())
-				f->error("Cannot have partially-named tuple",true);
+				f->error("Cannot have partially-named tuple/map",true);
 			Statement* arr;
 			if(open=='('){
 				if(seconds.size()>0){
@@ -1358,8 +1378,14 @@ Statement* Lexer::getNextStatement(ParseData data){
 				arr = new E_ARR(pos(), values);
 			} else {
 				assert(open=='{');
-				pos().compilerError("Set/map creation has not been implemented");
-				exit(1);
+				if(seconds.size()>0){
+					assert(values.size()>0);
+					assert(values.size()==seconds.size());
+					arr = new E_MAP(pos(), values, seconds);
+				} else {
+					pos().compilerError("Set creation has not been implemented");
+					exit(1);
+				}
 			}
 
 			trim(data);

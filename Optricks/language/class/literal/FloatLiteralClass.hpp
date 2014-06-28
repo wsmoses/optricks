@@ -56,6 +56,11 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+
+		if(a->classType==CLASS_COMPLEX && b->classType==CLASS_COMPLEX)
+			return compare(((const ComplexClass*)a)->innerClass, ((const ComplexClass*)b)->innerClass);
+		else if(a->classType==CLASS_COMPLEX) return 1;
+		else if(b->classType==CLASS_COMPLEX) return -1;
 		if(a==this){
 			if(b==this) return 0;
 			else return -1;

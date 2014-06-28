@@ -51,6 +51,56 @@ struct Jumpable {
 		}
 };
 
+//USAGE rdata, condition, if true, if false
+#define LLVM_IF(_r, _cond, i_true, i_false){\
+	auto _ll_cond = _cond;\
+	if(llvm::ConstantInt* _ll_C = llvm::dyn_cast<llvm::ConstantInt>(_ll_cond)){\
+		if(_ll_C->isOne()){\
+			i_true;\
+		} else {\
+			i_false;\
+		}\
+	} else {\
+		llvm::BasicBlock* _ll_block = _r.builder.GetInsertPoint();\
+		llvm::Function* _ll_func = _ll_block->getParent();\
+		llvm::BasicBlock* _ll_if_true = _r.CreateBlockD("if_true", _ll_func);\
+		llvm::BasicBlock* _ll_if_false = _r.CreateBlockD("if_false", _ll_func);\
+		bool _ll_if_merge;\
+		auto _ll_cond_br = _r.builder.CreateCondBr(_ll_cond, _ll_if_true, _ll_if_false);\
+		_r.builder.SetInsertPoint(_ll_if_true);\
+		i_true;\
+		auto _ll_true_temp = r.builder.GetInsertPoint();\
+		if(_ll_true_temp==_ll_if_true && _ll_if_true->empty()){\
+			_ll_if_merge = true;\
+		} else {\
+			_ll_if_merge = false;\
+		}\
+		_r.builder.SetInsertPoint(_ll_if_false);\
+		i_false;\
+		if(_r.builder.GetInsertPoint()==_ll_if_false && _ll_if_false->empty()){\
+			if(!_ll_if_merge) { \
+				_r.builder.SetInsertPoint(_ll_true_temp);\
+				if(!_r.hadBreak())\
+					_r.builder.CreateBr(_ll_if_false);\
+				_r.builder.SetInsertPoint(_ll_if_false);\
+			} else {\
+				_r.DeleteBlock(_ll_if_true);\
+				_r.DeleteBlock(_ll_if_false);\
+				_ll_cond_br->eraseFromParent();\
+				_r.builder.SetInsertPoint(_ll_block);\
+			}\
+		} else {\
+			auto _ll_m = _r.CreateBlockD("if_merge", _ll_func);\
+			if(!_r.hadBreak())\
+				_r.builder.CreateBr(_ll_m);\
+			_r.builder.SetInsertPoint(_ll_true_temp);\
+			if(!_r.hadBreak())\
+				_r.builder.CreateBr(_ll_m);\
+			_r.builder.SetInsertPoint(_ll_m);\
+			\
+		}\
+	}\
+};
 
 #define RDATA_C_
 struct RData{
@@ -118,6 +168,11 @@ struct RData{
 			llvm::Function* f = llvm::Function::Create(FT,L,llvm::Twine(name),lmod);
 			return f;
 		}
+		/*
+		 * V is whether error
+		 * bool is whether already done
+		 */
+		//bool conditionalError(llvm::Value* V, String s, PositionID id);
 		void error(String s);
 		inline llvm::Constant* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
 		std::map<llvm::Function*, void*> toPut;

@@ -38,6 +38,8 @@ void incrementCount(RData& r, PositionID filePos, const Data* D){
 	case CLASS_COMPLEX:
 	case CLASS_RATIONAL:
 	case CLASS_ARRAY:
+	case CLASS_HASHMAP:
+	case CLASS_PRIORITYQUEUE:
 	case CLASS_MAP:
 	case CLASS_SET:
 	case CLASS_VECTOR:

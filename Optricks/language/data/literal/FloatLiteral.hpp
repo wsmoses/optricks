@@ -113,6 +113,7 @@ public:
 
 const FloatLiteral MY_NAN  (true,"nan");
 const FloatLiteral MY_P_INF(true,"inf");
+const FloatLiteral ZEROF_LITERAL((double)0);
 const FloatLiteral MY_N_INF(false,"-inf");
 
 

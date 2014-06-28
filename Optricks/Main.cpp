@@ -60,6 +60,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(getRData());
+	assert(dat);
 	if(dat->type==R_INT){
 		IntLiteral* i = (IntLiteral*)dat;
 		i->toStream(std::cout);
@@ -105,6 +106,12 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	const AbstractClass* retType = (dat->type==R_VOID)?(&voidClass):(dat->getReturnType());
 
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
+		retType = &voidClass;
+		getRData().builder.CreateRetVoid();
+	}
+
+	if(retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
+		LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 		retType = &voidClass;
 		getRData().builder.CreateRetVoid();
 	} else if(retType->classType!=CLASS_VOID){
@@ -510,6 +517,7 @@ int main(int argc, char** argv){
 		//std::cout << convertClass(std::pair<bool, char>,&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass(void (*)(int, char),&LANG_M)->getName() << endl << flush;
 		std::cout << START << flush;
+		//st.force("{int:long} a\n");
 		//st.force("int[] a\n");
 		//st.force("complex{int} a;\n");
 		/*

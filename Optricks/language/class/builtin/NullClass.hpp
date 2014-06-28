@@ -47,6 +47,8 @@ public:
 				|| toCast->classType==CLASS_CPOINTER
 				|| toCast->classType==CLASS_CSTRING
 				|| toCast->classType==CLASS_ARRAY
+				|| toCast->classType==CLASS_HASHMAP
+				|| toCast->classType==CLASS_PRIORITYQUEUE
 				|| toCast->classType==CLASS_FUNC
 
 
