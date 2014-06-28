@@ -110,20 +110,21 @@ def lang.c.string[] listdir(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
 	auto mlen = strlen(s);
 	bool end=s[mlen-1]=='/';
-
+	if(end) mlen+=1;
+	else mlen+=2;
 	auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
 	do{
 		auto st = _posix_dir_next_name(dir);
 		if(st==null) break;
 
-		auto len = mlen+strlen(st)+(end?lang.c.size_t(1):lang.c.size_t(2));
+		auto len = mlen+strlen(st);
 		auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
-
+		int n;
 		if(end)
-			sprintf(cp,"%s%s",s,st)
+			n=sprintf(cp,"%s%s",s,st)
 		else
-			sprintf(cp,"%s/%s",s,st)
-
+			n=sprintf(cp,"%s/%s",s,st)
+		assert(n+1==len);
 		if(isFile(cp)) {
 			ar[]= cp;
 		}

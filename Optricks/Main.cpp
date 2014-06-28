@@ -108,17 +108,17 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
 		retType = &voidClass;
 		getRData().builder.CreateRetVoid();
+	} else {
+		if(retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
+			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
+			retType = &voidClass;
+			getRData().builder.CreateRetVoid();
+		} else if(retType->classType!=CLASS_VOID){
+			llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
+			F->mutateType(llvm::PointerType::getUnqual(FT));
+			getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
+		} else getRData().builder.CreateRetVoid();
 	}
-
-	if(retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
-		LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
-		retType = &voidClass;
-		getRData().builder.CreateRetVoid();
-	} else if(retType->classType!=CLASS_VOID){
-		llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
-		F->mutateType(llvm::PointerType::getUnqual(FT));
-		getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
-	} else getRData().builder.CreateRetVoid();
 
 	getRData().FinalizeFunction(F);
 

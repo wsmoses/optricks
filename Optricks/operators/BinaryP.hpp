@@ -1412,12 +1412,13 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 		} else if(operation=="[]="){
 			ArrayClass* AC = (ArrayClass*) cc;
-
-			static llvm::Function* F = nullptr;
-			if(F==nullptr){
+			static std::map<llvm::Type*,llvm::Function*> MAP;
+			llvm::Function* F;
+			auto find = MAP.find(AC->type);
+			if(find==MAP.end()){
 				llvm::SmallVector<llvm::Type*,2> ar(2);
 				ar[0] = AC->type;
-				ar[1] = intClass.type;
+				ar[1] = AC->inner->type;
 				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(VOIDTYPE, ar, false), LOCAL_FUNC);
 
 				llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
@@ -1464,7 +1465,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.CreateRetVoid();
 				r.FinalizeFunctionD(F);
 				if(Parent) r.builder.SetInsertPoint( Parent );
-			}
+			} else F = find->second;
 			llvm::Value* INTO = ev->evaluate(r)->castToV(r, AC->inner, filePos);
 			llvm::Value* V = value->getValue(r, filePos);
 			assert(V);
@@ -1529,11 +1530,13 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 		} else if(operation=="[]="){
 			PriorityQueueClass* AC = (PriorityQueueClass*) cc;
-			static llvm::Function* F = nullptr;
-			if(F==nullptr){
+			static std::map<llvm::Type*,llvm::Function*> MAP;
+			llvm::Function* F;
+			auto find = MAP.find(AC->type);
+			if(find==MAP.end()){
 				llvm::SmallVector<llvm::Type*,2> ar(2);
 				ar[0] = AC->type;
-				ar[1] = intClass.type;
+				ar[1] = AC->inner->type;
 				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(VOIDTYPE, ar, false), LOCAL_FUNC);
 
 				llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
@@ -1605,7 +1608,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.CreateRetVoid();
 				r.FinalizeFunctionD(F);
 				if(Parent) r.builder.SetInsertPoint( Parent );
-			}
+			} else F = find->second;
 			llvm::Value* INTO = ev->evaluate(r)->castToV(r, AC->inner, filePos);
 			llvm::Value* V = value->getValue(r, filePos);
 			assert(V);

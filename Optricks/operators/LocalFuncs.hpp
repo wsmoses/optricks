@@ -120,8 +120,10 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			if(s=="poll" && v.size()==0){
 
 				PriorityQueueClass* AC = (PriorityQueueClass*) cc;
-				static llvm::Function* F = nullptr;
-				if(F==nullptr){
+				static std::map<llvm::Type*,llvm::Function*> MAP;
+				llvm::Function* F;
+				auto find = MAP.find(AC->type);
+				if(find==MAP.end()){
 					llvm::SmallVector<llvm::Type*,1> ar(1);
 					ar[0] = AC->type;
 					F = r.CreateFunctionD("_opt"+AC->getName()+".poll", llvm::FunctionType::get(AC->inner->type, ar, false), LOCAL_FUNC);
@@ -174,7 +176,11 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					auto NORMAL = r.CreateBlockD("NORMAL", FUNC);
 					auto not_break = r.CreateBlockD("not_break", FUNC);
 					auto END = r.CreateBlockD("end", FUNC);
-					r.builder.CreateCondBr(r.builder.CreateICmpULT(getInt32(0),HALF), LOOP, END);
+					auto END2 = r.CreateBlockD("end2", FUNC);
+					r.builder.CreateCondBr(r.builder.CreateICmpULT(getInt32(0),HALF), LOOP, END2);
+
+					r.builder.SetInsertPoint(END2);
+					r.builder.CreateRet(toRet);
 
 					r.builder.SetInsertPoint(END);
 					auto END_K = r.builder.CreatePHI(intClass.type,5);
@@ -224,7 +230,8 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					r.builder.CreateRet(toRet);
 					r.FinalizeFunctionD(F);
 					if(Parent) r.builder.SetInsertPoint( Parent );
-				}
+					MAP.insert(std::pair<llvm::Type*,llvm::Function*>(AC->type,F));
+				} else F = find->second;
 				auto V = inst->getValue(r, id);
 				assert(V);
 				return new ConstantData(r.builder.CreateCall(F, V), AC->inner);

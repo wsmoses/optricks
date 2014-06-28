@@ -1,3 +1,4 @@
+/*
 def File.:<<(int i){
 	fprintf(this.f,"%d", i);
 }
@@ -5,3 +6,16 @@ File f = File('hi.txt','w')
 
 f << 128;
 f.close();
+*/
+extern lang.c.size_t _msize(lang.c.pointer)
+auto a = listdir('.');
+println(a.alloced);
+println(a.length);
+for(int i=0; i<a.length; i++){
+	printf("%d ",(a[i]));
+	fflush();
+	printf("%d ",_msize(a[i]));
+	fflush();
+	printf("%d\n",strlen(a[i]));
+	fflush();
+}

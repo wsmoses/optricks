@@ -5,6 +5,50 @@ import "random.opt"
 import 'image.opt'
 //import "string.opt"
 
+class string{
+	lang.c.string t;
+	def string(lang.c.string l){
+		this.t = l;
+	}
+	def :<(string s){
+		return (extern lang.c.int strcmp(lang.c.string,lang.c.string))(this.t,s.t) < 0;
+	}
+}
+def print(string s){
+	print(s.t);
+}
+def println(string s){
+	println(s.t);
+}
+class T{
+	int t;
+	def T(int l){
+		this.t = l;
+	}
+	def :<(T s){
+		return this.t < s.t;
+	}
+}
+def print(T s){
+	print(s.t);
+}
+def println(T s){
+	println(s.t);
+}
+def print(lang.c.string s){
+	if(s==null){
+		print('null')
+		return;
+	}
+	int i=0;
+	while(s[i]!='\0'){
+		print(s[i]);
+		i++;
+	}
+
+}
+
+///*
 gen int range(int start=0,int stop,int step=1){
 	if(step>0)
 		for(int i = start; i<stop; i+=step)
@@ -18,12 +62,12 @@ gen int range(int end){
 	for(int i = 0; i<end; i++) yield i;
 }
 
-/*
-gen map(range{int} it, function{int,int} a){
+
+gen mmap(range{int} it, function{int,int} a){
 	for i in it:
 		yield a(i);
 }
-*/
+
 
 
 gen double range(double start=0, double stop, double step=1){
