@@ -23,6 +23,7 @@ template<> struct getName<A>{\
 DEF(unsigned int)
 DEF(int)
 DEF(long)
+DEF(unsigned long)
 DEF(long long)
 DEF(unsigned long long)
 //DEF(size_t)
