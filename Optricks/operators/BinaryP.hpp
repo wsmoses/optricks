@@ -407,12 +407,10 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			return hm->value;
 		}
 		if(operation=="[]="){
-			if(dd->hasCast(hm->key))
-				return hm->value;
-			else if(dd->classType==CLASS_TUPLE){
+			if(dd->classType==CLASS_TUPLE){
 				auto tc = (TupleClass*)dd;
 				if(tc->innerTypes.size()==2 && tc->innerTypes[0]->hasCast(hm->key) && tc->innerTypes[1]->hasCast(hm->value))
-					return hm->value;
+					return &boolClass;
 			}
 		}
 		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -1389,26 +1387,21 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			} else {
 				llvm::Value* A = value->getValue(r,filePos);
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,1));
-				auto FUNCT = r.builder.GetInsertBlock()->getParent();
-				auto ERROR_B = r.CreateBlockD("ERROR", FUNCT);
-				auto NO_ERROR_B = r.CreateBlockD("NO_ERROR", FUNCT);
-				r.builder.CreateCondBr(r.builder.CreateICmpUGE(V, LENGTH), ERROR_B, NO_ERROR_B);
-				r.builder.SetInsertPoint(ERROR_B);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,6> c_args(6);
-				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-				c_args[1] = V;
-				c_args[2] = LENGTH;
-				c_args[3] = r.getConstantCString(filePos.fileName);
-				c_args[4] = getInt32(filePos.lineN);
-				c_args[5] = getInt32(filePos.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
-				r.builder.SetInsertPoint(NO_ERROR_B);
+				LLVM_QUICKERROR(r,
+						(r.builder.CreateICmpUGE(V, LENGTH)),SINGLE_ARG(
+						llvm::SmallVector<llvm::Type*,1> t_args(1);
+						t_args[0] = C_STRINGTYPE;
+						llvm::SmallVector<llvm::Value*,6> c_args(6);
+						c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
+						c_args[1] = V;
+						c_args[2] = LENGTH;
+						c_args[3] = r.getConstantCString(filePos.fileName);
+						c_args[4] = getInt32(filePos.lineN);
+						c_args[5] = getInt32(filePos.charN);
+						r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+				))
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
-				I = r.builder.CreateGEP(I, V);
-				return new LocationData(new StandardLocation(I), AC->inner);
+				return new LocationData(new StandardLocation(r.builder.CreateGEP(I, V)), AC->inner);
 			}
 		} else if(operation=="[]="){
 			ArrayClass* AC = (ArrayClass*) cc;
@@ -1497,7 +1490,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		}
 		if(operation=="[]"){
 			llvm::Value* V;
-			ArrayClass* AC = (ArrayClass*) cc;
+			PriorityQueueClass* AC = (PriorityQueueClass*) cc;
 			if(dd->classType==CLASS_INT) V =
 					r.builder.CreateSExtOrTrunc(ev->evalV(r, filePos),intClass.type);
 			else{
@@ -1507,25 +1500,20 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			{
 				llvm::Value* A = value->getValue(r,filePos);
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,1));
-				auto FUNCT = r.builder.GetInsertBlock()->getParent();
-				auto ERROR_B = r.CreateBlockD("ERROR", FUNCT);
-				auto NO_ERROR_B = r.CreateBlockD("NO_ERROR", FUNCT);
-				r.builder.CreateCondBr(r.builder.CreateICmpUGE(V, LENGTH), ERROR_B, NO_ERROR_B);
-				r.builder.SetInsertPoint(ERROR_B);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,6> c_args(6);
-				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-				c_args[1] = V;
-				c_args[2] = LENGTH;
-				c_args[3] = r.getConstantCString(filePos.fileName);
-				c_args[4] = getInt32(filePos.lineN);
-				c_args[5] = getInt32(filePos.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
-				r.builder.SetInsertPoint(NO_ERROR_B);
+				LLVM_QUICKERROR(r,
+						(r.builder.CreateICmpUGE(V, LENGTH)),SINGLE_ARG(
+						llvm::SmallVector<llvm::Type*,1> t_args(1);
+						t_args[0] = C_STRINGTYPE;
+						llvm::SmallVector<llvm::Value*,6> c_args(6);
+						c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
+						c_args[1] = V;
+						c_args[2] = LENGTH;
+						c_args[3] = r.getConstantCString(filePos.fileName);
+						c_args[4] = getInt32(filePos.lineN);
+						c_args[5] = getInt32(filePos.charN);
+						r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+				))
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
-				I = r.builder.CreateGEP(I, V);
 				return new ConstantData(r.builder.CreateLoad(r.builder.CreateGEP(I, V)), AC->inner);
 			}
 		} else if(operation=="[]="){
@@ -1639,15 +1627,56 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else return new ConstantData(r.builder.CreateICmpNE(T,NU), &boolClass);
 		}
 		if(operation=="[]"){
-			llvm::Value* V;
 			HashMapClass* AC = (HashMapClass*) cc;
 			if(!dd->hasCast(AC->key)){
 				filePos.error("Cannot use class '"+dd->getName()+"' as key for "+AC->getName());
 				return &VOID_DATA;
 			} else{
-				V = getLocalFunction(r, filePos, "hash", ev->evaluate(r)->castTo(r, AC->key, filePos), NO_TEMPLATE,{})->getValue(r, filePos);
+				auto KEY = ev->evaluate(r)->castTo(r, AC->key, filePos);
+				llvm::Value* V = getLocalFunction(r, filePos, "hash", KEY, NO_TEMPLATE,{})->getValue(r, filePos);
 				//TODO MOD
 				V =	r.builder.CreateSExtOrTrunc(V,intClass.type);
+
+				llvm::Value* A = value->getValue(r,filePos);
+				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,1));
+				V = r.builder.CreateURem(V, LENGTH);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
+				auto S_IDX = r.builder.CreateLoad(r.builder.CreateGEP(DATA,V));
+				auto START = r.builder.GetInsertBlock();
+				auto FUNCT = START->getParent();
+				auto ERROR_B = r.CreateBlockD("map[]_error", FUNCT);
+				auto LOOP_1 = r.CreateBlockD("map[]_loop_1", FUNCT);
+				r.builder.CreateCondBr(r.builder.CreateIsNull(S_IDX),ERROR_B,LOOP_1);
+
+				r.builder.SetInsertPoint(ERROR_B);
+				llvm::SmallVector<llvm::Type*,1> t_args(1);
+				t_args[0] = C_STRINGTYPE;
+				llvm::SmallVector<llvm::Value*,4> c_args(4);
+				c_args[0] = r.getConstantCString("Illegal map key at %s:%d:%d\n");
+				c_args[1] = r.getConstantCString(filePos.fileName);
+				c_args[2] = getInt32(filePos.lineN);
+				c_args[3] = getInt32(filePos.charN);
+				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+				r.error("");
+
+				r.builder.SetInsertPoint(LOOP_1);
+				auto PHI=r.builder.CreatePHI(llvm::PointerType::getUnqual(AC->nodeType),2);
+				PHI->addIncoming(S_IDX,START);
+				auto KEY_P = r.builder.CreateConstGEP2_32(PHI,0,1);
+				StandardLocation SL(KEY_P);
+				LocationData LD(&SL, AC->key);
+				auto cmp = getBinop(r, filePos, &LD, KEY, "==")->getValue(r, filePos);
+				auto DONE = r.CreateBlockD("map[]_done", FUNCT);
+				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", FUNCT);
+				r.builder.CreateCondBr(cmp, LOOP_2, DONE);
+				r.builder.SetInsertPoint(LOOP_2);
+				auto NEX_P = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(PHI,0,0));
+				r.builder.CreateCondBr(r.builder.CreateIsNull(NEX_P),ERROR_B,LOOP_1);
+				PHI->addIncoming(NEX_P, LOOP_2);
+
+				r.builder.SetInsertPoint(DONE);
+				return new LocationData(
+						new StandardLocation(r.builder.CreateConstGEP2_32(PHI,0,2)), AC->value);
 			}
 			//todo
 			if(value->type==R_MAP){
@@ -1697,42 +1726,105 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			// */
 			}
 		}
-		/*
-		else if(operation=="[]="){
-			ArrayClass* AC = (ArrayClass*) cc;
-			llvm::Value* INTO = ev->evaluate(r)->castToV(r, AC->inner, filePos);
-			llvm::Value* V = value->getValue(r, filePos);
-			assert(V);
-			auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
-			auto LENGTH = r.builder.CreateLoad(LENGTH_P);
-			auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
-			auto ALLOC = r.builder.CreateLoad(ALLOC_P);
-			auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
-			auto REALLOC = r.CreateBlockD("realloc", r.builder.GetInsertBlock()->getParent());
-			auto ADD = r.CreateBlockD("add", r.builder.GetInsertBlock()->getParent());
-			r.builder.CreateCondBr(r.builder.CreateICmpSGT(ALLOC,LENGTH),ADD,REALLOC);
-			r.builder.SetInsertPoint(REALLOC);
-			llvm::SmallVector<llvm::Type*,2> args(2);
-			args[0] = C_POINTERTYPE;
-			args[1] = C_SIZETTYPE;
-			llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
-			auto R_FUNC = r.getExtern("realloc",FT);
-			llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
-			auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
-			uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
-			auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
-					llvm::ConstantInt::get(C_SIZETTYPE, s)));
-			auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
-			r.builder.CreateStore(NEW_P,DATA_P);
-			r.builder.CreateStore(NEWLEN,ALLOC_P);
-			r.builder.CreateBr(ADD);
-			r.builder.SetInsertPoint(ADD);
-			llvm::Value* I = r.builder.CreateLoad(DATA_P);
-			I = r.builder.CreateGEP(I, LENGTH);
-			r.builder.CreateStore(INTO, I);
-			r.builder.CreateStore(r.builder.CreateAdd(LENGTH, getInt32(1)),LENGTH_P);
-			return new ConstantData(INTO, AC->inner);
+		else if(operation=="[]="){
+			HashMapClass* AC = (HashMapClass*) cc;
+			TupleClass* TC = TupleClass::get({AC->key, AC->value});
+
+			static std::map<llvm::Type*,llvm::Function*> MAP;
+			llvm::Function* F;
+			auto find = MAP.find(AC->type);
+			if(find==MAP.end()){
+				llvm::SmallVector<llvm::Type*,3> ar(3);
+				ar[0] = AC->type;
+				ar[1] = AC->key->type;
+				ar[2] = AC->value->type;
+				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(BOOLTYPE, ar, false), LOCAL_FUNC);
+
+				llvm::Value* A, * KEY_V, *VAL_V;
+				{
+					llvm::Function::arg_iterator AI = F->arg_begin();
+					AI->setName("map");
+					A = AI;
+					++AI;
+					AI->setName("key");
+					KEY_V = AI;
+					++AI;
+					AI->setName("value");
+					VAL_V = AI;
+				}
+				ConstantData KEY(KEY_V, AC->key);
+
+				llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
+				llvm::BasicBlock* START = r.CreateBlockD("entry", F);
+				r.builder.SetInsertPoint(START);
+				llvm::Value* V = getLocalFunction(r, filePos, "hash", &KEY, NO_TEMPLATE,{})->getValue(r, filePos);
+				V =	r.builder.CreateSExtOrTrunc(V,intClass.type);
+
+				//llvm::Value* A = value->getValue(r,filePos);
+				auto ALLOCED = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,2));
+
+				//TODO RESIZE ALLOCED / REHASH ALL!
+
+				V = r.builder.CreateURem(V, ALLOCED);
+
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
+				auto P_S_IDX = r.builder.CreateGEP(DATA,V);
+				auto S_IDX = r.builder.CreateLoad(P_S_IDX);
+				auto INSERT_B = r.CreateBlockD("map[]=_insert", F);
+				r.builder.SetInsertPoint(INSERT_B);
+				auto TO_INSERT = r.builder.CreatePHI(llvm::PointerType::getUnqual(llvm::PointerType::getUnqual(AC->nodeType)), 2);
+				r.builder.SetInsertPoint(START);
+
+				auto LOOP_1 = r.CreateBlockD("map[]_loop_1", F);
+				r.builder.CreateCondBr(r.builder.CreateIsNull(S_IDX),INSERT_B,LOOP_1);
+				TO_INSERT->addIncoming(P_S_IDX, START);
+
+				r.builder.SetInsertPoint(INSERT_B);
+				auto s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->nodeType);
+				llvm::Instruction* p = llvm::CallInst::CreateMalloc(INSERT_B, C_SIZETTYPE,
+								AC->nodeType, llvm::ConstantInt::get(C_SIZETTYPE, s));
+				r.builder.Insert(p);
+				r.builder.CreateStore(p, TO_INSERT);
+				r.builder.CreateStore(llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(AC->nodeType)), r.builder.CreateConstGEP2_32(p,0,0));
+				r.builder.CreateStore(KEY_V, r.builder.CreateConstGEP2_32(p,0,1));
+				r.builder.CreateStore(VAL_V, r.builder.CreateConstGEP2_32(p,0,2));
+				auto LENGTH_P = r.builder.CreateConstGEP2_32(A, 0,1);
+				r.builder.CreateStore(r.builder.CreateAdd(r.builder.CreateLoad(LENGTH_P), getInt32(1)), LENGTH_P);
+				r.builder.CreateRet(BoolClass::getValue(false));
+
+				r.builder.SetInsertPoint(LOOP_1);
+				auto PHI=r.builder.CreatePHI(llvm::PointerType::getUnqual(AC->nodeType),2);
+				PHI->addIncoming(S_IDX,START);
+				auto KEY_P = r.builder.CreateConstGEP2_32(PHI,0,1);
+				StandardLocation SL(KEY_P);
+				LocationData LD(&SL, AC->key);
+				auto cmp = getBinop(r, filePos, &LD, &KEY, "==")->getValue(r, filePos);
+				auto DONE = r.CreateBlockD("map[]_done", F);
+				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", F);
+				r.builder.CreateCondBr(cmp, LOOP_2, DONE);
+
+				r.builder.SetInsertPoint(LOOP_2);
+				auto P_NEX_P = r.builder.CreateConstGEP2_32(PHI,0,0);
+				auto NEX_P = r.builder.CreateLoad(P_NEX_P);
+				r.builder.CreateCondBr(r.builder.CreateIsNull(NEX_P),INSERT_B,LOOP_1);
+				TO_INSERT->addIncoming(P_NEX_P, LOOP_2);
+				PHI->addIncoming(NEX_P, LOOP_2);
+
+				r.builder.SetInsertPoint(DONE);
+				r.builder.CreateStore(VAL_V, r.builder.CreateConstGEP2_32(PHI,0,2));
+				r.builder.CreateRet(BoolClass::getValue(true));
+				r.FinalizeFunctionD(F);
+				if(Parent) r.builder.SetInsertPoint( Parent );
+			} else F = find->second;
+
+			auto TUPLE = ev->evaluate(r)->castTo(r, TC, filePos);
+			auto m_MAP = value->getValue(r, filePos);
+			auto m_KEY = TC->getLocalData(r, filePos, "_0", TUPLE)->getValue(r, filePos);
+			auto m_VALUE = TC->getLocalData(r, filePos, "_1", TUPLE)->getValue(r, filePos);
+			assert(m_KEY);
+			assert(m_VALUE);
+			return new ConstantData(r.builder.CreateCall3(F, m_MAP, m_KEY,m_VALUE), &boolClass);
 		}
 		// */
 		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");

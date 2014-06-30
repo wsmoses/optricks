@@ -36,6 +36,12 @@ bool RData::conditionalError(llvm::Value* V, String s, PositionID id){
 		return false;
 	}
 }*/
+void RData::println(String m){
+	llvm::SmallVector<llvm::Type*,1> args(1);
+	args[0] = C_STRINGTYPE;
+	llvm::FunctionType *FT = llvm::FunctionType::get(C_INTTYPE, args, false);
+	builder.CreateCall(getExtern("puts", FT, ""),getConstantCString(m));
+}
 		void RData::error(String s){
 			auto CU = getExtern("putchar", &c_intClass, {&c_intClass});
 			//std::stringstream ss;

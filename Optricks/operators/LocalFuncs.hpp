@@ -19,6 +19,7 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 		return uc->hasLocalFunction(s);
 	}
 	case CLASS_HASHMAP:
+		if(s=="carr") return true;
 	case CLASS_ARRAY:{
 		if(s=="isEmpty") return true;
 		else return false;
@@ -43,6 +44,7 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 		return lf->getSingleProto()->returnType;
 	}
 	case CLASS_HASHMAP:
+		if(s=="carr") return &c_pointerClass;
 	case CLASS_ARRAY:{
 		if(s=="isEmpty" && v.size()==0) return &boolClass;
 		else break;
@@ -96,6 +98,30 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			return lf->callFunction(r,id, v, inst);
 		}
 		case CLASS_HASHMAP:{
+			if(s=="carr"){
+				llvm::Value* A = inst->getValue(r,id);
+				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,2));
+				auto FUNCT = r.builder.GetInsertBlock()->getParent();
+				auto ERROR_B = r.CreateBlockD("ERROR", FUNCT);
+				auto NO_ERROR_B = r.CreateBlockD("NO_ERROR", FUNCT);
+				auto V = v[0]->evaluate(r)->castToV(r, &intClass, id);
+				r.builder.CreateCondBr(r.builder.CreateICmpUGE(V, LENGTH), ERROR_B, NO_ERROR_B);
+				r.builder.SetInsertPoint(ERROR_B);
+				llvm::SmallVector<llvm::Type*,1> t_args(1);
+				t_args[0] = C_STRINGTYPE;
+				llvm::SmallVector<llvm::Value*,6> c_args(6);
+				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
+				c_args[1] = V;
+				c_args[2] = LENGTH;
+				c_args[3] = r.getConstantCString(id.fileName);
+				c_args[4] = getInt32(id.lineN);
+				c_args[5] = getInt32(id.charN);
+				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+				r.error("");
+				r.builder.SetInsertPoint(NO_ERROR_B);
+				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
+				return new LocationData(new StandardLocation(r.builder.CreatePointerCast(r.builder.CreateGEP(I, V),llvm::PointerType::getUnqual(C_POINTERTYPE))), &c_pointerClass);
+			}
 			//auto hm = (const HashMapClass*)cc;
 			if(s=="isEmpty" && v.size()==0){
 				auto V = inst->getValue(r, id);

@@ -17,23 +17,28 @@ public:
 		assert(d);
 		return "map{"+c->getName()+","+d->getName()+"}";
 	}
+	static inline llvm::StructType* getNodeType(const AbstractClass* const c, const AbstractClass* const d){
+		auto T = llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef("map.Node{"+c->getName()+","+d->getName()+"}"));
+		llvm::SmallVector<llvm::Type*,3> types(3);
+		types[0] = llvm::PointerType::getUnqual(T);
+		types[1] = c->type;
+		types[2] = d->type;
+		T->setBody(types,false);
+		return T;
+	}
 	static inline llvm::Type* getMapType(const AbstractClass* const c, const AbstractClass* const d){
 		llvm::SmallVector<llvm::Type*,4> ar(4);
 		ar[0] = /* Counts (for garbage collection) */ intClass.type;
 		ar[1] = /* Length of array */ intClass.type;
 		ar[2] = /* Amount of memory allocated */ intClass.type;
-		ar[3] = /* Actual data */ llvm::PointerType::getUnqual(llvm::StructType::get(c->type,d->type,nullptr));
-		return llvm::PointerType::getUnqual(llvm::StructType::create(ar,llvm::StringRef(str(c,d)),false));
+		ar[3] = /* Actual data */ llvm::PointerType::getUnqual(llvm::PointerType::getUnqual(getNodeType(c,d)));
+		return llvm::PointerType::getUnqual(llvm::StructType::get(llvm::getGlobalContext(),ar,false));
 	}
+	llvm::StructType* const nodeType;
 	const AbstractClass* key;
 	const AbstractClass* value;
 protected:
-	HashMapClass(const AbstractClass* a,const AbstractClass* b):
-		AbstractClass(nullptr,str(a,b),nullptr,PRIMITIVE_LAYOUT,CLASS_HASHMAP,true,getMapType(a,b)),key(a),value(b){
-		assert(a->classType!=CLASS_LAZY);
-		assert(a->classType!=CLASS_REF);
-		///register methods such as print / tostring / tofile / etc
-	}
+	HashMapClass(const AbstractClass* a,const AbstractClass* b);
 public:
 	inline bool hasCast(const AbstractClass* const toCast) const{
 		switch(toCast->classType){
@@ -49,17 +54,21 @@ public:
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override{
-		if(s!="length"){
+		if(s!="length" && s!="alloced"){
 			illegalLocal(id,s);
 			exit(1);
 		}
 		return &intClass;
 	}
 	bool hasLocalData(String s) const override final{
-		return s=="length";
+		return s=="length" || s=="alloced";
 	}
 	const Data* getLocalData(RData& r, PositionID id, String s, const Data* instance) const override{
 		//TODO reference count carr / make into int[len]&
+		if(s=="alloced"){
+			llvm::Value* V = instance->getValue(r,id);
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 2)), &intClass);
+		}
 		if(s!="length"){
 			illegalLocal(id,s);
 			exit(1);

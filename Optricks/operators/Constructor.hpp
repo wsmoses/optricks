@@ -85,16 +85,15 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		}
 		const ArrayClass* tc = (const ArrayClass*)this;
 		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
-		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
-		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				tc->inner->type, llvm::ConstantInt::get(ic, s), LEN);
+		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
+				tc->inner->type, llvm::ConstantInt::get(C_SIZETTYPE, s), LEN);
 		r.builder.Insert(v);
 
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
 		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-						tmp, llvm::ConstantInt::get(ic, s));
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
+						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
 		r.builder.Insert(p);
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
@@ -110,7 +109,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		if(args.size()>1 ) filePos.error("Could not find valid constructor in array");
 		llvm::Value* LEN;
 		if(args.size()==0){
-
+			LEN = getInt32(3);
 		} else {
 			auto L = args[0]->evaluate(r);
 			auto V = L->getReturnType();
@@ -118,12 +117,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				llvm::Value* M = L->getValue(r, filePos);
 				const IntClass* I = (const IntClass*)V;
 				auto Im = I->getWidth();
-				if(Im==32) LEN = M;
-				else if(32>Im){
-					LEN = r.builder.CreateSExt(M, type);
-				} else{
-					LEN = r.builder.CreateTrunc(M, type);
-				}
+				LEN = r.builder.CreateSExtOrTrunc(M, intClass.type);
 			} else if(V->classType==CLASS_INTLITERAL){
 				const IntLiteral* IL = (const IntLiteral*)L;
 				assert(intClass.getWidth()==32);
@@ -131,22 +125,23 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			}
 		}
 		const HashMapClass* tc = (const HashMapClass*)this;
-		auto ST = llvm::StructType::get(tc->key->type,tc->value->type,nullptr);
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(ST);
-		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
-		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				ST, llvm::ConstantInt::get(ic, s), LEN);
-		r.builder.Insert(v);
+		auto PT = llvm::PointerType::getUnqual(tc->nodeType);
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(PT);
+		auto CALLOC = r.lmod->getOrInsertFunction("calloc", C_POINTERTYPE, C_SIZETTYPE, C_SIZETTYPE, NULL);
 
-		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
+		auto v = r.builder.CreatePointerCast(
+				r.builder.CreateCall2(CALLOC,r.builder.CreateSExtOrTrunc(LEN,C_SIZETTYPE),llvm::ConstantInt::get(C_SIZETTYPE, s)),
+				llvm::PointerType::getUnqual(PT));
+
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
 		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-						tmp, llvm::ConstantInt::get(ic, s));
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
+						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
 		r.builder.Insert(p);
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
-		r.builder.CreateStore(LEN,
+
+		r.builder.CreateStore(getInt32(0),
 				r.builder.CreateConstGEP2_32(p, 0,1));
 		r.builder.CreateStore(LEN,
 				r.builder.CreateConstGEP2_32(p, 0,2));

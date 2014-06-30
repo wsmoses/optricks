@@ -51,6 +51,38 @@ struct Jumpable {
 		}
 };
 
+#define SINGLE_ARG(...) __VA_ARGS__
+#define LLVM_QUICKERROR(_r, _cond, i_true){\
+		llvm::Function* _ll_func = _r.builder.GetInsertBlock()->getParent();\
+		llvm::BasicBlock* _ll_if_true = _r.CreateBlockD("error", _ll_func);\
+		llvm::BasicBlock* _ll_if_false = _r.CreateBlockD("no_error", _ll_func);\
+		 _r.builder.CreateCondBr(_cond, _ll_if_true, _ll_if_false);\
+		_r.builder.SetInsertPoint(_ll_if_true);\
+		i_true;\
+		_r.builder.CreateCall(_r.getExtern("exit", &c_intClass, {&c_intClass}), llvm::ConstantInt::get(c_intClass.type, 1,false));\
+		_r.builder.CreateUnreachable();\
+		_r.builder.SetInsertPoint(_ll_if_false);\
+	};
+#define LLVM_ERROR(_r, _cond, i_true){\
+		auto _ll_cond = _cond;\
+		if(llvm::ConstantInt* _ll_C = llvm::dyn_cast<llvm::ConstantInt>(_ll_cond)){\
+			if(_ll_C->isOne()){\
+				i_true;\
+			} \
+		} else {\
+			llvm::BasicBlock* _ll_block = _r.builder.GetInsertBlock();\
+			llvm::Function* _ll_func = _ll_block->getParent();\
+			llvm::BasicBlock* _ll_if_true = _r.CreateBlockD("error", _ll_func);\
+			llvm::BasicBlock* _ll_if_false = _r.CreateBlockD("no_error", _ll_func);\
+			 _r.builder.CreateCondBr(_ll_cond, _ll_if_true, _ll_if_false);\
+			_r.builder.SetInsertPoint(_ll_if_true);\
+			i_true;\
+			_r.builder.CreateCall(_r.getExtern("exit", &c_intClass, {&c_intClass}), llvm::ConstantInt::get(c_intClass.type, 1,false));\
+			_r.builder.CreateUnreachable();\
+			_r.builder.SetInsertPoint(_ll_if_false);\
+		}\
+	};
+
 //USAGE rdata, condition, if true, if false
 #define LLVM_IF(_r, _cond, i_true, i_false){\
 	auto _ll_cond = _cond;\
@@ -61,7 +93,7 @@ struct Jumpable {
 			i_false;\
 		}\
 	} else {\
-		llvm::BasicBlock* _ll_block = _r.builder.GetInsertPoint();\
+		llvm::BasicBlock* _ll_block = _r.builder.GetInsertBlock();\
 		llvm::Function* _ll_func = _ll_block->getParent();\
 		llvm::BasicBlock* _ll_if_true = _r.CreateBlockD("if_true", _ll_func);\
 		llvm::BasicBlock* _ll_if_false = _r.CreateBlockD("if_false", _ll_func);\
@@ -152,6 +184,7 @@ struct RData{
 				return exec;
 			}
 		}
+		void println(String s);
 		llvm::PHINode* CreatePHI(llvm::Type *Ty, unsigned NumReservedValues, const llvm::Twine &Name = ""){
 			llvm::PHINode* p = builder.CreatePHI(Ty,NumReservedValues,Name);
 			assert(p);

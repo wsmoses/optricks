@@ -135,7 +135,7 @@ template<typename A> struct convertClass<const A>{
 };
 template<typename A, size_t B> struct convertClass<A[B]>{
 	static const ArrayClass* const convert(Scopable* s){
-		return ArrayClass::get(convertClass<A>::convert(s), B);
+		return ArrayClass::get(convertClass<A>::convert(s));
 	}
 };
 template<typename... A> struct totalSize{

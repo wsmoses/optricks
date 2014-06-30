@@ -31,9 +31,10 @@ public:
 		}
 		return HashMapClass::get(A, B);
 	}
-	inline Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
+	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType==CLASS_CLASS) return getMyClass(r, id);
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
+		if(getReturnType()==right) return this;
 		return new ConstantData(castToV(r, right, id), right);
 	}
 	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
@@ -60,20 +61,23 @@ public:
 		auto tc = (HashMapClass*)right;
 		assert(tc->key);
 		assert(tc->value);
-		auto LEN=getInt32(inner.size());
-		auto ST = llvm::StructType::get(tc->key->type,tc->value->type,nullptr);
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(ST);
-		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
-		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				ST, llvm::ConstantInt::get(ic, s), LEN);
-		r.builder.Insert(v);
+		auto LEN=getInt32(inner.size());//TODO CONSIDER HAVING DIF
+
+		auto PT = llvm::PointerType::getUnqual(tc->nodeType);
+		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(PT);
+		auto CALLOC = r.lmod->getOrInsertFunction("calloc", C_POINTERTYPE, C_SIZETTYPE, C_SIZETTYPE, NULL);
+
+		auto v = r.builder.CreatePointerCast(
+				r.builder.CreateCall2(CALLOC,r.builder.CreateZExtOrTrunc(LEN,C_SIZETTYPE),llvm::ConstantInt::get(C_SIZETTYPE, s)),
+				llvm::PointerType::getUnqual(PT));
 
 		id.compilerError("Need to insert map elements!");
+
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
 		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-						tmp, llvm::ConstantInt::get(ic, s));
+		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
+						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
 		r.builder.Insert(p);
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));

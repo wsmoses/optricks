@@ -133,6 +133,5 @@ const IntClass c_intClass(&(NS_LANG_C.staticVariables), "int", 8*sizeof(int));
 const IntClass c_longClass(&(NS_LANG_C.staticVariables), "long", 8*sizeof(long));
 const IntClass c_longlongClass(&(NS_LANG_C.staticVariables), "long_long", 8*sizeof(long long));
 const IntClass c_size_tClass(&(NS_LANG_C.staticVariables), "size_t", 8*sizeof(size_t));
-//const IntClass c_size_tClass("c_size_t", 8*sizeof(size_t));
 
 #endif /* INTCLASS_HPP_ */

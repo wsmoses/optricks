@@ -1,0 +1,4 @@
+auto m=map{char,int}()
+m[]=('c',3)
+println(m)
+println(m.carr(0))

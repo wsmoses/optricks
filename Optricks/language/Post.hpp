@@ -11,6 +11,7 @@
 #include "./evaluatable/EvaluatableP.hpp"
 #include "./evaluatable/CastEvalP.hpp"
 #include "./class/builtin/FloatClassP.hpp"
+#include "./class/builtin/HashMapClassP.hpp"
 #include "./class/builtin/IntClassP.hpp"
 #include "./class/builtin/ClassClassP.hpp"
 #include "./class/builtin/FunctionClassP.hpp"

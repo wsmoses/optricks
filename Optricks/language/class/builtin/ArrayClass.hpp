@@ -12,7 +12,7 @@
 class ArrayClass: public AbstractClass{
 public:
 	static inline String str(const AbstractClass* const d){
-		if(!d) return "unknown[]";
+		if(!d) return "array{#}";
 		assert(d);
 		//if(d==nullptr) return "array";
 		/** length 0 is arbitrary-length **/
@@ -29,7 +29,7 @@ public:
 			ar[1] = /* Length of array */ intClass.type;
 			ar[2] = /* Amount of memory allocated */ intClass.type;
 			ar[3] = /* Actual data */ llvm::PointerType::getUnqual(d->type);
-			return llvm::PointerType::getUnqual(llvm::StructType::create(ar,llvm::StringRef(str(d)),false));
+			return llvm::PointerType::getUnqual(llvm::StructType::get(llvm::getGlobalContext(), ar,false));
 		}
 	}
 	const AbstractClass* inner;

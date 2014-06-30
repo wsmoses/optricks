@@ -10,6 +10,7 @@
 
 #include "./AbstractClass.hpp"
 #include "./UserClass.hpp"
+#include "./builtin/NamedTupleClass.hpp"
 #include "./builtin/TupleClass.hpp"
 #include "./builtin/IntClass.hpp"
 #include "./builtin/FloatClass.hpp"

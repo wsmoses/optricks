@@ -9,8 +9,8 @@
 #define NAMEDTUPLECLASS_HPP_
 #include "./TupleClass.hpp"
 #include "../../data/LocationData.hpp"
+#include "../../data/TupleData.hpp"
 #include "../../data/DeclarationData.hpp"
-
 
 class NamedTupleClass: public TupleClass{
 public:
@@ -71,7 +71,7 @@ public:
 			if(innerNames[i]==s){
 				assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST || instance->type==R_TUPLE);
 				if(instance->type==R_TUPLE){
-					TupleData* td = (TupleData*)instance;
+					auto td = (TupleData*)instance;
 					return td->inner[i]->castTo(r,innerTypes[i],id);
 				}
 				assert(instance->getReturnType()==this);

@@ -12,6 +12,7 @@
 class Location{
 	public:
 		virtual ~Location(){};
+		virtual llvm::Type* getType()=0;
 		virtual llvm::Value* getValue(RData& r, PositionID id)=0;
 		virtual void setValue(llvm::Value* v, RData& r)=0;
 		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
@@ -27,6 +28,11 @@ class StandardLocation : public Location{
 		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
+		llvm::Type* getType() override final{
+			auto T=position->getType();
+			assert(llvm::dyn_cast<llvm::PointerType>(T));
+			return ((llvm::PointerType*) T)->getElementType();
+		}
 		llvm::Value* getPointer(RData& r,PositionID id) override final{
 			return position;
 		}
@@ -66,6 +72,9 @@ public:
 		}
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
+	}
+	llvm::Type* getType() override final{
+		return type;
 	}
 	llvm::Value* getPointer(RData& r,PositionID id) override final{
 		llvm::BasicBlock* me = r.builder.GetInsertBlock();

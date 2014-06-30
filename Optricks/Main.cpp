@@ -109,7 +109,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		retType = &voidClass;
 		getRData().builder.CreateRetVoid();
 	} else {
-		if(retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
+		if(retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
 			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 			retType = &voidClass;
 			getRData().builder.CreateRetVoid();
@@ -479,7 +479,7 @@ int main(int argc, char** argv){
 	//{};
 	///*
 	 		{
-				getExecutablePath() +"stdlib/stdlib.opt"
+//				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
 #endif

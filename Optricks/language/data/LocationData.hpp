@@ -15,6 +15,7 @@ public:
 	Location* const value;
 	LocationData(Location* const val, const AbstractClass* cp):LLVMData(R_LOC, cp),value(val){
 		assert(val); assert(cp);
+		assert(val->getType()==cp->type);
 		//assert(cp->classType!=CLASS_CLASS);
 		//assert(cp->classType!=CLASS_FUNC);
 		//assert(cp->classType!=CLASS_GEN);
