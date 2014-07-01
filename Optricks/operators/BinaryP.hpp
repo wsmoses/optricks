@@ -1413,6 +1413,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				ar[0] = AC->type;
 				ar[1] = AC->inner->type;
 				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(VOIDTYPE, ar, false), LOCAL_FUNC);
+				MAP.insert(std::pair<llvm::Type*,llvm::Function*>(AC->type,F));
 
 				llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 				llvm::BasicBlock* BB = r.CreateBlockD("entry", F);
@@ -1518,14 +1519,15 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 		} else if(operation=="[]="){
 			PriorityQueueClass* AC = (PriorityQueueClass*) cc;
-			static std::map<llvm::Type*,llvm::Function*> MAP;
+			static std::map<const AbstractClass*,llvm::Function*> MAP;
 			llvm::Function* F;
-			auto find = MAP.find(AC->type);
+			auto find = MAP.find(AC->inner);
 			if(find==MAP.end()){
 				llvm::SmallVector<llvm::Type*,2> ar(2);
 				ar[0] = AC->type;
 				ar[1] = AC->inner->type;
 				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(VOIDTYPE, ar, false), LOCAL_FUNC);
+				MAP.insert(std::pair<const AbstractClass*,llvm::Function*>(AC->inner,F));
 
 				llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 				llvm::BasicBlock* BB = r.CreateBlockD("entry", F);
@@ -1665,10 +1667,11 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto KEY_P = r.builder.CreateConstGEP2_32(PHI,0,1);
 				StandardLocation SL(KEY_P);
 				LocationData LD(&SL, AC->key);
+
 				auto cmp = getBinop(r, filePos, &LD, KEY, "==")->getValue(r, filePos);
 				auto DONE = r.CreateBlockD("map[]_done", FUNCT);
 				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", FUNCT);
-				r.builder.CreateCondBr(cmp, LOOP_2, DONE);
+				r.builder.CreateCondBr(cmp, DONE, LOOP_2);
 				r.builder.SetInsertPoint(LOOP_2);
 				auto NEX_P = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(PHI,0,0));
 				r.builder.CreateCondBr(r.builder.CreateIsNull(NEX_P),ERROR_B,LOOP_1);
@@ -1731,15 +1734,16 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			HashMapClass* AC = (HashMapClass*) cc;
 			TupleClass* TC = TupleClass::get({AC->key, AC->value});
 
-			static std::map<llvm::Type*,llvm::Function*> MAP;
+			static std::map<const HashMapClass*,llvm::Function*> MAP;
 			llvm::Function* F;
-			auto find = MAP.find(AC->type);
+			auto find = MAP.find(AC);
 			if(find==MAP.end()){
 				llvm::SmallVector<llvm::Type*,3> ar(3);
 				ar[0] = AC->type;
 				ar[1] = AC->key->type;
 				ar[2] = AC->value->type;
 				F = r.CreateFunctionD(AC->getName()+"[]=", llvm::FunctionType::get(BOOLTYPE, ar, false), LOCAL_FUNC);
+				MAP.insert(std::pair<const HashMapClass*,llvm::Function*>(AC,F));
 
 				llvm::Value* A, * KEY_V, *VAL_V;
 				{
@@ -1802,7 +1806,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto cmp = getBinop(r, filePos, &LD, &KEY, "==")->getValue(r, filePos);
 				auto DONE = r.CreateBlockD("map[]_done", F);
 				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", F);
-				r.builder.CreateCondBr(cmp, LOOP_2, DONE);
+				r.builder.CreateCondBr(cmp, DONE,LOOP_2);
 
 				r.builder.SetInsertPoint(LOOP_2);
 				auto P_NEX_P = r.builder.CreateConstGEP2_32(PHI,0,0);

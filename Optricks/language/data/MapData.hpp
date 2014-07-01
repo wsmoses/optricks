@@ -13,6 +13,7 @@
 #include "../class/ClassLib.hpp"
 #include "../class/builtin/ClassClass.hpp"
 #include "./VoidData.hpp"
+#include "../../operators/Binary.hpp"
 class MapData:public Data{
 public:
 	PositionID filePos;
@@ -71,8 +72,6 @@ public:
 				r.builder.CreateCall2(CALLOC,r.builder.CreateZExtOrTrunc(LEN,C_SIZETTYPE),llvm::ConstantInt::get(C_SIZETTYPE, s)),
 				llvm::PointerType::getUnqual(PT));
 
-		id.compilerError("Need to insert map elements!");
-
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
 		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
@@ -81,12 +80,19 @@ public:
 		r.builder.Insert(p);
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
-		r.builder.CreateStore(LEN,
+		r.builder.CreateStore(getInt32(0),
 				r.builder.CreateConstGEP2_32(p, 0,1));
-		r.builder.CreateStore(LEN,
+		r.builder.CreateStore(r.builder.CreateUDiv(r.builder.CreateMul(LEN,getInt32(4)),getInt32(3)),
 				r.builder.CreateConstGEP2_32(p, 0,2));
 		auto G = r.builder.CreateConstGEP2_32(p, 0,3);
 		r.builder.CreateStore(v,G);
+
+		//TODO this can be optimized with construction
+		ConstantData cd(p, getReturnType());
+		for(const auto& a: inner){
+			TupleData td(a);
+			getBinop(r, id, &cd, &td,"[]=");
+		}
 		return p;
 	}
 	bool hasCastValue(const AbstractClass* const a) const override {

@@ -120,6 +120,12 @@ public:
 		}
 	}
 	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, int toFile=0,unsigned int optLevel = 3){
+		llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
+		assert(FT);
+		llvm::Function* F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
+		assert(F);
+		llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
+
 		std::vector<Statement*> stats;
 		getStatements(global, fileNames, stats);
 		for(auto& n: stats) n->registerClasses();
@@ -130,11 +136,6 @@ public:
 			n->buildFunction(getRData());
 		}
 
-		llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
-		assert(FT);
-		llvm::Function* F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
-		assert(F);
-		llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 		getRData().builder.SetInsertPoint(BB);
 		for(auto& n: stats) n->evaluate(getRData());
 		getRData().builder.CreateRetVoid();

@@ -56,7 +56,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	//const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
 	llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
-	llvm::Function* F = getRData().CreateFunction("",FT,EXTERN_FUNC);
+	llvm::Function* F = getRData().CreateFunction(":input_",FT,EXTERN_FUNC);
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
 	const Data* dat = n->evaluate(getRData());
@@ -476,10 +476,8 @@ int main(int argc, char** argv){
 	//initializeBaseFunctions(rdata);
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
-	//{};
-	///*
 	 		{
-//				getExecutablePath() +"stdlib/stdlib.opt"
+				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
 #endif
@@ -487,7 +485,6 @@ int main(int argc, char** argv){
 				,getExecutablePath() +"stdlib/opengl.opt"
 #endif
 		};
-	// */
 	if(!interactive){
 		if(command==""){
 			auto t = files.size()-1;

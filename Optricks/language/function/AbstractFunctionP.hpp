@@ -13,6 +13,25 @@
 #include "../class/builtin/ReferenceClass.hpp"
 #include "../data/LazyWrapperData.hpp"
 
+const Data* ExternalFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
+	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
+	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
+	else{
+		return new ConstantData(cal,proto->returnType);
+	}
+}
+
+llvm::Constant* ExternalFunction::getSingleFunc() const{
+	if(myFunc) return myFunc;
+	auto tmp=proto->declarations.size();
+	llvm::SmallVector<llvm::Type*,0> ar(tmp);
+	for(unsigned i=0; i<tmp; i++){
+		ar[i] = proto->declarations[i].declarationType->type;
+		assert(ar[i]);
+	}
+	auto FT = llvm::FunctionType::get(proto->returnType->type, ar, proto->varArg);
+	return myFunc = getRData().getExtern(proto->name, FT, lib);
+}
 
 template<decltype(llvm::Intrinsic::sqrt) A>
 const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
@@ -450,6 +469,7 @@ const ConstantData* AbstractFunction::castTo(RData& r, const AbstractClass* cons
 }
 
 llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const{
+	getSingleFunc();
 	switch(right->classType){
 	case CLASS_FUNC:{
 		auto fc= proto->getFunctionClass();
@@ -463,7 +483,7 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 		}
 	}
 	case CLASS_CPOINTER:
-		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
+		return r.builder.CreatePointerCast(myFunc,C_POINTERTYPE);
 	default:
 		id.error("Cannot cast function to non-function class "+right->getName());
 		exit(1);

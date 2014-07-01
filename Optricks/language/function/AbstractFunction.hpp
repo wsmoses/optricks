@@ -77,7 +77,7 @@ public:
 		return proto;
 	}
 	inline llvm::Constant* getValue(RData& r, PositionID id) const override{
-		return myFunc;
+		return getSingleFunc();
 	}
 	std::vector<const Evaluatable*> validatePrototypeInline(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data*& instance) const;
 	static const Evaluatable* deLazyInline(RData& r, PositionID id, Data* val, const AbstractClass* const t) ;
@@ -105,6 +105,15 @@ public:
 	llvm::Function* getSingleFunc() const override final;
 
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override;
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
+};
+
+class ExternalFunction: public SingleFunction{
+private:
+	String lib;
+public:
+	ExternalFunction(FunctionProto* const fp, String mylib=""):SingleFunction(fp,nullptr),lib(mylib){};
+	llvm::Constant* getSingleFunc() const override final;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 

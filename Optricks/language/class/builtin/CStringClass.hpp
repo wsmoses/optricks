@@ -72,9 +72,11 @@ public:
 			if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 			else if(a->classType==CLASS_VOID) return 1;
 			else if(b->classType==CLASS_VOID) return -1;
-			if(a->classType==CLASS_CSTRING && b->classType==CLASS_CSTRING) return 0;
-			else if(a->classType==CLASS_CSTRING) return 1;
-			else if(b->classType==CLASS_CSTRING) return -1;
+			if(a->classType==CLASS_CPOINTER && b->classType==CLASS_CPOINTER) return 0;
+			else if(a->classType==CLASS_CPOINTER) return 1;
+			else if(b->classType==CLASS_CPOINTER) return -1;
+			assert(a->classType==CLASS_CSTRING);
+			assert(b->classType==CLASS_CSTRING);
 			return 0;
 	}
 	/**

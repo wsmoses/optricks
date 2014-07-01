@@ -112,15 +112,53 @@ void initClasses(){
 	//convertClass(size_t,&LANG_M);
 	convertClass(int64_t,&LANG_M);
 	//add_import_c_function(&LANG_M, malloc);
-	add_import_c_function(&LANG_M, clock);
-	add_import_c_function(&LANG_M, difftime);
-	add_import_c_const(&LANG_M, CLOCKS_PER_SEC);
 
-	add_import_c_function(&LANG_M, rand);
-	add_import_c_function(&LANG_M, srand);
-	add_import_c_const(&LANG_M, RAND_MAX);
+	NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#init"),"clock")->add(
+			new ExternalFunction(new FunctionProto("clock", std::vector<AbstractDeclaration>(), convertClass(clock_t,&LANG_M))),
+	PositionID(0,0,"#init"));
 
-	add_import_c_function(&LANG_M, qsort);
+	add_import_c_const(&(NS_LANG_C.staticVariables), CLOCKS_PER_SEC);
+
+	//add_import_c_function(&LANG_M, rand);
+
+	NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#init"),"srand")->add(
+			new ExternalFunction(new FunctionProto("srand", {AbstractDeclaration(&c_intClass)}, &voidClass)),
+	PositionID(0,0,"#init"));
+
+
+	LANG_M.addFunction(PositionID(0,0,"#class"),"rand")->add(
+		new BuiltinInlineFunction(new FunctionProto("rand",std::vector<AbstractDeclaration>(),&c_intClass),
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+
+		auto CU = r.getExtern("rand", &c_intClass, std::vector<const AbstractClass*>());
+		static bool seeded=false;
+		if(!seeded){
+			llvm::Function* TO_ADD = r.lmod->getFunction(":input_");
+			if(TO_ADD==nullptr) TO_ADD = r.lmod->getFunction("main");
+			assert(TO_ADD);
+			auto PARENT = r.builder.GetInsertBlock();
+			assert(PARENT);
+			auto& BB = TO_ADD->front();
+			if(BB.empty())
+				r.builder.SetInsertPoint(& BB);
+			else
+				r.builder.SetInsertPoint(& BB.front());
+			auto SRAND = r.getExtern("srand", &voidClass, {&c_intClass});
+			auto CL = convertClass(time_t,&LANG_M);
+			auto CLOCK = r.getExtern("time", CL, {ReferenceClass::get(CL)});
+			auto C = r.builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(CL->type)));
+
+			r.builder.CreateCall(SRAND, r.builder.CreateZExtOrTrunc(C, C_INTTYPE));
+			r.builder.CreateCall(CU);
+			r.builder.SetInsertPoint(PARENT);
+		}
+		return new ConstantData(r.builder.CreateCall(CU), &c_intClass);
+	}), PositionID(0,0,"#int"));
+
+	add_import_c_const(&(NS_LANG_C.staticVariables), RAND_MAX);
+
+	//add_import_c_function(&LANG_M, qsort);
 	//add_import_cpp_function(&LANG_M, std::terminate);
 	LANG_M.addFunction(PositionID(0,0,"#class"),"print")->add(
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),

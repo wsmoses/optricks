@@ -15,6 +15,8 @@
 class TupleData:public Data{
 public:
 	const std::vector<const Data*> inner;
+	TupleData(const std::pair<const Data*,const Data*>& vec):Data(R_TUPLE),inner({vec.first,vec.second}){
+	};
 	TupleData(const std::vector<const Data*>& vec):Data(R_TUPLE),inner(vec){
 	};
 	const AbstractClass* getReturnType() const override final{
@@ -31,7 +33,6 @@ public:
 			for(; i<inner.size(); i++){
 				vec[i] = inner[i]->getReturnType();
 			}
-			std::cout << inner.size() << " " << vec.size() << endl << flush;
 			assert(vec.size()==inner.size());
 			return TupleClass::get(vec);
 		}

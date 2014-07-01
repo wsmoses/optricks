@@ -27,29 +27,18 @@ public:
 		if(myFunction) return;
 		assert(methodBody==nullptr);
 		//returnV->registerFunctionPrototype(a);
-		llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
-		llvm::SmallVector<llvm::Type*,0> args(declaration.size());
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
 			const AbstractClass* ac = b->getClass(a, filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
-			if(ac->type==NULL) error("Type argument "+ac->getName()+" is null");
-			args[i] = ac->type;
+			assert(ac->type);
 		}
 		assert(returnV);
 		const AbstractClass* returnType = returnV->getMyClass(a, filePos);
-		assert(returnType);
-		auto FT = llvm::FunctionType::get(returnType->type, args, false);
-		auto F = a.getExtern(name, FT);
-		//if(F->getName().str()!=name){
-		//	filePos.error("Cannot extern function due to name in use "+name+" was replaced with "+F->getName().str());
-		//}
-		//todo have full name
-		myFunction = new CompiledFunction(new FunctionProto(name, ad, returnType), F);
+		myFunction = new ExternalFunction(new FunctionProto(name, ad, returnType), ""/*lib*/);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
-		if(Parent) a.builder.SetInsertPoint( Parent );
 		for(auto& d: declaration) d->registerFunctionPrototype(a);
 	}
 };

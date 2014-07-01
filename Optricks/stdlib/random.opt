@@ -9,7 +9,7 @@ class primitive random{
 	static def int rand_interval(int min, int max){
 		assert(max>min);
 		auto range = max-min;
-		auto buckets = RAND_MAX/range;
+		auto buckets = lang.c.RAND_MAX/range;
 		auto limit = buckets*range;
 		int r;
 		do{
@@ -19,9 +19,6 @@ class primitive random{
 	}
 
 }
-extern lang.c.int time(lang.c.pointer=null);
-//extern void srand(lang.c.int=time());
-//srand();
 def FOR(void% i, bool% b=true, void% c){
 	i();
 	while(b()){

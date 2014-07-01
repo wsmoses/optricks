@@ -75,7 +75,7 @@ HashMapClass::HashMapClass(const AbstractClass* a,const AbstractClass* b):
 		P_IDX->addIncoming(PON, NotNull);
 		auto LOOP_HAD = r.builder.CreatePHI(BOOLTYPE, 2);
 		LOOP_HAD->addIncoming(BoolClass::getValue(false), NotNull);
-		auto LL = r.builder.CreateLoad(PON);
+		auto LL = r.builder.CreateLoad(P_IDX);
 
 
 		r.builder.CreateCondBr(r.builder.CreateIsNull(LL), NULL_B,NNULL_B);
@@ -174,8 +174,6 @@ HashMapClass::HashMapClass(const AbstractClass* a,const AbstractClass* b):
 			auto LOOPDEC_B = r.CreateBlockD("loop_dec", FUNC);
 			auto END_B = r.CreateBlockD("end", FUNC);
 
-			r.println("not_null");
-
 			r.builder.CreateBr(LOOP);
 
 			r.builder.SetInsertPoint(LOOP);
@@ -183,9 +181,7 @@ HashMapClass::HashMapClass(const AbstractClass* a,const AbstractClass* b):
 			P_IDX->addIncoming(PON, NotNull);
 			auto LOOP_HAD = r.builder.CreatePHI(BOOLTYPE, 2);
 			LOOP_HAD->addIncoming(BoolClass::getValue(false), NotNull);
-			auto LL = r.builder.CreateLoad(PON);
-
-			r.println("loop");
+			auto LL = r.builder.CreateLoad(P_IDX);
 
 			r.builder.CreateCondBr(r.builder.CreateIsNull(LL), NULL_B,NNULL_B);
 
@@ -194,44 +190,36 @@ HashMapClass::HashMapClass(const AbstractClass* a,const AbstractClass* b):
 			NULL_HAD->addIncoming(LOOP_HAD, LOOP);
 			LOOP_HAD->addIncoming(NULL_HAD, NULL_B);
 			auto P_IDXM1 = r.builder.CreateConstGEP1_32(P_IDX,-1);//TODO VERIFY THAT THIS DOES DO -1
+
 			r.builder.CreateCondBr(r.builder.CreateICmpEQ(DATA,P_IDX),END_B,LOOP);
 			P_IDX->addIncoming(P_IDXM1, NULL_B);
 
-			r.println("null_b");
 
 			r.builder.SetInsertPoint(NNULL_B);
 			auto LINKED = r.builder.CreatePHI(llvm::PointerType::getUnqual(this->nodeType),2);
 			LINKED->addIncoming(LL, LOOP);
 			auto HAD_ELEM = r.builder.CreatePHI(BOOLTYPE,2);
 			HAD_ELEM->addIncoming(LOOP_HAD, LOOP);
-
-			r.println("nnull_b");
-
-			ConstantData KEY(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(LINKED, 0, 1)), this->key);
-			ConstantData VALUE(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(LINKED, 0, 2)), this->value);
-			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->key}).first->callFunction(r, id, {&KEY}, nullptr);
-			r.builder.CreateCall(CU, getInt32(':'));
-			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->value}).first->callFunction(r, id, {&VALUE}, nullptr);
 			r.builder.CreateCondBr(HAD_ELEM, COMMA_B, LOOPDEC_B);
 
 			r.builder.SetInsertPoint(COMMA_B);
 			r.builder.CreateCall(CU, getInt32(','));
 			r.builder.CreateCall(CU, getInt32(' '));
 
-			r.println("comma_b");
-
 			r.builder.CreateBr(LOOPDEC_B);
 
 			r.builder.SetInsertPoint(LOOPDEC_B);
-
-			r.println("loopdec_b");
+			ConstantData KEY(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(LINKED, 0, 1)), this->key);
+			ConstantData VALUE(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(LINKED, 0, 2)), this->value);
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->key}).first->callFunction(r, id, {&KEY}, nullptr);
+			r.builder.CreateCall(CU, getInt32(':'));
+			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->value}).first->callFunction(r, id, {&VALUE}, nullptr);
 
 			auto NEX=r.builder.CreateLoad(r.builder.CreateConstGEP2_32(LINKED, 0, 0));
 			r.builder.CreateCondBr(r.builder.CreateIsNull(NEX),NULL_B, NNULL_B);
 			NULL_HAD->addIncoming(BoolClass::getValue(true), LOOPDEC_B);
 			LINKED->addIncoming(NEX, LOOPDEC_B);
 			HAD_ELEM->addIncoming(BoolClass::getValue(true), LOOPDEC_B);
-
 
 			r.builder.SetInsertPoint(END_B);
 			r.builder.CreateCall(CU, getInt32('}'));

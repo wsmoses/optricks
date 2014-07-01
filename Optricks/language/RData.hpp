@@ -262,7 +262,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			auto find = M.find(name);
 			if(find!=M.end()) return find->second;
 			else{
-				llvm::Value* const V = builder.CreateGlobalStringPtr(llvm::StringRef(name));
+				llvm::Value* const V = builder.CreateGlobalStringPtr(llvm::StringRef(name),llvm::Twine("_str:",name));
 				M.insert(std::pair<String,llvm::Value*>(name,V));
 				return V;
 			}

@@ -19,14 +19,44 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 		return uc->hasLocalFunction(s);
 	}
 	case CLASS_HASHMAP:
-		if(s=="carr") return true;
+		if(s=="containsKey") return true;
+		else if(s=="containsValue") return true;
+		else if(s=="setDefault") return true;
+		else if(s=="contains") return true;
+		else if(s=="remove") return true;
+		else if(s=="isEmpty") return true;
+		else if(s=="clear") return true;
+		else return false;
 	case CLASS_ARRAY:{
-		if(s=="isEmpty") return true;
+		if(s=="add") return true;
+		else if(s=="shuffle") return true;
+		else if(s=="reverse") return true;
+		else if(s=="replace") return true;
+		else if(s=="binarySearch") return true;
+		else if(s=="pop") return true;
+		else if(s=="sort") return true;
+		else if(s=="count") return true;
+		else if(s=="indexOf") return true;
+		else if(s=="lastIndexOf") return true;
+		else if(s=="trim") return true;
+		else if(s=="ensureCapacity") return true;
+		else if(s=="contains") return true;
+		else if(s=="remove") return true;
+		else if(s=="isEmpty") return true;
+		else if(s=="clear") return true;
 		else return false;
 	}
 	case CLASS_PRIORITYQUEUE:{
-		if(s=="poll") return true;
-		if(s=="isEmpty") return true;
+		if(s=="peek") return true;
+		else if(s=="poll") return true;
+		else if(s=="indexOf") return true;
+		else if(s=="lastIndexOf") return true;
+		else if(s=="trim") return true;
+		else if(s=="ensureCapacity") return true;
+		else if(s=="contains") return true;
+		else if(s=="remove") return true;
+		else if(s=="isEmpty") return true;
+		else if(s=="clear") return true;
 		else return false;
 	}
 	default:
@@ -43,10 +73,61 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 		if(lf==nullptr) return &voidClass;
 		return lf->getSingleProto()->returnType;
 	}
-	case CLASS_HASHMAP:
-		if(s=="carr") return &c_pointerClass;
+	case CLASS_HASHMAP:{
+		if(s=="isEmpty" && v.size()==0)
+			return &boolClass;
+		else break;
+	}
 	case CLASS_ARRAY:{
-		if(s=="isEmpty" && v.size()==0) return &boolClass;
+		auto AC = (const ArrayClass*)cc;
+		if(s=="add" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(AC->inner))
+			/* adds value at index, shifting things right if needed */
+			return &voidClass;
+		else if(s=="shuffle" && v.size()==0)
+			/* shuffles in place*/
+			return &voidClass;
+		else if(s=="reverse" && v.size()==0)
+			/* reverses in place */
+			return &voidClass;
+		else if(s=="replace" && v.size()==2 && v[0]->hasCastValue(AC->inner) && v[1]->hasCastValue(AC->inner))
+			/* # of replacements*/
+			return &intClass;
+		else if(s=="binarySearch" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* Idx where found*/
+			return &intClass;
+		else if(s=="pop" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&intClass)) ) )
+			/* Element found at idx (end if not specified) */
+			return AC->inner;
+		else if(s=="sort" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&boolClass)) ) )
+			/* Sorts naturally (reverse if bool is true, default false) */
+			return &voidClass;
+		else if(s=="count" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* Idx where found or -1 */
+			return &intClass;
+		else if(s=="indexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* Idx where found or -1 */
+			return &intClass;
+		else if(s=="lastIndexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* Idx where found or -1*/
+			return &intClass;
+		else if(s=="trim" && v.size()==0)
+			/* forces alloc to be size of used memory*/
+			return &voidClass;
+		else if(s=="ensureCapacity" && v.size()==1 && v[0]->hasCastValue(&intClass))
+			/* If memory is smaller. grow to size*/
+			return &voidClass;
+		else if(s=="contains" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* whether it contains */
+			return &boolClass;
+		else if(s=="remove" && v.size()==1 && v[0]->hasCastValue(AC->inner))
+			/* Idx where removed or -1 if not present */
+			return &intClass;
+		else if(s=="isEmpty" && v.size()==0)
+			/* size==0 */
+			return &boolClass;
+		else if(s=="clear" && v.size()==0)
+			/* Empties array / decrements count / does not realloc */
+			return &voidClass;
 		else break;
 	}
 	case CLASS_PRIORITYQUEUE:{
@@ -98,30 +179,6 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			return lf->callFunction(r,id, v, inst);
 		}
 		case CLASS_HASHMAP:{
-			if(s=="carr"){
-				llvm::Value* A = inst->getValue(r,id);
-				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,2));
-				auto FUNCT = r.builder.GetInsertBlock()->getParent();
-				auto ERROR_B = r.CreateBlockD("ERROR", FUNCT);
-				auto NO_ERROR_B = r.CreateBlockD("NO_ERROR", FUNCT);
-				auto V = v[0]->evaluate(r)->castToV(r, &intClass, id);
-				r.builder.CreateCondBr(r.builder.CreateICmpUGE(V, LENGTH), ERROR_B, NO_ERROR_B);
-				r.builder.SetInsertPoint(ERROR_B);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,6> c_args(6);
-				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-				c_args[1] = V;
-				c_args[2] = LENGTH;
-				c_args[3] = r.getConstantCString(id.fileName);
-				c_args[4] = getInt32(id.lineN);
-				c_args[5] = getInt32(id.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
-				r.builder.SetInsertPoint(NO_ERROR_B);
-				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
-				return new LocationData(new StandardLocation(r.builder.CreatePointerCast(r.builder.CreateGEP(I, V),llvm::PointerType::getUnqual(C_POINTERTYPE))), &c_pointerClass);
-			}
 			//auto hm = (const HashMapClass*)cc;
 			if(s=="isEmpty" && v.size()==0){
 				auto V = inst->getValue(r, id);
@@ -133,26 +190,327 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			break;
 		}
 		case CLASS_ARRAY:{
-			if(s=="isEmpty" && v.size()==0){
-				auto V = inst->getValue(r, id);
-				//TODO assert non null
+			//TODO assert non null
+			auto AC = (const ArrayClass*)cc;
+			auto V = inst->getValue(r, id);
+
+			if(s=="add" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(AC->inner)) {
+				/* adds value at index, shifting things right if needed */
+				return &voidClass;
+			} else if(s=="shuffle" && v.size()==0) {
+				/* shuffles in place*/
+				return &voidClass;
+			} else if(s=="reverse" && v.size()==0) {
+				/* reverses in place */
+				return &voidClass;
+			} else if(s=="replace" && v.size()==2 && v[0]->hasCastValue(AC->inner) && v[1]->hasCastValue(AC->inner)) {
+				/* # of replacements*/
+				return &intClass;
+			} else if(s=="binarySearch" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* Idx where found*/
+				return &intClass;
+			} else if(s=="pop" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&intClass)) ) ){
+				/* Element found at idx (end if not specified) */
+				return AC->inner;
+			} else if(s=="sort" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&boolClass)) ) ){
+				/* Sorts naturally (reverse if bool is true, default false) */
+				return &voidClass;
+			} else if(s=="count" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* Number of occurences*/
+
+				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_LOAD = r.CreateBlockD("to_load", FUNC);
+				auto TO_SEARCH = r.CreateBlockD("to_search", FUNC);
+				auto NEXT = r.CreateBlockD("next", FUNC);
+				auto INC_COUNT = r.CreateBlockD("inc_count", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), DONE, TO_LOAD);
+
+				r.builder.SetInsertPoint(DONE);
+				auto RET_V = r.builder.CreatePHI(intClass.type,4);
+				RET_V->addIncoming(getInt32(0), STARTT);
+
+				r.builder.SetInsertPoint(TO_LOAD);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				r.builder.CreateBr(TO_SEARCH);
+
+				r.builder.SetInsertPoint(TO_SEARCH);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), TO_LOAD);
+				auto COUNT = r.builder.CreatePHI(intClass.type, 2);
+				COUNT->addIncoming(getInt32(0), TO_LOAD);
+				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				LocationData ld(&sl, AC->inner);
+				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
+
+				r.builder.CreateCondBr(cmp, INC_COUNT, NEXT);
+
+				r.builder.SetInsertPoint(INC_COUNT);
+				auto COUNT_P1 = r.builder.CreateAdd(COUNT, getInt32(1));
+				r.builder.CreateBr(NEXT);
+
+				r.builder.SetInsertPoint(NEXT);
+
+				auto COUNT_N = r.builder.CreatePHI(intClass.type, 2);
+				COUNT_N->addIncoming(COUNT, TO_SEARCH);
+				COUNT_N->addIncoming(COUNT_P1, INC_COUNT);
+				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, IDX2), DONE, TO_SEARCH);
+				RET_V->addIncoming(COUNT_N, NEXT);
+				IDX->addIncoming(IDX2, NEXT);
+				COUNT->addIncoming(COUNT_N, NEXT);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(RET_V, &intClass);
+				return &intClass;
+			} else if(s=="indexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* Idx where found or -1 */
+
+				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_LOAD = r.CreateBlockD("to_load", FUNC);
+				auto TO_SEARCH = r.CreateBlockD("to_search", FUNC);
+				auto NEXT = r.CreateBlockD("next", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), DONE, TO_LOAD);
+
+				r.builder.SetInsertPoint(DONE);
+				auto RET_V = r.builder.CreatePHI(intClass.type,4);
+				RET_V->addIncoming(getInt32(-1), STARTT);
+
+				r.builder.SetInsertPoint(TO_LOAD);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				r.builder.CreateBr(TO_SEARCH);
+
+				r.builder.SetInsertPoint(TO_SEARCH);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), TO_LOAD);
+				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				LocationData ld(&sl, AC->inner);
+				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
+
+				r.builder.CreateCondBr(cmp, DONE, NEXT);
+				RET_V->addIncoming(IDX, TO_SEARCH);
+
+				r.builder.SetInsertPoint(NEXT);
+				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, IDX2), DONE, TO_SEARCH);
+				RET_V->addIncoming(getInt32(-1), NEXT);
+				IDX->addIncoming(IDX2, NEXT);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(RET_V, &intClass);
+			} else if(s=="lastIndexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* Idx where found or -1*/
+				//TODO
+				return &intClass;
+			} else if(s=="trim" && v.size()==0){
+				/* forces alloc to be size of used memory*/
+				auto NEWLEN = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
+				auto ALLOC = r.builder.CreateLoad(ALLOC_P);
+
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_POINTERTYPE;
+				args[1] = C_SIZETTYPE;
+				llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
+				auto R_FUNC = r.getExtern("realloc",FT);
+				auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
+
+				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+
+				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
+				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
+						llvm::ConstantInt::get(C_SIZETTYPE, s)));
+				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
+				r.builder.CreateStore(NEW_P,DATA_P);
+				r.builder.CreateStore(NEWLEN,ALLOC_P);
+
+				return &VOID_DATA;
+			} else if(s=="ensureCapacity" && v.size()==1 && v[0]->hasCastValue(&intClass)){
+				/* If memory is smaller. grow to size*/
+				auto NEWLEN = v[0]->evaluate(r)->castTo(r, &intClass, id)->getValue(r, id);
+				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
+				auto ALLOC = r.builder.CreateLoad(ALLOC_P);
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto REALLOC = r.CreateBlockD("realloc", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+				r.builder.CreateCondBr(r.builder.CreateICmpSGT(NEWLEN, ALLOC), REALLOC, DONE);
+
+				r.builder.SetInsertPoint(REALLOC);
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_POINTERTYPE;
+				args[1] = C_SIZETTYPE;
+				llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
+				auto R_FUNC = r.getExtern("realloc",FT);
+				auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
+
+				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+
+				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
+				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
+						llvm::ConstantInt::get(C_SIZETTYPE, s)));
+				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
+				r.builder.CreateStore(NEW_P,DATA_P);
+				r.builder.CreateStore(NEWLEN,ALLOC_P);
+
+				r.builder.CreateBr(DONE);
+
+				r.builder.SetInsertPoint(DONE);
+				return &VOID_DATA;
+			} else if(s=="contains" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* whether it contains */
+
+				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_LOAD = r.CreateBlockD("to_load", FUNC);
+				auto TO_SEARCH = r.CreateBlockD("to_search", FUNC);
+				auto NEXT = r.CreateBlockD("next", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), DONE, TO_LOAD);
+
+				r.builder.SetInsertPoint(DONE);
+				auto RET_V = r.builder.CreatePHI(BOOLTYPE,4);
+				RET_V->addIncoming(BoolClass::getValue(false), STARTT);
+
+				r.builder.SetInsertPoint(TO_LOAD);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				r.builder.CreateBr(TO_SEARCH);
+
+				r.builder.SetInsertPoint(TO_SEARCH);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), TO_LOAD);
+				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				LocationData ld(&sl, AC->inner);
+				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
+
+				r.builder.CreateCondBr(cmp, DONE, NEXT);
+				RET_V->addIncoming(BoolClass::getValue(true), TO_SEARCH);
+
+				r.builder.SetInsertPoint(NEXT);
+				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, IDX2), DONE, TO_SEARCH);
+				RET_V->addIncoming(BoolClass::getValue(false), NEXT);
+				IDX->addIncoming(IDX2, NEXT);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(RET_V, &boolClass);
+			} else if(s=="remove" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
+				/* Idx where removed or -1 if not there*/
+				auto TO_REMOVE = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
+				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_LOAD = r.CreateBlockD("to_load", FUNC);
+				auto TO_SEARCH = r.CreateBlockD("to_search", FUNC);
+				auto NEXT = r.CreateBlockD("next", FUNC);
+				auto DEC_LENGTH = r.CreateBlockD("dec_length", FUNC);
+				auto SHIFT_LEFT = r.CreateBlockD("shift_left", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), DONE, TO_LOAD);
+
+				r.builder.SetInsertPoint(DONE);
+				auto RET_V = r.builder.CreatePHI(intClass.type,4);
+				RET_V->addIncoming(getInt32(-1), STARTT);
+
+				r.builder.SetInsertPoint(TO_LOAD);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				r.builder.CreateBr(TO_SEARCH);
+
+				r.builder.SetInsertPoint(TO_SEARCH);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), TO_LOAD);
+				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				LocationData ld(&sl, AC->inner);
+				auto cmp = getBinop(r, id, &ld, TO_REMOVE, "==")->getValue(r, id);
+				//LANG_M.getFunction(id, "print", NO_TEMPLATE, {AC->inner}).first->callFunction(r, id, {&ld}, nullptr);
+				r.builder.CreateCondBr(cmp, DEC_LENGTH, NEXT);
+
+				r.builder.SetInsertPoint(NEXT);
+				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, IDX2), DONE, TO_SEARCH);
+				RET_V->addIncoming(getInt32(-1), NEXT);
+				IDX->addIncoming(IDX2, NEXT);
+
+				r.builder.SetInsertPoint(DEC_LENGTH);
+				auto lenM1 = r.builder.CreateSub(LENGTH,getInt32(1));
+				r.builder.CreateStore(lenM1,LENGTH_P);
+				decrementCount(r, id, &ld);//todo check
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(IDX, lenM1), DONE, SHIFT_LEFT);
+				RET_V->addIncoming(IDX, DEC_LENGTH);
+
+				r.builder.SetInsertPoint(SHIFT_LEFT);
+				auto toMove = r.builder.CreatePHI(intClass.type, 2);
+				toMove->addIncoming(IDX, DEC_LENGTH);
+				auto fromMove = r.builder.CreateAdd(toMove, getInt32(1));
+				toMove->addIncoming(fromMove, SHIFT_LEFT);
+				r.builder.CreateStore(r.builder.CreateLoad(r.builder.CreateGEP(DATA, fromMove)), r.builder.CreateGEP(DATA, toMove));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(fromMove, lenM1), DONE, SHIFT_LEFT);
+				RET_V->addIncoming(IDX, SHIFT_LEFT);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(RET_V, &intClass);
+			} else if(s=="isEmpty" && v.size()==0){
 				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
 				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
 				return new ConstantData(r.builder.CreateICmpEQ(LENGTH,getInt32(0)), &boolClass);
-			}
-			break;
+			} else if(s=="clear" && v.size()==0){
+				/* Empties array / decrements count / does not realloc */
+				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
+				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
+				r.builder.CreateStore(getInt32(0),LENGTH_P);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_DEC = r.CreateBlockD("to_dec", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), DONE, TO_DEC);
+
+				r.builder.SetInsertPoint(TO_DEC);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), STARTT);
+				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				LocationData ld(&sl, AC->inner);
+				decrementCount(r, id, &ld);
+				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, IDX2), DONE, TO_DEC);
+				IDX->addIncoming(IDX2, r.builder.GetInsertBlock());
+
+				r.builder.SetInsertPoint(DONE);
+				return &VOID_DATA;
+			} else break;
 		}
 		case CLASS_PRIORITYQUEUE:{
 			if(s=="poll" && v.size()==0){
 
 				PriorityQueueClass* AC = (PriorityQueueClass*) cc;
-				static std::map<llvm::Type*,llvm::Function*> MAP;
+				static std::map<const AbstractClass*,llvm::Function*> MAP;
 				llvm::Function* F;
-				auto find = MAP.find(AC->type);
+				auto find = MAP.find(AC->inner);
 				if(find==MAP.end()){
 					llvm::SmallVector<llvm::Type*,1> ar(1);
 					ar[0] = AC->type;
 					F = r.CreateFunctionD("_opt"+AC->getName()+".poll", llvm::FunctionType::get(AC->inner->type, ar, false), LOCAL_FUNC);
+					MAP.insert(std::pair<const AbstractClass*,llvm::Function*>(AC->inner,F));
 
 					llvm::BasicBlock* Parent = r.builder.GetInsertBlock();
 					llvm::BasicBlock* BB = r.CreateBlockD("entry", F);
@@ -256,7 +614,6 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					r.builder.CreateRet(toRet);
 					r.FinalizeFunctionD(F);
 					if(Parent) r.builder.SetInsertPoint( Parent );
-					MAP.insert(std::pair<llvm::Type*,llvm::Function*>(AC->type,F));
 				} else F = find->second;
 				auto V = inst->getValue(r, id);
 				assert(V);

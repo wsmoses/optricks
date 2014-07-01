@@ -15,6 +15,29 @@ public:
 	inline CPointerClass(bool b):
 		AbstractClass(& NS_LANG_C.staticVariables,"pointer", NULL,PRIMITIVE_LAYOUT,CLASS_CPOINTER,true,C_POINTERTYPE){
 		NS_LANG_C.staticVariables.addClass(PositionID(0,0,"#pointer"),this);
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()>=1);
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_STRINGTYPE;
+			auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+			r.builder.CreateCall2(CU, r.getConstantCString("0x%" PRIXPTR), args[0]->evalV(r, id));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#int"));
+		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()>=1);
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_STRINGTYPE;
+			auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
+			r.builder.CreateCall2(CU, r.getConstantCString("0x%" PRIXPTR "\n"), args[0]->evalV(r, id));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#int"));
 	}
 
 	const AbstractClass* getLocalReturnClass(PositionID id, String s) const override final{
