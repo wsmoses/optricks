@@ -477,7 +477,7 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 	 		{
-				getExecutablePath() +"stdlib/stdlib.opt"
+//				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
 #endif

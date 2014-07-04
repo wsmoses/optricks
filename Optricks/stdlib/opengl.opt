@@ -52,8 +52,7 @@ class primitive_pointer Display{
 	}
 	static def init(){
 		int fakeargc=1;
-		lang.c.string[] ar = lang.c.string[](1);
-		ar[0] = 'fake';
+		lang.c.string[] ar = ['fake'];
 		(extern void glutInit(lang.c.int&, lang.c.pointer))(&fakeargc,ar.carr);
 		(extern void glutInitDisplayMode(int))(0x0002 | 0x0000);
 	}

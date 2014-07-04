@@ -28,4 +28,5 @@ def idle(){
 	angle+=.1;
 	glutPostRedisplay();
 }
+Display.init()
 Display(500,500,'hi',display,idle);
