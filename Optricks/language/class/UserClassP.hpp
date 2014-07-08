@@ -47,13 +47,7 @@ llvm::Value* UserClass::generateData(RData& r, PositionID id) const{
 		assert(llvm::dyn_cast<llvm::PointerType>(type));
 		auto tmp = ((llvm::PointerType*)type)->getArrayElementType();
 		assert(tmp);
-		assert(r.lmod);
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
-		auto v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				tmp, llvm::ConstantInt::get(ic, s));
-		r.builder.Insert(v);
-		return v;
+		return r.allocate(tmp);
 	}
 }
 const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Data* instance) const {

@@ -81,7 +81,9 @@ public:
 		return llvm::ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
-		return a->classType==CLASS_CLASS || a->classType==CLASS_VOID;
+		if(a->classType==CLASS_CLASS || a->classType==CLASS_VOID) return true;
+		//TODO else if(a->classType==CLASS_FUNC && ((FunctionClass*)a)->argumentTypes)
+		else return false;
 	}
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
 		assert(a);

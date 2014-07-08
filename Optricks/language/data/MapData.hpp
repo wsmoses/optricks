@@ -65,19 +65,14 @@ public:
 		auto LEN=getInt32(inner.size());//TODO CONSIDER HAVING DIF
 
 		auto PT = llvm::PointerType::getUnqual(tc->nodeType);
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(PT);
-		auto CALLOC = r.lmod->getOrInsertFunction("calloc", C_POINTERTYPE, C_SIZETTYPE, C_SIZETTYPE, NULL);
 
-		auto v = r.builder.CreatePointerCast(
-				r.builder.CreateCall2(CALLOC,r.builder.CreateZExtOrTrunc(LEN,C_SIZETTYPE),llvm::ConstantInt::get(C_SIZETTYPE, s)),
-				llvm::PointerType::getUnqual(PT));
+		auto v = r.allocate(PT, LEN, llvm::ConstantPointerNull::get(PT));
 
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
-		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
-						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
-		r.builder.Insert(p);
+
+		auto p = r.allocate(tmp);
+
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
 		r.builder.CreateStore(getInt32(0),

@@ -1436,18 +1436,11 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto ADD = r.CreateBlockD("add", r.builder.GetInsertBlock()->getParent());
 				r.builder.CreateCondBr(r.builder.CreateICmpSGT(ALLOC,LENGTH),ADD,REALLOC);
 				r.builder.SetInsertPoint(REALLOC);
-				llvm::SmallVector<llvm::Type*,2> args(2);
-				args[0] = C_POINTERTYPE;
-				args[1] = C_SIZETTYPE;
-				llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
-				auto R_FUNC = r.getExtern("realloc",FT);
+
 				llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
 				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
-				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
-				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
-						llvm::ConstantInt::get(C_SIZETTYPE, s)));
-				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
+				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P), AC->inner->type, NEWLEN);
 				r.builder.CreateStore(NEW_P,DATA_P);
 				r.builder.CreateStore(NEWLEN,ALLOC_P);
 				r.builder.CreateBr(ADD);
@@ -1552,17 +1545,14 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto ADD = r.CreateBlockD("add", FUNC);
 				r.builder.CreateCondBr(r.builder.CreateICmpSGT(ALLOC,LENGTH),ADD,REALLOC);
 				r.builder.SetInsertPoint(REALLOC);
-				llvm::SmallVector<llvm::Type*,2> args(2);
-				args[0] = C_POINTERTYPE;
-				args[1] = C_SIZETTYPE;
-				auto R_FUNC = r.getExtern("realloc",llvm::FunctionType::get(C_POINTERTYPE, args, false));
+
 				llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
 				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
-				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
-				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
-						llvm::ConstantInt::get(C_SIZETTYPE, s)));
-				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
+				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P), AC->inner->type, NEWLEN);
+				r.builder.CreateStore(NEW_P,DATA_P);
+				r.builder.CreateStore(NEWLEN,ALLOC_P);
+
 				r.builder.CreateStore(NEW_P,DATA_P);
 				r.builder.CreateStore(NEWLEN,ALLOC_P);
 				r.builder.CreateBr(ADD);
@@ -1785,10 +1775,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				TO_INSERT->addIncoming(P_S_IDX, START);
 
 				r.builder.SetInsertPoint(INSERT_B);
-				auto s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->nodeType);
-				llvm::Instruction* p = llvm::CallInst::CreateMalloc(INSERT_B, C_SIZETTYPE,
-								AC->nodeType, llvm::ConstantInt::get(C_SIZETTYPE, s));
-				r.builder.Insert(p);
+
+				auto p = r.allocate(AC->nodeType);
+
 				r.builder.CreateStore(p, TO_INSERT);
 				r.builder.CreateStore(llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(AC->nodeType)), r.builder.CreateConstGEP2_32(p,0,0));
 				r.builder.CreateStore(KEY_V, r.builder.CreateConstGEP2_32(p,0,1));

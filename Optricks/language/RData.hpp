@@ -142,6 +142,10 @@ struct RData{
 		std::map<llvm::Function*,std::vector<LazyLocation*> > flocs;
 		std::map<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> > pred;
 		llvm::ExecutionEngine* exec;
+		llvm::Function* LLVM_REALLOC;
+		llvm::Function* LLVM_CALLOC;
+		llvm::Function* LLVM_FREE;
+		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
 		llvm::Module* lmod;
@@ -154,6 +158,9 @@ struct RData{
 		,fpm(lmod),mpm(){
 			lmod->setDataLayout("p:64:64:64");
 			exec=nullptr;
+			LLVM_REALLOC = nullptr;
+			LLVM_CALLOC = nullptr;
+			LLVM_FREE = nullptr;
 			// Set up optimizers
 			llvm::PassManagerBuilder pmb;
 			pmb.Inliner = llvm::createFunctionInliningPass();
@@ -212,6 +219,11 @@ struct RData{
 		inline llvm::Constant* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
 			assert(FT);
+			assert(name!="malloc");
+			assert(name!="calloc");
+			assert(name!="realloc");
+			assert(name!="memset");
+			assert(name!="free");
 			for(unsigned i=0; i<FT->getNumParams(); i++)
 				assert(FT->getParamType(i));
 			auto G = lmod->getOrInsertFunction(llvm::StringRef(name), FT);
@@ -303,6 +315,189 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			flocs.insert(std::pair<llvm::Function*,std::vector<LazyLocation*> >(f,std::vector<LazyLocation*>()));
 			pred.insert(std::pair<llvm::Function*,std::map<llvm::BasicBlock*,llvm::BasicBlock*> >(f,std::map<llvm::BasicBlock*,llvm::BasicBlock*>()));
 			return f;
+		}
+		void free(llvm::Value* P){
+			assert(P->getType()->isPointerTy());
+			P = pointerCast(P);
+
+			if(llvm::isa<llvm::UndefValue>(P))
+				return;
+			else if(auto C = llvm::dyn_cast<llvm::Constant>(P)){
+				if(C->isNullValue()) return;
+			}
+
+			if(LLVM_FREE==nullptr){
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_POINTERTYPE;
+				llvm::FunctionType *FT = llvm::FunctionType::get(VOIDTYPE, args, false);
+				auto G = lmod->getOrInsertFunction("free", FT);
+				assert(G);
+				assert(llvm::dyn_cast<llvm::Function>(G));
+				LLVM_FREE = (llvm::Function*)(G);
+			}
+			builder.CreateCall(P);
+			//TODO llvm memory end
+		}
+
+		inline llvm::Value* integerCast(llvm::Value* V, llvm::IntegerType* T=nullptr, bool zext=true){
+			assert(V->getType()->isIntOrIntVectorTy());
+			if(llvm::isa<llvm::UndefValue>(V)) return llvm::UndefValue::get(T);
+			llvm::Value* VN =  (V->getType()==T)?V:nullptr;
+			while(auto C = llvm::dyn_cast<llvm::CastInst>(V)){
+				auto ST = C->getSrcTy();
+				if(ST->isIntOrIntVectorTy() && ST->getIntegerBitWidth()<=C->getDestTy()->getIntegerBitWidth()){
+					V = C->getOperand(0);
+					if(ST==T) VN = V;
+				}
+				else
+					break;
+			}
+			if(T==nullptr) return V;
+			else if(VN!=nullptr) return VN;
+			else{
+				if(zext) return builder.CreateZExtOrTrunc(V, T);
+				else return builder.CreateSExtOrTrunc(V, T);
+			}
+		}
+		inline llvm::Value* pointerCast(llvm::Value* P, llvm::PointerType* T=C_POINTERTYPE){
+			//TODO
+			assert(T);
+			assert(P->getType()->isPointerTy());
+			if(llvm::isa<llvm::UndefValue>(P)) return llvm::UndefValue::get(T);
+			llvm::Value* VN =  (P->getType()==T)?P:nullptr;
+			while(auto C = llvm::dyn_cast<llvm::CastInst>(P)){
+				P = C->getOperand(0);
+				if(C->getSrcTy()==T) VN = P;
+			}
+			if(VN!=nullptr) return VN;
+			else return builder.CreatePointerCast(P, T);
+		}
+		/* T is type to allocate*/
+		llvm::Value* reallocate(llvm::Value* P, llvm::Type* T, llvm::Value* SIZE){
+			assert(SIZE);
+			assert(P);
+			assert(T);
+			assert(P->getType()==llvm::PointerType::getUnqual(T));
+			assert(SIZE->getType()->isIntegerTy());
+			P = pointerCast(P);
+			uint64_t s = llvm::DataLayout(lmod).getTypeAllocSize(T);
+			if(s==0 || isIntZero(SIZE)){
+				free(P);
+				return llvm::ConstantPointerNull::getNullValue(llvm::PointerType::getUnqual(T));
+			}
+			/*
+			else if(auto C = llvm::dyn_cast<llvm::CallInst>(P)){
+				if(C->get)
+			}*/
+			else {
+				if(LLVM_REALLOC==nullptr){
+					llvm::SmallVector<llvm::Type*,2> args(2);
+					args[0] = C_POINTERTYPE;
+					args[1] = C_SIZETTYPE;
+					llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
+					auto G = lmod->getOrInsertFunction("realloc", FT);
+					assert(G);
+					assert(llvm::dyn_cast<llvm::Function>(G));
+					LLVM_REALLOC = (llvm::Function*)(G);
+				}
+				SIZE = integerCast(SIZE, C_SIZETTYPE);
+				auto CAL = builder.CreateCall2(LLVM_REALLOC,P,builder.CreateMul(SIZE,llvm::ConstantInt::get(C_SIZETTYPE, s)));
+				return builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(T));
+			}
+		}
+		llvm::Value* allocate(llvm::Type* T, llvm::Value* SIZE=getSizeT(1), llvm::Value* DEFAULT=nullptr){
+			assert(T);
+			assert(SIZE);
+			auto s = llvm::DataLayout(lmod).getTypeAllocSize(T);
+			if(DEFAULT) assert(DEFAULT->getType()==T);
+
+			if(s==0 || isIntZero(SIZE)){
+				return llvm::ConstantPointerNull::getNullValue(llvm::PointerType::getUnqual(T));
+			} else if(DEFAULT!=nullptr && isZero(DEFAULT)){
+				if(LLVM_CALLOC==nullptr){
+					llvm::SmallVector<llvm::Type*,2> args(2);
+					args[0] = C_SIZETTYPE;/*num*/
+					args[1] = C_SIZETTYPE;/*size*/
+					llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
+					auto G = lmod->getOrInsertFunction("calloc", FT);
+					assert(G);
+					assert(llvm::dyn_cast<llvm::Function>(G));
+					LLVM_CALLOC = (llvm::Function*)(G);
+				}
+				SIZE = integerCast(SIZE, C_SIZETTYPE);
+				auto CAL = builder.CreateCall2(LLVM_CALLOC,SIZE,llvm::ConstantInt::get(C_SIZETTYPE, s));
+				return builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(T));
+			} else {
+				llvm::Instruction* p = llvm::CallInst::CreateMalloc(builder.GetInsertBlock(), C_SIZETTYPE,
+					T, llvm::ConstantInt::get(C_SIZETTYPE, s), builder.CreateZExtOrTrunc(SIZE, C_SIZETTYPE));
+				builder.Insert(p);
+				if(DEFAULT){
+					if(auto C1 = llvm::dyn_cast<llvm::ConstantInt>(SIZE)){
+						assert(!C1->isZero());
+						if(C1->isOne()){
+							builder.CreateStore(DEFAULT, p);
+							return p;
+						}
+						uint64_t T=C1->getValue().getLimitedValue();
+						for(uint64_t i=1; i<T; i++){
+							builder.CreateStore(DEFAULT, builder.CreateConstGEP1_64(p, i));
+						}
+					} else {
+						auto START= builder.GetInsertBlock();
+						auto FUNC = START->getParent();
+						auto LOOP = CreateBlockD("loop", FUNC);
+						auto DONE = CreateBlockD("done", FUNC);
+						auto CZ = llvm::ConstantInt::get(SIZE->getType(),0,false);
+						builder.CreateCondBr(builder.CreateICmpSLE(SIZE, CZ), DONE, LOOP);
+						builder.SetInsertPoint(LOOP);
+						auto idx = builder.CreatePHI(SIZE->getType(),2);
+						idx->addIncoming(CZ, START);
+						auto P1 = builder.CreateAdd(idx, llvm::ConstantInt::get(SIZE->getType(),1,false));
+						idx->addIncoming(P1, LOOP);
+						builder.CreateStore(DEFAULT, builder.CreateGEP(p, idx));
+						builder.CreateCondBr(builder.CreateICmpEQ(SIZE, P1), DONE, LOOP);
+						builder.SetInsertPoint(DONE);
+					}
+				}
+				return p;
+			}
+		}
+		bool isIntZero(llvm::Value* V){
+			//TODO HANDLE CASTS -- assume const cast gives const
+			assert(V->getType()->isIntegerTy());
+			if(llvm::isa<llvm::UndefValue>(V))
+				return true;
+			else if(auto C = llvm::dyn_cast<llvm::Constant>(V))
+				return C->isZeroValue();
+			else return false;
+		}
+		bool isZero(llvm::Value *V/*, const llvm::DataLayout *DL*/) {
+			// Assume undef could be zero.
+			if (llvm::isa<llvm::UndefValue>(V)) return true;
+			// Per-component check doesn't work with zeroinitializer
+			auto *C = llvm::dyn_cast<llvm::Constant>(V);
+			if (!C) return false;
+			if (C->isZeroValue()) return true;
+
+			/*
+			llvm::VectorType *VecTy = llvm::dyn_cast<llvm::VectorType>(V->getType());
+			if (!VecTy) {
+				unsigned BitWidth = V->getType()->getIntegerBitWidth();
+				llvm::APInt KnownZero(BitWidth, 0), KnownOne(BitWidth, 0);
+				llvm::computeKnownBits(V, KnownZero, KnownOne, DL);
+				return KnownZero.isAllOnesValue();
+			}
+
+			unsigned BitWidth = VecTy->getElementType()->getIntegerBitWidth();
+			for (unsigned I = 0, N = VecTy->getNumElements(); I != N; ++I) {
+				llvm::Constant *Elem = C->getAggregateElement(I);
+				if (llvm::isa<llvm::UndefValue>(Elem)) return true;
+				llvm::APInt KnownZero(BitWidth, 0), KnownOne(BitWidth, 0);
+				llvm::computeKnownBits(Elem, KnownZero, KnownOne, DL);
+				if (KnownZero.isAllOnesValue()) return true;
+			}*/
+
+			return false;
 		}
 		void FinalizeFunction(llvm::Function* f);
 		void DeleteBlock(llvm::BasicBlock* b){

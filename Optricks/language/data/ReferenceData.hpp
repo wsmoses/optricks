@@ -64,15 +64,17 @@ public:
 		else{
 			//todo check
 			llvm::Value* V = value->value->getPointer(r, id);
-			if(V->getType()!=right->type) V = r.builder.CreatePointerCast(V, right->type);
+			assert(right->type->isPointerTy());
+			if(V->getType()!=right->type) V = r.pointerCast(V, (llvm::PointerType*) right->type);
 			return new ConstantData(V, right);
 		}
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(hasCastValue(right)){
 			llvm::Value* V = value->value->getPointer(r, id);
+			assert(right->type->isPointerTy());
 			if(V->getType()==right->type) return V;
-			else return r.builder.CreatePointerCast(V, right->type);
+			else return r.pointerCast(V, (llvm::PointerType*) right->type);
 		}
 		id.compilerError("Cannot cast reference V "+value->type->getName()+" to "+right->getName());
 		exit(1);

@@ -11,11 +11,12 @@
 #include "../../RData.hpp"
 inline llvm::Value* FunctionClass::castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		switch(toCast->classType){
-		case CLASS_CPOINTER: return r.builder.CreatePointerCast(valueToCast, C_POINTERTYPE);
+		case CLASS_CPOINTER: return r.pointerCast(valueToCast, C_POINTERTYPE);
 		case CLASS_FUNC: {
 			if(noopCast(toCast)){
+				assert(toCast->type->isPointerTy());
 				if(toCast->type==valueToCast->getType()) return valueToCast;
-				else return r.builder.CreatePointerCast(valueToCast, toCast->type);
+				else return r.pointerCast(valueToCast, (llvm::PointerType*) toCast->type);
 			}
 			else {
 				id.error("Cannot cast value of function type "+getName()+" to "+toCast->getName());

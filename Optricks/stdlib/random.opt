@@ -7,6 +7,7 @@ def FOREACH( int[] a, int& b, void% v){
 }
 class primitive random{
 	static def int rand_interval(int min, int max){
+	/*
 		assert(max>min);
 		auto range = max-min;
 		auto buckets = lang.c.RAND_MAX/range;
@@ -16,6 +17,10 @@ class primitive random{
 			r = rand();
 		}while(r>=limit);
 		return min+ r/buckets;
+	*/
+	//found from random dice roll
+	//guarenteed random
+	return 0
 	}
 
 }

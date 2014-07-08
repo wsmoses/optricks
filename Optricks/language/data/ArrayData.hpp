@@ -53,21 +53,17 @@ public:
 		}
 		ArrayClass* tc = (ArrayClass*)right;
 		//TODO have an "empty" slot
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
-		llvm::IntegerType* ic = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(size_t));
-		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-				tc->inner->type, llvm::ConstantInt::get(ic, s), llvm::ConstantInt::get(ic,inner.size()));
-		r.builder.Insert(v);
+		auto v = r.allocate(tc->inner->type, getSizeT(inner.size()));
+
 		for(unsigned i = 0; i<inner.size(); i++){
 			r.builder.CreateStore(inner[i]->castToV(r, tc->inner, id),
 					r.builder.CreateConstGEP1_32(v, i));
 		}
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
-		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), ic,
-						tmp, llvm::ConstantInt::get(ic, s));
-		r.builder.Insert(p);
+
+		auto p=r.allocate(tmp);
+
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(1)), inner.size()),

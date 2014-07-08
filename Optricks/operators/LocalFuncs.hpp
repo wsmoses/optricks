@@ -38,6 +38,7 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 		else if(s=="count") return true;
 		else if(s=="indexOf") return true;
 		else if(s=="lastIndexOf") return true;
+		else if(s=="swap") return true;
 		else if(s=="trim") return true;
 		else if(s=="ensureCapacity") return true;
 		else if(s=="contains") return true;
@@ -110,6 +111,9 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 		else if(s=="lastIndexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner))
 			/* Idx where found or -1*/
 			return &intClass;
+		else if(s=="swap" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(&intClass))
+			/* swaps elems at idx1 and idx2*/
+			return &voidClass;
 		else if(s=="trim" && v.size()==0)
 			/* forces alloc to be size of used memory*/
 			return &voidClass;
@@ -593,27 +597,55 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(RET_V, &intClass);
 
+			} else if(s=="swap" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(&intClass)){
+				auto IDX1 = v[0]->evaluate(r)->castToV(r, &intClass, id);
+				auto IDX2 = v[1]->evaluate(r)->castToV(r, &intClass, id);
+				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+				auto MAX = r.builder.CreateSelect(r.builder.CreateICmpUGT(IDX1, IDX2), IDX1, IDX2);
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+
+				auto IDX_TOO_BIG = r.CreateBlockD("idx_too_big", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpULT(MAX, LENGTH), DONE, IDX_TOO_BIG);
+
+				r.builder.SetInsertPoint(IDX_TOO_BIG);
+				llvm::SmallVector<llvm::Type*,1> t_args(1);
+				t_args[0] = C_STRINGTYPE;
+				llvm::SmallVector<llvm::Value*,6> c_args(6);
+				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
+				c_args[1] = MAX;
+				c_args[2] = LENGTH;
+				c_args[3] = r.getConstantCString(id.fileName);
+				c_args[4] = getInt32(id.lineN);
+				c_args[5] = getInt32(id.charN);
+				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+				r.error("");
+
+				r.builder.SetInsertPoint(DONE);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				auto p1 = r.builder.CreateGEP(DATA, IDX1);
+				auto d1 = r.builder.CreateLoad(p1);
+				auto p2 = r.builder.CreateGEP(DATA, IDX2);
+				auto d2 = r.builder.CreateLoad(p2);
+				r.builder.CreateStore(d2, p1);
+				r.builder.CreateStore(d1, p2);
+				return &VOID_DATA;
+
 			} else if(s=="trim" && v.size()==0){
 				/* forces alloc to be size of used memory*/
-				auto NEWLEN = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
 				auto ALLOC = r.builder.CreateLoad(ALLOC_P);
 
-				llvm::SmallVector<llvm::Type*,2> args(2);
-				args[0] = C_POINTERTYPE;
-				args[1] = C_SIZETTYPE;
-				llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
-				auto R_FUNC = r.getExtern("realloc",FT);
 				auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
 
-				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P),AC->inner->type,LENGTH);
 
-				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
-				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
-						llvm::ConstantInt::get(C_SIZETTYPE, s)));
-				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
 				r.builder.CreateStore(NEW_P,DATA_P);
-				r.builder.CreateStore(NEWLEN,ALLOC_P);
+				r.builder.CreateStore(LENGTH,ALLOC_P);
 
 				return &VOID_DATA;
 			} else if(s=="ensureCapacity" && v.size()==1 && v[0]->hasCastValue(&intClass)){
@@ -629,19 +661,11 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.CreateCondBr(r.builder.CreateICmpSGT(NEWLEN, ALLOC), REALLOC, DONE);
 
 				r.builder.SetInsertPoint(REALLOC);
-				llvm::SmallVector<llvm::Type*,2> args(2);
-				args[0] = C_POINTERTYPE;
-				args[1] = C_SIZETTYPE;
-				llvm::FunctionType *FT = llvm::FunctionType::get(C_POINTERTYPE, args, false);
-				auto R_FUNC = r.getExtern("realloc",FT);
+
+
 				auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
+				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P),AC->inner->type,NEWLEN);
 
-				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
-
-				uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(AC->inner->type);
-				auto CAL = r.builder.CreateCall2(R_FUNC,IP,r.builder.CreateMul(r.builder.CreateZExt(NEWLEN,C_SIZETTYPE),
-						llvm::ConstantInt::get(C_SIZETTYPE, s)));
-				auto NEW_P = r.builder.CreatePointerCast(CAL,llvm::PointerType::getUnqual(AC->inner->type));
 				r.builder.CreateStore(NEW_P,DATA_P);
 				r.builder.CreateStore(NEWLEN,ALLOC_P);
 

@@ -169,7 +169,8 @@ llvm::Value* ArrayClass::castTo(const AbstractClass* const toCast, RData& r, Pos
 		exit(1);
 	}
 	if(inner->noopCast(AR->inner)){
-		return r.builder.CreatePointerCast(valueToCast, type);
+		assert(AR->inner->type->isPointerTy());
+		return r.pointerCast(valueToCast, (llvm::PointerType*) AR->inner->type);
 	}
 	cerr << this << " " << toCast << endl << flush;
 	id.compilerError("Casting array types has not been implemented "+toCast->getName());

@@ -58,12 +58,10 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	}
 	case CLASS_PRIORITYQUEUE:
 	case CLASS_ARRAY:{
-		if(args.size()>1 ) filePos.error("Could not find valid constructor in array");
-
 		llvm::Value* LEN;
 		if(args.size()==0)
 			LEN = getInt32(3);
-		else {
+		else if(args.size()>=1){
 			auto L = args[0]->evaluate(r);
 			auto V = L->getReturnType();
 			if(V->classType==CLASS_INT){
@@ -85,19 +83,67 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		}
 		const ArrayClass* tc = (const ArrayClass*)this;
 		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
-		llvm::Instruction* v = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
-				tc->inner->type, llvm::ConstantInt::get(C_SIZETTYPE, s), LEN);
-		r.builder.Insert(v);
+		llvm::Value* v;
+
+		if(args.size()<=1){
+			v = r.allocate(tc->inner->type, LEN);
+		} else if(args.size()==2){
+			auto M = args[1]->evaluate(r);
+			if(M->hasCastValue(tc->inner)){
+				v = r.allocate(tc->inner->type, LEN,M->castToV(r, tc->inner, filePos));
+			} else{
+
+				std::vector<const AbstractClass*> E_INT = {&intClass};
+				std::vector<const AbstractClass*> E_LONG = {&longClass};
+				const AbstractClass* V;
+
+				if(M->hasCastValue(FunctionClass::get(tc->inner,E_INT)) ||
+				   M->hasCastValue(FunctionClass::get(tc->inner,E_LONG)) ||
+						( (V=M->getReturnType())->classType==CLASS_FUNC && ((FunctionClass*)V)->returnType->hasCast(tc->inner)
+								&& ((FunctionClass*)V)->argumentTypes.size()==1
+								&& ((FunctionClass*)V)->argumentTypes[0]->classType==CLASS_INT)){
+
+					v = r.allocate(tc->inner->type, LEN);
+					if(auto C1 = llvm::dyn_cast<llvm::ConstantInt>(r.integerCast(LEN))){
+						assert(!C1->isZero());
+
+						r.builder.CreateStore(M->callFunction(r, filePos, std::vector<const Evaluatable*>({new ConstantData(getInt32(0),&intClass)}),nullptr)->castToV(r, tc->inner, filePos), v);
+
+						uint64_t T=C1->getValue().getLimitedValue();
+						for(uint64_t i=1; i<T; i++){
+							r.builder.CreateStore(M->callFunction(r, filePos, std::vector<const Evaluatable*>({new ConstantData(getInt32(i),&intClass)}),nullptr)->castToV(r, tc->inner, filePos), r.builder.CreateConstGEP1_64(v, i));
+						}
+					} else {
+						auto START= r.builder.GetInsertBlock();
+						auto FUNC = START->getParent();
+						auto LOOP = r.CreateBlockD("loop", FUNC);
+						auto DONE = r.CreateBlockD("done", FUNC);
+						auto CZ = llvm::ConstantInt::get(INT32TYPE,0,false);
+						auto SIZE = r.integerCast(LEN, INT32TYPE);
+						r.builder.CreateCondBr(r.builder.CreateICmpSLE(SIZE, CZ), DONE, LOOP);
+						r.builder.SetInsertPoint(LOOP);
+						auto idx = r.builder.CreatePHI(SIZE->getType(),2);
+						idx->addIncoming(CZ, START);
+						auto P1 = r.builder.CreateAdd(idx, llvm::ConstantInt::get(SIZE->getType(),1,false));
+						idx->addIncoming(P1, LOOP);
+						r.builder.CreateStore(M->callFunction(r, filePos, std::vector<const Evaluatable*>({new ConstantData(idx,&intClass)}),nullptr)->castToV(r, tc->inner, filePos), r.builder.CreateGEP(v, idx));
+						r.builder.CreateCondBr(r.builder.CreateICmpEQ(SIZE, P1), DONE, LOOP);
+						r.builder.SetInsertPoint(DONE);
+					}
+				} else filePos.error("Could not find valid constructor in array");
+
+			}
+		} else filePos.error("Could not find valid constructor in array");
 
 		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
-		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
-						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
-		r.builder.Insert(p);
+
+		auto p = r.allocate(tmp);
+
+
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
-		r.builder.CreateStore(getInt32(0),
+		r.builder.CreateStore((args.size()==2)?LEN:(llvm::Value*)getInt32(0),
 				r.builder.CreateConstGEP2_32(p, 0,1));
 		r.builder.CreateStore(LEN,
 				r.builder.CreateConstGEP2_32(p, 0,2));
@@ -126,18 +172,14 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		}
 		const HashMapClass* tc = (const HashMapClass*)this;
 		auto PT = llvm::PointerType::getUnqual(tc->nodeType);
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(PT);
-		auto CALLOC = r.lmod->getOrInsertFunction("calloc", C_POINTERTYPE, C_SIZETTYPE, C_SIZETTYPE, NULL);
 
-		auto v = r.builder.CreatePointerCast(
-				r.builder.CreateCall2(CALLOC,r.builder.CreateSExtOrTrunc(LEN,C_SIZETTYPE),llvm::ConstantInt::get(C_SIZETTYPE, s)),
-				llvm::PointerType::getUnqual(PT));
+		auto v = r.allocate(PT, LEN, llvm::ConstantPointerNull::get(PT));
 
+		assert(llvm::dyn_cast<llvm::PointerType>(tc->type));
 		auto tmp=(llvm::StructType*)(((llvm::PointerType*)tc->type)->getElementType());
-		s = llvm::DataLayout(r.lmod).getTypeAllocSize(tmp);
-		llvm::Instruction* p = llvm::CallInst::CreateMalloc(r.builder.GetInsertBlock(), C_SIZETTYPE,
-						tmp, llvm::ConstantInt::get(C_SIZETTYPE, s));
-		r.builder.Insert(p);
+
+		auto p = r.allocate(tmp);
+
 		r.builder.CreateStore(llvm::ConstantInt::get((llvm::IntegerType*)(tmp->getElementType(0)), 0),
 				r.builder.CreateConstGEP2_32(p, 0,0));
 

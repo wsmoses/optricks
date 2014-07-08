@@ -145,10 +145,35 @@ void initClasses(){
 			else
 				r.builder.SetInsertPoint(& BB.front());
 			auto SRAND = r.getExtern("srand", &voidClass, {&c_intClass});
-			auto CL = convertClass(time_t,&LANG_M);
+
+			auto VV = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod,llvm::Intrinsic::
+#if UINT_MAX == UINT16_MAX
+					x86_rdseed_16
+#elif UINT_MAX == UINT32_MAX
+					x86_rdseed_32
+#elif UINT_MAX == UINT64_MAX
+					x86_rdseed_64
+#endif
+			,llvm::SmallVector<llvm::Type*,0>()));
+			assert(VV);
+			auto C = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)0));
+			assert(C);
+			assert(C->getType()==C_INTTYPE);
+
+			llvm::SmallVector<llvm::Type*,1> t_args(1);
+			t_args[0] = C_STRINGTYPE;
+			llvm::SmallVector<llvm::Value*,3> c_args(3);
+			c_args[0] = r.getConstantCString("rdseed %u of %u\n");
+			c_args[1] = C;
+			c_args[2] = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)1));
+			r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+			r.builder.GetInsertBlock()->dump();
+			fflush(0);
+
+/*			auto CL = convertClass(time_t,&LANG_M);
 			auto CLOCK = r.getExtern("time", CL, {ReferenceClass::get(CL)});
 			auto C = r.builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(CL->type)));
-
+*/
 			r.builder.CreateCall(SRAND, r.builder.CreateZExtOrTrunc(C, C_INTTYPE));
 			r.builder.CreateCall(CU);
 			r.builder.SetInsertPoint(PARENT);
@@ -478,9 +503,9 @@ void initClasses(){
 #define WINDOWS 0
 #define LINUX 1
 #define OSX 2
-		E_D.push_back(std::pair<int,String>(WINDOWS,"WINDOWS"));
-		E_D.push_back(std::pair<int,String>(LINUX,"LINUX"));
-		E_D.push_back(std::pair<int,String>(OSX,"OSX"));
+		E_D.push_back(std::pair<int,String>(WINDOWS,"windows"));
+		E_D.push_back(std::pair<int,String>(LINUX,"linux"));
+		E_D.push_back(std::pair<int,String>(OSX,"osx"));
 		auto OS_T = new EnumClass(&LANG_M,"os",E_D,PositionID("#os",0,0),byteClass.type);
 
 #if defined(WIN32) || defined(_WIN32)
@@ -490,7 +515,7 @@ void initClasses(){
 #else
 #define OS LINUX
 #endif
-		OS_T->staticVariables.addVariable(PositionID("#os",0,0),"SELF",new ConstantData(llvm::ConstantInt::get(byteClass.type, OS, false),OS_T));
+		OS_T->staticVariables.addVariable(PositionID("#os",0,0),"self",new ConstantData(llvm::ConstantInt::get(byteClass.type, OS, false),OS_T));
 		LANG_M.addClass(PositionID("#sdl",0,0),OS_T);
 #undef OS
 #undef LINUX

@@ -83,7 +83,7 @@ public:
 	 * Will error with id if this.hasCast(toCast)==false
 	 */
 	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
-		if(toCast->classType==CLASS_CPOINTER) return r.builder.CreatePointerCast(valueToCast, C_POINTERTYPE);
+		if(toCast->classType==CLASS_CPOINTER) return r.pointerCast(valueToCast, C_POINTERTYPE);
 		if(toCast->classType!=CLASS_CSTRING) id.error("Cannot cast "+getName()+" type to "+toCast->getName());
 		return valueToCast;
 	}

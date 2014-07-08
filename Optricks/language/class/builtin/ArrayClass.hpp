@@ -71,7 +71,7 @@ public:
 		if(s=="carr"){
 			llvm::Value* V = instance->getValue(r,id);
 			return new ConstantData(
-					r.builder.CreatePointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
+					r.pointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
 					&c_pointerClass);
 		}
 		if(inner!=nullptr && s=="alloced"){

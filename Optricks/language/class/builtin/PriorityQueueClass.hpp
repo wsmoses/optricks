@@ -201,7 +201,7 @@ public:
 		if(s=="carr"){
 			llvm::Value* V = instance->getValue(r,id);
 			return new ConstantData(
-					r.builder.CreatePointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
+					r.pointerCast(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3)),C_POINTERTYPE),
 					&c_pointerClass);
 		} else if(s=="alloced"){
 			llvm::Value* V = instance->getValue(r,id);
@@ -237,7 +237,8 @@ public:
 			exit(1);
 		}
 		if(inner->noopCast(AR->inner)){
-			return r.builder.CreatePointerCast(valueToCast, type);
+			assert(toCast->type->isPointerTy());
+			return r.pointerCast(valueToCast, (llvm::PointerType*) toCast->type);
 		}
 		id.compilerError("Casting priority queue types has not been implemented "+toCast->getName());
 		exit(1);

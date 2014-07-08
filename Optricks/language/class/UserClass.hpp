@@ -233,8 +233,9 @@ public:
 			exit(1);
 		}
 		UserClass* tmp = (UserClass*)superClass;
+		assert(toCast->type->isPointerTy());
 		while(tmp!=nullptr){
-			if(tmp==toCast) return r.builder.CreatePointerCast(valueToCast, toCast->type);
+			if(tmp==toCast) return r.pointerCast(valueToCast, (llvm::PointerType*) toCast->type);
 			else tmp=(UserClass*)tmp->superClass;
 		}
 		id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());

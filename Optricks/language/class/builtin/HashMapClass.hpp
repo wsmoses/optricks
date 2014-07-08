@@ -101,7 +101,8 @@ public:
 			exit(1);
 		}
 		if(key->noopCast(AR->key) && value->noopCast(AR->value)){
-			return r.builder.CreatePointerCast(valueToCast, type);
+			assert(toCast->type->isPointerTy());
+			return r.pointerCast(valueToCast, (llvm::PointerType*) toCast->type);
 		}
 		cerr << this << " " << toCast << endl << flush;
 		id.compilerError("Casting hashmap types has not been implemented "+toCast->getName());

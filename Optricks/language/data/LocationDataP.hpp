@@ -18,7 +18,8 @@ inline llvm::Value* LocationData::castToV(RData& r, const AbstractClass* const r
 		if(type == right)
 			return value->getValue(r,id);
 		if((type->layout==POINTER_LAYOUT && right->layout==POINTER_LAYOUT) || (type->layout==PRIMITIVEPOINTER_LAYOUT && right->layout==PRIMITIVEPOINTER_LAYOUT)){
-			if(type->hasSuper(right)) return r.builder.CreatePointerCast(value->getValue(r, id), right->type);
+			assert(right->type->isPointerTy());
+			if(type->hasSuper(right)) return r.pointerCast(value->getValue(r, id), (llvm::PointerType*) right->type);
 			else id.error("Cannot cast value of type "+type->getName()+" to "+right->getName());
 		}
 		return type->castTo(right, r, id, value->getValue(r,id));

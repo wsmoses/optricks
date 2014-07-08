@@ -52,8 +52,9 @@ public:
 	}
 	inline llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const{
 		if(noopCast(toCast)){
+			assert(toCast->type->isPointerTy());
 			if(toCast->type==type) return valueToCast;
-			else return r.builder.CreatePointerCast(valueToCast, toCast->type);
+			else return r.pointerCast(valueToCast, (llvm::PointerType*) toCast->type);
 		}
 		id.error("Cannot cast reference");
 		exit(1);

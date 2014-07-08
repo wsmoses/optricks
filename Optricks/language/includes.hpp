@@ -245,10 +245,6 @@ class E_FUNC_CALL;
 class Statement;
 #endif
 
-inline llvm::ConstantInt* getInt32(int32_t val){
-	return llvm::ConstantInt::getSigned(llvm::IntegerType::get(llvm::getGlobalContext(),32),(int64_t)val);
-}
-
 template<typename T> inline void toStringStream(ostream& o, T s)
 {
     o << s;
@@ -268,11 +264,20 @@ template<typename... Args> String toStr(Args... args){
 const auto C_POINTERTYPE = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8),0);
 const auto C_SIZETTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(size_t));
 const auto C_INTTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(int));
+const auto INT32TYPE = llvm::IntegerType::get(llvm::getGlobalContext(),32);
 const auto VOIDTYPE = llvm::Type::getVoidTy(llvm::getGlobalContext());
 const auto BOOLTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),1);
 const auto CHARTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8);
 const auto CLASSTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(void*));
 const auto C_STRINGTYPE = llvm::PointerType::getUnqual(CHARTYPE);
+
+inline llvm::ConstantInt* getSizeT(size_t val){
+	return llvm::ConstantInt::get(C_SIZETTYPE,(uint64_t)val,false);
+}
+inline llvm::ConstantInt* getInt32(int32_t val){
+	return llvm::ConstantInt::getSigned(INT32TYPE,(int64_t)val);
+}
+
 #ifdef NULL
 #undef NULL
 #endif

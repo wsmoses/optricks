@@ -10,7 +10,10 @@ class primitive File{
         	this.f = (extern lang.c.pointer fopen(lang.c.string, lang.c.string))(s,t);
         };
 	static def File popen(lang.c.string c, lang.c.string t){
-		return (extern File popen(lang.c.string,lang.c.string))(c,t);
+		if(os.self==os.windows)
+			return (extern File _popen(lang.c.string,lang.c.string))(c,t);
+		else
+			return (extern File popen(lang.c.string,lang.c.string))(c,t);
 	}
         def void flush(){
                 (extern void fflush(lang.c.pointer))(this.f);
@@ -108,6 +111,7 @@ extern void fflush(lang.c.pointer=null);
 
 def lang.c.string[] listdir(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
+	/*
 	auto mlen = strlen(s);
 	bool end=s[mlen-1]=='/';
 	if(end) mlen+=1;
@@ -133,6 +137,6 @@ def lang.c.string[] listdir(lang.c.string s){
 		}
 	}while(true);
 	(extern void closedir(lang.c.pointer))(dir);
-
+	*/
 	return ar;
 }

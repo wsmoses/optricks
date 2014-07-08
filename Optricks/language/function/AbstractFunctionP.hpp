@@ -311,8 +311,10 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 		} else {
 			T = instance->getValue(r, id);
 		}
-		if(T->getType()!= proto->declarations[0].declarationType->type)
-			T = r.builder.CreatePointerCast(T, proto->declarations[0].declarationType->type);
+		if(T->getType()!= proto->declarations[0].declarationType->type){
+			assert(proto->declarations[0].declarationType->type->isPointerTy());
+			T = r.pointerCast(T, (llvm::PointerType*) proto->declarations[0].declarationType->type);
+		}
 		assert(T != NULL);
 		temp[0] = T;
 	}
@@ -381,8 +383,10 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		} else {
 			T = instance->getValue(r, id);
 		}
-		if(T->getType()!= proto->declarations[0].declarationType->type)
-			T = r.builder.CreatePointerCast(T, proto->declarations[0].declarationType->type);
+		if(T->getType()!= proto->declarations[0].declarationType->type){
+			assert(proto->declarations[0].declarationType->type->isPointerTy());
+			T = r.builder.CreatePointerCast(T, (llvm::PointerType*) proto->declarations[0].declarationType->type);
+		}
 		assert(T != NULL);
 		if(ds==1) return T;
 		else {
@@ -461,7 +465,7 @@ const ConstantData* AbstractFunction::castTo(RData& r, const AbstractClass* cons
 		id.error("Function classes have not been implemented...");
 		exit(1);
 	case CLASS_CPOINTER:
-		return new ConstantData(r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE), right);
+		return new ConstantData(r.pointerCast(getValue(r, id),C_POINTERTYPE), right);
 	default:
 		id.error("Cannot cast function to non-function class "+right->getName());
 		exit(1);
@@ -474,8 +478,9 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 	case CLASS_FUNC:{
 		auto fc= proto->getFunctionClass();
 		if(fc->noopCast(right)){
+			assert(right->type->isPointerTy());
 			if(right->type==myFunc->getType()) return myFunc;
-			else return r.builder.CreatePointerCast(myFunc, right->type);
+			else return r.pointerCast(myFunc, (llvm::PointerType*) right->type);
 		}
 		else {
 			id.error("Single Function automatic generation of types has not been implemented... "+fc->getName()+" to "+right->getName());
@@ -483,7 +488,7 @@ llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right,
 		}
 	}
 	case CLASS_CPOINTER:
-		return r.builder.CreatePointerCast(myFunc,C_POINTERTYPE);
+		return r.pointerCast(myFunc,C_POINTERTYPE);
 	default:
 		id.error("Cannot cast function to non-function class "+right->getName());
 		exit(1);
@@ -540,7 +545,7 @@ llvm::Value* OverloadedFunction::castToV(RData& r, const AbstractClass* const ri
 		return getBestFit(id, fc->argumentTypes,false)->castToV(r, right, id);
 	}
 	case CLASS_CPOINTER:
-		return r.builder.CreatePointerCast(getValue(r, id),C_POINTERTYPE);
+		return r.pointerCast(getValue(r, id),C_POINTERTYPE);
 	default:
 		id.error("Cannot cast function to non-function class "+right->getName());
 		exit(1);
