@@ -92,6 +92,7 @@ class CompiledFunction: public SingleFunction{
 private:
 public:
 	CompiledFunction(FunctionProto* const fp, llvm::Constant* const f);
+//	static CompiledFunction* compile(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> tmp);
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 
@@ -126,10 +127,17 @@ public:
 	BuiltinInlineFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> tmp):
 		SingleFunction(fp,nullptr),inlined(tmp){}
 	llvm::Function* getSingleFunc() const override final;
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override{
 		//assert(instance==nullptr);
 		return inlined(r,id,validatePrototypeInline(r,id,args,instance),instance);
 	}
+};
+
+class BuiltinCompiledFunction: public BuiltinInlineFunction{
+public:
+	BuiltinCompiledFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> tmp):
+		BuiltinInlineFunction(fp,tmp){}
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override;
 };
 
 template<decltype(llvm::Intrinsic::sqrt) A>

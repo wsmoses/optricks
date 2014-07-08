@@ -522,10 +522,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				Switch->addCase(getInt32(i), TmpBB);
 			}
 			r.builder.SetInsertPoint(ErrorBB);
-			llvm::SmallVector<llvm::Type*,1> t_args(1);
-			t_args[0] = C_STRINGTYPE;
-			auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-			r.builder.CreateCall2(CU, r.getConstantCString("Illegal string index %d in "+str(D->value.size())), V);
+			r.error("Illegal string index %d in %d", filePos, {V, getCInt(D->value.size())});
+
 			r.builder.SetInsertPoint(MergeBB);
 			return new ConstantData(PHI, &charClass);
 		} else if(operation=="+"){
@@ -1371,17 +1369,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					Switch->addCase(getInt32(i), TmpBB);
 				}
 				r.builder.SetInsertPoint(ErrorBB);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,6> c_args(6);
-				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-				c_args[1] = V;
-				c_args[2] = getInt32(D->inner.size());
-				c_args[3] = r.getConstantCString(filePos.fileName);
-				c_args[4] = getInt32(filePos.lineN);
-				c_args[5] = getInt32(filePos.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
+				r.error("Illegal array index %d in %d", filePos, {V, getInt32(D->inner.size())});
+
 				r.builder.SetInsertPoint(MergeBB);
 				return new ConstantData(PHI, RT);
 			} else {
@@ -1389,16 +1378,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,1));
 				LLVM_QUICKERROR(r,
 						(r.builder.CreateICmpUGE(V, LENGTH)),SINGLE_ARG(
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						llvm::SmallVector<llvm::Value*,6> c_args(6);
-						c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-						c_args[1] = V;
-						c_args[2] = LENGTH;
-						c_args[3] = r.getConstantCString(filePos.fileName);
-						c_args[4] = getInt32(filePos.lineN);
-						c_args[5] = getInt32(filePos.charN);
-						r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+								r.error("Illegal array index %d in %d", filePos, {V, LENGTH});
 				))
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
 				return new LocationData(new StandardLocation(r.builder.CreateGEP(I, V)), AC->inner);
@@ -1496,16 +1476,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,1));
 				LLVM_QUICKERROR(r,
 						(r.builder.CreateICmpUGE(V, LENGTH)),SINGLE_ARG(
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						llvm::SmallVector<llvm::Value*,6> c_args(6);
-						c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-						c_args[1] = V;
-						c_args[2] = LENGTH;
-						c_args[3] = r.getConstantCString(filePos.fileName);
-						c_args[4] = getInt32(filePos.lineN);
-						c_args[5] = getInt32(filePos.charN);
-						r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+								r.error("Illegal array index %d in %d", filePos, {V, LENGTH});
 				))
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
 				return new ConstantData(r.builder.CreateLoad(r.builder.CreateGEP(I, V)), AC->inner);
@@ -1641,15 +1612,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.CreateCondBr(r.builder.CreateIsNull(S_IDX),ERROR_B,LOOP_1);
 
 				r.builder.SetInsertPoint(ERROR_B);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,4> c_args(4);
-				c_args[0] = r.getConstantCString("Illegal map key at %s:%d:%d\n");
-				c_args[1] = r.getConstantCString(filePos.fileName);
-				c_args[2] = getInt32(filePos.lineN);
-				c_args[3] = getInt32(filePos.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
+				r.error("Illegal map key", filePos);
 
 				r.builder.SetInsertPoint(LOOP_1);
 				auto PHI=r.builder.CreatePHI(llvm::PointerType::getUnqual(AC->nodeType),2);
@@ -1703,11 +1666,8 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					Switch->addCase(getInt32(i), TmpBB);
 				}
 				r.builder.SetInsertPoint(ErrorBB);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-				r.builder.CreateCall2(CU, r.getConstantCString("Illegal array index %d in "+str(D->inner.size())), V);
-				r.error("");
+				r.error("Illegal array index %d in %d", filePos, {V, getInt32(D->inner.size())});
+
 				r.builder.SetInsertPoint(MergeBB);
 				return new ConstantData(PHI, RT);
 			} else {

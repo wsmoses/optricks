@@ -89,9 +89,6 @@ class primitive Base64File{
 	};
 };
 
-extern lang.c.size_t strlen(lang.c.string);
-extern lang.c.string strcpy(lang.c.string,lang.c.string);
-
 def getInfo(lang.c.string s){
 	FileStat fs;
 	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
@@ -108,10 +105,9 @@ def isFile(lang.c.string s){
 
 extern void fflush(lang.c.pointer=null);
 
-
+/*
 def lang.c.string[] listdir(lang.c.string s){
 	lang.c.string[] ar = lang.c.string[](0);
-	/*
 	auto mlen = strlen(s);
 	bool end=s[mlen-1]=='/';
 	if(end) mlen+=1;
@@ -137,6 +133,6 @@ def lang.c.string[] listdir(lang.c.string s){
 		}
 	}while(true);
 	(extern void closedir(lang.c.pointer))(dir);
-	*/
 	return ar;
 }
+*/

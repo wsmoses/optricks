@@ -22,6 +22,23 @@ enum TJump{
 	GENERATOR,
 };
 
+template<unsigned idx, unsigned len, typename... F> struct printf_helper{
+	static void add(llvm::SmallVector<llvm::Value*,len> V, F...);
+};
+
+
+template<unsigned idx, unsigned len> struct printf_helper<idx, len>{
+	static void add(llvm::SmallVector<llvm::Value*,len> V){
+	}
+};
+
+template<unsigned idx, unsigned len, typename A, typename... F> struct printf_helper<idx, len, A, F...>{
+	static void add(llvm::SmallVector<llvm::Value*,len> V, A val, F... args){
+		V[idx] = val;
+		printf_helper<idx+1,len,F...>::add(V, args...);
+	}
+};
+
 template<> String str<TJump>(TJump d){
 	String ret;
 	switch(d){
@@ -59,8 +76,6 @@ struct Jumpable {
 		 _r.builder.CreateCondBr(_cond, _ll_if_true, _ll_if_false);\
 		_r.builder.SetInsertPoint(_ll_if_true);\
 		i_true;\
-		_r.builder.CreateCall(_r.getExtern("exit", &c_intClass, {&c_intClass}), llvm::ConstantInt::get(c_intClass.type, 1,false));\
-		_r.builder.CreateUnreachable();\
 		_r.builder.SetInsertPoint(_ll_if_false);\
 	};
 #define LLVM_ERROR(_r, _cond, i_true){\
@@ -145,6 +160,10 @@ struct RData{
 		llvm::Function* LLVM_REALLOC;
 		llvm::Function* LLVM_CALLOC;
 		llvm::Function* LLVM_FREE;
+		llvm::Function* LLVM_PRINTF;
+		llvm::Function* LLVM_SPRINTF;
+		llvm::Function* LLVM_ASPRINTF;
+		llvm::Function* LLVM_FPRINTF;
 		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
@@ -161,6 +180,10 @@ struct RData{
 			LLVM_REALLOC = nullptr;
 			LLVM_CALLOC = nullptr;
 			LLVM_FREE = nullptr;
+			LLVM_PRINTF = nullptr;
+			LLVM_SPRINTF = nullptr;
+			LLVM_ASPRINTF = nullptr;
+			LLVM_FPRINTF = nullptr;
 			// Set up optimizers
 			llvm::PassManagerBuilder pmb;
 			pmb.Inliner = llvm::createFunctionInliningPass();
@@ -213,12 +236,19 @@ struct RData{
 		 * bool is whether already done
 		 */
 		//bool conditionalError(llvm::Value* V, String s, PositionID id);
-		void error(String s);
 		inline llvm::Constant* getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs = false, String lib="");
 		std::map<llvm::Function*, void*> toPut;
 		inline llvm::Constant* getExtern(String name, llvm::FunctionType* FT, String lib=""){
 			//TODO actually check library
 			assert(FT);
+			assert(name!="printf");
+			assert(name!="sprintf");
+			assert(name!="asprintf");
+			assert(name!="fprintf");
+			assert(name!="strlen");
+			assert(name!="opendir");
+			assert(name!="closedir");
+			assert(name!="readdir");
 			assert(name!="malloc");
 			assert(name!="calloc");
 			assert(name!="realloc");
@@ -232,9 +262,6 @@ struct RData{
 if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			if(false){}
 #define MAP(X) else if(name==#X){ assert((void*)(&X)); if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
-			MAP(opendir)
-			MAP(readdir)
-			MAP(closedir)
 			MAP(stat)
 #ifdef USE_OPENGL
 //#pragma message "Using OpenGL"
@@ -335,7 +362,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				assert(llvm::dyn_cast<llvm::Function>(G));
 				LLVM_FREE = (llvm::Function*)(G);
 			}
-			builder.CreateCall(P);
+			builder.CreateCall(LLVM_FREE, P);
 			//TODO llvm memory end
 		}
 
@@ -462,6 +489,411 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				return p;
 			}
 		}
+		void exitLLVM(llvm::Value* V){
+			assert(V);
+			assert(V->getType()==C_INTTYPE);
+			llvm::SmallVector<llvm::Type*,1> args(1);
+			args[0] = C_INTTYPE;
+			auto EXIT = this->getExtern("exit",llvm::FunctionType::get(VOIDTYPE, args, false));
+			builder.CreateCall(EXIT,V);
+		}
+		/* Assumes V is not null */
+		///* Assumes if V is global string constant that it will not be modified */
+		llvm::Value* strlen(llvm::Value* V){
+			assert(V);
+			assert(V->getType()==C_STRINGTYPE);
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_STRINGTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_SIZETTYPE, args, false), llvm::Function::ExternalLinkage,
+						"strlen", lmod);
+				assert(F->getName()=="strlen");
+
+				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+			}
+			return builder.CreateCall(F, V);
+		}
+		template<size_t N>
+		llvm::Value* asprintf(llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=2);
+			assert(args[0]->getType()==llvm::PointerType::getUnqual(C_STRINGTYPE));
+			assert(args[1]->getType()==C_STRINGTYPE);
+			if(LLVM_ASPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = llvm::PointerType::getUnqual(C_STRINGTYPE); // buffer
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_ASPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"asprintf", lmod);
+				assert(LLVM_ASPRINTF->getName()=="asprintf");
+
+				//LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
+			}
+			return builder.CreateCall(LLVM_ASPRINTF, args);
+		}
+		template<size_t N>
+		llvm::Value* asprintf(String fmt, llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=1);
+			assert(args[0]->getType()==llvm::PointerType::getUnqual(C_STRINGTYPE));
+			if(LLVM_ASPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = llvm::PointerType::getUnqual(C_STRINGTYPE); // buffer
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_ASPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"asprintf", lmod);
+				assert(LLVM_ASPRINTF->getName()=="asprintf");
+
+				//LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
+			}
+			args.insert(++ args.begin(), getConstantCString(fmt));
+			return builder.CreateCall(LLVM_ASPRINTF, args);
+		}
+
+
+		template<size_t N>
+		llvm::Value* sprintf(llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=2);
+			assert(args[0]->getType()==C_STRINGTYPE);
+			assert(args[1]->getType()==C_STRINGTYPE);
+			if(LLVM_SPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_STRINGTYPE; // buffer
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_SPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"sprintf", lmod);
+				assert(LLVM_SPRINTF->getName()=="sprintf");
+
+				//LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& ::sprintf));
+			}
+			return builder.CreateCall(LLVM_SPRINTF, args);
+		}
+		template<size_t N>
+		llvm::Value* sprintf(String fmt, llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=1);
+			assert(args[0]->getType()==C_STRINGTYPE);
+			if(LLVM_SPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_STRINGTYPE; // buffer
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_SPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"sprintf", lmod);
+				assert(LLVM_SPRINTF->getName()=="sprintf");
+
+				//LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& ::sprintf));
+			}
+			args.insert(++ args.begin(), getConstantCString(fmt));
+			return builder.CreateCall(LLVM_SPRINTF, args);
+		}
+
+		template<size_t N>
+		llvm::Value* fprintf(llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=2);
+			assert(args[0]->getType()==C_POINTERTYPE);
+			assert(args[1]->getType()==C_STRINGTYPE);
+			if(LLVM_FPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_POINTERTYPE; // file
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_FPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"fprintf", lmod);
+				assert(LLVM_FPRINTF->getName()=="fprintf");
+
+				//LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& ::fprintf));
+			}
+			return builder.CreateCall(LLVM_FPRINTF, args);
+		}
+		template<size_t N>
+		llvm::Value* fprintf(String fmt, llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=1);
+			assert(args[0]->getType()==C_POINTERTYPE);
+			if(LLVM_FPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_POINTERTYPE; // buffer
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_FPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"fprintf", lmod);
+				assert(LLVM_FPRINTF->getName()=="fprintf");
+
+				//LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& ::fprintf));
+			}
+			args.insert(++ args.begin(), getConstantCString(fmt));
+			return builder.CreateCall(LLVM_FPRINTF, args);
+		}
+
+		template<size_t N>
+		llvm::Value* printf(llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=1);
+			assert(args[0]->getType()==C_STRINGTYPE);
+			if(LLVM_PRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_STRINGTYPE; // fmt
+
+				LLVM_PRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"printf", lmod);
+				assert(LLVM_PRINTF->getName()=="printf");
+
+				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& ::printf));
+			}
+			return builder.CreateCall(LLVM_PRINTF, args);
+		}
+		template<size_t N>
+		llvm::Value* printf(String fmt, llvm::SmallVector<llvm::Value*,N> args){
+			if(LLVM_PRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_STRINGTYPE; // fmt
+
+				LLVM_PRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"printf", lmod);
+				assert(LLVM_PRINTF->getName()=="printf");
+
+				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+
+				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& ::printf));
+			}
+			args.insert(++ args.begin(), getConstantCString(fmt));
+			return builder.CreateCall(LLVM_PRINTF, args);
+		}
+
+		template<typename...args>
+		llvm::Value* printf(String fmt, args... A){
+			llvm::SmallVector<llvm::Value*,1+sizeof...(args)> V(1+sizeof...(args));
+			V[0] = getConstantCString(fmt);
+			printf_helper<1,1+sizeof...(args), args...>::add(V, A...);
+			return printf<1+sizeof...(args)>(V);
+		}
+
+		void error(String code, PositionID id){
+			error(code, id, std::vector<llvm::Value*>());
+		}
+		void p_error(String code, PositionID id, const std::vector<llvm::Value*> V){
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_STRINGTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(VOIDTYPE, args, false), llvm::Function::ExternalLinkage,
+						"perror", lmod);
+				assert(F->getName()=="perror");
+
+				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				exec->updateGlobalMapping(F,(void*)(& ::perror));
+			}
+			auto vs = V.size();
+			llvm::SmallVector<llvm::Value*,4> a_args(vs+4);
+			a_args[0] = getConstantCString(code+(" in %s:%d:%d"));
+			for(unsigned i=0; i<vs; i++)
+				a_args[1+i] = V[i];
+			a_args[vs+1] = getConstantCString(id.fileName);
+			a_args[vs+2] = getCUInt(id.lineN);
+			a_args[vs+3] = getCUInt(id.lineN);
+			this->printf<4>(a_args);
+			builder.CreateCall(F, llvm::ConstantPointerNull::get(C_STRINGTYPE));
+			this->exitLLVM(getCInt(1));
+			builder.CreateUnreachable();
+		}
+		void error(String code, PositionID id, const std::vector<llvm::Value*> V){
+
+#if (defined(WIN32) || defined(_WIN32))
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				assert(sizeof(UINT)==sizeof(int));
+				args[0] = C_INTTYPE;
+				assert(sizeof(LPCSTR)==sizeof(char*));
+				args[1] = C_STRINGTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_SIZETTYPE, args, false), llvm::Function::ExternalLinkage,
+						"FatalAppExit", lmod);
+				assert(F->getName()=="FatalAppExit");
+
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoAlias);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
+
+				exec->updateGlobalMapping(F,(void*)(& ::FatalAppExit));
+			}
+/*
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				assert(sizeof(UINT)==sizeof(int));
+				args[0] = C_INTTYPE;
+				assert(sizeof(LPCSTR)==sizeof(char*));
+				args[1] = C_STRINGTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_SIZETTYPE, args, false), llvm::Function::ExternalLinkage,
+						"FatalAppExit", lmod);
+				assert(F->getName()=="FatalAppExit");
+
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoAlias);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
+			}*/
+			auto AL = builder.CreateAlloca(C_STRINGTYPE);
+			auto vs = V.size();
+			llvm::SmallVector<llvm::Value*,5> a_args(vs+5);
+			a_args[0] = AL;
+			a_args[1] = getConstantCString(code+(" in %s:%d:%d\n"));
+			for(unsigned i=0; i<vs; i++)
+				a_args[2+i] = V[i];
+			a_args[vs+2] = getConstantCString(id.fileName);
+			a_args[vs+3] = getCUInt(id.lineN);
+			a_args[vs+4] = getCUInt(id.lineN);
+			this->asprintf<5>(a_args);
+			builder.CreateCall2(F, getCUInt(0),builder.CreateLoad(AL));
+			builder.CreateUnreachable();
+#else
+			auto vs = V.size();
+			llvm::SmallVector<llvm::Value*,4> a_args(vs+4);
+			a_args[0] = getConstantCString(code+(" in %s:%d:%d"));
+			for(unsigned i=0; i<vs; i++)
+				a_args[1+i] = V[i];
+			a_args[vs+1] = getConstantCString(id.fileName);
+			a_args[vs+2] = getCUInt(id.lineN);
+			a_args[vs+3] = getCUInt(id.lineN);
+			this->printf<4>(a_args);
+			this->exitLLVM(getCInt(1));
+			builder.CreateUnreachable();
+#endif
+		}
+
+		llvm::Value* closedir(llvm::Value* dir){
+			assert(dir);
+			assert(dir->getType()==C_POINTERTYPE);
+
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_POINTERTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE,args,true), llvm::Function::ExternalLinkage,
+						"closedir", lmod);
+				assert(F->getName()=="closedir");
+
+				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				exec->updateGlobalMapping(F,(void*)(& ::closedir));
+			}
+			return builder.CreateCall(F, dir);
+		}
+		llvm::Value* readdir(llvm::Value* dir){
+			assert(dir);
+			assert(dir->getType()==C_POINTERTYPE);
+
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_POINTERTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::ArrayType::get(CHARTYPE, sizeof(struct dirent))),args,true), llvm::Function::ExternalLinkage,
+						"readdir", lmod);
+				assert(F->getName()=="readdir");
+
+				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				exec->updateGlobalMapping(F,(void*)(& ::readdir));
+			}
+			return builder.CreateCall(F, dir);
+		}
+		llvm::Value* opendir(llvm::Value* V, PositionID id){
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,1> args(1);
+				args[0] = C_STRINGTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_POINTERTYPE, args, false), llvm::Function::ExternalLinkage,
+						"opendir", lmod);
+				assert(F->getName()=="opendir");
+
+				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+
+				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				exec->updateGlobalMapping(F,(void*)(& ::opendir));
+			}
+			V = builder.CreateCall(F, V);
+
+			llvm::BasicBlock*  START = builder.GetInsertBlock();
+			llvm::Function* FUNC = START->getParent();
+			llvm::BasicBlock* IF_NULL = CreateBlockD("if_null", FUNC);
+			llvm::BasicBlock* NOT_NULL = CreateBlockD("not_null", FUNC);
+			builder.CreateCondBr(builder.CreateIsNull(V), IF_NULL, NOT_NULL);
+			builder.SetInsertPoint(IF_NULL);
+			this->p_error("Could not open directory %s", id, {V});
+			builder.SetInsertPoint(NOT_NULL);
+			return V;
+		}
+		/*
+		assert(name!="closedir");
+		assert(name!="readdir");*/
+
 		bool isIntZero(llvm::Value* V){
 			//TODO HANDLE CASTS -- assume const cast gives const
 			assert(V->getType()->isIntegerTy());

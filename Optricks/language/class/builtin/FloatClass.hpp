@@ -74,22 +74,16 @@ public:
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-						assert(args.size()>=1);
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-						r.builder.CreateCall2(CU, r.getConstantCString("%f"), args[0]->evalV(r, id));
+						assert(args.size()==1);
+						r.printf("%f", args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-						assert(args.size()>=1);
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-						r.builder.CreateCall2(CU, r.getConstantCString("%f\n"), args[0]->evalV(r, id));
+						assert(args.size()==1);
+						r.printf("%f", args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#float"));
 }

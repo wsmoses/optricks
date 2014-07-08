@@ -386,17 +386,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), IDX_TOO_BIG, TO_LOAD);
 
 					r.builder.SetInsertPoint(IDX_TOO_BIG);
-					llvm::SmallVector<llvm::Type*,1> t_args(1);
-					t_args[0] = C_STRINGTYPE;
-					llvm::SmallVector<llvm::Value*,6> c_args(6);
-					c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-					c_args[1] = getInt32(0);
-					c_args[2] = LENGTH;
-					c_args[3] = r.getConstantCString(id.fileName);
-					c_args[4] = getInt32(id.lineN);
-					c_args[5] = getInt32(id.charN);
-					r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-					r.error("");
+					r.error("Illegal array index %d in %d", id, {getInt32(0), LENGTH});
 
 					r.builder.SetInsertPoint(DONE);
 					auto RET_V = r.builder.CreatePHI(intClass.type,4);
@@ -425,17 +415,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					r.builder.CreateCondBr(r.builder.CreateICmpULT(REMOVE_IDX, LENGTH), TO_LOAD, IDX_TOO_BIG);
 
 					r.builder.SetInsertPoint(IDX_TOO_BIG);
-					llvm::SmallVector<llvm::Type*,1> t_args(1);
-					t_args[0] = C_STRINGTYPE;
-					llvm::SmallVector<llvm::Value*,6> c_args(6);
-					c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-					c_args[1] = REMOVE_IDX;
-					c_args[2] = LENGTH;
-					c_args[3] = r.getConstantCString(id.fileName);
-					c_args[4] = getInt32(id.lineN);
-					c_args[5] = getInt32(id.charN);
-					r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-					r.error("");
+					r.error("Illegal array index %d in %d", id, {REMOVE_IDX, LENGTH});
 
 					r.builder.SetInsertPoint(TO_LOAD);
 					auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
@@ -612,17 +592,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.CreateCondBr(r.builder.CreateICmpULT(MAX, LENGTH), DONE, IDX_TOO_BIG);
 
 				r.builder.SetInsertPoint(IDX_TOO_BIG);
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				llvm::SmallVector<llvm::Value*,6> c_args(6);
-				c_args[0] = r.getConstantCString("Illegal array index %d in %d at %s:%d:%d\n");
-				c_args[1] = MAX;
-				c_args[2] = LENGTH;
-				c_args[3] = r.getConstantCString(id.fileName);
-				c_args[4] = getInt32(id.lineN);
-				c_args[5] = getInt32(id.charN);
-				r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-				r.error("");
+				r.error("Illegal array index %d in %d", id, {MAX, LENGTH});
 
 				r.builder.SetInsertPoint(DONE);
 				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
@@ -835,16 +805,11 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 					auto ERROR_B = r.CreateBlockD("ERROR", FUNC);
 					auto NO_ERROR_B = r.CreateBlockD("NO_ERROR", FUNC);
 					r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH, getInt32(0)), ERROR_B, NO_ERROR_B);
+
 					r.builder.SetInsertPoint(ERROR_B);
-					llvm::SmallVector<llvm::Type*,1> t_args(1);
-					t_args[0] = C_STRINGTYPE;
-					llvm::SmallVector<llvm::Value*,4> c_args(4);
-					c_args[0] = r.getConstantCString("PriorityQueue poll() called on empty list at %s:%d:%d\n");
-					c_args[1] = r.getConstantCString(id.fileName);
-					c_args[2] = getInt32(id.lineN);
-					c_args[3] = getInt32(id.charN);
-					r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
-					r.error("");
+
+					r.error("PriorityQueue poll() called on empty list", id);
+
 					r.builder.SetInsertPoint(NO_ERROR_B);
 
 					LENGTH = r.builder.CreateSub(LENGTH, getInt32(1));

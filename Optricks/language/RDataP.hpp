@@ -42,6 +42,7 @@ void RData::println(String m){
 	llvm::FunctionType *FT = llvm::FunctionType::get(C_INTTYPE, args, false);
 	builder.CreateCall(getExtern("puts", FT, ""),getConstantCString(m));
 }
+/*
 		void RData::error(String s){
 			auto CU = getExtern("putchar", &c_intClass, {&c_intClass});
 			//std::stringstream ss;
@@ -52,7 +53,7 @@ void RData::println(String m){
 			auto EX = getExtern("exit", &c_intClass, {&c_intClass});
 			builder.CreateCall(EX, llvm::ConstantInt::get(c_intClass.type, 1,false));
 			builder.CreateUnreachable();
-		}
+		}*/
 inline llvm::Constant* RData::getExtern(String name, const AbstractClass* R, const std::vector<const AbstractClass*>& A, bool varArgs, String lib){
 	llvm::SmallVector<llvm::Type*,0> args(A.size());
 	for(unsigned i = 0; i<A.size(); i++){

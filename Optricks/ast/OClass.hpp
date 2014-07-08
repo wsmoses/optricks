@@ -145,7 +145,7 @@ void initClasses(){
 			else
 				r.builder.SetInsertPoint(& BB.front());
 			auto SRAND = r.getExtern("srand", &voidClass, {&c_intClass});
-
+/*
 			auto VV = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod,llvm::Intrinsic::
 #if UINT_MAX == UINT16_MAX
 					x86_rdseed_16
@@ -157,23 +157,15 @@ void initClasses(){
 			,llvm::SmallVector<llvm::Type*,0>()));
 			assert(VV);
 			auto C = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)0));
-			assert(C);
-			assert(C->getType()==C_INTTYPE);
 
-			llvm::SmallVector<llvm::Type*,1> t_args(1);
-			t_args[0] = C_STRINGTYPE;
-			llvm::SmallVector<llvm::Value*,3> c_args(3);
-			c_args[0] = r.getConstantCString("rdseed %u of %u\n");
-			c_args[1] = C;
-			c_args[2] = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)1));
-			r.builder.CreateCall(r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true)), c_args);
+			r.printf("rdseed %u of %u\n", C, r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)1)));
 			r.builder.GetInsertBlock()->dump();
 			fflush(0);
-
-/*			auto CL = convertClass(time_t,&LANG_M);
+*/
+			auto CL = convertClass(time_t,&LANG_M);
 			auto CLOCK = r.getExtern("time", CL, {ReferenceClass::get(CL)});
 			auto C = r.builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(CL->type)));
-*/
+
 			r.builder.CreateCall(SRAND, r.builder.CreateZExtOrTrunc(C, C_INTTYPE));
 			r.builder.CreateCall(CU);
 			r.builder.SetInsertPoint(PARENT);
@@ -464,39 +456,78 @@ void initClasses(){
 #undef ADD
 		FD->finalize(PositionID("#dir",0,0));
 #endif
-		LANG_M.addFunction(PositionID("#dir",0,0),"_posix_dir_next_name")->add(new BuiltinInlineFunction(new FunctionProto("_posix_dir_next_name",{AbstractDeclaration(&c_pointerClass)},&c_stringClass),
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+
+		LANG_M.addFunction(PositionID("#dir",0,0),"listdir")->add(new BuiltinCompiledFunction(new FunctionProto("listdir",{AbstractDeclaration(&c_stringClass)},ArrayClass::get(&c_stringClass)),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
 			assert(args.size()==1);
+			auto ARRAY_DATA = ArrayClass::get(&c_stringClass)->callFunction(r, id, std::vector<const Evaluatable*>(),nullptr);
+
+
+			auto s_value = args[0]->evalV(r, id);
+			auto mlen_0 = r.strlen(s_value);
+			auto end = r.builder.CreateICmpEQ(r.builder.CreateLoad(r.builder.CreateGEP(s_value, r.builder.CreateSub(mlen_0, getSizeT(1)))), CharClass::getValue('/'));
+			auto mlen = r.builder.CreateAdd(mlen_0,r.builder.CreateSelect(end, getSizeT(1),getSizeT(2)));
+			auto dir = r.opendir(s_value,id);
+			auto STAR = r.builder.GetInsertBlock();
+			llvm::Function* FUNC = STAR->getParent();
+			llvm::BasicBlock* LOOP = r.CreateBlockD("loop", FUNC);
+			llvm::BasicBlock* DONE = r.CreateBlockD("done", FUNC);
+
+			r.builder.CreateBr(LOOP);
+			r.builder.SetInsertPoint(LOOP);
+
+			//POSIX_DIR_NEXT_NAME
+
 			struct dirent TMP;
 			size_t beforeChar = (size_t)((size_t)(&(TMP.d_name))-(size_t)(&(TMP)));
 			//size_t charSize = sizeof(TMP.d_name);
 			//size_t afterChar = sizeof(TMP)-beforeChar-charSize;
-			auto TYPE_1 = llvm::ArrayType::get(CHARTYPE, sizeof(struct dirent));
-
-			llvm::SmallVector<llvm::Type*,1> t_args(1);
-			t_args[0] = C_POINTERTYPE;
-			auto READ = r.getExtern("readdir", llvm::FunctionType::get(llvm::PointerType::getUnqual(TYPE_1), t_args,true));
-			auto dirent_p = r.builder.CreateCall(READ,args[0]->evalV(r, id));
-			auto BEGIN = r.builder.GetInsertBlock();
-			auto NOTNULL = r.CreateBlockD("notnull",r.builder.GetInsertBlock()->getParent());
-			auto MERGE = r.CreateBlockD("merge",r.builder.GetInsertBlock()->getParent());
-			r.builder.CreateCondBr(r.builder.CreateIsNull(dirent_p),MERGE,NOTNULL);
+			auto dirent_p = r.readdir(dir);
+			auto NOTNULL = r.CreateBlockD("notnull",FUNC);
+			r.builder.CreateCondBr(r.builder.CreateIsNull(dirent_p),DONE,NOTNULL);
 			r.builder.SetInsertPoint(NOTNULL);
 			llvm::SmallVector<llvm::Value*,2> ar(2);
 			ar[0] = getInt32(0);
 			ar[1] = getInt32(beforeChar);
 			auto str = r.builder.CreateGEP(dirent_p,ar);
-			assert(str->getType()==C_STRINGTYPE);
-			r.builder.CreateBr(MERGE);
-			r.builder.SetInsertPoint(MERGE);
-			auto PHI=r.builder.CreatePHI(c_stringClass.type,2);
-			assert(PHI);
-			assert(BEGIN);
-			PHI->addIncoming(llvm::ConstantPointerNull::get(C_STRINGTYPE),BEGIN);
-			assert(str);
-			assert(MERGE);
-			PHI->addIncoming(str,NOTNULL);
-			return new ConstantData(PHI,&c_stringClass);
+
+			auto stl = r.strlen(str);
+			auto len = r.builder.CreateAdd(mlen, stl);
+			auto cp = r.allocate(CHARTYPE, len);
+			//END_POSIX_DIR_NEXT_NAME
+			auto spf = r.builder.CreateSelect(end, r.getConstantCString("%s%s"),r.getConstantCString("%s/%s"));
+
+			llvm::SmallVector<llvm::Value*,4> V(4);
+			V[0] = cp;
+			V[1] = spf;
+			V[2] = s_value;
+			V[3] = str;
+
+			auto P = r.builder.CreateAlloca(llvm::ArrayType::get(CHARTYPE, sizeof(struct stat)));
+			struct stat stat_tmp;
+			auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
+			auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
+			auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
+			auto isFil = r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false));
+
+			auto IS_FILE = r.CreateBlockD("is_file",FUNC);
+
+			auto NOT_FILE = r.CreateBlockD("not_file",FUNC);
+			r.builder.CreateCondBr(isFil, IS_FILE, NOT_FILE);
+
+			r.builder.SetInsertPoint(IS_FILE);
+			ConstantData STR_DATA(cp, &c_stringClass);
+			//ACTUALLY DO STUFF
+			getBinop(r, id, ARRAY_DATA, &STR_DATA,"[]=");
+			r.builder.CreateBr(LOOP);
+
+			r.builder.SetInsertPoint(NOT_FILE);
+			r.free(cp);
+			r.builder.CreateBr(LOOP);
+
+			r.builder.SetInsertPoint(DONE);
+			r.closedir(dir);
+			return ARRAY_DATA;
 		}), PositionID("#dir",0,0));
 
 		std::vector<std::pair<int,String>> E_D;

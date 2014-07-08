@@ -61,7 +61,7 @@ public:
 			return false;
 		}
 		const FunctionClass* const fc = (FunctionClass*)toCast;
-		if(!returnType->noopCast(fc->returnType)){
+		if(fc->returnType->classType!=CLASS_VOID && !returnType->noopCast(fc->returnType)){
 			//cerr << "RET: "<< returnType->getName() << " cannot cast to " << fc->returnType->getName() << endl << flush;
 			return false;
 		}

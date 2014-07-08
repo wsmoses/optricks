@@ -32,6 +32,8 @@
 #include <mmsystem.h>
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
+#else
+#include <err.h>
 #endif
 #include <unistd.h>
 #include <assert.h>
@@ -276,6 +278,12 @@ inline llvm::ConstantInt* getSizeT(size_t val){
 }
 inline llvm::ConstantInt* getInt32(int32_t val){
 	return llvm::ConstantInt::getSigned(INT32TYPE,(int64_t)val);
+}
+inline llvm::ConstantInt* getCInt(int val){
+	return llvm::ConstantInt::getSigned(INT32TYPE,(int64_t)val);
+}
+inline llvm::ConstantInt* getCUInt(unsigned int val){
+	return llvm::ConstantInt::get(INT32TYPE,(uint64_t)val,false);
 }
 
 #ifdef NULL

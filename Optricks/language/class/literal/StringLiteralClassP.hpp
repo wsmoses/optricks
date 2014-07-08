@@ -53,9 +53,6 @@
 				assert(args.size()>=1);
 				//TODO custom formatting for printf (and checks for literals / correct format / etc)
 				const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
-				llvm::SmallVector<llvm::Type*,1> t_args(1);
-				t_args[0] = C_STRINGTYPE;
-				auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
 				llvm::SmallVector<llvm::Value*,1> m_args(args.size());
 				m_args[0] = r.getConstantCString(value);
 				assert(m_args[0]);
@@ -63,9 +60,7 @@
 					m_args[i] = args[i]->evalV(r, id);
 					assert(m_args[i]);
 				}
-				llvm::Value* V = r.builder.CreateCall(CU, m_args);
-				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
-				return new ConstantData(V, &intClass);
+				return new ConstantData(r.builder.CreateSExtOrTrunc(r.printf<1>(m_args), intClass.type), &intClass);
 			}), PositionID(0,0,"#int"));
 
 
@@ -80,10 +75,6 @@
 				assert(TP);
 				assert(TP->type==R_STR);
 				const auto& value = ((const StringLiteral*) TP)->value;
-				llvm::SmallVector<llvm::Type*,2> t_args(2);
-				t_args[0] = C_STRINGTYPE;
-				t_args[1] = C_STRINGTYPE;
-				auto CU = r.getExtern("sprintf", llvm::FunctionType::get(c_intClass.type, t_args,true));
 				llvm::SmallVector<llvm::Value*,2> m_args(args.size());
 				assert(args[0]);
 				m_args[0] = args[0]->evalV(r, id);
@@ -95,13 +86,14 @@
 					m_args[i] = args[i]->evalV(r, id);
 					assert(m_args[i]);
 				}
-				llvm::Value* V = r.builder.CreateCall(CU, m_args);
+				llvm::Value* V = r.sprintf<2>(m_args);
 				assert(V);
 				V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 				assert(V);
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
 
+		/*
 		LANG_M.addFunction(PositionID(0,0,"#str"),"snprintf")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("snprintf",{AbstractDeclaration(&c_stringClass),AbstractDeclaration(&c_size_tClass),AbstractDeclaration(this)},&c_intClass,true),
@@ -135,6 +127,7 @@
 				assert(V);
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
+		*/
 		LANG_M.addFunction(PositionID(0,0,"#str"),"fprintf")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("fprintf",{AbstractDeclaration(&c_pointerClass),AbstractDeclaration(this)},&intClass,true),
@@ -146,10 +139,6 @@
 			assert(TP);
 			assert(TP->type==R_STR);
 			const auto& value = ((const StringLiteral*) TP)->value;
-			llvm::SmallVector<llvm::Type*,2> t_args(2);
-			t_args[0] = C_POINTERTYPE;
-			t_args[1] = C_STRINGTYPE;
-			auto CU = r.getExtern("fprintf", llvm::FunctionType::get(c_intClass.type, t_args,true));
 			llvm::SmallVector<llvm::Value*,2> m_args(args.size());
 			assert(args[0]);
 			m_args[0] = args[0]->evalV(r, id);
@@ -161,7 +150,7 @@
 				m_args[i] = args[i]->evalV(r, id);
 				assert(m_args[i]);
 			}
-			llvm::Value* V = r.builder.CreateCall(CU, m_args);
+			llvm::Value* V = r.fprintf<2>(m_args);
 			assert(V);
 			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 			assert(V);

@@ -32,22 +32,17 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-						assert(args.size()>=1);
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-						r.builder.CreateCall2(CU, r.getConstantCString("%d"), args[0]->evalV(r, id));
+						assert(args.size()==1);
+						//TODO have int32 / int64 / etc
+						r.printf("%d", args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
-						assert(args.size()>=1);
-						llvm::SmallVector<llvm::Type*,1> t_args(1);
-						t_args[0] = C_STRINGTYPE;
-						auto CU = r.getExtern("printf", llvm::FunctionType::get(c_intClass.type, t_args,true));
-						r.builder.CreateCall2(CU, r.getConstantCString("%d\n"), args[0]->evalV(r, id));
+						//TODO have int32 / int64 / etc
+						r.printf("%d\n", args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"abs2")->add(
