@@ -463,15 +463,20 @@ void initClasses(){
 			auto ARRAY_DATA = ArrayClass::get(&c_stringClass)->callFunction(r, id, std::vector<const Evaluatable*>(),nullptr);
 
 
-			auto s_value = args[0]->evalV(r, id);
+			llvm::Value* const s_value = args[0]->evalV(r, id);
 			auto mlen_0 = r.strlen(s_value);
 			auto end = r.builder.CreateICmpEQ(r.builder.CreateLoad(r.builder.CreateGEP(s_value, r.builder.CreateSub(mlen_0, getSizeT(1)))), CharClass::getValue('/'));
 			auto mlen = r.builder.CreateAdd(mlen_0,r.builder.CreateSelect(end, getSizeT(1),getSizeT(2)));
 			auto dir = r.opendir(s_value,id);
-			auto STAR = r.builder.GetInsertBlock();
-			llvm::Function* FUNC = STAR->getParent();
-			llvm::BasicBlock* LOOP = r.CreateBlockD("loop", FUNC);
-			llvm::BasicBlock* DONE = r.CreateBlockD("done", FUNC);
+			auto LOOP = r.builder.GetInsertBlock();
+			assert(LOOP->empty());
+			LOOP->setName("loop");
+			llvm::Function* FUNC = LOOP->getParent();
+			//llvm::BasicBlock* LOOP = r.CreateBlockD("loop", FUNC);
+			auto NOTNULL = r.CreateBlockD("notnull",FUNC);
+			auto IS_FILE = r.CreateBlockD("is_file",FUNC);
+			auto NOT_FILE = r.CreateBlockD("not_file",FUNC);
+			auto DONE = r.CreateBlockD("done", FUNC);
 
 			r.builder.CreateBr(LOOP);
 			r.builder.SetInsertPoint(LOOP);
@@ -483,13 +488,10 @@ void initClasses(){
 			//size_t charSize = sizeof(TMP.d_name);
 			//size_t afterChar = sizeof(TMP)-beforeChar-charSize;
 			auto dirent_p = r.readdir(dir);
-			auto NOTNULL = r.CreateBlockD("notnull",FUNC);
 			r.builder.CreateCondBr(r.builder.CreateIsNull(dirent_p),DONE,NOTNULL);
+
 			r.builder.SetInsertPoint(NOTNULL);
-			llvm::SmallVector<llvm::Value*,2> ar(2);
-			ar[0] = getInt32(0);
-			ar[1] = getInt32(beforeChar);
-			auto str = r.builder.CreateGEP(dirent_p,ar);
+			auto str = r.builder.CreateConstGEP2_32(dirent_p, 0, beforeChar);
 
 			auto stl = r.strlen(str);
 			auto len = r.builder.CreateAdd(mlen, stl);
@@ -510,9 +512,9 @@ void initClasses(){
 			auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
 			auto isFil = r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false));
 
-			auto IS_FILE = r.CreateBlockD("is_file",FUNC);
 
-			auto NOT_FILE = r.CreateBlockD("not_file",FUNC);
+			r.printf("found: %s\n", cp);
+			r.fflush();
 			r.builder.CreateCondBr(isFil, IS_FILE, NOT_FILE);
 
 			r.builder.SetInsertPoint(IS_FILE);

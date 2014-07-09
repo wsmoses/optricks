@@ -137,6 +137,7 @@ ArrayClass::ArrayClass(const AbstractClass* a):
 			IDX->addIncoming(getInt32(0),NotNull);
 			IDX->addIncoming(IDX2, MANY);
 			ConstantData cd(r.builder.CreateLoad(r.builder.CreateGEP(DATA_P,IDX)), this->inner);
+
 			LANG_M.getFunction(id, "print", NO_TEMPLATE, {this->inner}).first->callFunction(r, id, {&cd}, nullptr);
 			r.builder.CreateCondBr(r.builder.CreateICmpEQ(LENGTH,IDX2), END, MANY);
 
@@ -150,6 +151,7 @@ ArrayClass::ArrayClass(const AbstractClass* a):
 			r.builder.CreateBr(END_NULL);
 			r.builder.SetInsertPoint(END_NULL);
 			r.builder.CreateCall(CU, getInt32('\n'));
+
 			return &VOID_DATA;
 		}), PositionID(0,0,"#complex"));
 		///register methods such as print / tostring / tofile / etc

@@ -23,17 +23,17 @@ enum TJump{
 };
 
 template<unsigned idx, unsigned len, typename... F> struct printf_helper{
-	static void add(llvm::SmallVector<llvm::Value*,len> V, F...);
+	static void add(llvm::SmallVector<llvm::Value*,len>& V, F...);
 };
 
 
 template<unsigned idx, unsigned len> struct printf_helper<idx, len>{
-	static void add(llvm::SmallVector<llvm::Value*,len> V){
+	static void add(llvm::SmallVector<llvm::Value*,len>& V){
 	}
 };
 
 template<unsigned idx, unsigned len, typename A, typename... F> struct printf_helper<idx, len, A, F...>{
-	static void add(llvm::SmallVector<llvm::Value*,len> V, A val, F... args){
+	static void add(llvm::SmallVector<llvm::Value*,len>& V, A val, F... args){
 		V[idx] = val;
 		printf_helper<idx+1,len,F...>::add(V, args...);
 	}
@@ -588,7 +588,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& ::sprintf));
+				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
 			}
 			return builder.CreateCall(LLVM_SPRINTF, args);
 		}
@@ -611,7 +611,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& ::sprintf));
+				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_SPRINTF, args);
@@ -637,7 +637,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& ::fprintf));
+				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
 			}
 			return builder.CreateCall(LLVM_FPRINTF, args);
 		}
@@ -660,7 +660,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& ::fprintf));
+				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_FPRINTF, args);
@@ -681,7 +681,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
 				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
 
-				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& ::printf));
+				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
 			}
 			return builder.CreateCall(LLVM_PRINTF, args);
 		}
@@ -698,7 +698,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
 				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
 
-				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& ::printf));
+				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_PRINTF, args);
@@ -730,13 +730,16 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				exec->updateGlobalMapping(F,(void*)(& ::perror));
+				exec->updateGlobalMapping(F,(void*)(& std::perror));
 			}
 			auto vs = V.size();
 			llvm::SmallVector<llvm::Value*,4> a_args(vs+4);
 			a_args[0] = getConstantCString(code+(" in %s:%d:%d"));
-			for(unsigned i=0; i<vs; i++)
+			for(unsigned i=0; i<vs; i++){
+				assert(V[i]);
+				assert(V[i]->getType());
 				a_args[1+i] = V[i];
+			}
 			a_args[vs+1] = getConstantCString(id.fileName);
 			a_args[vs+2] = getCUInt(id.lineN);
 			a_args[vs+3] = getCUInt(id.lineN);
@@ -767,7 +770,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
 
-				exec->updateGlobalMapping(F,(void*)(& ::FatalAppExit));
+				exec->updateGlobalMapping(F,(void*)(& FatalAppExit));
 			}
 /*
 			static llvm::Function* F=nullptr;
@@ -839,6 +842,12 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			}
 			return builder.CreateCall(F, dir);
 		}
+		llvm::Value* fflush(llvm::Value* V=llvm::ConstantPointerNull::get(C_POINTERTYPE)){
+			llvm::SmallVector<llvm::Type*,1> args(1);
+			args[0] = C_POINTERTYPE;
+			auto FFLUSH = this->getExtern("fflush",llvm::FunctionType::get(C_INTTYPE,args,false));
+			return builder.CreateCall(FFLUSH, V);
+		}
 		llvm::Value* readdir(llvm::Value* dir){
 			assert(dir);
 			assert(dir->getType()==C_POINTERTYPE);
@@ -878,21 +887,18 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				exec->updateGlobalMapping(F,(void*)(& ::opendir));
 			}
-			V = builder.CreateCall(F, V);
+			auto CC = builder.CreateCall(F, V);
 
 			llvm::BasicBlock*  START = builder.GetInsertBlock();
 			llvm::Function* FUNC = START->getParent();
 			llvm::BasicBlock* IF_NULL = CreateBlockD("if_null", FUNC);
 			llvm::BasicBlock* NOT_NULL = CreateBlockD("not_null", FUNC);
-			builder.CreateCondBr(builder.CreateIsNull(V), IF_NULL, NOT_NULL);
+			builder.CreateCondBr(builder.CreateIsNull(CC), IF_NULL, NOT_NULL);
 			builder.SetInsertPoint(IF_NULL);
-			this->p_error("Could not open directory %s", id, {V});
+			this->p_error("Could not open directory '%s'", id, {V});
 			builder.SetInsertPoint(NOT_NULL);
-			return V;
+			return CC;
 		}
-		/*
-		assert(name!="closedir");
-		assert(name!="readdir");*/
 
 		bool isIntZero(llvm::Value* V){
 			//TODO HANDLE CASTS -- assume const cast gives const

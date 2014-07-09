@@ -27,16 +27,8 @@
 #ifdef WITH_ASSERTS
 #define NDEBUG
 #endif
-#if defined(WIN32) || defined(_WIN32)
-#include <Windows.h>
-#include <mmsystem.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#else
-#include <err.h>
-#endif
 #include <unistd.h>
-#include <assert.h>
+#include <cassert>
 #include <dirent.h>
 #include <algorithm>
 #include <functional>
@@ -59,7 +51,6 @@
 #include <array>
 #include <unordered_set>
 //#include <dlfcn.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #include <limits.h> /* PATH_MAX */
@@ -103,6 +94,15 @@
 #else
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/CFG.h>
+#endif
+
+#if defined(WIN32) || defined(_WIN32)
+#include <Windows.h>
+#include <mmsystem.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#else
+#include <err.h>
 #endif
 
 //#include "clang/AST/ASTContext.h"

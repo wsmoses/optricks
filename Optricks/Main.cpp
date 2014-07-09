@@ -119,7 +119,6 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 			getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
 		} else getRData().builder.CreateRetVoid();
 	}
-
 	getRData().FinalizeFunction(F);
 	void *FPtr = getRData().getExec()->getPointerToFunction(F);
 

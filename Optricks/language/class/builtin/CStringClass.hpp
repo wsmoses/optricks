@@ -28,6 +28,15 @@ public:
 							r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, a,false));
 						}
 						return &VOID_DATA;}), PositionID(0,0,"#int"));*/
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
+						new BuiltinInlineFunction(
+								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						assert(args.size()==1);
+						r.printf("%s", args[0]->evalV(r, id));
+						return &VOID_DATA;
+					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#cstr"), "println")->add(
 				new CompiledFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 						getRData().getExtern("puts",&c_intClass, {this})), PositionID(0,0,"#cstr"));

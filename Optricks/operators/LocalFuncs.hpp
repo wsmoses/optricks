@@ -608,7 +608,6 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				/* forces alloc to be size of used memory*/
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
-				auto ALLOC = r.builder.CreateLoad(ALLOC_P);
 
 				auto DATA_P = r.builder.CreateConstGEP2_32(V, 0, 3);
 

@@ -67,11 +67,10 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		}
 	}
 	const Data* BuiltinCompiledFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
-			getSingleFunc();
-			assert(myFunc);
-			assert(llvm::dyn_cast<llvm::PointerType>(myFunc->getType()));
-			assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*) myFunc->getType())->getElementType()));
-			llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
+			llvm::Value* cal = r.builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
+			assert(cal);
+			assert(cal->getType());
+			assert(cal->getType()==proto->returnType->type);
 			if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 			else{
 				return new ConstantData(cal,proto->returnType);
@@ -81,7 +80,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		assert(myFunc);
 		assert(llvm::dyn_cast<llvm::PointerType>(myFunc->getType()));
 		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*) myFunc->getType())->getElementType()));
-		llvm::Value* cal = getRData().builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
+		llvm::Value* cal = r.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else{
 			return new ConstantData(cal,proto->returnType);

@@ -82,7 +82,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			}
 		}
 		const ArrayClass* tc = (const ArrayClass*)this;
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(tc->inner->type);
+
 		llvm::Value* v;
 
 		if(args.size()<=1){
@@ -162,7 +162,6 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			if(V->classType==CLASS_INT){
 				llvm::Value* M = L->getValue(r, filePos);
 				const IntClass* I = (const IntClass*)V;
-				auto Im = I->getWidth();
 				LEN = r.builder.CreateSExtOrTrunc(M, intClass.type);
 			} else if(V->classType==CLASS_INTLITERAL){
 				const IntLiteral* IL = (const IntLiteral*)L;
