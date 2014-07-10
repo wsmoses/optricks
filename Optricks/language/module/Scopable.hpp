@@ -86,6 +86,24 @@ public:
 			return tmp;
 		} else return tmp;
 	}
+	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> findHere(PositionID id, const String s) {
+		auto tmp = find2Here(id,s);
+		if(tmp.first==NULL){
+			id.error("Cannot find "+s+" in current scope");
+			write(cerr);
+			cerr << endl << flush;
+			return tmp;
+		} else return tmp;
+	}
+	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> findHere(PositionID id, const String s) const{
+		auto tmp = find2Here(id,s);
+		if(tmp.first==NULL){
+			id.error("Cannot find "+s+" in current scope");
+			write(cerr);
+			cerr << endl << flush;
+			return tmp;
+		} else return tmp;
+	}
 	inline SCOPE_TYPE getScopeType(PositionID id, const String s) const{
 		auto tmp = find2(id,s);
 		return tmp.second->second.type;
@@ -121,7 +139,9 @@ public:
 		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
 	const AbstractClass* getClass(PositionID id, const String name, const T_ARGS&) const;
+	const AbstractClass* getClassHere(PositionID id, const String name, const T_ARGS&) const;
 
+	inline const AbstractClass* getFunctionReturnTypeHere(PositionID id, const String name, const T_ARGS& t_args, const std::vector<const Evaluatable*>& fp) const;
 	inline const AbstractClass* getFunctionReturnType(PositionID id, const String name, const T_ARGS& t_args, const std::vector<const Evaluatable*>& fp) const;
 	inline std::pair<const Data*,SCOPE_TYPE> getFunction(PositionID id, const String name, const T_ARGS&, const std::vector<const AbstractClass*>& fp) const;
 
@@ -130,6 +150,10 @@ public:
 
 	const AbstractClass* getReturnClass(PositionID id, const String name, const T_ARGS&) const;
 	const Data* get(PositionID id, const String name, const T_ARGS&) const;
+
+	const AbstractClass* getReturnClassHere(PositionID id, const String name, const T_ARGS&) const;
+	const Data* getHere(PositionID id, const String name, const T_ARGS&) const;
+
 	OverloadedFunction* addFunction(PositionID id, const String name, void* generic=nullptr);
 	void addClass(PositionID id, AbstractClass* c);
 	void addClass(PositionID id, const MetaClass* c,String n="");
