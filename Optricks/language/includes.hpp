@@ -96,7 +96,10 @@
 #include <llvm/IR/CFG.h>
 #endif
 
+#include <sys/types.h>
+
 #if defined(WIN32) || defined(_WIN32)
+#include <winsock2.h>
 #include <Windows.h>
 #include <mmsystem.h>
 #elif defined(__APPLE__)

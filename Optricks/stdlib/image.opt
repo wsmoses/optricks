@@ -25,7 +25,7 @@ class primitive Image{
 		f.close()
 	}
 	def outputPPM(File f){
-		fprintf(f.f, "P6 %d %d\n", this.data.length, this.data[0].length);
+		lang.c.fprintf(f.f, "P6 %d %d\n", this.data.length, this.data[0].length);
 		for(int i=0; i<this.data.length; i++)
 		for(int j=0; j<this.data[0].length; j++){
 			f.write(this.data[i,j].r)
@@ -40,8 +40,12 @@ class primitive Image{
 	}
 	def outputHTML(lang.c.string width=null, lang.c.string height=null){
 		print("<img style='");
-		if(width!=null) printf("width:%s;",width);
-		if(height!=null) printf("height:%s;",height);
+		if(width!=null){
+			lang.c.printf("width:%s;",width);
+		}
+		if(height!=null){
+			lang.c.printf("height:%s;",height);
+		}
 		print("' src='data:image/bmp;base64,")
 		Base64File f = Base64File();
 		auto w = this.getWidth();
@@ -201,7 +205,7 @@ def readHex(lang.c.string s, int i=int(inf)){
 	do{
 		auto tmp = f.read();
 		if(tmp==-1) break;
-		else printf("%02x ", tmp);
+		else lang.c.printf("%02x ", tmp);
 		if(i==0) break;
 		i--;
 	}while(true);

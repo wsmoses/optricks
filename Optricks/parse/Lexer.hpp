@@ -120,7 +120,10 @@ public:
 		}
 	}
 	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, int toFile=0,unsigned int optLevel = 3){
-		llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
+		llvm::SmallVector<llvm::Type*,2> main_args(2);
+		main_args[0] = C_INTTYPE /*Argument Count*/;
+		main_args[1] = llvm::PointerType::getUnqual(C_STRINGTYPE); /* Argument vector*/
+		llvm::FunctionType* FT = llvm::FunctionType::get(C_INTTYPE, main_args, false);
 		assert(FT);
 		llvm::Function* F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
 		assert(F);
@@ -138,7 +141,7 @@ public:
 
 		getRData().builder.SetInsertPoint(BB);
 		for(auto& n: stats) n->evaluate(getRData());
-		getRData().builder.CreateRetVoid();
+		getRData().builder.CreateRet(getCInt(0));
 		getRData().FinalizeFunction(F);
 		if(getRData().debug){
 			this->myMod->write(cerr);
@@ -177,8 +180,8 @@ public:
 			//				getRData().lmod->print(raw_stream, 0);
 		} else {
 			void *FPtr = getRData().getExec()->getPointerToFunction(F);
-			void (*FP)() = (void (*)())(intptr_t)FPtr;
-			FP();
+			void (*FP)(int, char**) = (void (*)(int, char**))(intptr_t)FPtr;
+			FP(0,nullptr);
 		}
 	}
 	String getNextName(char endWith){

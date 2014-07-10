@@ -55,7 +55,14 @@ class primitive Base64File{
 		this.buf = 0;
 	}
 	static def encode(int b){
-		return ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'][b];
+//		return ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'][b];
+		if(b<26)
+			return chr(int.ord('A')+b);
+		elif(b<26*2)
+			return chr(int.ord('a')+b-26);
+		elif(b<26*2+10)
+			return chr(int.ord('0')+b-26*2);
+		else return ['+','/'][b-26*2-10];
 	}
         def void close(){
 		if(this.len!=0){
@@ -92,10 +99,7 @@ class primitive Base64File{
 def getInfo(lang.c.string s){
 	FileStat fs;
 	(extern lang.c.int stat(lang.c.string, FileStat&))(s,&fs);
-	println(fs.isFile());
-	println(fs.isDirectory());
-	println(fs.getSize());
-
+	return fs;
 }
 def isFile(lang.c.string s){
 	FileStat fs;
@@ -104,35 +108,3 @@ def isFile(lang.c.string s){
 }
 
 extern void fflush(lang.c.pointer=null);
-
-/*
-def lang.c.string[] listdir(lang.c.string s){
-	lang.c.string[] ar = lang.c.string[](0);
-	auto mlen = strlen(s);
-	bool end=s[mlen-1]=='/';
-	if(end) mlen+=1;
-	else mlen+=2;
-	auto dir = (extern lang.c.pointer opendir(lang.c.string))(s);
-	do{
-		auto st = _posix_dir_next_name(dir);
-		if(st==null) break;
-
-		auto len = mlen+strlen(st);
-		auto cp = (extern lang.c.string malloc(lang.c.size_t))(len);
-		int n;
-		if(end)
-			n=sprintf(cp,"%s%s",s,st)
-		else
-			n=sprintf(cp,"%s/%s",s,st)
-		assert(n+1==len);
-		if(isFile(cp)) {
-			ar[]= cp;
-		}
-		else { 
-			(extern void free(lang.c.pointer))(cp);
-		}
-	}while(true);
-	(extern void closedir(lang.c.pointer))(dir);
-	return ar;
-}
-*/

@@ -16,6 +16,8 @@
 #include "../language/ffi/F_Class.hpp"
 #include "../language/ffi/F_Function.hpp"
 #include "../language/ffi/F_Var.hpp"
+
+UserClass* TIME_CLASS;
 class OClass: public ErrorStatement
 {
 	public:
@@ -175,6 +177,26 @@ void initClasses(){
 
 	add_import_c_const(&(NS_LANG_C.staticVariables), RAND_MAX);
 
+	auto Stream = new UserClass(&LANG_M,"Stream",nullptr,PRIMITIVE_LAYOUT,true);
+	Stream->addLocalVariable(PositionID("#stream",0,0),"descriptor",&c_intClass);
+	Stream->finalize(PositionID("#stream",0,0));
+	LANG_M.addClass(PositionID("#stream",0,0),Stream);
+	Stream->addLocalFunction("printf")->add(new BuiltinInlineFunction(new FunctionProto("printf",{AbstractDeclaration(Stream),AbstractDeclaration(&stringLiteralClass)},&intClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()>=1);
+		//TODO custom formatting for printf (and checks for literals / correct format / etc)
+		const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
+		llvm::SmallVector<llvm::Value*,2> m_args(args.size());
+		m_args[0] = Stream->getLocalData(r, id, "descriptor", instance)->getValue(r, id);
+		m_args[1] = r.getConstantCString(value);
+		assert(m_args[1]);
+		for(unsigned i=1; i<args.size(); i++){
+			m_args[i+1] = args[i]->evalV(r, id);
+			assert(m_args[i+1]);
+		}
+		return new ConstantData(r.builder.CreateSExtOrTrunc(r.dprintf<2>(m_args), INT32TYPE), &intClass);
+	}), PositionID("#stream",0,0));
+
 	//add_import_c_function(&LANG_M, qsort);
 	//add_import_cpp_function(&LANG_M, std::terminate);
 	LANG_M.addFunction(PositionID(0,0,"#class"),"print")->add(
@@ -265,7 +287,7 @@ void initClasses(){
 			return FunctionClass::get(args[0], ar);
 		}),"function");
 
-	LANG_M.addFunction(PositionID(0,0,"#str"),"scanf")->add(
+	NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"scanf")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("scanf",{AbstractDeclaration(&stringLiteralClass)},&intClass,true),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -293,57 +315,54 @@ void initClasses(){
 #ifdef USE_SDL
 	auto SDL = new ScopeClass(&LANG_M, PositionID("#init",0,0), "sdl");
 	{
-		auto AF = new UserClass(&SDL->staticVariables,"AudioFormat",nullptr,PRIMITIVE_LAYOUT,false);
+		auto AF = new UserClass(&SDL->staticVariables,"AudioFormat",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(SDL_AudioFormat)));
 		SDL->staticVariables.addClass(PositionID("#sdl",0,0),AF);
-		AF->addLocalVariable(PositionID("#sdl",0,0),"_data",&shortClass);
-		AF->finalize(PositionID("#sdl",0,0));
 		AF->constructors.add(new BuiltinInlineFunction(new FunctionProto("AudioFormat",{AbstractDeclaration(&shortClass)},AF),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			llvm::Value* A = args[0]->evalV(r, id);
-			llvm::Value* V = llvm::UndefValue::get(AF->type);
-			return new ConstantData(r.builder.CreateInsertValue(V, A, 0), AF);
+			return new ConstantData(A, AF);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isFloat")->add(new BuiltinInlineFunction(new FunctionProto("isFloat",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isBigEndian")->add(new BuiltinInlineFunction(new FunctionProto("isBigEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isSigned")->add(new BuiltinInlineFunction(new FunctionProto("isSigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isInt")->add(new BuiltinInlineFunction(new FunctionProto("isInt",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isLittleEndian")->add(new BuiltinInlineFunction(new FunctionProto("isLittleEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isUnsigned")->add(new BuiltinInlineFunction(new FunctionProto("isUnsigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data", instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("bitSize")->add(new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getLocalData(r, id, "_data",instance)->getValue(r, id);
+			llvm::Value* V = AF->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
 		}), PositionID("#sdl",0,0));
 #define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(getRData().builder.CreateInsertValue(llvm::UndefValue::get(AF->type), llvm::ConstantInt::get(shortClass.type,A,false), 0),AF));
@@ -478,7 +497,6 @@ void initClasses(){
 			auto NOT_FILE = r.CreateBlockD("not_file",FUNC);
 			auto DONE = r.CreateBlockD("done", FUNC);
 
-			r.builder.CreateBr(LOOP);
 			r.builder.SetInsertPoint(LOOP);
 
 			//POSIX_DIR_NEXT_NAME
@@ -504,17 +522,26 @@ void initClasses(){
 			V[1] = spf;
 			V[2] = s_value;
 			V[3] = str;
+			r.sprintf<4>(V);
 
-			auto P = r.builder.CreateAlloca(llvm::ArrayType::get(CHARTYPE, sizeof(struct stat)));
+			auto stat_t = llvm::ArrayType::get(CHARTYPE, sizeof(struct stat));
+			auto P = r.builder.CreateAlloca(stat_t);
+
+			llvm::SmallVector<llvm::Type*,2> stat_args(2);
+			stat_args[0] = C_STRINGTYPE;
+			stat_args[1] = llvm::PointerType::getUnqual(stat_t);
+
+			auto STAT_F = r.getExtern("stat", llvm::FunctionType::get(C_INTTYPE,stat_args,true));
+
+			r.builder.CreateCall2(STAT_F, cp, P);
+
 			struct stat stat_tmp;
 			auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
 			auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
 			auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
-			auto isFil = r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false));
+			auto D_L = r.builder.CreateLoad(D);
+			auto isFil = r.builder.CreateICmpEQ(r.builder.CreateAnd(D_L, llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false));
 
-
-			r.printf("found: %s\n", cp);
-			r.fflush();
 			r.builder.CreateCondBr(isFil, IS_FILE, NOT_FILE);
 
 			r.builder.SetInsertPoint(IS_FILE);
@@ -530,6 +557,89 @@ void initClasses(){
 			r.builder.SetInsertPoint(DONE);
 			r.closedir(dir);
 			return ARRAY_DATA;
+		}), PositionID("#dir",0,0));
+		std::vector<const AbstractClass*> C_VEC({&c_stringClass});
+		LANG_M.addFunction(PositionID("#dir",0,0),"mapdir")->add(new BuiltinCompiledFunction(new FunctionProto("mapdir",{AbstractDeclaration(&c_stringClass),
+				AbstractDeclaration(FunctionClass::get(&voidClass,C_VEC))},&voidClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
+			assert(args.size()==2);
+
+			llvm::Value* const s_value = args[0]->evalV(r, id);
+			auto MYFUNC = args[1]->evaluate(r);
+			auto mlen_0 = r.strlen(s_value);
+			auto end = r.builder.CreateICmpEQ(r.builder.CreateLoad(r.builder.CreateGEP(s_value, r.builder.CreateSub(mlen_0, getSizeT(1)))), CharClass::getValue('/'));
+			auto mlen = r.builder.CreateAdd(mlen_0,r.builder.CreateSelect(end, getSizeT(1),getSizeT(2)));
+			auto dir = r.opendir(s_value,id);
+			auto LOOP = r.builder.GetInsertBlock();
+			assert(LOOP->empty());
+			LOOP->setName("loop");
+			llvm::Function* FUNC = LOOP->getParent();
+			//llvm::BasicBlock* LOOP = r.CreateBlockD("loop", FUNC);
+			auto NOTNULL = r.CreateBlockD("notnull",FUNC);
+			auto IS_FILE = r.CreateBlockD("is_file",FUNC);
+			auto NOT_FILE = r.CreateBlockD("not_file",FUNC);
+			auto DONE = r.CreateBlockD("done", FUNC);
+
+			r.builder.SetInsertPoint(LOOP);
+
+			//POSIX_DIR_NEXT_NAME
+
+			struct dirent TMP;
+			size_t beforeChar = (size_t)((size_t)(&(TMP.d_name))-(size_t)(&(TMP)));
+			//size_t charSize = sizeof(TMP.d_name);
+			//size_t afterChar = sizeof(TMP)-beforeChar-charSize;
+			auto dirent_p = r.readdir(dir);
+			r.builder.CreateCondBr(r.builder.CreateIsNull(dirent_p),DONE,NOTNULL);
+
+			r.builder.SetInsertPoint(NOTNULL);
+			auto str = r.builder.CreateConstGEP2_32(dirent_p, 0, beforeChar);
+
+			auto stl = r.strlen(str);
+			auto len = r.builder.CreateAdd(mlen, stl);
+			auto cp = r.allocate(CHARTYPE, len);
+			//END_POSIX_DIR_NEXT_NAME
+			auto spf = r.builder.CreateSelect(end, r.getConstantCString("%s%s"),r.getConstantCString("%s/%s"));
+
+			llvm::SmallVector<llvm::Value*,4> V(4);
+			V[0] = cp;
+			V[1] = spf;
+			V[2] = s_value;
+			V[3] = str;
+			r.sprintf<4>(V);
+
+			auto stat_t = llvm::ArrayType::get(CHARTYPE, sizeof(struct stat));
+			auto P = r.builder.CreateAlloca(stat_t);
+
+			llvm::SmallVector<llvm::Type*,2> stat_args(2);
+			stat_args[0] = C_STRINGTYPE;
+			stat_args[1] = llvm::PointerType::getUnqual(stat_t);
+
+			auto STAT_F = r.getExtern("stat", llvm::FunctionType::get(C_INTTYPE,stat_args,true));
+
+			r.builder.CreateCall2(STAT_F, cp, P);
+
+			struct stat stat_tmp;
+			auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.st_mode))-(size_t)(&(stat_tmp))));
+			auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
+			auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
+			auto D_L = r.builder.CreateLoad(D);
+			auto isFil = r.builder.CreateICmpEQ(r.builder.CreateAnd(D_L, llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false));
+
+			r.builder.CreateCondBr(isFil, IS_FILE, NOT_FILE);
+
+			r.builder.SetInsertPoint(IS_FILE);
+			ConstantData STR_DATA(cp, &c_stringClass);
+			//ACTUALLY DO STUFF
+			MYFUNC->callFunction(r, id, {&STR_DATA}, nullptr);
+			r.builder.CreateBr(LOOP);
+
+			r.builder.SetInsertPoint(NOT_FILE);
+			r.free(cp);
+			r.builder.CreateBr(LOOP);
+
+			r.builder.SetInsertPoint(DONE);
+			r.closedir(dir);
+			return &VOID_DATA;
 		}), PositionID("#dir",0,0));
 
 		std::vector<std::pair<int,String>> E_D;
@@ -567,11 +677,118 @@ void initClasses(){
 		#undef SDL_A
 		auto FT = new EnumClass(DIR->staticVariables,"FileType",E_D,PositionID("#dir",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(unsigned char)));
 		DIR->staticVariables.addClass(PositionID("#sdl",0,0),FT);*/
+		TIME_CLASS = new UserClass(&LANG_M,"Time",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t)));
+		LANG_M.addClass(PositionID("#dir",0,0),TIME_CLASS);
+		TIME_CLASS->constructors.add(new BuiltinInlineFunction(
+				new FunctionProto("TIME",std::vector<AbstractDeclaration>(),TIME_CLASS),
+		[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+		llvm::SmallVector<llvm::Type*,1> time_args(1);
+		time_args[0] = llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t)));
+		auto TIME = r.getExtern("time",llvm::FunctionType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t)),time_args,false));
+		auto V = r.builder.CreateCall(TIME, llvm::ConstantPointerNull::get((llvm::PointerType*)time_args[0]));
+		return new ConstantData(V, TIME_CLASS);
+	}), PositionID(0,0,"#int"));
 
-		auto FileStat = new UserClass(&LANG_M,"FileStat",nullptr,PRIMITIVE_LAYOUT,false);
+		TIME_CLASS->addLocalFunction(":<")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":<",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpULT(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+		TIME_CLASS->addLocalFunction(":<=")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":<=",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpULE(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+		TIME_CLASS->addLocalFunction(":>")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":>",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpUGT(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+		TIME_CLASS->addLocalFunction(":>=")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":>",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpUGE(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+		TIME_CLASS->addLocalFunction(":==")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":==",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpEQ(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+
+		TIME_CLASS->addLocalFunction(":!=")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto(":!=",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V1 = instance->evalV(r, id);
+				auto V2 = args[0]->evalV(r, id);
+				return new ConstantData(r.builder.CreateICmpNE(V1, V2), &boolClass);
+			}), PositionID(0,0,"#time"));
+
+		TIME_CLASS->addLocalFunction("hash")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("hash",{AbstractDeclaration(TIME_CLASS)},&intClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			auto V1 = instance->evalV(r, id);
+			return new ConstantData(r.builder.CreateZExtOrTrunc(V1,INT32TYPE), &intClass);
+		}), PositionID(0,0,"#time"));
+		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("print",{AbstractDeclaration(TIME_CLASS)},&voidClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				auto V = args[0]->evaluate(r);
+				assert(V->type==R_CONST || V->type==R_LOC);
+				llvm::SmallVector<llvm::Type*,1> ctime_args(1);
+				ctime_args[0] = llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t)));
+				auto CTIME = r.getExtern("ctime",llvm::FunctionType::get(C_STRINGTYPE,ctime_args,false));
+				auto STR = r.builder.CreateCall(CTIME, ((LLVMData*)V)->toLocation(r,"time")->value->getPointer(r, id));
+				auto len = r.strlen(STR);
+				r.builder.CreateStore(CharClass::getValue('\0'),r.builder.CreateGEP(STR,r.builder.CreateSub(len, getSizeT(1))));
+				r.printf("%s",STR);
+				return &VOID_DATA;
+			}), PositionID(0,0,"#int"));
+		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("println",{AbstractDeclaration(TIME_CLASS)},&voidClass),
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==1);
+					auto V = args[0]->evaluate(r);
+					assert(V->type==R_CONST || V->type==R_LOC);
+					llvm::SmallVector<llvm::Type*,1> ctime_args(1);
+					ctime_args[0] = llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t)));
+					auto CTIME = r.getExtern("ctime",llvm::FunctionType::get(C_STRINGTYPE,ctime_args,false));
+					auto STR = r.builder.CreateCall(CTIME, ((LLVMData*)V)->toLocation(r,"time")->value->getPointer(r, id));
+					auto len = r.strlen(STR);
+					r.builder.CreateStore(CharClass::getValue('\0'),r.builder.CreateGEP(STR,r.builder.CreateSub(len, getSizeT(1))));
+					r.puts(STR);
+					return &VOID_DATA;
+			}), PositionID(0,0,"#int"));
+
+		auto FileStat = new UserClass(&LANG_M,"FileStat",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::ArrayType::get(CHARTYPE, sizeof(struct stat)));
 		LANG_M.addClass(PositionID("#dir",0,0),FileStat);
-		FileStat->addLocalVariable(PositionID("#dir",0,0),"freq",new WrapperClass("",llvm::ArrayType::get(CHARTYPE, sizeof(struct stat))));
-		FileStat->finalize(PositionID("#sdl",0,0));
 #define DATA(name, stat_var, returnType)\
 		FileStat->addLocalFunction(#name)->add(new BuiltinInlineFunction(new FunctionProto(#name,{AbstractDeclaration(FileStat)},returnType),\
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
@@ -589,9 +806,9 @@ void initClasses(){
 		DATA(getUID, st_uid, &intClass);
 		DATA(getGID, st_gid, &intClass);
 		DATA(getSize, st_size, &intClass);
-		DATA(getAccessTime, st_atime, &intClass);
-		DATA(getModificationTime, st_mtime, &intClass);
-		DATA(getStatusTime, st_ctime, &intClass);
+		DATA(getAccessTime, st_atime, TIME_CLASS);
+		DATA(getModificationTime, st_mtime, TIME_CLASS);
+		DATA(getStatusTime, st_ctime, TIME_CLASS);
 #undef DATA
 
 		FileStat->addLocalFunction("isFile")->add(new BuiltinInlineFunction(new FunctionProto("isFile",{AbstractDeclaration(FileStat)},&boolClass),

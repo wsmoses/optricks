@@ -87,6 +87,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 			else if(a=='\'') std::cout << "\\'";
 			else std::cout << a;
 		}
+		F->eraseFromParent();
 		std::cout << "'" << endl << flush;
 		return;
 	} /*else if(dat->type==R_ARRAY){
@@ -109,7 +110,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		retType = &voidClass;
 		getRData().builder.CreateRetVoid();
 	} else {
-		if(retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
+		if(retType==TIME_CLASS || retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
 			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 			retType = &voidClass;
 			getRData().builder.CreateRetVoid();
@@ -264,6 +265,7 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		((void* (*)())(intptr_t)FPtr)();
 		cerr << "Unknown print function for type " << retType->getName() << " " << str(dat->type) << endl << flush;
 	}
+	assert(F);
 	F->eraseFromParent();
 }
 /**
@@ -475,7 +477,7 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 	 		{
-//				getExecutablePath() +"stdlib/stdlib.opt"
+				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
 #endif

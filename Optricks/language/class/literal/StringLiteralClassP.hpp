@@ -46,7 +46,7 @@
 			}
 			r.builder.CreateCall(CU, llvm::ConstantInt::get(c_intClass.type, '\n',false));
 			return &VOID_DATA;}), PositionID(0,0,"#int"));
-		LANG_M.addFunction(PositionID(0,0,"#str"),"printf")->add(
+		NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"printf")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("printf",{AbstractDeclaration(this)},&intClass,true),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -63,8 +63,22 @@
 				return new ConstantData(r.builder.CreateSExtOrTrunc(r.printf<1>(m_args), intClass.type), &intClass);
 			}), PositionID(0,0,"#int"));
 
+		NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"errorf")->add(
+				new BuiltinInlineFunction(
+						new FunctionProto("errorf",{AbstractDeclaration(this)},&voidClass,true),
+				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()>=1);
+				//TODO custom formatting for printf (and checks for literals / correct format / etc)
+				const auto& value = ((const StringLiteral*) args[0]->evaluate(r))->value;
+				std::vector<llvm::Value*> m_args(args.size()-1);
+				for(unsigned i=0; i<args.size()-1; i++)
+					m_args[i] = args[i+1]->evalV(r, id);
+				r.p_error(value, id, m_args);
 
-		LANG_M.addFunction(PositionID(0,0,"#str"),"sprintf")->add(
+				return &VOID_DATA;
+			}), PositionID(0,0,"#int"));
+
+		NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"sprintf")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("sprintf",{AbstractDeclaration(&c_stringClass),AbstractDeclaration(this)},&c_intClass,true),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -94,7 +108,7 @@
 			}), PositionID(0,0,"#int"));
 
 		/*
-		LANG_M.addFunction(PositionID(0,0,"#str"),"snprintf")->add(
+		NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"snprintf")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("snprintf",{AbstractDeclaration(&c_stringClass),AbstractDeclaration(&c_size_tClass),AbstractDeclaration(this)},&c_intClass,true),
 				[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -128,7 +142,7 @@
 				return new ConstantData(V, &intClass);
 			}), PositionID(0,0,"#int"));
 		*/
-		LANG_M.addFunction(PositionID(0,0,"#str"),"fprintf")->add(
+		NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#str"),"fprintf")->add(
 			new BuiltinInlineFunction(
 					new FunctionProto("fprintf",{AbstractDeclaration(&c_pointerClass),AbstractDeclaration(this)},&intClass,true),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{

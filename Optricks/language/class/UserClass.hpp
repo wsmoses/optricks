@@ -25,7 +25,7 @@ private:
 	bool final;
 public:
 	friend AbstractClass;
-	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false);
+	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false,llvm::Type* T=nullptr);
 	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
 		auto find = localFunctions.find(s);
 		if(find==localFunctions.end()){

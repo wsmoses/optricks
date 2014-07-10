@@ -307,7 +307,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 	}
 	case CLASS_STR:
 	case CLASS_CHAR:{
-		if(operation=="==" || operation=="!=") return &boolClass;
+		if(operation=="==" || operation=="!=" || operation=="<" || operation=="<=" || operation==">" || operation==">=") return &boolClass;
 		if(operation=="+" || operation=="*") return &stringLiteralClass;
 		//todo allow for string
 		filePos.compilerError("todo -- string binops");
@@ -1153,6 +1153,10 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		case CLASS_CHAR:
 			if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(C, ev->evalV(r,filePos)),&boolClass);
 			else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation=="<") return new ConstantData(r.builder.CreateICmpULT(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation=="<=") return new ConstantData(r.builder.CreateICmpULE(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation==">") return new ConstantData(r.builder.CreateICmpUGT(C, ev->evalV(r,filePos)),&boolClass);
+			else if(operation==">=") return new ConstantData(r.builder.CreateICmpUGE(C, ev->evalV(r,filePos)),&boolClass);
 			else if(operation=="+"){
 				auto D = ev->evalV(r, filePos);
 				if(auto CC = llvm::dyn_cast<llvm::ConstantInt>(C)){

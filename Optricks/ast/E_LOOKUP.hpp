@@ -87,6 +87,44 @@ public:
 		}
 	}
 
+	bool hasCastValue(const AbstractClass* const a) const override{
+		const AbstractClass* cla = left->getReturnType();
+		if(cla->classType==CLASS_CLASS){
+			const AbstractClass* c = left->getMyClass(getRData(), filePos);
+			return c->staticVariables.get(filePos, right, t_args)->hasCastValue(a);
+		} else {
+			if(cla->hasLocalData(right))
+				return cla->getLocalReturnClass(filePos, right)->hasCast(a);
+			else if(hasLocalFunction(right, cla)){
+				//TODO MAKE WRAPPER FOR ENCLOSED FUNCS
+				return false;
+			}
+			else{
+				return false;
+			}
+		}
+	}
+	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override{
+		assert(hasCastValue(a));
+		assert(hasCastValue(b));
+		const AbstractClass* cla = left->getReturnType();
+		if(cla->classType==CLASS_CLASS){
+			const AbstractClass* c = left->getMyClass(getRData(), filePos);
+			return c->staticVariables.get(filePos, right, t_args)->compareValue(a,b);
+		} else {
+			if(cla->hasLocalData(right))
+				return cla->getLocalReturnClass(filePos, right)->compare(a,b);
+			else if(hasLocalFunction(right, cla)){
+				//TODO MAKE WRAPPER FOR ENCLOSED FUNCS
+				assert(0);
+				return 0;
+			}
+			else{
+				assert(0);
+				return 0;
+			}
+		}
+	}
 	const Data* evaluate(RData& a) const override{
 		auto eval = left->evaluate(a);
 		const AbstractClass* cla = eval->getReturnType();

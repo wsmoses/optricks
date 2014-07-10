@@ -64,7 +64,7 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			exit(1);
 		}
 	} else{
-		id.error("Cannot use non-function type as function");
+		id.error("Cannot use non-function type as function: "+type->getName());
 		exit(1);
 	}
 }

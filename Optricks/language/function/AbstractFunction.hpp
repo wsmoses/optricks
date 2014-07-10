@@ -133,10 +133,13 @@ public:
 	}
 };
 
-class BuiltinCompiledFunction: public BuiltinInlineFunction{
+class BuiltinCompiledFunction: public SingleFunction{
+	const std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> inlined;
 public:
 	BuiltinCompiledFunction(FunctionProto* fp, std::function<const Data*(RData&,PositionID,const std::vector<const Evaluatable*>&,const Data*)> tmp):
-		BuiltinInlineFunction(fp,tmp){}
+		SingleFunction(fp,nullptr),inlined(tmp){}
+
+	llvm::Function* getSingleFunc() const override final;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override;
 };
 
@@ -180,6 +183,9 @@ public:
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final{
+		assert(hasCastValue(a));
+		assert(hasCastValue(b));
+		//if templated, use that first priority
 		if(innerFuncs.size()==0) return 0;
 		else if(innerFuncs.size()==1) return innerFuncs[0]->compareValue(a,b);
 		else return 0;//todo allow large compare value

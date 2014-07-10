@@ -32,6 +32,17 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				return d->toValue(r, filePos);
 			}
 		}
+		filePos.error("Could not find constructor in class '"+getName()+"'");
+		exit(1);
+	}
+	case CLASS_CSTRING:{
+		if(args.size()==1){
+			const Data* d = args[0]->evaluate(r);
+			if(d->hasCastValue(this))
+				return d->castTo(r, this, filePos);
+		}
+		filePos.error("Could not find constructor in class '"+getName()+"'");
+		exit(1);
 	}
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
@@ -43,7 +54,6 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 	case CLASS_MAP:
 	case CLASS_STRLITERAL:
 	case CLASS_STR:
-	case CLASS_CSTRING:
 	case CLASS_SET:
 	case CLASS_CLASS:
 	case CLASS_MATHLITERAL:

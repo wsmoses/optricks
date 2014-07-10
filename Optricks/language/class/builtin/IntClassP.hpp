@@ -28,6 +28,14 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 				assert(args.size()==1);
 				return new ConstantData(r.builder.CreateSExtOrTrunc(args[0]->evalV(r, id), CHARTYPE),&charClass);}), PositionID(0,0,"#float")
 			);
+
+		this->staticVariables.addFunction(PositionID(0,0,"#int"),"ord")->add(
+					new BuiltinInlineFunction(new FunctionProto("ord",{AbstractDeclaration(&charClass)},this),
+					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==1);
+					llvm::Value* V = args[0]->evalV(r, id);
+					return new ConstantData(r.builder.CreateZExtOrTrunc(V, type), this);
+		}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),

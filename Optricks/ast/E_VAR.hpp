@@ -37,6 +37,13 @@ class E_VAR : public VariableReference {
 			assert(pointer.module);
 			return pointer;
 		}
+
+		bool hasCastValue(const AbstractClass* const a) const override{
+			return pointer.getObject(getRData(), t_args)->hasCastValue(a);
+		}
+		int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override{
+			return pointer.getObject(getRData(), t_args)->compareValue(a,b);
+		}
 		const Data* evaluate(RData& r) const override final{
 			assert(pointer.module);
 			/*if(t_args.inUse){

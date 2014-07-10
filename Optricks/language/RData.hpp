@@ -164,6 +164,7 @@ struct RData{
 		llvm::Function* LLVM_SPRINTF;
 		llvm::Function* LLVM_ASPRINTF;
 		llvm::Function* LLVM_FPRINTF;
+		llvm::Function* LLVM_DPRINTF;
 		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
@@ -184,6 +185,7 @@ struct RData{
 			LLVM_SPRINTF = nullptr;
 			LLVM_ASPRINTF = nullptr;
 			LLVM_FPRINTF = nullptr;
+			LLVM_DPRINTF = nullptr;
 			// Set up optimizers
 			llvm::PassManagerBuilder pmb;
 			pmb.Inliner = llvm::createFunctionInliningPass();
@@ -211,6 +213,15 @@ struct RData{
 					assert(a.second);
 					exec->updateGlobalMapping(a.first,a.second);
 				}
+				if(LLVM_ASPRINTF)
+					exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
+				if(LLVM_SPRINTF)
+					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
+				if(LLVM_FPRINTF)
+					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
+				if(LLVM_PRINTF)
+					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
+
 				return exec;
 			}
 		}
@@ -268,6 +279,19 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			MAP(glutInit)
 #else
 //#pragma message "Not Using OpenGL"
+#endif
+			/*MAP(socket)
+			MAP(accept)
+			MAP(bind)
+			MAP(connect)
+			MAP(closesocket)
+			MAP(recv)
+			MAP(send)
+			MAP(gethostname)
+*/
+#if defined(WIN32) || defined(_WIN32)
+			//MAP(TransmitFile)
+
 #endif
 #ifdef USE_SDL
 //#pragma message "Using SDL"
@@ -538,7 +562,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
 			}
 			return builder.CreateCall(LLVM_ASPRINTF, args);
 		}
@@ -561,7 +586,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_ASPRINTF, args);
@@ -588,7 +614,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
 			}
 			return builder.CreateCall(LLVM_SPRINTF, args);
 		}
@@ -611,7 +638,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_SPRINTF, args);
@@ -637,7 +665,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
 			}
 			return builder.CreateCall(LLVM_FPRINTF, args);
 		}
@@ -660,7 +689,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
-				exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_FPRINTF, args);
@@ -681,7 +711,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
 				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
 
-				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
 			}
 			return builder.CreateCall(LLVM_PRINTF, args);
 		}
@@ -698,7 +729,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
 				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
 
-				exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
+				if(exec)
+					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
 			return builder.CreateCall(LLVM_PRINTF, args);
@@ -712,6 +744,28 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			return printf<1+sizeof...(args)>(V);
 		}
 
+		template<size_t N>
+		llvm::Value* dprintf(llvm::SmallVector<llvm::Value*,N> args){
+			assert(args.size()>=2);
+			assert(args[0]->getType()==C_INTTYPE);
+			assert(args[1]->getType()==C_STRINGTYPE);
+			if(LLVM_DPRINTF == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = C_INTTYPE; // file
+				args[1] = C_STRINGTYPE; // fmt
+
+				LLVM_DPRINTF = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, true), llvm::Function::ExternalLinkage,
+						"dprintf", lmod);
+				assert(LLVM_DPRINTF->getName()=="dprintf");
+
+				LLVM_DPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_DPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				//TODO ADD HERE (and exec init)
+//				if(exec)
+//					exec->updateGlobalMapping(LLVM_DPRINTF,(void*)(& ::dprintf));
+			}
+			return builder.CreateCall(LLVM_FPRINTF, args);
+		}
 		void error(String code, PositionID id){
 			error(code, id, std::vector<llvm::Value*>());
 		}
@@ -730,7 +784,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				exec->updateGlobalMapping(F,(void*)(& std::perror));
+				getExec()->updateGlobalMapping(F,(void*)(& std::perror));
 			}
 			auto vs = V.size();
 			llvm::SmallVector<llvm::Value*,4> a_args(vs+4);
@@ -770,7 +824,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
 
-				exec->updateGlobalMapping(F,(void*)(& FatalAppExit));
+				getExec()->updateGlobalMapping(F,(void*)(& FatalAppExit));
 			}
 /*
 			static llvm::Function* F=nullptr;
@@ -838,11 +892,18 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				exec->updateGlobalMapping(F,(void*)(& ::closedir));
+				getExec()->updateGlobalMapping(F,(void*)(& ::closedir));
 			}
 			return builder.CreateCall(F, dir);
 		}
-		llvm::Value* fflush(llvm::Value* V=llvm::ConstantPointerNull::get(C_POINTERTYPE)){
+		llvm::Value* puts(llvm::Value* V){
+			llvm::SmallVector<llvm::Type*,1> args(1);
+			args[0] = C_STRINGTYPE;
+			auto PUTS = this->getExtern("puts",llvm::FunctionType::get(C_INTTYPE,args,false));
+			return builder.CreateCall(PUTS, V);
+		}
+
+		llvm::Value* fflush_llvm(llvm::Value* V=llvm::ConstantPointerNull::get(C_POINTERTYPE)){
 			llvm::SmallVector<llvm::Type*,1> args(1);
 			args[0] = C_POINTERTYPE;
 			auto FFLUSH = this->getExtern("fflush",llvm::FunctionType::get(C_INTTYPE,args,false));
@@ -866,7 +927,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				exec->updateGlobalMapping(F,(void*)(& ::readdir));
+				getExec()->updateGlobalMapping(F,(void*)(& ::readdir));
 			}
 			return builder.CreateCall(F, dir);
 		}
@@ -885,7 +946,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				exec->updateGlobalMapping(F,(void*)(& ::opendir));
+				getExec()->updateGlobalMapping(F,(void*)(& ::opendir));
 			}
 			auto CC = builder.CreateCall(F, V);
 

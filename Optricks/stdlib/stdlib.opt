@@ -5,6 +5,8 @@ import "random.opt"
 import 'image.opt'
 //import "string.opt"
 
+extern int system(lang.c.string);
+
 class string{
 	lang.c.string t;
 	def string(lang.c.string l){
@@ -34,18 +36,6 @@ def print(T s){
 }
 def println(T s){
 	println(s.t);
-}
-def print(lang.c.string s){
-	if(s==null){
-		print('null')
-		return;
-	}
-	int i=0;
-	while(s[i]!='\0'){
-		print(s[i]);
-		i++;
-	}
-
 }
 
 ///*

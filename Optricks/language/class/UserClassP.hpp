@@ -12,14 +12,15 @@
 #include "./builtin/IntClass.hpp"
 #include "../data/ReferenceData.hpp"
 #include "../data/DeclarationData.hpp"
-UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject)
+UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject,llvm::Type* T)
 	: AbstractClass(sc,nam,(!isObject && t==POINTER_LAYOUT && supa==nullptr)?(&objectClass):(supa),
 				t,CLASS_USER, fina,
 				(t==PRIMITIVEPOINTER_LAYOUT)?C_POINTERTYPE:(
 				(t==POINTER_LAYOUT)?(
 						(llvm::Type*) llvm::PointerType::getUnqual(llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
 		):(
-						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam))
+				T?T:(
+						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
 				)
 				)),
 						constructors(nam, nullptr),start(0),final(false)
@@ -31,6 +32,8 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 				localVars.push_back(&c_pointerClass);
 				final = true;
 			}
+			if(t!=PRIMITIVE_LAYOUT) assert(T==nullptr);
+			if(T) final=true;
 			if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
 			if(isObject){
 				localVars.push_back(&intClass);
