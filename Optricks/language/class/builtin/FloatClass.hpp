@@ -83,7 +83,7 @@ public:
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
-						r.printf("%f", args[0]->evalV(r, id));
+						r.printf("%f\n", args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#float"));
 }
