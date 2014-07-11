@@ -1,0 +1,229 @@
+class FileDescriptor{
+	lang.c.int fd=0;
+	def FileDescriptor(lang.c.int id){
+		this.fd = id;
+	}
+	/* WINDOWS VARS
+	// flag
+	_O_APPEND - Moves the file pointer to the end of the file before every write operation.
+	_O_BINARY - Opens the file in binary (untranslated) mode. (See fopen for a description of binary mode.)
+	_O_CREAT - Creates a file and opens it for writing. Has no effect if the file specified by filename exists. The pmode argument is required when _O_CREAT is specified.
+	_O_CREAT | _O_SHORT_LIVED - Creates a file as temporary and if possible does not flush to disk. The pmode argument is required when _O_CREAT is specified.
+	_O_CREAT | _O_TEMPORARY - Creates a file as temporary; the file is deleted when the last file descriptor is closed. The pmode argument is required when _O_CREAT is specified.
+	_O_CREAT | _O_EXCL - Returns an error value if the file specified by filename exists. Applies only when used with _O_CREAT.
+	_O_NOINHERIT - Prevents creation of a shared file descriptor.
+	_O_RANDOM - Specifies that caching is optimized for, but not restricted to, random access from disk.
+	_O_RDONLY -  Opens a file for reading only. Cannot be specified with _O_RDWR or _O_WRONLY.
+	_O_RDWR - Opens file for both reading and writing. Cannot be specified with _O_RDONLY or _O_WRONLY.
+	_O_SEQUENTIAL - Specifies that caching is optimized for, but not restricted to, sequential access from disk.
+	_O_TEXT - Opens a file in text (translated) mode. (For more information, see Text and Binary Mode File I/O and fopen.)
+	_O_TRUNC - Opens a file and truncates it to zero length; the file must have write permission. Cannot be specified with _O_RDONLY. _O_TRUNC used with _O_CREAT opens an existing file or creates a file. Note The _O_TRUNC flag destroys the contents of the specified file.
+	_O_WRONLY - Opens the file for writing only. Cannot be specified with _O_RDONLY or _O_RDWR.
+	_O_U16TEXT - Opens the file in Unicode UTF-16 mode.
+	_O_U8TEXT - Opens the file in Unicode UTF-8 mode.
+	_O_WTEXT - Opens the file in Unicode mode.
+
+	// PERMISSION
+	_S_IREAD - Only reading permitted.
+	_S_IWRITE - Writing permitted. (In effect, permits reading and writing.)
+	_S_IREAD | _S_IWRITE - Reading and writing permitted.
+	*/
+	def FileDescriptor(lang.c.string filename, lang.c.int flag, lang.c.int permission){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _open(lang.c.string,lang.c.int,lang.c.int))(filename,flag,permission);
+		} else {
+			// last is actually mode_t
+			rv = (extern lang.c.int open(lang.c.string,lang.c.int,lang.c.int))(filename,flag,permission);
+		}
+		if(rv==-1){
+			/*
+			error happend errno set to (WINDOWS)
+			EACCES - Tried to open a read-only file for writing, file's sharing mode does not allow the specified operations, or the given path is a directory.
+			EEXIST - _O_CREAT and _O_EXCL flags specified, but filename already exists.
+			EINVAL - Invalid oflag or pmode argument.
+			EMFILE - No more file descriptors are available (too many files are open).
+			ENOENT - File or path not found
+			*/
+		}
+		this.fd = rv;
+	}
+	def close(){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _close(lang.c.int))(this.fd);
+		} else {
+			rv = (extern lang.c.int close(lang.c.int))(this.fd);
+		}
+		if(rv==-1){
+			//error happened
+			//check errno
+		}
+	}
+	def long write(lang.c.pointer buffer, long len){
+		long rv;
+		if(os.self==os.windows){
+			rv = long( (extern lang.c.int _write(lang.c.int,lang.c.pointer,lang.c.int))(this.fd, buffer, lang.c.int(len)) );
+		} else {
+			// actually returns ssize_t
+			rv = long( (extern lang.c.size_t write(lang.c.int,lang.c.pointer,lang.c.size_t))(this.fd,buffer,lang.c.size_t(len)) );
+		}
+		if(rv == -1){
+			//error
+		}
+		return rv;
+	}
+	def long read(lang.c.pointer buffer, long len){
+		long rv;
+		if(os.self==os.windows){
+			rv = long( (extern lang.c.int _read(lang.c.int,lang.c.pointer,lang.c.int))(this.fd, buffer, lang.c.int(len)) );
+		} else {
+			// actually returns ssize_t
+			rv = long( (extern lang.c.size_t read(lang.c.int,lang.c.pointer,lang.c.size_t))(this.fd,buffer,lang.c.size_t(len)) );
+		}
+		if(rv == -1){
+			//error
+		}
+		return rv;
+	}
+	//READ WITH OFFSET
+	def long read(lang.c.pointer buffer, long len,long off){
+		long rv;
+		if(os.self==os.windows){
+			rv = -1;
+			// couldn't find in windows?
+			//rv = long( (extern lang.c.int _read(lang.c.int,lang.c.pointer,lang.c.int))(this.fd, buffer, lang.c.int(len)) );
+		} else {
+			// actually returns ssize_t
+			// 3rd arg is actually off_t
+			rv = long( (extern lang.c.size_t pread(lang.c.int,lang.c.pointer,lang.c.size_t,lang.c.size_t))(this.fd,buffer,lang.c.size_t(len),lang.c.size_t(off)));
+		}
+		if(rv == -1){
+			//error
+		}
+		return rv;
+	}
+	def dup(){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _dup(lang.c.int))(this.fd);
+		} else {
+			rv = (extern lang.c.int dup(lang.c.int))(this.fd);
+		}
+		if(rv == -1){
+			//error
+		}
+		return FileDescriptor(rv);
+	}
+	//Takes fd from arg and makes this a copy of arg
+	def reassignAs(FileDescriptor arg){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _dup2(lang.c.int,lang.c.int))(arg.fd, this.fd);
+		} else {
+			rv = (extern lang.c.int dup2(lang.c.int,lang.c.int))(arg.fd, this.fd);
+		}
+		if(rv == -1){
+			//error
+		}
+	}
+	def void flush(){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _commit(lang.c.int))(this.fd);
+		} else {
+			//flushes whole file
+			//rv = (extern lang.c.int fsync(lang.c.int))(this.fd);
+			//flushes do not include metadata (e.g. access time)
+			rv = (extern lang.c.int fdatasync(lang.c.int))(this.fd);
+		}
+		if(rv == -1){
+			//error
+		}
+	}
+	def bool isEOF(){
+		lang.c.int rv;
+		if(os.self==os.windows){
+			rv = (extern lang.c.int _eof(lang.c.int))(this.fd);
+		} else {
+			byte b=0;
+			// actually returns ssize_t
+			rv = lang.c.int( (extern lang.c.size_t read(lang.c.int,byte&,lang.c.size_t))(this.fd,&b,1) );
+		}
+		if(rv==-1){
+			//error
+		}
+		// todo return bool(rv);
+		if(rv==1) return true;
+		else return false;
+	}
+	/*
+	SEEK_SET - Beginning of the file.
+	SEEK_CUR - Current position of the file pointer.
+	SEEK_END - End of file.
+	*/
+	def long seek(long offset, lang.c.int origin /*= SEEK_CUR */){
+		long rv;
+		if(os.self==os.windows){
+			rv = (extern long _lseeki64(lang.c.int,long,lang.c.int))(this.fd,offset,origin);
+		} else {
+			// in source requires
+			// #define _LARGEFILE64_SOURCE
+			// is actually off64_t, but let's assume sizeof(off64_t)*8==64 bits
+			rv = (extern long lseek64(lang.c.int,long,lang.c.int))(this.fd,offset,origin);
+		}
+		if(rv == -1){
+			//error
+		}
+		return rv;
+	}
+	//returns current locaton in file
+	def long current(){
+		long rv;
+		if(os.self==os.windows){
+			rv = (extern long _telli64(lang.c.int))(this.fd);
+		} else {
+			//TODO
+			rv = -1;
+			//rv = (extern long lseek64(lang.c.int,long,lang.c.int))(this.fd,offset, SEEK_CUR);
+		}
+
+		if(rv == -1){
+			//error
+		}
+		return rv;
+	}
+	//TODO
+	static def FileDescriptor[] pipe(lang.c.int flags){
+		auto ar = FileDescriptor[](2);
+		lang.c.int rv;
+		if(os.self==os.windows){
+			(extern lang.c.int _pipe(lang.c.pointer,lang.c.int,lang.c.int));
+			rv = -1;	
+		} else {
+			rv = (extern lang.c.int pipe(lang.c.pointer,lang.c.int))(ar.carr, flags);
+		}
+		
+		//0 is read descriptor
+		//1 is write descriptor
+		//ar._forceLength(2);
+		return ar;
+	}
+
+	static auto stdin  = FileDescriptor(0);
+	static auto stdout = FileDescriptor(1);
+	static auto stderr = FileDescriptor(2);
+}
+
+class Socket : FileDescriptor {
+	static lang.c.int AF_INET = 2;
+	static lang.c.int SOCK_STREAM = 1;
+	def Socket(lang.c.int socket_family=Socket.AF_INET, lang.c.int socket_type=Socket.SOCK_STREAM, lang.c.int protocol=0){
+		auto rv = (extern lang.c.int socket(lang.c.int,lang.c.int,lang.c.int))(socket_family,socket_type,protocol);
+		if(rv==-1){
+			//error
+		}
+		this.fd = rv;
+	}
+
+}
