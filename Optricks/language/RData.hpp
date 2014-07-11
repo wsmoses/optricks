@@ -535,7 +535,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"strlen", lmod);
 				assert(F->getName()=="strlen");
 
-				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
@@ -556,11 +556,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"asprintf", lmod);
 				assert(LLVM_ASPRINTF->getName()=="asprintf");
 
-				//LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_ASPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_ASPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
@@ -580,11 +580,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"asprintf", lmod);
 				assert(LLVM_ASPRINTF->getName()=="asprintf");
 
-				//LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_ASPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_ASPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_ASPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_ASPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_ASPRINTF,(void*)(& ::asprintf));
@@ -608,11 +608,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"sprintf", lmod);
 				assert(LLVM_SPRINTF->getName()=="sprintf");
 
-				//LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_SPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_SPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
@@ -632,11 +632,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"sprintf", lmod);
 				assert(LLVM_SPRINTF->getName()=="sprintf");
 
-				//LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_SPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_SPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_SPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_SPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
@@ -659,11 +659,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"fprintf", lmod);
 				assert(LLVM_FPRINTF->getName()=="fprintf");
 
-				//LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_FPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_FPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
@@ -683,11 +683,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"fprintf", lmod);
 				assert(LLVM_FPRINTF->getName()=="fprintf");
 
-				//LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_FPRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-
-				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 				//LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_FPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+
+				LLVM_FPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_FPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
@@ -708,8 +708,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"printf", lmod);
 				assert(LLVM_PRINTF->getName()=="printf");
 
-				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_PRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_PRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
@@ -726,8 +726,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"printf", lmod);
 				assert(LLVM_PRINTF->getName()=="printf");
 
-				//LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
-				LLVM_PRINTF->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_PRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_PRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
@@ -758,8 +758,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"dprintf", lmod);
 				assert(LLVM_DPRINTF->getName()=="dprintf");
 
-				LLVM_DPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
-				//LLVM_DPRINTF->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+				LLVM_DPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//LLVM_DPRINTF->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
 				//TODO ADD HERE (and exec init)
 //				if(exec)
 //					exec->updateGlobalMapping(LLVM_DPRINTF,(void*)(& ::dprintf));
@@ -779,8 +779,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"perror", lmod);
 				assert(F->getName()=="perror");
 
-				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
@@ -817,9 +817,9 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"FatalAppExit", lmod);
 				assert(F->getName()=="FatalAppExit");
 
-				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
-				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
-				F->addAttribute(1, llvm::Attribute::AttrKind::NoAlias);
+				F->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(2, llvm::Attribute::AttrKind::NoAlias);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
@@ -839,9 +839,9 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"FatalAppExit", lmod);
 				assert(F->getName()=="FatalAppExit");
 
-				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
-				F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
-				F->addAttribute(1, llvm::Attribute::AttrKind::NoAlias);
+				F->addAttribute(2, llvm::Attribute::AttrKind::NoCapture);
+				F->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(2, llvm::Attribute::AttrKind::NoAlias);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
@@ -887,8 +887,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"closedir", lmod);
 				assert(F->getName()=="closedir");
 
-				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
@@ -922,8 +922,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"readdir", lmod);
 				assert(F->getName()=="readdir");
 
-				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
@@ -941,8 +941,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 						"opendir", lmod);
 				assert(F->getName()=="opendir");
 
-				F->addAttribute(0, llvm::Attribute::AttrKind::NoCapture);
-				//F->addAttribute(0, llvm::Attribute::AttrKind::NonNull);
+				F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 

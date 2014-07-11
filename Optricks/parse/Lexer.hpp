@@ -279,7 +279,7 @@ public:
 		Statement* declarationType = getNextType(data.getEndWith(EOF),true);
 		trim(EOF);
 		String varName;
-		if(allowAuto && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
+		if(allowAuto && declarationType && (declarationType->getToken()==T_VAR) && !isStartName(f->peek())){
 			varName = ((E_VAR*)(declarationType))->pointer.name;
 			declarationType = nullptr; // now means auto
 		} else{
@@ -857,7 +857,7 @@ public:
 			outer->proto->staticVariables.addClass(pos(), proto);
 		}
 		data.mod->addClass(pos(), proto);
-		OModule* classMod = new OModule(data.mod);
+		OModule* classMod = new OModule( data.mod );
 		OClass* selfClass = new OClass(pos(), proto,(!stat)?outer:(nullptr));
 		while(f->peek()==';'){
 			f->read();

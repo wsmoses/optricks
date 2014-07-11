@@ -180,7 +180,7 @@ public:
 
 class OModule:public Scopable{
 public:
-	OModule(OModule* m):Scopable(m){};
+	OModule(Scopable* m):Scopable(m){};
 };
 
 class Resolvable{
