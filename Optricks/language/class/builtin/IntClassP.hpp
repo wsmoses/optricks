@@ -126,12 +126,16 @@ inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r
 		IntClass* nex = (IntClass*)toCast;
 		auto n_width = nex->getWidth();
 		auto s_width = getWidth();
+		llvm::Type* T = valueToCast->getType();
+		if(T->isVectorTy()){
+			T = llvm::VectorType::get(toCast->type,((llvm::VectorType*)T)->getNumElements());
+		} else T = toCast->type;
 		if(n_width>s_width){
-			return r.builder.CreateSExt(valueToCast,nex->type);
+			return r.builder.CreateSExt(valueToCast,T);
 		}
 		else if(n_width<s_width){
 			id.error("Cannot cast integer type of width "+str(getWidth())+" to integer type of width "+str(nex->getWidth()));
-			return r.builder.CreateTrunc(valueToCast, nex->type);
+			return r.builder.CreateTrunc(valueToCast,T);
 		}
 		assert(n_width==s_width);
 		return valueToCast;
@@ -139,7 +143,11 @@ inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r
 	}
 	case CLASS_FLOAT:{
 		assert(((FloatClass*)toCast)->type);
-		return r.builder.CreateSIToFP(valueToCast, toCast->type);
+		llvm::Type* T = valueToCast->getType();
+		if(T->isVectorTy()){
+			T = llvm::VectorType::get(toCast->type,((llvm::VectorType*)T)->getNumElements());
+		} else T = toCast->type;
+		return r.builder.CreateSIToFP(valueToCast, T);
 	}
 	//case CLASS_RATIONAL:
 	case CLASS_COMPLEX:{

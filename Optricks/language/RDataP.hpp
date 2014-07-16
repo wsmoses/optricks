@@ -20,7 +20,6 @@
 #define M 397
 llvm::Value* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 	static llvm::Function* F=nullptr;
-	auto PARENT = builder.GetInsertBlock();
 	if(REAL_MT==nullptr){
 		if(GLOBAL_MT==nullptr){
 			GLOBAL_IDX_P = new llvm::GlobalVariable(*lmod,INT32TYPE,false,llvm::GlobalValue::PrivateLinkage,
@@ -32,52 +31,54 @@ llvm::Value* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* 
 		REAL_IDX_P = GLOBAL_IDX_P;
 	}
 	if(F==nullptr){
-			llvm::SmallVector<llvm::Type*,3> rand_args(3);
-			rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
-			rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
-			rand_args[2] = INT32TYPE;
-			F = CreateFunctionD("_seed32", llvm::FunctionType::get(VOIDTYPE, rand_args, false), LOCAL_FUNC);
-			llvm::BasicBlock* ENTRY = CreateBlockD("entry", F);
-			builder.SetInsertPoint(ENTRY);
-			llvm::Value* MT, * IDX_P, *S;
-			{
-				llvm::Function::arg_iterator AI = F->arg_begin();
-				AI->setName("mt");
-				MT = AI;
-				++AI;
-				AI->setName("idx_p");
-				IDX_P = AI;
-				++AI;
-				AI->setName("seed");
-				S = AI;
-			}
+		auto PARENT = builder.GetInsertBlock();
+		llvm::SmallVector<llvm::Type*,3> rand_args(3);
+		rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
+		rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
+		rand_args[2] = INT32TYPE;
+		F = CreateFunctionD("_seed32", llvm::FunctionType::get(VOIDTYPE, rand_args, false), LOCAL_FUNC);
+		llvm::BasicBlock* ENTRY = CreateBlockD("entry", F);
+		builder.SetInsertPoint(ENTRY);
+		llvm::Value* MT, * IDX_P, *S;
+		{
+			llvm::Function::arg_iterator AI = F->arg_begin();
+			AI->setName("mt");
+			MT = AI;
+			++AI;
+			AI->setName("idx_p");
+			IDX_P = AI;
+			++AI;
+			AI->setName("seed");
+			S = AI;
+		}
 
-			builder.CreateStore(S, MT);
-			llvm::BasicBlock* LOOP1 = CreateBlockD("LOOP", F);
-			builder.CreateBr(LOOP1);
-			builder.SetInsertPoint(LOOP1);
+		builder.CreateStore(S, MT);
+		llvm::BasicBlock* LOOP1 = CreateBlockD("LOOP", F);
+		builder.CreateBr(LOOP1);
+		builder.SetInsertPoint(LOOP1);
 
-			llvm::BasicBlock* END_LOOP = CreateBlockD("end_loop", F);
+		llvm::BasicBlock* END_LOOP = CreateBlockD("end_loop", F);
 
-			auto MT1 = builder.CreatePHI(INT32TYPE,2);
-			MT1->addIncoming(getInt32(0),ENTRY);
-			auto P1 = builder.CreateAdd(MT1,getInt32(1));
-			MT1->addIncoming(P1, LOOP1);
+		auto MT1 = builder.CreatePHI(INT32TYPE,2);
+		MT1->addIncoming(getInt32(0),ENTRY);
+		auto P1 = builder.CreateAdd(MT1,getInt32(1));
+		MT1->addIncoming(P1, LOOP1);
 
-			auto MTKK_P = builder.CreateGEP(MT,P1);
+		auto MTKK_P = builder.CreateGEP(MT,P1);
 
-			auto PREV = builder.CreateLoad(builder.CreateGEP(MT, MT1));
-			builder.CreateStore(
-					builder.CreateMul(llvm::ConstantInt::get(INT32TYPE,1812433253UL,false),
-							builder.CreateAdd(builder.CreateXor(PREV,
-									builder.CreateLShr(PREV, (uint64_t)(30))
-							), P1)
-					),MTKK_P);
-			builder.CreateCondBr(builder.CreateICmpEQ(P1, getInt32(N-1)), END_LOOP, LOOP1);
-			builder.SetInsertPoint(END_LOOP);
-			builder.CreateStore(getInt32(N), IDX_P);
-			builder.CreateRetVoid();
-			this->FinalizeFunctionD(F);
+		auto PREV = builder.CreateLoad(builder.CreateGEP(MT, MT1));
+		builder.CreateStore(
+				builder.CreateMul(llvm::ConstantInt::get(INT32TYPE,1812433253UL,false),
+						builder.CreateAdd(builder.CreateXor(PREV,
+								builder.CreateLShr(PREV, (uint64_t)(30))
+						), P1)
+				),MTKK_P);
+		builder.CreateCondBr(builder.CreateICmpEQ(P1, getInt32(N-1)), END_LOOP, LOOP1);
+		builder.SetInsertPoint(END_LOOP);
+		builder.CreateStore(getInt32(N), IDX_P);
+		builder.CreateRetVoid();
+		this->FinalizeFunctionD(F);
+		if(PARENT) builder.SetInsertPoint(PARENT);
 	}
 	return builder.CreateCall3(F, REAL_MT, REAL_IDX_P,REAL_S);
 }
@@ -250,7 +251,7 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 	#undef M
 	#undef N
 	}
-	builder.SetInsertPoint(PARENT);
+	if(PARENT) builder.SetInsertPoint(PARENT);
 	return builder.CreateCall2(F,REAL_MT,REAL_IDX_P);
 }
 /*

@@ -69,7 +69,9 @@ public:
 		if(toCast->classType!=CLASS_COMPLEX) id.error("Cannot cast "+getName()+" type to "+toCast->getName());
 		//if(toCast==this || innerClass->noopCast(((ComplexClass*)toCast)->innerClass)) return valueToCast;
 		//if(!innerClass->hasCast(((ComplexClass*)toCast)->innerClass)) id.error()
-		return innerClass->castTo(((ComplexClass*)toCast)->innerClass, r, id, valueToCast);
+		auto V = innerClass->castTo(((ComplexClass*)toCast)->innerClass, r, id, valueToCast);
+		assert(V->getType()==toCast->type);
+		return V;
 	}
 	static inline ComplexClass* get(const RealClass* inner) {
 		static std::map<const RealClass*, ComplexClass*> cache;
