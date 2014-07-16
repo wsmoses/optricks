@@ -39,18 +39,27 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
-						//TODO have int32 / int64 / etc
-						r.printf("%d", args[0]->evalV(r, id));
+						String fmt;
+						if(len==8) fmt="%" PRId8;
+						else if(len==16) fmt="%" PRId16;
+						else if(len==32) fmt="%" PRId32;
+						else {assert(len==64); fmt="%" PRId64;}
+						r.printf(fmt, args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						//TODO have int32 / int64 / etc
-						r.printf("%d\n", args[0]->evalV(r, id));
+						String fmt;
+						if(len==8) fmt="%" PRId8 "\n";
+						else if(len==16) fmt="%" PRId16 "\n";
+						else if(len==32) fmt="%" PRId32 "\n";
+						else {assert(len==64); fmt="%" PRId64 "\n";}
+						r.printf(fmt, args[0]->evalV(r, id));
 						return &VOID_DATA;
 					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"abs2")->add(
