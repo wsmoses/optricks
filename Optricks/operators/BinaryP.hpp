@@ -437,7 +437,7 @@ inline const AbstractClass* getBinopReturnType(PositionID filePos, const Abstrac
 			return &boolClass;
 		}
 		const UserClass* uc = (const UserClass*)cc;
-		return uc->getLocalFunction(filePos, ":"+operation, NO_TEMPLATE, std::vector<const AbstractClass*>({cc, dd}))->getSingleProto()->returnType;
+		return uc->getLocalFunctionReturnType(filePos, ":"+operation, NO_TEMPLATE, std::vector<const AbstractClass*>({cc, dd}));
 	}
 	}
 }
@@ -1813,7 +1813,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			}
 		}
 		const UserClass* uc = (const UserClass*)cc;
-		return uc->getLocalFunction(filePos, ":"+operation, NO_TEMPLATE, {ev})->callFunction(r, filePos, {ev},value);
+		return uc->callLocalFunction(r, filePos, ":"+operation, NO_TEMPLATE, {ev}, value);
 	}
 	}
 }

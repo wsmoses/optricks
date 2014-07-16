@@ -473,6 +473,8 @@ int main(int argc, char** argv){
 	}
 
 	Lexer lexer(NULL,interactive?'\n':EOF);
+
+	std::vector<const AbstractClass*> V = {&intClass};
 	//initializeBaseFunctions(rdata);
 	//initFuncsMeta(rdata);
 	std::vector<String> files =

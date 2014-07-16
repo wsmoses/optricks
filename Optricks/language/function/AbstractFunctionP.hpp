@@ -530,16 +530,7 @@ int SingleFunction::compareValue(const AbstractClass* const a, const AbstractCla
 }
 
 const ConstantData* AbstractFunction::castTo(RData& r, const AbstractClass* const right, PositionID id) const{
-	switch(right->classType){
-	case CLASS_FUNC:
-		id.error("Function classes have not been implemented...");
-		exit(1);
-	case CLASS_CPOINTER:
-		return new ConstantData(r.pointerCast(getValue(r, id),C_POINTERTYPE), right);
-	default:
-		id.error("Cannot cast function to non-function class "+right->getName());
-		exit(1);
-	}
+	return new ConstantData(castToV(r, right, id), right);
 }
 
 llvm::Value* SingleFunction::castToV(RData& r, const AbstractClass* const right, PositionID id) const{
@@ -677,6 +668,10 @@ bool OverloadedFunction::hasCastValue(const AbstractClass* const a) const {
 	else return false;
 }
 
+const Data* OverloadedFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
+	auto gbf=getBestFit(id,args, instance!=nullptr);
+	return gbf->callFunction(r,id,args, instance);
+}
 SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const{
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
@@ -791,8 +786,11 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 
 SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::vector<const Evaluatable*>& args,bool isClassMethod) const{
 	//force type construction / templated function generation
-	//TODO why is below important again?
-	//for(const auto& a: args) if(a) a->getReturnType();
+	//TODO why is below important again? -- to force println/etc to be registered
+	if(this->myName=="print" || this->myName=="println")
+		for(const auto& a: args) if(a){
+			a->getReturnType();
+		}
 	if(isGeneric!=nullptr){
 		for(auto& a: innerFuncs){
 			bool perfect=true;

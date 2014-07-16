@@ -269,6 +269,7 @@ template<typename... Args> String toStr(Args... args){
 const auto C_POINTERTYPE = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8),0);
 const auto C_SIZETTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(size_t));
 const auto C_INTTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(int));
+const auto C_LONGTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(long));
 const auto INT32TYPE = llvm::IntegerType::get(llvm::getGlobalContext(),32);
 const auto VOIDTYPE = llvm::Type::getVoidTy(llvm::getGlobalContext());
 const auto BOOLTYPE = llvm::IntegerType::get(llvm::getGlobalContext(),1);

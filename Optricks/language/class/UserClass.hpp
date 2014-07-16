@@ -18,21 +18,24 @@ private:
 	std::map<String,unsigned int> localMap;
 	std::map<String,UnaryFunction> preop;
 	std::map<String,UnaryFunction> postop;
+	llvm::GlobalVariable* vtable;
 public:
 	mutable OverloadedFunction constructors;
 private:
 	unsigned int start;
 	bool final;
+protected:
+	std::vector<UserClass*> children;
 public:
 	friend AbstractClass;
 	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false,llvm::Type* T=nullptr);
-	inline OverloadedFunction* addLocalFunction(const String s, void* generic=nullptr){
+	inline void addLocalFunction(const String s, PositionID id, SingleFunction* F, bool forceOverride/*=false*/, void* generic=nullptr){
 		auto find = localFunctions.find(s);
-		if(find==localFunctions.end()){
-			return localFunctions.insert(
-					std::pair<String,OverloadedFunction*>(s,new OverloadedFunction(s, generic))).first->second;
-		}
-		return find->second;
+		auto container = (find==localFunctions.end())?localFunctions.insert(
+					std::pair<String,OverloadedFunction*>(s,new OverloadedFunction(s, generic))).first->second:
+				find->second;
+		//TODO VALIDATE USE OF METHOD
+		container->add(F, id);
 	}
 	inline const UnaryFunction& getPostop(PositionID id, String s) const{
 		auto tmp = this;
@@ -54,6 +57,153 @@ public:
 		id.error("Could not find unary pre-operator '"+s+"' in class '"+getName()+"'");
 		exit(1);
 	}
+	inline const Data* callLocalFunction(RData& r, PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v, const Data* instance) const{
+		assert(instance);
+		if(layout!=POINTER_LAYOUT){
+			auto tmp = this;
+			do{
+				auto find = tmp->localFunctions.find(s);
+				if(find!=tmp->localFunctions.end()) {
+					if(!t_args.inUse)
+						return find->second->getBestFit(id,v, true)->callFunction(r, id, v, instance);
+					else
+						return find->second->getBestFit(id, t_args.eval(getRData(), id), true)->callFunction(r, id, v, instance);
+				}
+				tmp = (const UserClass*)(tmp->superClass);
+			}while(tmp);
+			id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+			exit(1);
+		} else {
+			SingleFunction* SF=nullptr;{
+			auto tmp = this;
+			do{
+				auto find = tmp->localFunctions.find(s);
+				if(find!=tmp->localFunctions.end()) {
+					if(!t_args.inUse)
+						SF = find->second->getBestFit(id, v, true);
+					else
+						SF = find->second->getBestFit(id, t_args.eval(getRData(), id), true);
+					break;
+				}
+				tmp = (const UserClass*)(tmp->superClass);
+			}while(tmp);}
+			if(SF==nullptr){
+				id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+				exit(1);
+			}
+			unsigned countClasses = 1;
+			unsigned countFunctions = 1;
+			std::stack<UserClass*> Q;
+			for(const auto& a : children){
+				Q.push(a);
+			}
+			while(Q.size()!=0){
+				auto P = Q.top();
+				Q.pop();
+				auto find = P->localFunctions.find(s);
+				countClasses++;
+				if(find!=P->localFunctions.end()){
+					//TODO check to see if was just name?
+					countFunctions++;
+				}
+				for(const auto& a : P->children){
+					Q.push(a);
+				}
+			}
+			if(countFunctions==1){
+				return SF->callFunction(r, id, v, instance);
+			} else {
+				//TODO consider evaluating args here?
+				auto ENTRY = r.builder.GetInsertBlock();
+				auto F = ENTRY->getParent();
+				auto DEF = r.CreateBlock("_def", ENTRY);
+				auto IV = instance->getValue(r, id);
+				auto SWITCH = r.builder.CreateSwitch(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(IV, 0, 1)), DEF, countClasses-1);
+
+				auto retType = SF->getSingleProto()->returnType;
+				bool isVoid = retType->classType==CLASS_VOID;
+
+				auto DEST = r.CreateBlockD("_dest",F);
+				r.builder.SetInsertPoint(DEST);
+				llvm::PHINode* PHI;
+				if(!isVoid) PHI = r.builder.CreatePHI(retType->type, countFunctions);
+
+				r.builder.SetInsertPoint(DEF);
+				auto dat = SF->callFunction(r, id, v, instance);
+				if(!isVoid)
+					PHI->addIncoming(dat->castToV(r, retType, id), r.builder.GetInsertBlock());
+				r.builder.CreateBr(DEST);
+
+				std::stack<std::tuple<UserClass* /* One to do */,const UserClass* /*To cast to*/,llvm::BasicBlock* /* To land*/> > Q;
+				for(const auto& a : children){
+					Q.push(std::tuple<UserClass* /* One to do */,const UserClass* /*To cast to*/,llvm::BasicBlock* /* To land*/>(a, this, DEF));
+				}
+
+				while(Q.size()!=0){
+					auto M = Q.top();
+					auto P = std::get<0>(M);
+					Q.pop();
+					const UserClass* TOCAST;
+					llvm::BasicBlock* TOBREAK;
+					auto find = P->localFunctions.find(s);
+					if(find!=P->localFunctions.end()){
+						TOCAST = P;
+						TOBREAK = r.CreateBlockD("_dest",F);
+						r.builder.SetInsertPoint(TOBREAK);
+						if(!t_args.inUse)
+							SF = find->second->getBestFit(id, v, true);
+						else
+							SF = find->second->getBestFit(id, t_args.eval(getRData(), id), true);
+						auto dat = SF->callFunction(r, id, v, instance);
+						if(!isVoid)
+							PHI->addIncoming(dat->castToV(r, retType, id), r.builder.GetInsertBlock());
+						r.builder.CreateBr(DEST);
+					} else {
+						TOCAST = std::get<1>(M);
+						TOBREAK = std::get<2>(M);
+					}
+					SWITCH->addCase(TOCAST->getValue(r, id),TOBREAK);
+					for(const auto& a : P->children){
+						Q.push(std::tuple<UserClass* /* One to do */,const UserClass* /*To cast to*/,llvm::BasicBlock* /* To land*/>(a, this, DEF));
+					}
+				}
+				r.builder.SetInsertPoint(DEST);
+				if(isVoid) return &VOID_DATA;
+				else return new ConstantData(PHI, retType);
+			}
+		}
+	}
+	inline const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const T_ARGS& t_args, const std::vector<const AbstractClass*>& v) const{
+		auto tmp = this;
+		do{
+			auto find = tmp->localFunctions.find(s);
+			if(find!=tmp->localFunctions.end()) {
+				if(!t_args.inUse)
+					return find->second->getBestFit(id, v, true)->getSingleProto()->returnType;
+				else
+					return find->second->getBestFit(id, t_args.eval(getRData(), id), true)->getSingleProto()->returnType;
+			}
+			tmp = (const UserClass*)(tmp->superClass);
+		}while(tmp);
+		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		exit(1);
+	}
+	inline const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
+		auto tmp = this;
+		do{
+			auto find = tmp->localFunctions.find(s);
+			if(find!=tmp->localFunctions.end()) {
+				if(!t_args.inUse)
+					return find->second->getBestFit(id, v, true)->getSingleProto()->returnType;
+				else
+					return find->second->getBestFit(id, t_args.eval(getRData(), id), true)->getSingleProto()->returnType;
+			}
+			tmp = (const UserClass*)(tmp->superClass);
+		}while(tmp);
+		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
+		exit(1);
+	}
+	/*
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v) const{
 		auto tmp = this;
 		do{
@@ -71,6 +221,7 @@ public:
 		//exit(1);
 	}
 	inline SingleFunction* getLocalFunction(PositionID id, String s, const T_ARGS& t_args, const std::vector<const AbstractClass*>& v) const{
+
 		auto tmp = this;
 		do{
 			auto find = tmp->localFunctions.find(s);
@@ -84,7 +235,7 @@ public:
 		}while(tmp);
 		id.error("Could not find local method '"+s+"' in class '"+getName()+"'");
 		exit(1);
-	}
+	}*/
 
 	inline llvm::Value* generateData(RData& r, PositionID id) const;
 	inline bool hasLocalFunction(String s) const{
@@ -203,7 +354,7 @@ public:
 		return std::pair<AbstractClass*,unsigned int>(this,0);
 	}*/
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return this==toCast || toCast->classType==CLASS_VOID;
+		return hasCast(toCast);
 		//todo decide if it is no-op class to
 //		return toCast->classType==CLASS_BOOL;
 	}

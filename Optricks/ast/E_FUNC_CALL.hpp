@@ -55,7 +55,8 @@ class E_FUNC_CALL : public ErrorStatement{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractClass* getReturnType() const override{
-			return toCall->getFunctionReturnType(filePos,vals,false);
+			auto FT = toCall->getFunctionReturnType(filePos,vals,false);
+			return FT;
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{}
 

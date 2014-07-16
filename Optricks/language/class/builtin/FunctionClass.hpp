@@ -33,6 +33,23 @@ public:
 private:
 	FunctionClass(const AbstractClass* const r1, const std::vector<const AbstractClass*>& args, bool var=false):
 		AbstractClass(nullptr,str(r1,args,var),nullptr,PRIMITIVE_LAYOUT,CLASS_FUNC,true,getFuncType(r1,args,var)),returnType(r1),argumentTypes(args),isVarArg(var){
+
+		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==1);
+			r.printf(this->getName()+"(0x%" PRIXPTR ")", args[0]->evalV(r, id));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#int"));
+		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
+			new BuiltinInlineFunction(
+					new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==1);
+			r.printf(this->getName()+"(0x%" PRIXPTR ")\n", args[0]->evalV(r, id));
+			return &VOID_DATA;
+		}), PositionID(0,0,"#int"));
 		//cerr << getName() << " is ";
 		//type->dump();
 		//cerr << endl << flush;
@@ -90,6 +107,9 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+		if(a==this && b==this) return 0;
+		else if(a==this) return -1;
+		else if(b==this) return 1;
 		if(a->classType==CLASS_CPOINTER)
 			return (b->classType==CLASS_CPOINTER)?(0):(1);
 		else if(b->classType==CLASS_CPOINTER)

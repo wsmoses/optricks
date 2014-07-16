@@ -129,50 +129,10 @@ void initClasses(){
 
 
 	LANG_M.addFunction(PositionID(0,0,"#class"),"rand")->add(
-		new BuiltinInlineFunction(new FunctionProto("rand",std::vector<AbstractDeclaration>(),&c_intClass),
+		new BuiltinInlineFunction(new FunctionProto("rand",std::vector<AbstractDeclaration>(),&intClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==0);
-
-		auto CU = r.getExtern("rand", &c_intClass, std::vector<const AbstractClass*>());
-		static bool seeded=false;
-		if(!seeded){
-			llvm::Function* TO_ADD = r.lmod->getFunction(":input_");
-			if(TO_ADD==nullptr) TO_ADD = r.lmod->getFunction("main");
-			assert(TO_ADD);
-			auto PARENT = r.builder.GetInsertBlock();
-			assert(PARENT);
-			auto& BB = TO_ADD->front();
-			if(BB.empty())
-				r.builder.SetInsertPoint(& BB);
-			else
-				r.builder.SetInsertPoint(& BB.front());
-			auto SRAND = r.getExtern("srand", &voidClass, {&c_intClass});
-/*
-			auto VV = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod,llvm::Intrinsic::
-#if UINT_MAX == UINT16_MAX
-					x86_rdseed_16
-#elif UINT_MAX == UINT32_MAX
-					x86_rdseed_32
-#elif UINT_MAX == UINT64_MAX
-					x86_rdseed_64
-#endif
-			,llvm::SmallVector<llvm::Type*,0>()));
-			assert(VV);
-			auto C = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)0));
-
-			r.printf("rdseed %u of %u\n", C, r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)1)));
-			r.builder.GetInsertBlock()->dump();
-			fflush(0);
-*/
-			auto CL = convertClass(time_t,&LANG_M);
-			auto CLOCK = r.getExtern("time", CL, {ReferenceClass::get(CL)});
-			auto C = r.builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(CL->type)));
-
-			r.builder.CreateCall(SRAND, r.builder.CreateZExtOrTrunc(C, C_INTTYPE));
-			r.builder.CreateCall(CU);
-			r.builder.SetInsertPoint(PARENT);
-		}
-		return new ConstantData(r.builder.CreateCall(CU), &c_intClass);
+		return new ConstantData(r.rand(), &intClass);
 	}), PositionID(0,0,"#int"));
 
 	add_import_c_const(&(NS_LANG_C.staticVariables), RAND_MAX);
@@ -181,7 +141,7 @@ void initClasses(){
 	Stream->addLocalVariable(PositionID("#stream",0,0),"descriptor",&c_intClass);
 	Stream->finalize(PositionID("#stream",0,0));
 	LANG_M.addClass(PositionID("#stream",0,0),Stream);
-	Stream->addLocalFunction("printf")->add(new BuiltinInlineFunction(new FunctionProto("printf",{AbstractDeclaration(Stream),AbstractDeclaration(&stringLiteralClass)},&intClass),
+	Stream->addLocalFunction("printf", PositionID("#stream",0,0),new BuiltinInlineFunction(new FunctionProto("printf",{AbstractDeclaration(Stream),AbstractDeclaration(&stringLiteralClass)},&intClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()>=1);
 		//TODO custom formatting for printf (and checks for literals / correct format / etc)
@@ -195,7 +155,7 @@ void initClasses(){
 			assert(m_args[i+1]);
 		}
 		return new ConstantData(r.builder.CreateSExtOrTrunc(r.dprintf<2>(m_args), INT32TYPE), &intClass);
-	}), PositionID("#stream",0,0));
+	}), false);
 
 	//add_import_c_function(&LANG_M, qsort);
 	//add_import_cpp_function(&LANG_M, std::terminate);
@@ -326,46 +286,53 @@ void initClasses(){
 		AF->addLocalFunction("isFloat")->add(new BuiltinInlineFunction(new FunctionProto("isFloat",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isBigEndian")->add(new BuiltinInlineFunction(new FunctionProto("isBigEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isSigned")->add(new BuiltinInlineFunction(new FunctionProto("isSigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isInt")->add(new BuiltinInlineFunction(new FunctionProto("isInt",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isLittleEndian")->add(new BuiltinInlineFunction(new FunctionProto("isLittleEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("isUnsigned")->add(new BuiltinInlineFunction(new FunctionProto("isUnsigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE)),&boolClass);
 		}), PositionID("#sdl",0,0));
 		AF->addLocalFunction("bitSize")->add(new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
-			llvm::Value* V = AF->getValue(r, id);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
 		}), PositionID("#sdl",0,0));
-#define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(getRData().builder.CreateInsertValue(llvm::UndefValue::get(AF->type), llvm::ConstantInt::get(shortClass.type,A,false), 0),AF));
+#define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(AF->type,A,false),AF));
 		SDL_A(AUDIO_S8, S8);
 		SDL_A(AUDIO_U8, U8);
 		SDL_A(AUDIO_S16LSB, S16LSB);
@@ -690,7 +657,7 @@ void initClasses(){
 		return new ConstantData(V, TIME_CLASS);
 	}), PositionID(0,0,"#int"));
 
-		TIME_CLASS->addLocalFunction(":<")->add(
+		TIME_CLASS->addLocalFunction(":<", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":<",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -698,8 +665,8 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpULT(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
-		TIME_CLASS->addLocalFunction(":<=")->add(
+			}),false);
+		TIME_CLASS->addLocalFunction(":<=", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":<=",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -707,8 +674,8 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpULE(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
-		TIME_CLASS->addLocalFunction(":>")->add(
+			}), false);
+		TIME_CLASS->addLocalFunction(":>", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":>",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -716,8 +683,8 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpUGT(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
-		TIME_CLASS->addLocalFunction(":>=")->add(
+			}), false);
+		TIME_CLASS->addLocalFunction(":>=", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":>",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -725,8 +692,8 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpUGE(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
-		TIME_CLASS->addLocalFunction(":==")->add(
+			}), false);
+		TIME_CLASS->addLocalFunction(":==", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":==",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -734,9 +701,9 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpEQ(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
+			}), false);
 
-		TIME_CLASS->addLocalFunction(":!=")->add(
+		TIME_CLASS->addLocalFunction(":!=", PositionID("#time",0,0),
 				new BuiltinInlineFunction(
 						new FunctionProto(":!=",{AbstractDeclaration(TIME_CLASS),AbstractDeclaration(TIME_CLASS)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
@@ -744,16 +711,16 @@ void initClasses(){
 				auto V1 = instance->evalV(r, id);
 				auto V2 = args[0]->evalV(r, id);
 				return new ConstantData(r.builder.CreateICmpNE(V1, V2), &boolClass);
-			}), PositionID(0,0,"#time"));
+			}), false);
 
-		TIME_CLASS->addLocalFunction("hash")->add(
+		TIME_CLASS->addLocalFunction("hash", PositionID("#time",0,0),
 			new BuiltinInlineFunction(
 					new FunctionProto("hash",{AbstractDeclaration(TIME_CLASS)},&intClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			auto V1 = instance->evalV(r, id);
 			return new ConstantData(r.builder.CreateZExtOrTrunc(V1,INT32TYPE), &intClass);
-		}), PositionID(0,0,"#time"));
+		}), false);
 		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
 				new BuiltinInlineFunction(
 						new FunctionProto("print",{AbstractDeclaration(TIME_CLASS)},&voidClass),
@@ -790,7 +757,7 @@ void initClasses(){
 		auto FileStat = new UserClass(&LANG_M,"FileStat",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::ArrayType::get(CHARTYPE, sizeof(struct stat)));
 		LANG_M.addClass(PositionID("#dir",0,0),FileStat);
 #define DATA(name, stat_var, returnType)\
-		FileStat->addLocalFunction(#name)->add(new BuiltinInlineFunction(new FunctionProto(#name,{AbstractDeclaration(FileStat)},returnType),\
+		FileStat->addLocalFunction(#name, PositionID("#time",0,0),new BuiltinInlineFunction(new FunctionProto(#name,{AbstractDeclaration(FileStat)},returnType),\
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
 					assert(args.size()==0);\
 					assert(instance->type==R_LOC || instance->type==R_CONST);\
@@ -799,7 +766,7 @@ void initClasses(){
 					auto P2 = r.builder.CreateConstGEP1_64(r.builder.CreatePointerCast(P, C_POINTERTYPE), (size_t)((size_t)(&(stat_tmp.stat_var))-(size_t)(&(stat_tmp))));\
 					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.stat_var))));\
 					return new ConstantData(r.builder.CreateZExtOrTrunc(r.builder.CreateLoad(D), (returnType)->type),returnType);\
-				}), PositionID("#dir",0,0));
+				}), false);
 		DATA(getDev, st_dev, &intClass);
 		DATA(getMode, st_mode, &intClass);
 		DATA(getNLink, st_nlink, &intClass);
@@ -811,7 +778,7 @@ void initClasses(){
 		DATA(getStatusTime, st_ctime, TIME_CLASS);
 #undef DATA
 
-		FileStat->addLocalFunction("isFile")->add(new BuiltinInlineFunction(new FunctionProto("isFile",{AbstractDeclaration(FileStat)},&boolClass),
+		FileStat->addLocalFunction("isFile", PositionID("#dir",0,0),new BuiltinInlineFunction(new FunctionProto("isFile",{AbstractDeclaration(FileStat)},&boolClass),
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==0);
 					assert(instance->type==R_LOC || instance->type==R_CONST);
@@ -821,8 +788,8 @@ void initClasses(){
 					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
 					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
 					return new ConstantData(r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFREG,false)),&boolClass);
-				}), PositionID("#dir",0,0));
-		FileStat->addLocalFunction("isDirectory")->add(new BuiltinInlineFunction(new FunctionProto("isDirectory",{AbstractDeclaration(FileStat)},&boolClass),
+				}), false);
+		FileStat->addLocalFunction("isDirectory", PositionID("#dir",0,0), new BuiltinInlineFunction(new FunctionProto("isDirectory",{AbstractDeclaration(FileStat)},&boolClass),
 						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==0);
 					assert(instance->type==R_LOC || instance->type==R_CONST);
@@ -832,7 +799,7 @@ void initClasses(){
 					auto TT = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(stat_tmp.st_mode));
 					auto D = r.builder.CreatePointerCast(P2, llvm::PointerType::getUnqual(TT));
 					return new ConstantData(r.builder.CreateICmpEQ(r.builder.CreateAnd(r.builder.CreateLoad(D), llvm::ConstantInt::get(TT, S_IFMT,false)), llvm::ConstantInt::get(TT, S_IFDIR,false)),&boolClass);
-				}), PositionID("#dir",0,0));
+				}), false);
 	}
 }
 

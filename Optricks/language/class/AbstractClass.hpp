@@ -77,7 +77,7 @@ public:
 	const Token getToken() const override{ return T_ABSTRACTCLASS; };
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	const AbstractClass* getReturnType() const override;
-	inline llvm::Constant* getValue(RData& r, PositionID id) const override final{
+	inline llvm::ConstantInt* getValue(RData& r, PositionID id) const override final{
 		return llvm::ConstantInt::get(CLASSTYPE, (uint64_t)this, false);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{

@@ -70,9 +70,7 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 	switch(cc->classType){
 	case CLASS_USER:{
 		auto uc = (const UserClass*)cc;
-		auto lf = uc->getLocalFunction(id, s, t_args, v);
-		if(lf==nullptr) return &voidClass;
-		return lf->getSingleProto()->returnType;
+		return uc->getLocalFunctionReturnType(id, s, t_args, v);
 	}
 	case CLASS_HASHMAP:{
 		if(s=="isEmpty" && v.size()==0)
@@ -168,9 +166,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			return new ConstantData(r.builder.CreatePtrToInt(inst->getValue(r, id), intClass.type),&intClass);
 		case CLASS_USER:{
 			auto uc = (const UserClass*)cc;
-			auto lf = uc->getLocalFunction(id, s, t_args, v);
-			if(lf==nullptr) return &VOID_DATA;
-			return lf->callFunction(r,id, v, inst);
+			return uc->callLocalFunction(r, id, s, t_args, v, inst);
 		}
 		default: break;
 		}
@@ -178,9 +174,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 	switch(cc->classType){
 		case CLASS_USER:{
 			auto uc = (const UserClass*)cc;
-			auto lf = uc->getLocalFunction(id, s, t_args, v);
-			if(lf==nullptr) return &VOID_DATA;
-			return lf->callFunction(r,id, v, inst);
+			return uc->callLocalFunction(r, id, s, t_args, v,inst);
 		}
 		case CLASS_HASHMAP:{
 			//auto hm = (const HashMapClass*)cc;

@@ -11,9 +11,248 @@
 #include "RData.hpp"
 #include "./class/AbstractClass.hpp"
 #include "./class/builtin/IntClass.hpp"
+#include "./class/builtin/VoidClass.hpp"
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
+
+#define N 624
+#define M 397
+llvm::Value* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+	static llvm::Function* F=nullptr;
+	auto PARENT = builder.GetInsertBlock();
+	if(REAL_MT==nullptr){
+		if(GLOBAL_MT==nullptr){
+			GLOBAL_IDX_P = new llvm::GlobalVariable(*lmod,INT32TYPE,false,llvm::GlobalValue::PrivateLinkage,
+					llvm::ConstantInt::get(INT32TYPE,N,false));
+
+			GLOBAL_MT = new llvm::GlobalVariable(*lmod,llvm::ArrayType::get(INT32TYPE,N),false,llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(llvm::ArrayType::get(INT32TYPE,N)));
+		}
+		REAL_MT = builder.CreatePointerCast(GLOBAL_MT, llvm::PointerType::getUnqual(INT32TYPE));
+		REAL_IDX_P = GLOBAL_IDX_P;
+	}
+	if(F==nullptr){
+			llvm::SmallVector<llvm::Type*,3> rand_args(3);
+			rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
+			rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
+			rand_args[2] = INT32TYPE;
+			F = CreateFunctionD("_seed32", llvm::FunctionType::get(VOIDTYPE, rand_args, false), LOCAL_FUNC);
+			llvm::BasicBlock* ENTRY = CreateBlockD("entry", F);
+			builder.SetInsertPoint(ENTRY);
+			llvm::Value* MT, * IDX_P, *S;
+			{
+				llvm::Function::arg_iterator AI = F->arg_begin();
+				AI->setName("mt");
+				MT = AI;
+				++AI;
+				AI->setName("idx_p");
+				IDX_P = AI;
+				++AI;
+				AI->setName("seed");
+				S = AI;
+			}
+
+			builder.CreateStore(S, MT);
+			llvm::BasicBlock* LOOP1 = CreateBlockD("LOOP", F);
+			builder.CreateBr(LOOP1);
+			builder.SetInsertPoint(LOOP1);
+
+			llvm::BasicBlock* END_LOOP = CreateBlockD("end_loop", F);
+
+			auto MT1 = builder.CreatePHI(INT32TYPE,2);
+			MT1->addIncoming(getInt32(0),ENTRY);
+			auto P1 = builder.CreateAdd(MT1,getInt32(1));
+			MT1->addIncoming(P1, LOOP1);
+
+			auto MTKK_P = builder.CreateGEP(MT,P1);
+
+			auto PREV = builder.CreateLoad(builder.CreateGEP(MT, MT1));
+			builder.CreateStore(
+					builder.CreateMul(llvm::ConstantInt::get(INT32TYPE,1812433253UL,false),
+							builder.CreateAdd(builder.CreateXor(PREV,
+									builder.CreateLShr(PREV, (uint64_t)(30))
+							), P1)
+					),MTKK_P);
+			builder.CreateCondBr(builder.CreateICmpEQ(P1, getInt32(N-1)), END_LOOP, LOOP1);
+			builder.SetInsertPoint(END_LOOP);
+			builder.CreateStore(getInt32(N), IDX_P);
+			builder.CreateRetVoid();
+			this->FinalizeFunctionD(F);
+	}
+	return builder.CreateCall3(F, REAL_MT, REAL_IDX_P,REAL_S);
+}
+
+llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+	static llvm::Function* F=nullptr;
+	auto PARENT = builder.GetInsertBlock();
+
+	if(REAL_MT==nullptr) {
+		static bool seeded = false;
+		if(!seeded) {
+			seeded = true;
+		llvm::Function* TO_ADD = lmod->getFunction(":input_");
+		if(TO_ADD==nullptr) TO_ADD = lmod->getFunction("main");
+		assert(TO_ADD);
+		assert(PARENT);
+		auto& BB = TO_ADD->front();
+		if(BB.empty())
+			builder.SetInsertPoint(& BB);
+		else
+			builder.SetInsertPoint(& BB.front());
+		/*
+		llvm::SmallVector<llvm::Type*,0> args(0);
+
+		F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE, args, false), llvm::Function::ExternalLinkage,
+				"rand", lmod);
+		assert(F->getName()=="rand");
+
+
+
+		llvm::SmallVector<llvm::Type*,1> s_args(1);
+		s_args[0] = C_INTTYPE;
+
+		auto SRAND = getExtern("srand", llvm::FunctionType::get(VOIDTYPE, s_args, false));
+		*/
+/*
+		auto VV = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod,llvm::Intrinsic::
+#if UINT_MAX == UINT16_MAX
+				x86_rdseed_16
+#elif UINT_MAX == UINT32_MAX
+				x86_rdseed_32
+#elif UINT_MAX == UINT64_MAX
+				x86_rdseed_64
+#endif
+		,llvm::SmallVector<llvm::Type*,0>()));
+		assert(VV);
+		auto C = r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)0));
+
+		r.printf("rdseed %u of %u\n", C, r.builder.CreateExtractValue(VV, llvm::SmallVector<unsigned int, 1>(1, (unsigned int)1)));
+		r.builder.GetInsertBlock()->dump();
+		fflush(0);
+*/
+
+
+		auto TIME_T = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(time_t));
+
+		llvm::SmallVector<llvm::Type*,1> t_args(1);
+		auto tmp = llvm::PointerType::getUnqual(TIME_T);
+		t_args[0] = llvm::PointerType::getUnqual(TIME_T);
+
+		llvm::Value* CLOCK = getExtern("time", llvm::FunctionType::get(TIME_T, t_args, false));
+		llvm::Value* C = builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(tmp));
+		this->seed(builder.CreateZExtOrTrunc(C,INT32TYPE));
+		}
+		assert(GLOBAL_MT);
+		assert(GLOBAL_IDX_P);
+		assert(REAL_IDX_P==nullptr);
+		REAL_MT = builder.CreatePointerCast(GLOBAL_MT, llvm::PointerType::getUnqual(INT32TYPE));
+		REAL_IDX_P = GLOBAL_IDX_P;
+		/*
+		builder.CreateCall(SRAND, builder.CreateZExtOrTrunc(C, C_INTTYPE));
+		builder.CreateCall(F);*/
+	}
+	if(F==nullptr){
+		llvm::Value* MATRIX_A   = llvm::ConstantInt::get(INT32TYPE,0x9908b0dfUL,false);   /* constant vector a */
+		llvm::Value* UPPER_MASK = llvm::ConstantInt::get(INT32TYPE,0x80000000UL,false); /* most significant w-r bits */
+		llvm::Value* LOWER_MASK = llvm::ConstantInt::get(INT32TYPE,0x7fffffffUL,false); /* least significant r bits */
+
+		llvm::SmallVector<llvm::Type*,2> rand_args(2);
+		rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
+		rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
+		F = CreateFunctionD("_rand32", llvm::FunctionType::get(INT32TYPE, rand_args, false), LOCAL_FUNC);
+		llvm::BasicBlock* BB = CreateBlockD("entry", F);
+		builder.SetInsertPoint(BB);
+		assert(REAL_MT);
+		assert(REAL_MT->getType()->isPointerTy());
+		assert(((llvm::PointerType*)REAL_MT->getType())->getPointerElementType()->isIntegerTy(32));
+
+		llvm::BasicBlock* LOOP1= CreateBlockD("loop1", F);
+		llvm::BasicBlock* GEN_NUM = CreateBlockD("gen_num", F);
+		llvm::Value* MT, * IDX_P;
+		{
+			llvm::Function::arg_iterator AI = F->arg_begin();
+			AI->setName("mt");
+			MT = AI;
+			++AI;
+			AI->setName("idx_p");
+			IDX_P = AI;
+		}
+		llvm::Value* IDX = builder.CreateLoad(IDX_P);
+		builder.CreateCondBr(builder.CreateICmpUGE(IDX, llvm::ConstantInt::get(IDX->getType(), N)), LOOP1, GEN_NUM);
+		builder.SetInsertPoint(LOOP1);
+
+		auto KK = builder.CreatePHI(INT32TYPE,2);
+		auto LONG_ZERO  = llvm::ConstantInt::get(INT32TYPE,0,false);
+		auto LONG_ONE  = llvm::ConstantInt::get(INT32TYPE,1,false);
+		KK->addIncoming(LONG_ZERO,BB);
+		auto KKP1 = builder.CreateAdd(KK,LONG_ONE);
+		auto MTKK_P = builder.CreateGEP(MT,KK);
+		llvm::Value* Y = builder.CreateOr(
+				builder.CreateAnd(builder.CreateLoad(MTKK_P),UPPER_MASK),
+				builder.CreateAnd(builder.CreateLoad(builder.CreateGEP(MT,KKP1)),LOWER_MASK));
+		builder.CreateStore(builder.CreateXor(builder.CreateXor(builder.CreateLoad(
+				builder.CreateGEP(MT,
+						builder.CreateAdd(KK,llvm::ConstantInt::get(INT32TYPE,M,false))
+				)),builder.CreateLShr(Y,(uint64_t)1)),
+				builder.CreateSelect(builder.CreateTrunc(Y, BOOLTYPE),MATRIX_A,LONG_ZERO)),MTKK_P);
+		KK->addIncoming(KKP1, LOOP1);
+		llvm::BasicBlock* LOOP2= CreateBlockD("loop2", F);
+
+		auto N_MINUS_M = llvm::ConstantInt::get(INT32TYPE,N-M,false);
+		builder.CreateCondBr(builder.CreateICmpEQ(KKP1, N_MINUS_M), LOOP2, LOOP1);
+		builder.SetInsertPoint(LOOP2);
+		KK = builder.CreatePHI(INT32TYPE,2);
+		KK->addIncoming(N_MINUS_M,LOOP1);
+
+		KKP1 = builder.CreateAdd(KK,LONG_ONE);
+		KK->addIncoming(KKP1, LOOP2);
+		MTKK_P = builder.CreateGEP(MT,KK);
+		Y = builder.CreateOr(
+				builder.CreateAnd(builder.CreateLoad(MTKK_P),UPPER_MASK),
+				builder.CreateAnd(builder.CreateLoad(builder.CreateGEP(MT,KKP1)),LOWER_MASK));
+
+		builder.CreateStore(builder.CreateXor(builder.CreateXor(builder.CreateLoad(
+				builder.CreateGEP(MT,
+						builder.CreateAdd(KK,getInt32(M-N))
+				)),builder.CreateLShr(Y,(uint64_t)1)),
+				builder.CreateSelect(builder.CreateTrunc(Y, BOOLTYPE),MATRIX_A,LONG_ZERO)),MTKK_P);
+
+		llvm::BasicBlock* END_LOOP= CreateBlockD("endLoop", F);
+		auto N_MINUS_1 = llvm::ConstantInt::get(INT32TYPE,N-1,false);
+		builder.CreateCondBr(builder.CreateICmpEQ(KKP1, N_MINUS_1), END_LOOP, LOOP2);
+		builder.SetInsertPoint(END_LOOP);
+
+		MTKK_P = builder.CreateConstGEP1_64(MT, (uint64_t)(N-1));
+
+		Y = builder.CreateOr(
+				builder.CreateAnd(builder.CreateLoad(MTKK_P),UPPER_MASK),
+				builder.CreateAnd(builder.CreateLoad(MT),LOWER_MASK));
+
+		builder.CreateStore(builder.CreateXor(builder.CreateXor(builder.CreateLoad(
+				builder.CreateConstGEP1_64(MT,(uint64_t)(M-1))),builder.CreateLShr(Y,(uint64_t)1)),
+				builder.CreateSelect(builder.CreateTrunc(Y, BOOLTYPE),MATRIX_A,LONG_ZERO)),MTKK_P);
+		builder.CreateBr(GEN_NUM);
+		builder.SetInsertPoint(GEN_NUM);
+
+		auto IDX2 = builder.CreatePHI(INT32TYPE,2);
+		IDX2->addIncoming(LONG_ZERO, END_LOOP);
+		IDX2->addIncoming(IDX,BB);
+
+		IDX = builder.CreateAdd(IDX, LONG_ONE);
+		builder.CreateStore(IDX, IDX_P);
+		Y = builder.CreateLoad(builder.CreateGEP(MT, IDX));
+		Y = builder.CreateXor(Y, builder.CreateLShr(Y, (uint64_t)11));
+		Y = builder.CreateXor(Y, builder.CreateAnd(builder.CreateShl(Y, (uint64_t)7),llvm::ConstantInt::get(INT32TYPE, 0x9d2c5680UL, false)));
+		Y = builder.CreateXor(Y, builder.CreateAnd(builder.CreateLShr(Y, (uint64_t)15),llvm::ConstantInt::get(INT32TYPE, 0xefc60000UL, false)));
+		Y = builder.CreateXor(Y, builder.CreateLShr(Y, (uint64_t)18));
+		builder.CreateRet(Y);
+		this->FinalizeFunctionD(F);
+	#undef M
+	#undef N
+	}
+	builder.SetInsertPoint(PARENT);
+	return builder.CreateCall2(F,REAL_MT,REAL_IDX_P);
+}
 /*
 bool RData::conditionalError(llvm::Value* V, String s, PositionID id){
 	assert(V);

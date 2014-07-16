@@ -51,17 +51,6 @@ public:
 				return getLocalFunctionReturnType(filePos, right, left->getReturnType(), t_args, args);
 			}
 		}
-		auto type=getReturnType();
-		if(type->classType==CLASS_FUNC){
-			return ((FunctionClass*)type)->returnType;
-		}  else if(type->classType==CLASS_LAZY){
-			return ((LazyClass*)type)->innerType;
-		} else if(type->classType==CLASS_CLASS){
-			return type;
-		}	else {
-			id.error("Class '"+type->getName()+"' cannot be used as function");
-			exit(1);
-		}
 	}
 
 	void registerClasses() const override final{

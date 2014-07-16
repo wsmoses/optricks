@@ -130,8 +130,7 @@ public:
 			filePos.error("Cannot find references early");
 		}
 		if(global){
-			llvm::Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
-			llvm::GlobalVariable* GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
+			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
 			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
@@ -178,12 +177,11 @@ public:
 		assert(returnType->type);
 		assert(!tmp || tmp->getType()==returnType->type);
 		if(global){
-			llvm::Module &M = *(r.builder.GetInsertBlock()->getParent()->getParent());
 			llvm::GlobalVariable* GV;
 			if(auto cons = llvm::dyn_cast_or_null<llvm::Constant>(tmp))
-				GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,cons);
+				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,cons);
 			else{
-				GV = new llvm::GlobalVariable(M, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
+				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));

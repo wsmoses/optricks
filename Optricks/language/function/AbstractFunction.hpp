@@ -203,9 +203,7 @@ public:
 	SingleFunction* getBestFit(const PositionID id, const std::vector<const AbstractClass*>& args, bool isClassMethod) const;
 
 	//TODO ALLOW TEMPLATE ARGS
-	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		return getBestFit(id,args, instance!=nullptr)->callFunction(r,id,args, instance);
-	}
+	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 	llvm::Constant* getValue(RData& r, PositionID id) const override final{
 		if(innerFuncs.size()==1) return innerFuncs[0]->getSingleFunc();
 		else{

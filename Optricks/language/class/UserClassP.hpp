@@ -10,6 +10,7 @@
 #include "./UserClass.hpp"
 #include "./AbstractClass.hpp"
 #include "./builtin/IntClass.hpp"
+#include "./builtin/WrapperClass.hpp"
 #include "../data/ReferenceData.hpp"
 #include "../data/DeclarationData.hpp"
 UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject,llvm::Type* T)
@@ -23,7 +24,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
 				)
 				)),
-						constructors(nam, nullptr),start(0),final(false)
+						constructors(nam, nullptr),start(0),final(false),vtable(nullptr)
 		{
 			if(t==PRIMITIVEPOINTER_LAYOUT){
 				PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
@@ -34,11 +35,16 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 			}
 			if(t!=PRIMITIVE_LAYOUT) assert(T==nullptr);
 			if(T) final=true;
-			if(superClass) assert(dynamic_cast<const UserClass*>(superClass));
+			if(superClass){
+				assert(dynamic_cast<const UserClass*>(superClass));
+				((UserClass*)superClass)->children.push_back(this);
+			}
 			if(isObject){
 				localVars.push_back(&intClass);
+				localVars.push_back(&classClass);
 				final = true;
 				assert(superClass==nullptr);
+				LANG_M.addClass(PositionID("#object",0,0),this);
 			}
 		};
 
@@ -50,7 +56,10 @@ llvm::Value* UserClass::generateData(RData& r, PositionID id) const{
 		assert(llvm::dyn_cast<llvm::PointerType>(type));
 		auto tmp = ((llvm::PointerType*)type)->getArrayElementType();
 		assert(tmp);
-		return r.allocate(tmp);
+		llvm::Value* V = r.allocate(tmp);
+		auto VTABLE_P = r.builder.CreateConstGEP2_32(V, 0, 1);
+		r.builder.CreateStore(this->getValue(r, id), VTABLE_P);
+		return V;
 	}
 }
 const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Data* instance) const {

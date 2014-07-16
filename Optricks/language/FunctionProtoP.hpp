@@ -78,6 +78,8 @@ String FunctionProto::toString() const{
 			first = false;
 		} else t+=",";
 		t+=a.declarationType->getName();
+		if(a.defaultValue)
+			t+="=<value>";
 	}
 	if(varArg) t+=",...";
 	return t+")";

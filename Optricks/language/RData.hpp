@@ -165,6 +165,8 @@ struct RData{
 		llvm::Function* LLVM_ASPRINTF;
 		llvm::Function* LLVM_FPRINTF;
 		llvm::Function* LLVM_DPRINTF;
+		llvm::Value* GLOBAL_MT;
+		llvm::Value* GLOBAL_IDX_P;
 		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
@@ -186,6 +188,9 @@ struct RData{
 			LLVM_ASPRINTF = nullptr;
 			LLVM_FPRINTF = nullptr;
 			LLVM_DPRINTF = nullptr;
+
+			GLOBAL_MT = nullptr;
+			GLOBAL_IDX_P = nullptr; // not necessary
 			// Set up optimizers
 			llvm::PassManagerBuilder pmb;
 			pmb.Inliner = llvm::createFunctionInliningPass();
@@ -265,6 +270,7 @@ struct RData{
 			assert(name!="realloc");
 			assert(name!="memset");
 			assert(name!="free");
+			assert(name!="rand");
 			for(unsigned i=0; i<FT->getNumParams(); i++)
 				assert(FT->getParamType(i));
 			auto G = lmod->getOrInsertFunction(llvm::StringRef(name), FT);
@@ -521,6 +527,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			auto EXIT = this->getExtern("exit",llvm::FunctionType::get(VOIDTYPE, args, false));
 			builder.CreateCall(EXIT,V);
 		}
+		llvm::Value* seed(llvm::Value* S, llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
+		llvm::Value* rand(llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
 		/* Assumes V is not null */
 		///* Assumes if V is global string constant that it will not be modified */
 		llvm::Value* strlen(llvm::Value* V){

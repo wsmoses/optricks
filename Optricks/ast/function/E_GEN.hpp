@@ -20,8 +20,9 @@ public:
 	mutable bool built;
 	bool staticF;
 	Statement* surroundingClass;
+	const bool overrides;
 	E_GEN(PositionID id, OModule* sur, String n,bool st,Statement* sc):
-		E_FUNCTION(id,OModule(sur),n),built(false),staticF(st),surroundingClass(sc){
+		E_FUNCTION(id,OModule(sur),n),built(false),staticF(st),surroundingClass(sc),overrides(false){
 		if(!surroundingClass) assert(staticF);
 		else if(!staticF)
 			module.addVariable(filePos,"this",&VOID_DATA);
@@ -152,7 +153,7 @@ public:
 					filePos.error("Cannot create class method for built-in type");
 					exit(1);
 				}
-				((UserClass*)upperClass)->addLocalFunction(name)->add(myFunction, filePos);
+				((UserClass*)upperClass)->addLocalFunction(name, filePos, myFunction, overrides);
 			}
 		} else {
 			module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);

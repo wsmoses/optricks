@@ -1,0 +1,50 @@
+
+class Normal{
+	def Normal(){}
+	def int get(){
+		return 17;
+	}
+	def void print(){
+		println(this.get());
+	}
+}
+
+class Base{
+	def Base(){}
+	def int get(){
+		return 47;
+	}
+	def void print(){
+		println(this.get());
+	}
+}
+
+class Derived : Base {
+	def Derived(){}
+	def int get(){
+		return 56;
+	}
+	def void print(){
+		println(this.get());
+	}
+}
+
+auto N = Normal();
+println("Normal <Normal> - 17");
+println(N.get());
+N.print();
+
+auto B = Base();
+println("Base <Base> - 47");
+println(B.get());
+B.print();
+
+auto D = Derived();
+println("Derived <Derived> - 56");
+println(D.get());
+D.print();
+
+B = D;
+println("Base <Derived> - 56");
+println(B.get());
+B.print();

@@ -16,11 +16,12 @@ class ClassFunction : public E_FUNCTION{
 		const bool staticF;
 		Statement* const surroundingClass;
 		mutable bool built;
+		const bool overrides;
 		//TODO incorporate combined scope
 		ClassFunction(PositionID id, OModule* superScope,String nam,bool st, Statement* a):
 			E_FUNCTION(id, OModule(superScope),nam)
 		,staticF(st),surroundingClass(a)
-		,built(false)
+		,built(false),overrides(false)//TODO ALLOW OVERRIDES
 		{
 			if(name=="iterator"){
 				filePos.error("Name 'iterator' is reserved for generators");
@@ -92,7 +93,7 @@ class ClassFunction : public E_FUNCTION{
 					filePos.error("Cannot create class method for built-in type");
 					exit(1);
 				}
-				((UserClass*)upperClass)->addLocalFunction(name)->add(myFunction, filePos);
+				((UserClass*)upperClass)->addLocalFunction(name, filePos, myFunction, overrides);
 			}
 
 			llvm::BasicBlock* BB = a.CreateBlockD("entry", F);
