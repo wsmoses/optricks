@@ -210,7 +210,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 				return new ConstantData(r.builder.CreateZExtOrTrunc(d->getValue(r, filePos),type), this);
 			}
 		} else if(args.size()==1) d = args[0]->evaluate(r);
-		if(args.size()!=1 ) filePos.error("Could not find valid constructor in bool");
+		if(args.size()!=1 ) filePos.error("Could not find valid constructor in integer");
 		auto V = d->getReturnType();
 		const IntClass* T = (const IntClass*)this;
 		if(V->classType==CLASS_STR){
@@ -314,6 +314,15 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			if(d->hasCastValue(this))
 				return d->castTo(r, this, filePos);
 		}
+		if(args.size()==2){
+			const Data* d = args[0]->evaluate(r);
+			const Data* d2 = args[1]->evaluate(r);
+			auto V = d->getReturnType();
+			if(d2->getReturnType()->classType==CLASS_BOOL && V->classType==CLASS_INT && ((FloatClass*)this)->getWidth() == ((IntClass*)V)->getWidth()){
+				return new ConstantData(r.builder.CreateBitCast(d->getValue(r, filePos),type), this);
+			}
+		}
+
 		filePos.compilerError("Floating and complex constructors not done yet");
 		exit(1);
 	}

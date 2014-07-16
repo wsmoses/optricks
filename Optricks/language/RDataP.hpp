@@ -18,7 +18,7 @@
 
 #define N 624
 #define M 397
-llvm::Value* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 	static llvm::Function* F=nullptr;
 	if(REAL_MT==nullptr){
 		if(GLOBAL_MT==nullptr){
@@ -68,11 +68,14 @@ llvm::Value* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* 
 
 		auto PREV = builder.CreateLoad(builder.CreateGEP(MT, MT1));
 		builder.CreateStore(
+			builder.CreateAdd(
 				builder.CreateMul(llvm::ConstantInt::get(INT32TYPE,1812433253UL,false),
-						builder.CreateAdd(builder.CreateXor(PREV,
-								builder.CreateLShr(PREV, (uint64_t)(30))
-						), P1)
-				),MTKK_P);
+					builder.CreateXor(PREV,builder.CreateLShr(PREV, (uint64_t)30) )
+				),
+				P1
+			),
+			MTKK_P
+		);
 		builder.CreateCondBr(builder.CreateICmpEQ(P1, getInt32(N-1)), END_LOOP, LOOP1);
 		builder.SetInsertPoint(END_LOOP);
 		builder.CreateStore(getInt32(N), IDX_P);
@@ -140,8 +143,16 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 		t_args[0] = llvm::PointerType::getUnqual(TIME_T);
 
 		llvm::Value* CLOCK = getExtern("time", llvm::FunctionType::get(TIME_T, t_args, false));
-		llvm::Value* C = builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(tmp));
-		this->seed(builder.CreateZExtOrTrunc(C,INT32TYPE));
+		llvm::Instruction* CA = builder.CreateCall(CLOCK, llvm::ConstantPointerNull::get(tmp));
+		auto CAST = builder.CreateZExtOrTrunc(CA,INT32TYPE);
+		if(auto INST = llvm::dyn_cast<llvm::Instruction>(CAST)){
+			INST->removeFromParent();
+			INST->insertAfter(CA);
+			CA = INST;
+		}
+		auto CALL = this->seed(builder.CreateZExtOrTrunc(CA,INT32TYPE));
+		CALL->removeFromParent();
+		CALL->insertAfter(CA);
 		}
 		assert(GLOBAL_MT);
 		assert(GLOBAL_IDX_P);
@@ -239,12 +250,11 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 		IDX2->addIncoming(LONG_ZERO, END_LOOP);
 		IDX2->addIncoming(IDX,BB);
 
-		IDX = builder.CreateAdd(IDX, LONG_ONE);
-		builder.CreateStore(IDX, IDX_P);
-		Y = builder.CreateLoad(builder.CreateGEP(MT, IDX));
+		builder.CreateStore(builder.CreateAdd(IDX2,LONG_ONE), IDX_P);
+		Y = builder.CreateLoad(builder.CreateGEP(MT, IDX2));
 		Y = builder.CreateXor(Y, builder.CreateLShr(Y, (uint64_t)11));
 		Y = builder.CreateXor(Y, builder.CreateAnd(builder.CreateShl(Y, (uint64_t)7),llvm::ConstantInt::get(INT32TYPE, 0x9d2c5680UL, false)));
-		Y = builder.CreateXor(Y, builder.CreateAnd(builder.CreateLShr(Y, (uint64_t)15),llvm::ConstantInt::get(INT32TYPE, 0xefc60000UL, false)));
+		Y = builder.CreateXor(Y, builder.CreateAnd(builder.CreateShl(Y, (uint64_t)15),llvm::ConstantInt::get(INT32TYPE, 0xefc60000UL, false)));
 		Y = builder.CreateXor(Y, builder.CreateLShr(Y, (uint64_t)18));
 		builder.CreateRet(Y);
 		this->FinalizeFunctionD(F);

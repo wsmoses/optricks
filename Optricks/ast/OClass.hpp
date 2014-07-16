@@ -121,12 +121,17 @@ void initClasses(){
 
 	add_import_c_const(&(NS_LANG_C.staticVariables), CLOCKS_PER_SEC);
 
-	//add_import_c_function(&LANG_M, rand);
-
 	NS_LANG_C.staticVariables.addFunction(PositionID(0,0,"#init"),"srand")->add(
 			new ExternalFunction(new FunctionProto("srand", {AbstractDeclaration(&c_intClass)}, &voidClass)),
 	PositionID(0,0,"#init"));
 
+	LANG_M.addFunction(PositionID(0,0,"#class"),"seed")->add(
+		new BuiltinInlineFunction(new FunctionProto("seed",{AbstractDeclaration(&intClass)},&voidClass),
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==1);
+		r.seed(args[0]->evalV(r,id));
+		return &VOID_DATA;
+	}), PositionID(0,0,"#int"));
 
 	LANG_M.addFunction(PositionID(0,0,"#class"),"rand")->add(
 		new BuiltinInlineFunction(new FunctionProto("rand",std::vector<AbstractDeclaration>(),&intClass),

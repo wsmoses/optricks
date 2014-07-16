@@ -527,7 +527,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			auto EXIT = this->getExtern("exit",llvm::FunctionType::get(VOIDTYPE, args, false));
 			builder.CreateCall(EXIT,V);
 		}
-		llvm::Value* seed(llvm::Value* S, llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
+		llvm::CallInst* seed(llvm::Value* S, llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
 		llvm::Value* rand(llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
 		/* Assumes V is not null */
 		///* Assumes if V is global string constant that it will not be modified */
