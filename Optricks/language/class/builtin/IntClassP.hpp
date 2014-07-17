@@ -28,7 +28,26 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 				assert(args.size()==1);
 				return new ConstantData(r.builder.CreateSExtOrTrunc(args[0]->evalV(r, id), CHARTYPE),&charClass);}), PositionID(0,0,"#float")
 			);
+#define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#int"), X)->add(new IntrinsicFunction<llvm::Intrinsic::Y>(new FunctionProto(X,{AbstractDeclaration(this)},this)), PositionID(0,0,"#int"));
+		SINGLE_FUNC_DECLR("changeEndian",bswap)
+		SINGLE_FUNC_DECLR("countBits",ctpop)
+		SINGLE_FUNC_DECLR("leadingZeroes",ctlz)
+		SINGLE_FUNC_DECLR("trailingZeroes",cttz)
 
+#undef SINGLE_FUNC_DECLR
+
+		LANG_M.addFunction(PositionID(0,0,"#int"),"ilog2")->add(
+					new BuiltinInlineFunction(new FunctionProto("ilog2",{AbstractDeclaration(this)},this),
+					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+					assert(args.size()==1);
+					llvm::Value* V = args[0]->evalV(r, id);
+
+					llvm::SmallVector<llvm::Type*,1> ar(1);
+					ar[0] = this->type;
+					V = r.builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),V);
+					V = r.builder.CreateSub(llvm::ConstantInt::get(this->type,len-1,false),V);
+					return new ConstantData(V, this);
+		}), PositionID(0,0,"#int"));
 		this->staticVariables.addFunction(PositionID(0,0,"#int"),"ord")->add(
 					new BuiltinInlineFunction(new FunctionProto("ord",{AbstractDeclaration(&charClass)},this),
 					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{

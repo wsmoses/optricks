@@ -1422,7 +1422,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.SetInsertPoint(REALLOC);
 
 				llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
-				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+				//auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
 				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P), AC->inner->type, NEWLEN);
 				r.builder.CreateStore(NEW_P,DATA_P);
@@ -1522,7 +1522,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.SetInsertPoint(REALLOC);
 
 				llvm::Value* NEWLEN = r.builder.CreateMul(r.builder.CreateAdd(getInt32(1), LENGTH),getInt32(2));
-				auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
+				//auto IP = r.builder.CreatePointerCast(r.builder.CreateLoad(DATA_P),C_POINTERTYPE);
 
 				auto NEW_P = r.reallocate(r.builder.CreateLoad(DATA_P), AC->inner->type, NEWLEN);
 				r.builder.CreateStore(NEW_P,DATA_P);

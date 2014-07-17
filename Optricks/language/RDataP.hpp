@@ -15,6 +15,41 @@
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
+//MAX IS INCLUDED
+llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+	assert(MAX->getType()==INT32TYPE);
+	llvm::Value* MASK;
+	if(auto VAL = llvm::dyn_cast<llvm::ConstantInt>(MAX)){
+		auto max = VAL->getLimitedValue(32);
+		if(max==0) return getInt32(0);
+		else if( ( max & (max + 1) ) == 0){
+			//is one less than power of two (e.g. is all ones)
+			return builder.CreateAnd(rand(REAL_MT, REAL_IDX_P), max);
+		} else {
+			auto bits = 32 - llvm::countLeadingZeros<uint32_t>((uint32_t)max);
+			uint64_t mask = bits;
+			mask = (1 << mask) - 1;
+			MASK = llvm::ConstantInt::get(INT32TYPE,mask,false);
+		}
+	} else {
+		llvm::SmallVector<llvm::Type*,1> ar(1);
+		ar[0] = INT32TYPE;
+		llvm::Value* BITS = builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),MAX);
+		BITS = builder.CreateSub(llvm::ConstantInt::get(INT32TYPE,32,false),BITS);
+		MASK = builder.CreateSub(builder.CreateShl(getInt32(1),BITS),getInt32(1));
+	}
+	auto F = builder.GetInsertBlock()->getParent();
+	llvm::BasicBlock* LOOP = CreateBlockD("LOOP", F);
+	llvm::BasicBlock* END_LOOP = CreateBlockD("end_loop", F);
+
+	builder.CreateBr(LOOP);
+	builder.SetInsertPoint(LOOP);
+	auto R = builder.CreateAnd(this->rand(REAL_MT, REAL_IDX_P),MASK);
+	builder.CreateCondBr(builder.CreateICmpULE(R, MAX), END_LOOP, LOOP);
+
+	builder.SetInsertPoint(END_LOOP);
+	return R;
+}
 
 #define N 624
 #define M 397

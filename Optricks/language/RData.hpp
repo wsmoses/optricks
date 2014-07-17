@@ -529,6 +529,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		}
 		llvm::CallInst* seed(llvm::Value* S, llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
 		llvm::Value* rand(llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
+		//MAX IS INCLUDED (e.g. randInt(1) could give 0 or 1)
+		llvm::Value* randInt(llvm::Value* MAX,llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
 		/* Assumes V is not null */
 		///* Assumes if V is global string constant that it will not be modified */
 		llvm::Value* strlen(llvm::Value* V){

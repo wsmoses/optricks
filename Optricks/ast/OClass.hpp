@@ -140,6 +140,13 @@ void initClasses(){
 		return new ConstantData(r.rand(), &intClass);
 	}), PositionID(0,0,"#int"));
 
+	LANG_M.addFunction(PositionID(0,0,"#class"),"randInt")->add(
+			new BuiltinInlineFunction(new FunctionProto("randInt",{AbstractDeclaration(&intClass)},&intClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==1);
+			llvm::Value* MAX = args[0]->evalV(r,id);
+			return new ConstantData(r.randInt(MAX), &intClass);
+		}), PositionID(0,0,"#int"));
 	add_import_c_const(&(NS_LANG_C.staticVariables), RAND_MAX);
 
 	auto Stream = new UserClass(&LANG_M,"Stream",nullptr,PRIMITIVE_LAYOUT,true);
@@ -288,55 +295,55 @@ void initClasses(){
 			llvm::Value* A = args[0]->evalV(r, id);
 			return new ConstantData(A, AF);
 		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isFloat")->add(new BuiltinInlineFunction(new FunctionProto("isFloat",{AbstractDeclaration(AF)},&boolClass),
+		AF->addLocalFunction("isFloat", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isFloat",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isBigEndian")->add(new BuiltinInlineFunction(new FunctionProto("isBigEndian",{AbstractDeclaration(AF)},&boolClass),
+		}), false);
+		AF->addLocalFunction("isBigEndian", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isBigEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isSigned")->add(new BuiltinInlineFunction(new FunctionProto("isSigned",{AbstractDeclaration(AF)},&boolClass),
+		}), false);
+		AF->addLocalFunction("isSigned", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isSigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isInt")->add(new BuiltinInlineFunction(new FunctionProto("isInt",{AbstractDeclaration(AF)},&boolClass),
+		}), false);
+		AF->addLocalFunction("isInt", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isInt",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_DATATYPE)),BOOLTYPE)),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isLittleEndian")->add(new BuiltinInlineFunction(new FunctionProto("isLittleEndian",{AbstractDeclaration(AF)},&boolClass),
+		}), false);
+		AF->addLocalFunction("isLittleEndian", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isLittleEndian",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_ENDIAN)),BOOLTYPE)),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("isUnsigned")->add(new BuiltinInlineFunction(new FunctionProto("isUnsigned",{AbstractDeclaration(AF)},&boolClass),
+		}), false);
+		AF->addLocalFunction("isUnsigned", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("isUnsigned",{AbstractDeclaration(AF)},&boolClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateNot(r.builder.CreateTrunc(r.builder.CreateLShr(V, log2(SDL_AUDIO_MASK_SIGNED)),BOOLTYPE)),&boolClass);
-		}), PositionID("#sdl",0,0));
-		AF->addLocalFunction("bitSize")->add(new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
+		}), false);
+		AF->addLocalFunction("bitSize", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto("bitSize",{AbstractDeclaration(AF)},&byteClass),
 				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==0);
 			assert(instance);
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
-		}), PositionID("#sdl",0,0));
+		}), false);
 #define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(AF->type,A,false),AF));
 		SDL_A(AUDIO_S8, S8);
 		SDL_A(AUDIO_U8, U8);

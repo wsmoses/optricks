@@ -112,6 +112,8 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 			exit(1);
 		}
 	}
+	case CLASS_PRIORITYQUEUE:
+	case CLASS_HASHMAP:
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -380,6 +382,8 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
 		exit(1);
 	}
+	case CLASS_PRIORITYQUEUE:
+	case CLASS_HASHMAP:
 	case CLASS_TUPLE:
 	case CLASS_NAMED_TUPLE:
 	case CLASS_FUNC:
@@ -438,6 +442,8 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 		if(operation=="%") return &classClass;
 		if(operation=="[]") return &classClass;
 	}
+	case CLASS_PRIORITYQUEUE:
+	case CLASS_HASHMAP:
 	case CLASS_BOOL:
 	case CLASS_INTLITERAL:
 	case CLASS_FLOATLITERAL:
@@ -618,6 +624,8 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 			return ArrayClass::get(value->getMyClass(r, filePos));
 		}
 	}
+	case CLASS_PRIORITYQUEUE:
+	case CLASS_HASHMAP:
 	case CLASS_BOOL:
 	case CLASS_INTLITERAL:
 	case CLASS_FLOATLITERAL:
@@ -634,8 +642,6 @@ inline const Data* getPostop(RData& r, PositionID filePos, const String operatio
 	case CLASS_STR:
 	case CLASS_SET:
 	case CLASS_ENUM:
-	case CLASS_HASHMAP:
-	case CLASS_PRIORITYQUEUE:
 	case CLASS_WRAPPER:
 	case CLASS_CSTRING:
 	case CLASS_MATHLITERAL:{
