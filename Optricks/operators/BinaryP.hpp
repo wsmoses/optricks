@@ -1599,7 +1599,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				filePos.error("Cannot use class '"+dd->getName()+"' as key for "+AC->getName());
 				return &VOID_DATA;
 			} else{
-				auto KEY = ev->evaluate(r)->castTo(r, AC->key, filePos);
+				auto KEY = ev->evaluate(r)->castTo(r, AC->key, filePos)->toValue(r, filePos);
 				llvm::Value* V = getLocalFunction(r, filePos, "hash", KEY, NO_TEMPLATE,{})->getValue(r, filePos);
 				//TODO MOD
 				V =	r.builder.CreateSExtOrTrunc(V,intClass.type);
@@ -1622,10 +1622,19 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto PHI=r.builder.CreatePHI(llvm::PointerType::getUnqual(AC->nodeType),2);
 				PHI->addIncoming(S_IDX,START);
 				auto KEY_P = r.builder.CreateConstGEP2_32(PHI,0,1);
-				StandardLocation SL(KEY_P);
-				LocationData LD(&SL, AC->key);
 
-				auto cmp = getBinop(r, filePos, &LD, KEY, "==")->getValue(r, filePos);
+				llvm::Value* cmp;
+
+				if(AC->key->classType==CLASS_FLOAT){
+					auto w = ((const FloatClass*)AC->key)->getWidth();
+					auto nt = llvm::IntegerType::get(llvm::getGlobalContext(), w);
+					cmp = r.builder.CreateICmpEQ(r.builder.CreateBitCast(r.builder.CreateLoad(KEY_P),nt),
+							r.builder.CreateBitCast(KEY->getValue(r, filePos), nt));
+				} else {
+					StandardLocation SL(KEY_P);
+					LocationData LD(&SL, AC->key);
+					cmp = getBinop(r, filePos, &LD, KEY, "==")->getValue(r, filePos);
+				}
 				auto DONE = r.CreateBlockD("map[]_done", FUNCT);
 				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", FUNCT);
 				r.builder.CreateCondBr(cmp, DONE, LOOP_2);
@@ -1754,9 +1763,20 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto PHI=r.builder.CreatePHI(llvm::PointerType::getUnqual(AC->nodeType),2);
 				PHI->addIncoming(S_IDX,START);
 				auto KEY_P = r.builder.CreateConstGEP2_32(PHI,0,1);
-				StandardLocation SL(KEY_P);
-				LocationData LD(&SL, AC->key);
-				auto cmp = getBinop(r, filePos, &LD, &KEY, "==")->getValue(r, filePos);
+
+
+				llvm::Value* cmp;
+
+				if(AC->key->classType==CLASS_FLOAT){
+					auto w = ((const FloatClass*)AC->key)->getWidth();
+					auto nt = llvm::IntegerType::get(llvm::getGlobalContext(), w);
+					cmp = r.builder.CreateICmpEQ(r.builder.CreateBitCast(r.builder.CreateLoad(KEY_P),nt),
+							r.builder.CreateBitCast(KEY_V, nt));
+				} else {
+					StandardLocation SL(KEY_P);
+					LocationData LD(&SL, AC->key);
+					cmp = getBinop(r, filePos, &LD, &KEY, "==")->getValue(r, filePos);
+				}
 				auto DONE = r.CreateBlockD("map[]_done", F);
 				auto LOOP_2 = r.CreateBlockD("map[]_loop_2", F);
 				r.builder.CreateCondBr(cmp, DONE,LOOP_2);

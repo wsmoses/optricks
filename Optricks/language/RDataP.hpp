@@ -20,21 +20,23 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* R
 	assert(MAX->getType()==INT32TYPE);
 	llvm::Value* MASK;
 	if(auto VAL = llvm::dyn_cast<llvm::ConstantInt>(MAX)){
-		auto max = VAL->getLimitedValue(32);
+		auto max = VAL->getLimitedValue();
 		if(max==0) return getInt32(0);
 		else if( ( max & (max + 1) ) == 0){
 			//is one less than power of two (e.g. is all ones)
 			return builder.CreateAnd(rand(REAL_MT, REAL_IDX_P), max);
 		} else {
+			//TODO there is a weird error here...
 			auto bits = 32 - llvm::countLeadingZeros<uint32_t>((uint32_t)max);
 			uint64_t mask = bits;
 			mask = (1 << mask) - 1;
 			MASK = llvm::ConstantInt::get(INT32TYPE,mask,false);
 		}
 	} else {
-		llvm::SmallVector<llvm::Type*,1> ar(1);
+		llvm::SmallVector<llvm::Type*,1> ar(2);
 		ar[0] = INT32TYPE;
-		llvm::Value* BITS = builder.CreateCall(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),MAX);
+		ar[1] = BOOLTYPE;
+		llvm::Value* BITS = builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),MAX,llvm::ConstantInt::get(BOOLTYPE,0,false));
 		BITS = builder.CreateSub(llvm::ConstantInt::get(INT32TYPE,32,false),BITS);
 		MASK = builder.CreateSub(builder.CreateShl(getInt32(1),BITS),getInt32(1));
 	}

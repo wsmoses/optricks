@@ -133,19 +133,68 @@ void initClasses(){
 		return &VOID_DATA;
 	}), PositionID(0,0,"#int"));
 
+
+	objectClass.addLocalFunction("hash", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto("hash",std::vector<AbstractDeclaration>(),&intClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+		assert(instance);
+		llvm::Value* V = instance->getValue(r, id);
+		return new ConstantData(r.builder.CreatePtrToInt(V, INT32TYPE),&intClass);
+	}), false);
+	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&objectClass)},&boolClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==1);
+		assert(instance);
+		llvm::Value* V = instance->getValue(r, id);
+		llvm::Value* V2 = args[0]->evalV(r, id);
+		return new ConstantData(r.builder.CreateICmpEQ(V,V2),&boolClass);
+	}), false);
+	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&objectClass)},&boolClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==1);
+		assert(instance);
+		return new ConstantData(r.builder.CreateNot(objectClass.callLocalFunction(r, id, ":==", NO_TEMPLATE, args,instance)->getValue(r, id)),&boolClass);
+	}), false);
+
+	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&nullClass)},&boolClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==1);
+		assert(instance);
+		llvm::Value* V = instance->getValue(r, id);
+		return new ConstantData(r.builder.CreateIsNull(V),&boolClass);
+	}), false);
+	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&nullClass)},&boolClass),
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==1);
+		assert(instance);
+		llvm::Value* V = instance->getValue(r, id);
+		return new ConstantData(r.builder.CreateIsNotNull(V),&boolClass);
+	}), false);
+
+	/*
 	LANG_M.addFunction(PositionID(0,0,"#class"),"rand")->add(
 		new BuiltinInlineFunction(new FunctionProto("rand",std::vector<AbstractDeclaration>(),&intClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==0);
 		return new ConstantData(r.rand(), &intClass);
-	}), PositionID(0,0,"#int"));
+	}), PositionID(0,0,"#int"));*/
 
+	//ceiling is inclusive
 	LANG_M.addFunction(PositionID(0,0,"#class"),"randInt")->add(
-			new BuiltinInlineFunction(new FunctionProto("randInt",{AbstractDeclaration(&intClass)},&intClass),
+			new BuiltinInlineFunction(new FunctionProto("randInt",{AbstractDeclaration(&intClass, "max", new ConstantData(getInt32(-1), &intClass))},&intClass),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 			assert(args.size()==1);
 			llvm::Value* MAX = args[0]->evalV(r,id);
 			return new ConstantData(r.randInt(MAX), &intClass);
+		}), PositionID(0,0,"#int"));
+
+	LANG_M.addFunction(PositionID(0,0,"#class"),"randInt")->add(
+			new BuiltinInlineFunction(new FunctionProto("randInt",{AbstractDeclaration(&intClass, "min"),AbstractDeclaration(&intClass, "max")},&intClass),
+			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==2);
+			llvm::Value* MIN = args[0]->evalV(r,id);
+			llvm::Value* MAX = args[1]->evalV(r,id);
+			return new ConstantData(r.builder.CreateAdd(MIN,r.randInt(r.builder.CreateSub(MAX,MIN))), &intClass);
 		}), PositionID(0,0,"#int"));
 	add_import_c_const(&(NS_LANG_C.staticVariables), RAND_MAX);
 

@@ -150,9 +150,11 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 	if(s=="hash" && v.size()==0){
 
 		switch(cc->classType){
-		case CLASS_INT:
 		case CLASS_BOOL:
 		case CLASS_CHAR:
+			return new ConstantData(r.builder.CreateZExt(inst->getValue(r, id), intClass.type),&intClass);
+		//TODO XOR REMAINING BITS?
+		case CLASS_INT:
 			return new ConstantData(r.builder.CreateZExtOrTrunc(inst->getValue(r, id), intClass.type),&intClass);
 		case CLASS_FLOAT:
 			//TODO check that all NaN hash to same value...
@@ -198,8 +200,51 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				return &voidClass;
 			} else if(s=="shuffle" && v.size()==0) {
 				/* shuffles in place*/
-				//TODO
-				return &voidClass;
+				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
+
+				auto STARTT = r.builder.GetInsertBlock();
+				auto FUNC = STARTT->getParent();
+				auto TO_LOAD = r.CreateBlockD("to_load", FUNC);
+				auto TO_SEARCH = r.CreateBlockD("to_search", FUNC);
+				auto DONE = r.CreateBlockD("done", FUNC);
+
+				r.builder.CreateCondBr(r.builder.CreateICmpULT(LENGTH, getInt32(2)), DONE, TO_LOAD);
+
+				r.builder.SetInsertPoint(TO_LOAD);
+				auto DATA = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 3));
+				auto lenM1 = r.builder.CreateSub(LENGTH, getInt32(1));
+				r.builder.CreateBr(TO_SEARCH);
+
+				r.builder.SetInsertPoint(TO_SEARCH);
+				auto IDX = r.builder.CreatePHI(intClass.type, 2);
+				IDX->addIncoming(getInt32(0), TO_LOAD);
+
+				auto MAX = r.builder.CreateSub(lenM1, IDX);
+				auto J = r.builder.CreateAdd(r.randInt(MAX),IDX);
+
+				/* basic alg *
+				 *  for(int i=0; ;){
+				 *  	int j = randInt(array.length-1-i)+i
+				 *  	array.swap(i,j);
+				 *  	i++;
+				 *  	if(i==array.length-1) break;
+				 *  }
+				 */
+
+				auto LEFT_P = r.builder.CreateGEP(DATA, IDX);
+				auto LEFT = r.builder.CreateLoad(LEFT_P);
+				auto RIGHT_P = r.builder.CreateGEP(DATA, J);
+				auto RIGHT = r.builder.CreateLoad(RIGHT_P);
+				r.builder.CreateStore(RIGHT, LEFT_P);
+				r.builder.CreateStore(LEFT, RIGHT_P);
+
+				auto IDX_P1 = r.builder.CreateAdd(IDX, getInt32(1));
+				IDX->addIncoming(IDX_P1, r.builder.GetInsertBlock());
+
+				r.builder.CreateCondBr(r.builder.CreateICmpEQ(lenM1, IDX_P1), DONE, TO_SEARCH);
+
+				r.builder.SetInsertPoint(DONE);
+				return &VOID_DATA;
 			} else if(s=="reverse" && v.size()==0) {
 				/* reverses in place */
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
