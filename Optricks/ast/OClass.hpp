@@ -134,14 +134,14 @@ void initClasses(){
 	}), PositionID(0,0,"#int"));
 
 
-	objectClass.addLocalFunction("hash", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto("hash",std::vector<AbstractDeclaration>(),&intClass),
+	objectClass.addLocalFunction("hash", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto("hash",{AbstractDeclaration(&objectClass)},&intClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==0);
 		assert(instance);
 		llvm::Value* V = instance->getValue(r, id);
 		return new ConstantData(r.builder.CreatePtrToInt(V, INT32TYPE),&intClass);
 	}), false);
-	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&objectClass)},&boolClass),
+	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&objectClass),AbstractDeclaration(&objectClass)},&boolClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		assert(instance);
@@ -149,21 +149,21 @@ void initClasses(){
 		llvm::Value* V2 = args[0]->evalV(r, id);
 		return new ConstantData(r.builder.CreateICmpEQ(V,V2),&boolClass);
 	}), false);
-	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&objectClass)},&boolClass),
+	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&objectClass),AbstractDeclaration(&objectClass)},&boolClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		assert(instance);
 		return new ConstantData(r.builder.CreateNot(objectClass.callLocalFunction(r, id, ":==", NO_TEMPLATE, args,instance)->getValue(r, id)),&boolClass);
 	}), false);
 
-	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&nullClass)},&boolClass),
+	objectClass.addLocalFunction(":==", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(&objectClass),AbstractDeclaration(&nullClass)},&boolClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		assert(instance);
 		llvm::Value* V = instance->getValue(r, id);
 		return new ConstantData(r.builder.CreateIsNull(V),&boolClass);
 	}), false);
-	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&nullClass)},&boolClass),
+	objectClass.addLocalFunction(":!=", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(&objectClass),AbstractDeclaration(&nullClass)},&boolClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
 		assert(instance);
@@ -180,6 +180,37 @@ void initClasses(){
 	}), PositionID(0,0,"#int"));*/
 
 	//ceiling is inclusive
+
+	LANG_M.addFunction(PositionID(0,0,"#class"),"randLong")->add(
+		new BuiltinInlineFunction(new FunctionProto("randLong",std::vector<AbstractDeclaration>(),&floatClass),
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+		llvm::Value* L1 = r.builder.CreateZExt(r.rand(),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
+		llvm::Value* L2 = r.builder.CreateZExt(r.rand(),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
+		L2 = r.builder.CreateShl(L2, (uint64_t)32);
+		llvm::Value* L = r.builder.CreateOr(L1, L2);
+		return new ConstantData(L, &floatClass);
+	}), PositionID(0,0,"#int"));
+
+	LANG_M.addFunction(PositionID(0,0,"#class"),"randFloat")->add(
+		new BuiltinInlineFunction(new FunctionProto("randFloat",std::vector<AbstractDeclaration>(),&floatClass),
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+		llvm::Value* L = r.rand();
+		L = r.builder.CreateAnd(L, (uint64_t)((1LL<<23)-1));
+		L = r.builder.CreateOr(L, (uint64_t)((1LL<<30)-1) - (uint64_t)((1LL<<23)-1));
+		L = r.builder.CreateBitCast(L, llvm::Type::getFloatTy(llvm::getGlobalContext()));
+		L = r.builder.CreateFSub(L, llvm::ConstantFP::get(llvm::Type::getFloatTy(llvm::getGlobalContext()),1.0));
+		return new ConstantData(L, &floatClass);
+	}), PositionID(0,0,"#int"));
+
+	LANG_M.addFunction(PositionID(0,0,"#class"),"randDouble")->add(
+		new BuiltinInlineFunction(new FunctionProto("randDouble",std::vector<AbstractDeclaration>(),&doubleClass),
+		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+		assert(args.size()==0);
+		return new ConstantData(r.randDouble(), &doubleClass);
+	}), PositionID(0,0,"#int"));
+
 	LANG_M.addFunction(PositionID(0,0,"#class"),"randInt")->add(
 			new BuiltinInlineFunction(new FunctionProto("randInt",{AbstractDeclaration(&intClass, "max", new ConstantData(getInt32(-1), &intClass))},&intClass),
 			[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{

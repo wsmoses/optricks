@@ -45,6 +45,12 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 				final = true;
 				assert(superClass==nullptr);
 				LANG_M.addClass(PositionID("#object",0,0),this);
+
+				llvm::StructType* structType = (llvm::StructType*)(((llvm::PointerType*)type)->getArrayElementType());
+				llvm::SmallVector<llvm::Type*,2> types(2);
+				types[0] = INT32TYPE;
+				types[1] = CLASSTYPE;
+				structType->setBody(types,false);
 			}
 		};
 

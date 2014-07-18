@@ -179,9 +179,7 @@ public:
 			//				WriteBitcodeToFile(getRData().lmod, file);
 			//				getRData().lmod->print(raw_stream, 0);
 		} else {
-			void *FPtr = getRData().getExec()->getPointerToFunction(F);
-			void (*FP)(int, char**) = (void (*)(int, char**))(intptr_t)FPtr;
-			FP(0,nullptr);
+			getRData().getExec()->runFunctionAsMain(F, {""},nullptr);
 		}
 	}
 	String getNextName(char endWith){

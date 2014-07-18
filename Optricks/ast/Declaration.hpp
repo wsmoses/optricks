@@ -130,7 +130,15 @@ public:
 			filePos.error("Cannot find references early");
 		}
 		if(global){
-			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
+			llvm::Constant* VAL;
+			if(returnType->layout==POINTER_LAYOUT){
+				assert(returnType->type);
+				assert(llvm::dyn_cast<llvm::PointerType>(returnType->type));
+				VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
+			}
+			else
+				VAL = llvm::UndefValue::get(returnType->type);
+			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
 			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
@@ -181,7 +189,15 @@ public:
 			if(auto cons = llvm::dyn_cast_or_null<llvm::Constant>(tmp))
 				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,cons);
 			else{
-				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(returnType->type));
+				llvm::Constant* VAL;
+				if(returnType->layout==POINTER_LAYOUT){
+					assert(returnType->type);
+					assert(llvm::dyn_cast<llvm::PointerType>(returnType->type));
+					VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
+				}
+				else
+					VAL = llvm::UndefValue::get(returnType->type);
+				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
@@ -210,60 +226,7 @@ void initFuncsMeta(RData& rd){
 	//TODO begin conversion of constructors to generators
 	{
 	}
-	{
-		FunctionProto* intIntP = new FunctionProto("int",intClass);
-		intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),doubleClass,NULL,false,NULL));
 
-		std::vector<Type*> args = {DOUBLETYPE};
-		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = rd.CreateFunctionD("!int",FT, LOCAL_FUNC);
-		BasicBlock *Parent = rd.builder.GetInsertBlock();
-		BasicBlock *BB = rd.CreateBlockD("entry", F);
-		rd.builder.SetInsertPoint(BB);
-		rd.builder.CreateRet(rd.builder.CreateFPToSI(F->arg_begin(), INTTYPE));
-		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		intClass->constructors.add(Data*::getFunction(F,intIntP),PositionID(0,0,"<start.initFuncsMeta>"));
-	}
-	{
-			FunctionProto* intIntP = new FunctionProto("byte",byteClass);
-			intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),doubleClass,NULL,false,NULL));
-
-			std::vector<Type*> args = {DOUBLETYPE};
-			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = rd.CreateFunctionD("!byte",FT, LOCAL_FUNC);
-			BasicBlock *Parent = rd.builder.GetInsertBlock();
-			BasicBlock *BB = rd.CreateBlockD("entry", F);
-			rd.builder.SetInsertPoint(BB);
-			rd.builder.CreateRet(rd.builder.CreateFPToUI(F->arg_begin(), BYTETYPE));
-			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-			byteClass->constructors.add(Data*::getFunction(F,intIntP),PositionID(0,0,"<start.initFuncsMeta>"));
-		}
-	{
-			FunctionProto* intIntP = new FunctionProto("byte",byteClass);
-			intIntP->declarations.push_back(new Declaration(PositionID(0,0,"<start.initFuncsMeta>"),intClass,NULL,false,NULL));
-
-			std::vector<Type*> args = {INTTYPE};
-			FunctionType *FT = FunctionType::get(BYTETYPE, args, false);
-			Function *F = rd.CreateFunctionD("!byte",FT, LOCAL_FUNC);
-			BasicBlock *Parent = rd.builder.GetInsertBlock();
-			BasicBlock *BB = rd.CreateBlockD("entry", F);
-			rd.builder.SetInsertPoint(BB);
-			rd.builder.CreateRet(rd.builder.CreateTrunc(F->arg_begin(), BYTETYPE));
-			if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-			byteClass->constructors.add(Data*::getFunction(F,intIntP),PositionID(0,0,"<start.initFuncsMeta>"));
-		}
-	{
-
-		std::vector<Type*> args = {CHARTYPE->getPointerTo(0)};
-		FunctionType *FT = FunctionType::get(INTTYPE, args, false);
-		Function *F = rd.CreateFunctionD("!return1", FT, LOCAL_FUNC);
-		BasicBlock *Parent = rd.builder.GetInsertBlock();
-		BasicBlock *BB = rd.CreateBlockD("entry", F);
-		rd.builder.SetInsertPoint(BB);
-		rd.builder.CreateRet(ConstantInt::get(INTTYPE,1));
-		if(Parent!=NULL) rd.builder.SetInsertPoint(Parent);
-		charClass->addLocalFunction(PositionID(0,0,"<start.initFuncsMeta>"),"length").add(Data*::getFunction(F,new FunctionProto("length",intClass)),PositionID(0,0,"<start.initFuncsMeta>"));
-	}
 	c_stringClass->addLocalFunction(PositionID(0,0,"<start.initFuncsMeta>"),"length").add(Data*::getFunction(o_strlen,new FunctionProto("length", intClass)),PositionID(0,0,"<start.initFuncsMeta>"));
 	charClass->addCast(c_stringClass) = new ouopNative(
 			[](Data* av, RData& m, PositionID id) -> Data*{

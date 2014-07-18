@@ -810,7 +810,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
-				if(i>=a->getSingleProto()->declarations.size()) continue;
+				if(i+(isClassMethod?1:0)>=a->getSingleProto()->declarations.size()) continue;
 				auto myDec = a->getSingleProto()->declarations[i+(isClassMethod?1:0)];
 				const AbstractClass* const dt = myDec.declarationType;
 				if(args[i]==nullptr){

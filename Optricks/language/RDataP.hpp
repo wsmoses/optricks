@@ -15,8 +15,46 @@
 #include "./data/VoidData.hpp"
 #include "../operators/Deconstructor.hpp"
 
+llvm::Value* RData::randDouble(llvm::Value* REAL_MT){
+	llvm::Value* L1 = builder.CreateZExt(rand(REAL_MT),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
+	llvm::Value* L2 = builder.CreateZExt(rand(REAL_MT),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
+	L2 = builder.CreateShl(L2, (uint64_t)32);
+	llvm::Value* L = builder.CreateOr(L1, L2);
+	L = builder.CreateAnd(L, (uint64_t)((1LL<<52)-1));
+	L = builder.CreateOr(L, (uint64_t)((1LL<<62)-1) - (uint64_t)((1LL<<52)-1));
+	L = builder.CreateBitCast(L, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+	L = builder.CreateFSub(L, llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),1.0));
+	return L;
+}
+
 //MAX IS INCLUDED
-llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+llvm::Value* RData::randInt(uint64_t max,llvm::Value* REAL_MT){
+	if(max==0) return getInt32(0);
+	else if( ( max & (max + 1) ) == 0){
+		//is one less than power of two (e.g. is all ones)
+		return builder.CreateAnd(rand(REAL_MT), max);
+	} else {
+		//TODO there is a weird error here...
+		auto bits = 32 - llvm::countLeadingZeros<uint32_t>((uint32_t)max);
+		uint64_t mask = bits;
+		mask = (1 << mask) - 1;
+		llvm::Value* MASK = llvm::ConstantInt::get(INT32TYPE,mask,false);
+
+		auto F = builder.GetInsertBlock()->getParent();
+		llvm::BasicBlock* LOOP = CreateBlockD("LOOP", F);
+		llvm::BasicBlock* END_LOOP = CreateBlockD("end_loop", F);
+
+		builder.CreateBr(LOOP);
+		builder.SetInsertPoint(LOOP);
+		auto R = builder.CreateAnd(this->rand(REAL_MT),MASK);
+		builder.CreateCondBr(builder.CreateICmpULE(R, getInt32(max)), END_LOOP, LOOP);
+
+		builder.SetInsertPoint(END_LOOP);
+		return R;
+	}
+}
+//MAX IS INCLUDED
+llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT){
 	assert(MAX->getType()==INT32TYPE);
 	llvm::Value* MASK;
 	if(auto VAL = llvm::dyn_cast<llvm::ConstantInt>(MAX)){
@@ -24,7 +62,7 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* R
 		if(max==0) return getInt32(0);
 		else if( ( max & (max + 1) ) == 0){
 			//is one less than power of two (e.g. is all ones)
-			return builder.CreateAnd(rand(REAL_MT, REAL_IDX_P), max);
+			return builder.CreateAnd(rand(REAL_MT), max);
 		} else {
 			//TODO there is a weird error here...
 			auto bits = 32 - llvm::countLeadingZeros<uint32_t>((uint32_t)max);
@@ -33,9 +71,9 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* R
 			MASK = llvm::ConstantInt::get(INT32TYPE,mask,false);
 		}
 	} else {
-		llvm::SmallVector<llvm::Type*,1> ar(2);
+		llvm::SmallVector<llvm::Type*,1> ar(1);
 		ar[0] = INT32TYPE;
-		ar[1] = BOOLTYPE;
+		//ar[1] = BOOLTYPE;
 		llvm::Value* BITS = builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),MAX,llvm::ConstantInt::get(BOOLTYPE,0,false));
 		BITS = builder.CreateSub(llvm::ConstantInt::get(INT32TYPE,32,false),BITS);
 		MASK = builder.CreateSub(builder.CreateShl(getInt32(1),BITS),getInt32(1));
@@ -46,7 +84,7 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* R
 
 	builder.CreateBr(LOOP);
 	builder.SetInsertPoint(LOOP);
-	auto R = builder.CreateAnd(this->rand(REAL_MT, REAL_IDX_P),MASK);
+	auto R = builder.CreateAnd(this->rand(REAL_MT),MASK);
 	builder.CreateCondBr(builder.CreateICmpULE(R, MAX), END_LOOP, LOOP);
 
 	builder.SetInsertPoint(END_LOOP);
@@ -55,24 +93,23 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT,llvm::Value* R
 
 #define N 624
 #define M 397
-llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT){
 	static llvm::Function* F=nullptr;
 	if(REAL_MT==nullptr){
 		if(GLOBAL_MT==nullptr){
-			GLOBAL_IDX_P = new llvm::GlobalVariable(*lmod,INT32TYPE,false,llvm::GlobalValue::PrivateLinkage,
-					llvm::ConstantInt::get(INT32TYPE,N,false));
+			//GLOBAL_IDX_P = new llvm::GlobalVariable(*lmod,INT32TYPE,false,llvm::GlobalValue::PrivateLinkage,
+			//		llvm::ConstantInt::get(INT32TYPE,N,false));
 
-			GLOBAL_MT = new llvm::GlobalVariable(*lmod,llvm::ArrayType::get(INT32TYPE,N),false,llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(llvm::ArrayType::get(INT32TYPE,N)));
+			GLOBAL_MT = new llvm::GlobalVariable(*lmod,llvm::ArrayType::get(INT32TYPE,N+1),false,llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(llvm::ArrayType::get(INT32TYPE,N+1)));
 		}
 		REAL_MT = builder.CreatePointerCast(GLOBAL_MT, llvm::PointerType::getUnqual(INT32TYPE));
-		REAL_IDX_P = GLOBAL_IDX_P;
+		//REAL_IDX_P = GLOBAL_IDX_P;
 	}
 	if(F==nullptr){
 		auto PARENT = builder.GetInsertBlock();
-		llvm::SmallVector<llvm::Type*,3> rand_args(3);
+		llvm::SmallVector<llvm::Type*,2> rand_args(2);
 		rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
-		rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
-		rand_args[2] = INT32TYPE;
+		rand_args[1] = INT32TYPE;
 		F = CreateFunctionD("_seed32", llvm::FunctionType::get(VOIDTYPE, rand_args, false), LOCAL_FUNC);
 		llvm::BasicBlock* ENTRY = CreateBlockD("entry", F);
 		builder.SetInsertPoint(ENTRY);
@@ -82,9 +119,7 @@ llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Valu
 			AI->setName("mt");
 			MT = AI;
 			++AI;
-			AI->setName("idx_p");
-			IDX_P = AI;
-			++AI;
+			IDX_P = builder.CreateConstGEP1_32(MT, N);
 			AI->setName("seed");
 			S = AI;
 		}
@@ -120,10 +155,10 @@ llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT,llvm::Valu
 		this->FinalizeFunctionD(F);
 		if(PARENT) builder.SetInsertPoint(PARENT);
 	}
-	return builder.CreateCall3(F, REAL_MT, REAL_IDX_P,REAL_S);
+	return builder.CreateCall2(F, REAL_MT, REAL_S);
 }
 
-llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
+llvm::Value* RData::rand(llvm::Value* REAL_MT){
 	static llvm::Function* F=nullptr;
 	auto PARENT = builder.GetInsertBlock();
 
@@ -192,10 +227,7 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 		CALL->insertAfter(CA);
 		}
 		assert(GLOBAL_MT);
-		assert(GLOBAL_IDX_P);
-		assert(REAL_IDX_P==nullptr);
 		REAL_MT = builder.CreatePointerCast(GLOBAL_MT, llvm::PointerType::getUnqual(INT32TYPE));
-		REAL_IDX_P = GLOBAL_IDX_P;
 		/*
 		builder.CreateCall(SRAND, builder.CreateZExtOrTrunc(C, C_INTTYPE));
 		builder.CreateCall(F);*/
@@ -205,9 +237,8 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 		llvm::Value* UPPER_MASK = llvm::ConstantInt::get(INT32TYPE,0x80000000UL,false); /* most significant w-r bits */
 		llvm::Value* LOWER_MASK = llvm::ConstantInt::get(INT32TYPE,0x7fffffffUL,false); /* least significant r bits */
 
-		llvm::SmallVector<llvm::Type*,2> rand_args(2);
+		llvm::SmallVector<llvm::Type*,1> rand_args(1);
 		rand_args[0] = llvm::PointerType::getUnqual(INT32TYPE);
-		rand_args[1] = llvm::PointerType::getUnqual(INT32TYPE);
 		F = CreateFunctionD("_rand32", llvm::FunctionType::get(INT32TYPE, rand_args, false), LOCAL_FUNC);
 		llvm::BasicBlock* BB = CreateBlockD("entry", F);
 		builder.SetInsertPoint(BB);
@@ -222,9 +253,7 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 			llvm::Function::arg_iterator AI = F->arg_begin();
 			AI->setName("mt");
 			MT = AI;
-			++AI;
-			AI->setName("idx_p");
-			IDX_P = AI;
+			IDX_P = builder.CreateConstGEP1_32(MT, N);
 		}
 		llvm::Value* IDX = builder.CreateLoad(IDX_P);
 		builder.CreateCondBr(builder.CreateICmpUGE(IDX, llvm::ConstantInt::get(IDX->getType(), N)), LOOP1, GEN_NUM);
@@ -299,7 +328,7 @@ llvm::Value* RData::rand(llvm::Value* REAL_MT,llvm::Value* REAL_IDX_P){
 	#undef N
 	}
 	if(PARENT) builder.SetInsertPoint(PARENT);
-	return builder.CreateCall2(F,REAL_MT,REAL_IDX_P);
+	return builder.CreateCall(F,REAL_MT);
 }
 /*
 bool RData::conditionalError(llvm::Value* V, String s, PositionID id){
@@ -608,6 +637,8 @@ void RData::FinalizeFunction(llvm::Function* f){
 	//if(Parent) builder.SetInsertPoint(Parent);
 	//cerr << "start finalizing function" << endl << flush;
 	if(debug){
+		//lmod->dump();
+		//cerr << "ENDMOD" << endl << flush;
 		f->dump();
 		cerr << "ENDPREV" << endl << flush;
 	}

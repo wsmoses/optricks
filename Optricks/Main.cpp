@@ -36,6 +36,11 @@ hi(r(12),&b,r(35))
  * TODO create allocation of global memory after function prototype but before built
  */
 
+struct __attribute__((__packed__)) TYPE_DATA {
+	void* first;
+	const AbstractClass* second;
+};
+
 void execF(Lexer& lexer, OModule* mod, Statement* n){
 	if(n==NULL) return;// NULL;
 	if(n->getToken()==T_IMPORT){
@@ -55,7 +60,13 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	n->buildFunction(getRData());
 	//const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
-	llvm::FunctionType* FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
+	llvm::FunctionType* FT;
+
+	if(n->getReturnType()->layout==POINTER_LAYOUT)
+		FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,1>(1,llvm::PointerType::getUnqual(CLASSTYPE)), false);
+	else
+		FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
+
 	llvm::Function* F = getRData().CreateFunction(":input_",FT,EXTERN_FUNC);
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 	getRData().builder.SetInsertPoint(BB);
@@ -114,17 +125,40 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 			retType = &voidClass;
 			getRData().builder.CreateRetVoid();
+		} else if(retType->layout==POINTER_LAYOUT){
+			llvm::SmallVector<llvm::Type*,2> TYPES(2);
+			TYPES[0] = retType->type;
+			TYPES[1] = CLASSTYPE;
+			auto ST = llvm::StructType::get(llvm::getGlobalContext(),TYPES,true);
+			llvm::FunctionType* FT = llvm::FunctionType::get(ST, llvm::SmallVector<llvm::Type*,1>(1,llvm::PointerType::getUnqual(CLASSTYPE)), false);
+			F->mutateType(llvm::PointerType::getUnqual(FT));
+
+			llvm::Value* V = dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>"));
+
+			RData& r = getRData();
+
+			auto STAR = r.builder.GetInsertBlock();
+
+			llvm::BasicBlock* END = r.CreateBlockD("is_null", F);
+			llvm::BasicBlock* NOT_NULL = r.CreateBlockD("not_null", F);
+
+			r.builder.CreateCondBr(r.builder.CreateIsNull(V),END,NOT_NULL);
+			r.builder.SetInsertPoint(NOT_NULL);
+
+			assert(V->getType());
+			assert(V->getType()->isPointerTy());
+			assert(((llvm::PointerType*)V->getType())->getElementType()->isStructTy());
+			assert(((llvm::StructType*)((llvm::PointerType*)V->getType())->getElementType())->getStructNumElements()>=2);
+			r.builder.CreateStore(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)),F->arg_begin());
+			r.builder.CreateBr(END);
+			r.builder.SetInsertPoint(END);
+
+			r.builder.CreateRet(V);
+
 		} else if(retType->classType!=CLASS_VOID){
 			llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
 			F->mutateType(llvm::PointerType::getUnqual(FT));
 			getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
-		} else getRData().builder.CreateRetVoid();
-	}
-	getRData().FinalizeFunction(F);
-	void *FPtr = getRData().getExec()->getPointerToFunction(F);
-
-	//TODO introduce new error literal
-
 #ifndef NDEBUG
 	if(F->getReturnType()!=retType->type){
 		F->getReturnType()->dump();
@@ -134,6 +168,15 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	}
 #endif
 	assert(F->getReturnType()==retType->type);
+		} else getRData().builder.CreateRetVoid();
+	}
+	getRData().FinalizeFunction(F);
+
+	void *FPtr = getRData().getExec()->getPointerToFunction(F);
+
+	//TODO introduce new error literal
+
+
 	if(retType->classType==CLASS_FUNC){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		std::cout << retType->getName() << "(" << FP() << ")" << endl << flush;
@@ -256,11 +299,19 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		FP();
 		std::cout << "null" << endl << flush;
-	}
-	else if(retType->layout==PRIMITIVEPOINTER_LAYOUT || retType->layout==POINTER_LAYOUT){
+	} else if(retType->layout==PRIMITIVEPOINTER_LAYOUT){
 		void* (*FP)() = (void* (*)())(intptr_t)FPtr;
 		auto t = FP();
 		std::cout << retType->getName() << "<" << t << ">" << endl << flush;
+	} else if(retType->layout==POINTER_LAYOUT){
+		void* (*FP)(const AbstractClass*&) = (void* (*)(const AbstractClass*&))(intptr_t)FPtr;
+		const AbstractClass* cla;
+		void* data = FP(cla);
+		if(data==nullptr)
+			std::cout << "null" << endl << flush;
+		else{
+			std::cout << cla->getName() << "<" << data << ">" << endl << flush;
+		}
 	} else{
 		((void* (*)())(intptr_t)FPtr)();
 		cerr << "Unknown print function for type " << retType->getName() << " " << str(dat->type) << endl << flush;
@@ -349,7 +400,10 @@ int main(int argc, char** argv){
 					new FunctionProto("typeof",{AbstractDeclaration(LazyClass::get(&voidClass))},&classClass),
 					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
 		assert(args.size()==1);
-		return args[0]->getReturnType();
+		const AbstractClass* a=args[0]->getReturnType();
+		assert(a->classType==CLASS_LAZY);
+		a = ((LazyClass*)a)->innerType;
+		return a;
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
 	LANG_M.addFunction(PositionID(0,0,"#str"),"sizeof")->add(
@@ -358,18 +412,18 @@ int main(int argc, char** argv){
 					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> const Data*{
 		assert(args.size()==1);
 		const AbstractClass* a = args[0]->getReturnType();
-		if(a->classType==CLASS_CLASS)
-			a = args[0]->evaluate(r)->getMyClass(r, id);
+		assert(a->classType==CLASS_LAZY);
+		a = ((LazyClass*)a)->innerType;
+		if(a->classType==CLASS_CLASS){
+			const Data* d = args[0]->evaluate(r);
+			assert(d->type==R_LAZY);
+			a = ((LazyWrapperData*)d)->value->evaluate(r)->getMyClass(r, id);
+		}
 		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
 		return new IntLiteral(s);
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
 
-	/*LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
-			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
-			nullptr,"stdout",GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true
-			),C_POINTERTYPE)
-			, &c_pointerClass));*/
 	String file = "";
 	String command = "";
 	String output = "";
@@ -479,7 +533,7 @@ int main(int argc, char** argv){
 	//initFuncsMeta(rdata);
 	std::vector<String> files =
 	 		{
-	//			getExecutablePath() +"stdlib/stdlib.opt"
+				getExecutablePath() +"stdlib/stdlib.opt"
 #ifdef USE_SDL
 				,getExecutablePath() +"stdlib/sdl.opt"
 #endif

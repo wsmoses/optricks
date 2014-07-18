@@ -37,12 +37,7 @@ template<typename C> Data* import_c_const_h<C>::import(C val){
 #define import_c_const(a) import_c_const_h<typeof(a)>::import(a)
 #define add_import_c_const(m, a) (m)->addVariable(PositionID("#internal",0,0), #a, import_c_const_h<decltype(a)>::import(a))
 
-/*
-LANG_M.addVariable(PositionID(0,0,"#main"), "stdout", new ConstantData(
-			getRData().builder.CreatePointerCast(new GlobalVariable(C_POINTERTYPE, false, GlobalValue::LinkageTypes::ExternalLinkage,
-			nullptr,"stdout",GlobalVariable::ThreadLocalMode::NotThreadLocal,0,true
-			),C_POINTERTYPE)
-			, &c_pointerClass));*/
+//TODO force GV->setUnnamedAddr(true);
 #define import_c_var(a, b) new ConstantData(\
 		getRData().builder.CreatePointerCast(\
 		new llvm::GlobalVariable(convertLLVM<decltype(a)>::convert(), false, llvm::GlobalValue::LinkageTypes::ExternalLinkage,\

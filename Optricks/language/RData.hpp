@@ -166,7 +166,6 @@ struct RData{
 		llvm::Function* LLVM_FPRINTF;
 		llvm::Function* LLVM_DPRINTF;
 		llvm::Value* GLOBAL_MT;
-		llvm::Value* GLOBAL_IDX_P;
 		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
@@ -190,7 +189,6 @@ struct RData{
 			LLVM_DPRINTF = nullptr;
 
 			GLOBAL_MT = nullptr;
-			GLOBAL_IDX_P = nullptr; // not necessary
 			// Set up optimizers
 			llvm::PassManagerBuilder pmb;
 			pmb.Inliner = llvm::createFunctionInliningPass();
@@ -331,7 +329,16 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			auto find = M.find(name);
 			if(find!=M.end()) return find->second;
 			else{
-				llvm::Value* const V = builder.CreateGlobalStringPtr(llvm::StringRef(name),llvm::Twine("_str:",name));
+				auto StrConstant = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name);
+				auto GV = new llvm::GlobalVariable(*lmod, StrConstant->getType(),
+				true, llvm::GlobalValue::PrivateLinkage,StrConstant);
+				GV->setName(llvm::Twine("_str:",name));
+				GV->setConstant(true);
+				GV->setUnnamedAddr(true);
+
+				llvm::Value *zero = llvm::ConstantInt::get(INT32TYPE, 0);
+				llvm::Value *Args[] = { zero, zero };
+				llvm::Value* const V = builder.CreateInBoundsGEP(GV, Args, llvm::Twine("_str:",name));
 				M.insert(std::pair<String,llvm::Value*>(name,V));
 				return V;
 			}
@@ -527,10 +534,12 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			auto EXIT = this->getExtern("exit",llvm::FunctionType::get(VOIDTYPE, args, false));
 			builder.CreateCall(EXIT,V);
 		}
-		llvm::CallInst* seed(llvm::Value* S, llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
-		llvm::Value* rand(llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
+		llvm::CallInst* seed(llvm::Value* S, llvm::Value* MT=nullptr);
+		llvm::Value* rand(llvm::Value* MT=nullptr);
 		//MAX IS INCLUDED (e.g. randInt(1) could give 0 or 1)
-		llvm::Value* randInt(llvm::Value* MAX,llvm::Value* MT=nullptr,llvm::Value* IDX_P=nullptr);
+		llvm::Value* randDouble(llvm::Value* MT=nullptr);
+		llvm::Value* randInt(uint64_t max ,llvm::Value* MT=nullptr);
+		llvm::Value* randInt(llvm::Value* MAX,llvm::Value* MT=nullptr);
 		/* Assumes V is not null */
 		///* Assumes if V is global string constant that it will not be modified */
 		llvm::Value* strlen(llvm::Value* V){

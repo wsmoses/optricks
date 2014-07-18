@@ -7,7 +7,12 @@ File f = File('hi.txt','w')
 f << 128;
 f.close();
 */
-mapdir('.',lambda lang.c.string s: lang.c.printf("%s %s\n", s, getInfo(s).getAccessTime()))
+import 'stdlib/fd.opt'
+object o = FileDescriptor(0)
+println(o)
+println(o.hash())
+println(o==o)
+//mapdir('.',lambda lang.c.string s: lang.c.printf("%s %s\n", s, getInfo(s).getAccessTime()))
 /*
 extern lang.c.size_t _msize(lang.c.pointer)
 auto a = listdir('.');

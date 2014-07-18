@@ -73,17 +73,21 @@ public:
 		LANG_M.addFunction(PositionID(0,0,"#str"),"print")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
-						r.printf("%f", args[0]->evalV(r, id));
+						llvm::Value* V=args[0]->evalV(r, id);
+						if(t==FloatTy) V = r.builder.CreateFPExt(V, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+						r.printf( (t<=DoubleTy)?"%f":"%Lf", V);
 						return &VOID_DATA;
 					}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#str"),"println")->add(
 						new BuiltinInlineFunction(
 								new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 						assert(args.size()==1);
-						r.printf("%f\n", args[0]->evalV(r, id));
+						llvm::Value* V=args[0]->evalV(r, id);
+						if(t==FloatTy) V = r.builder.CreateFPExt(V, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+						r.printf( (t<=DoubleTy)?"%f\n":"%Lf\n", V);
 						return &VOID_DATA;
 					}), PositionID(0,0,"#float"));
 }

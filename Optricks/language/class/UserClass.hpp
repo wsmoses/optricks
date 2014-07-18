@@ -8,6 +8,7 @@
 #ifndef USERCLASS_HPP_
 #define USERCLASS_HPP_
 #include "./AbstractClass.hpp"
+#include "./builtin/ReferenceClass.hpp"
 #include "../function/UnaryFunction.hpp"
 //TODO note if class has 1 arg, does not make struct
 //TODO note if class has 0 arg, does not make anything
@@ -30,6 +31,11 @@ public:
 	friend AbstractClass;
 	UserClass(const Scopable* sc, String nam, const AbstractClass* const supa, LayoutType t, bool fina,bool isObject=false,llvm::Type* T=nullptr);
 	inline void addLocalFunction(const String s, PositionID id, SingleFunction* F, bool forceOverride/*=false*/, void* generic=nullptr){
+		assert(F->getSingleProto()->declarations.size()>=1);
+		assert(F->getSingleProto()->declarations[0].declarationType==this || (layout==PRIMITIVE_LAYOUT &&
+				F->getSingleProto()->declarations[0].declarationType->classType==CLASS_REF &&
+				((ReferenceClass*)F->getSingleProto()->declarations[0].declarationType)->innerType==this
+		));
 		auto find = localFunctions.find(s);
 		auto container = (find==localFunctions.end())?localFunctions.insert(
 					std::pair<String,OverloadedFunction*>(s,new OverloadedFunction(s, generic))).first->second:
@@ -359,7 +365,9 @@ public:
 //		return toCast->classType==CLASS_BOOL;
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
+		assert(toCast);
 		if(toCast->classType==CLASS_VOID) return true;
+		if(layout==POINTER_LAYOUT && toCast->classType==CLASS_CPOINTER) return true;
 		if(toCast->classType!=CLASS_USER) return false;
 		if(this==toCast) return true;
 		if(layout==PRIMITIVE_LAYOUT || toCast->layout==PRIMITIVE_LAYOUT) return false;
@@ -375,6 +383,8 @@ public:
 	 */
 	llvm::Value* castTo(const AbstractClass* const toCast, RData& r, PositionID id, llvm::Value* valueToCast) const override{
 		if(this==toCast) return valueToCast;
+		if(toCast->classType==CLASS_CPOINTER && layout==POINTER_LAYOUT)
+			return r.pointerCast(valueToCast);
 		if(toCast->classType!=CLASS_USER){
 			id.error("Cannot promote class '"+getName()+"' to "+toCast->getName());
 			exit(1);
@@ -398,6 +408,10 @@ public:
 		if(a->classType==CLASS_VOID && b->classType==CLASS_VOID) return 0;
 		else if(a->classType==CLASS_VOID) return 1;
 		else if(b->classType==CLASS_VOID) return -1;
+
+		if(a->classType==CLASS_CPOINTER && b->classType==CLASS_CPOINTER) return 0;
+		else if(a->classType==CLASS_CPOINTER) return 1;
+		else if(b->classType==CLASS_CPOINTER) return -1;
 
 		const UserClass* tmp = this;
 		do{

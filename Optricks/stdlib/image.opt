@@ -4,9 +4,6 @@ class primitive Image{
 #		this.data = (byte:r,byte:g,byte:b)[][](w, lambda int x: (byte:r, byte:g, byte:b)[](h, (0,0,0)));
 		this.data = (byte:r,byte:g,byte:b)[][](w);
 		for(int i=0; i<w; i++){
-//			auto tmp = (byte:r,byte:g,byte:b)[](h);
-//			for(int j=0; j<h; j++) tmp[]=(0,0,0);
-//			this.data[]= tmp;
 			this.data[]= (byte:r,byte:g,byte:b)[](h, (0,0,0));
 		}
 	}
