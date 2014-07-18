@@ -182,14 +182,14 @@ void initClasses(){
 	//ceiling is inclusive
 
 	LANG_M.addFunction(PositionID(0,0,"#class"),"randLong")->add(
-		new BuiltinInlineFunction(new FunctionProto("randLong",std::vector<AbstractDeclaration>(),&floatClass),
+		new BuiltinInlineFunction(new FunctionProto("randLong",std::vector<AbstractDeclaration>(),&longClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==0);
 		llvm::Value* L1 = r.builder.CreateZExt(r.rand(),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
 		llvm::Value* L2 = r.builder.CreateZExt(r.rand(),llvm::Type::getInt64Ty(llvm::getGlobalContext()));
 		L2 = r.builder.CreateShl(L2, (uint64_t)32);
 		llvm::Value* L = r.builder.CreateOr(L1, L2);
-		return new ConstantData(L, &floatClass);
+		return new ConstantData(L, &longClass);
 	}), PositionID(0,0,"#int"));
 
 	LANG_M.addFunction(PositionID(0,0,"#class"),"randFloat")->add(
