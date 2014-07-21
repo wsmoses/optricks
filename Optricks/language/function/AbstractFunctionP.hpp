@@ -16,6 +16,8 @@
 const Data* ExternalFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
 	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
+	else if(proto->returnType->classType==CLASS_REF)
+		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
 	else{
 		return new ConstantData(cal,proto->returnType);
 	}
@@ -37,6 +39,8 @@ template<decltype(llvm::Intrinsic::sqrt) A>
 const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
 	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
+	else if(proto->returnType->classType==CLASS_REF)
+		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
 	else{
 		return new ConstantData(cal,proto->returnType);
 	}
@@ -82,6 +86,8 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		assert(llvm::dyn_cast<llvm::FunctionType>(((llvm::PointerType*) myFunc->getType())->getElementType()));
 		llvm::Value* cal = r.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
+		else if(proto->returnType->classType==CLASS_REF)
+			return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
 		else{
 			return new ConstantData(cal,proto->returnType);
 		}

@@ -13,7 +13,18 @@
 	IntLiteralClass::IntLiteralClass(bool b):
 		RealClass(nullptr,"intLiteral",LITERAL_LAYOUT,CLASS_INTLITERAL,BOOLTYPE)
 		{
-
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"bitCount")->add(
+						new BuiltinInlineFunction(new FunctionProto("bitCount",{AbstractDeclaration(this)},this),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						assert(args.size()==1);
+						const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
+						return new IntLiteral(mpz_popcount(value));}), PositionID(0,0,"#float"));
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"trailingZeros")->add(
+						new BuiltinInlineFunction(new FunctionProto("trailingZeros",{AbstractDeclaration(this)},this),
+						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+						assert(args.size()==1);
+						const auto& value = ((const IntLiteral*) args[0]->evaluate(r))->value;
+						return new IntLiteral(mpz_scan1(value,0));}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"isNan")->add(
 						new BuiltinInlineFunction(new FunctionProto("isNan",{AbstractDeclaration(this)},&boolClass),
 						[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{

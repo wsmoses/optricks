@@ -681,13 +681,13 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
 				auto ret = new IntLiteral(0,0,0);
-				mpz_div(ret->value, tmp1, tmp2);
+				mpz_tdiv_q(ret->value, tmp1, tmp2);
 				return ret;
 			} else if(operation=="%"){
 				if(mpz_sgn(tmp2)==0)
 					filePos.error("Divide by integer 0");
 				auto ret = new IntLiteral(0,0,0);
-				mpz_mod(ret->value, tmp1, tmp2);
+				mpz_tdiv_r(ret->value, tmp1, tmp2);
 				return ret;
 				filePos.warning("Literal modolo gives different results from integer modulo");
 			} else if(operation=="&"){
@@ -702,8 +702,33 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				auto ret = new IntLiteral(0,0,0);
 				mpz_xor(ret->value, tmp1, tmp2);
 				return ret;
-			} else if(operation=="<<" || operation==">>" || operation==">>>"){
-				filePos.compilerError("TODO -- bitshifts");
+			} else if(operation=="<<"){
+				auto ret = new IntLiteral(0,0,0);
+				if(mpz_sgn(tmp2)>=0)
+					mpz_mul_2exp(ret->value, tmp1, mpz_get_ui(tmp2));
+				else{
+					mpz_tdiv_q_2exp(ret->value,tmp1,mpz_get_ui(tmp2));
+				}
+				return ret;
+			} else if(operation==">>"){
+				auto ret = new IntLiteral(0,0,0);
+				if(mpz_sgn(tmp2)<=0)
+					mpz_mul_2exp(ret->value, tmp1, mpz_get_ui(tmp2));
+				else{
+					//mpz_get_ui takes abs value
+					mpz_tdiv_q_2exp(ret->value,tmp1,mpz_get_ui(tmp2));
+				}
+				return ret;
+			} else if(operation==">>>"){
+
+				auto ret = new IntLiteral(0,0,0);
+				if(mpz_sgn(tmp2)<=0)
+					mpz_mul_2exp(ret->value, tmp1, mpz_get_ui(tmp2));
+				else{
+					filePos.error("Cannot perform '>>>' shift on integer literals, can only perform logical shift '>>'");
+					delete ret;
+					return value;
+				}
 			} else if(operation=="**"){
 				auto s = mpz_sgn(tmp2);
 				if(s<0){

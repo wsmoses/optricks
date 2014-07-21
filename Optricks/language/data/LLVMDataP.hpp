@@ -13,6 +13,7 @@
 
 
 	LLVMData::LLVMData(DataType tp, const AbstractClass* const r):Data(tp),type(r){
+		//TODO -- provide warning about how this could be bad...
 		assert(r->classType!=CLASS_REF);
 	};
 	const AbstractClass* LLVMData::getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const{

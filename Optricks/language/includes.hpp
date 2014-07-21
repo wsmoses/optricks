@@ -329,6 +329,7 @@ enum ClassType{
 	CLASS_NULL,
 	CLASS_MATHLITERAL,
 	CLASS_INT, // int classes and literals
+	CLASS_BIGINT,
 		CLASS_INTLITERAL,
 	CLASS_STR, // string classes and literals
 	CLASS_STRLITERAL,

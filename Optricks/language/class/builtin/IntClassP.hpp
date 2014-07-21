@@ -30,21 +30,39 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 			);
 #define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#int"), X)->add(new IntrinsicFunction<llvm::Intrinsic::Y>(new FunctionProto(X,{AbstractDeclaration(this)},this)), PositionID(0,0,"#int"));
 		SINGLE_FUNC_DECLR("changeEndian",bswap)
-		SINGLE_FUNC_DECLR("countBits",ctpop)
-//		SINGLE_FUNC_DECLR("leadingZeroes",ctlz)
-//		SINGLE_FUNC_DECLR("trailingZeroes",cttz)
-
+		SINGLE_FUNC_DECLR("bitCount",ctpop)
+//		SINGLE_FUNC_DECLR("leadingZeros",ctlz)
+//		SINGLE_FUNC_DECLR("trailingZeros",cttz)
 #undef SINGLE_FUNC_DECLR
 
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"leadingZeros")->add(
+				new BuiltinInlineFunction(new FunctionProto("leadingZeros",{AbstractDeclaration(this)},this),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				llvm::Value* V = args[0]->evalV(r, id);
+
+				llvm::SmallVector<llvm::Type*,1> ar(1);
+				ar[0] = this->type;
+				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
+				return new ConstantData(V, this);}), PositionID(0,0,"#float"));
+		LANG_M.addFunction(PositionID(0,0,"#intL"),"trailingZeros")->add(
+				new BuiltinInlineFunction(new FunctionProto("trailingZeros",{AbstractDeclaration(this)},this),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+				assert(args.size()==1);
+				llvm::Value* V = args[0]->evalV(r, id);
+
+				llvm::SmallVector<llvm::Type*,1> ar(1);
+				ar[0] = this->type;
+				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::cttz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
+				return new ConstantData(V, this);}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"ilog2")->add(
 					new BuiltinInlineFunction(new FunctionProto("ilog2",{AbstractDeclaration(this)},this),
 					[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 					assert(args.size()==1);
 					llvm::Value* V = args[0]->evalV(r, id);
 
-					llvm::SmallVector<llvm::Type*,1> ar(2);
+					llvm::SmallVector<llvm::Type*,1> ar(1);
 					ar[0] = this->type;
-					ar[1] = BOOLTYPE;
 					V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
 					V = r.builder.CreateSub(llvm::ConstantInt::get(this->type,len-1,false),V);
 					return new ConstantData(V, this);

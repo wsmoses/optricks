@@ -22,7 +22,7 @@ class Location{
 
 class StandardLocation : public Location{
 	private:
-	llvm::Value* position;
+	llvm::Value* const position;
 	public:
 		~StandardLocation() override{};
 		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}

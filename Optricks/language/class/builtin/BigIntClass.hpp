@@ -12,17 +12,18 @@
 #include "../ScopeClass.hpp"
 class BigIntClass: public RealClass{
 
-	static inline llvm::Type* getBigIntType(){
-		llvm::SmallVector<llvm::Type*,4> ar(4);
-		ar[0] = /* Counts (for garbage collection) */ intClass.type;
-		ar[3] = /* Actual data */ llvm:ArrayType::get(CHARTYPE, sizeof(mpz_t));
-		return llvm::PointerType::getUnqual(llvm::StructType::get(llvm::getGlobalContext(), ar,false));
-	}
+static inline llvm::Type* getBigIntType(){
+	llvm::SmallVector<llvm::Type*,2> ar(2);
+	ar[0] = /* Counts (for garbage collection) */ intClass.type;
+	ar[1] = /* Actual data */ llvm:ArrayType::get(CHARTYPE, sizeof(mpz_t));
+	return llvm::PointerType::getUnqual(llvm::StructType::get(llvm::getGlobalContext(), ar,false));
+}
+
 public:
 	BigIntClass(unsigned):RealClass(nullptr, "bigint", POINTER_LAYOUT,CLASS_BIGINT,
-			llvm::IntegerType::get(llvm::getGlobalContext(),len)){
-(s?s:((Scopable*)(&LANG_M)))->addClass(PositionID(0,0,"#int"),this);
-LANG_M.addFunction(PositionID(0,0,"#int"),"chr")->add(
+			getBigIntType()){
+LANG_M.addClass(PositionID(0,0,"#int"),this);
+/*LANG_M.addFunction(PositionID(0,0,"#int"),"chr")->add(
 		new BuiltinInlineFunction(new FunctionProto("chr",{AbstractDeclaration(this)},&charClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
@@ -70,6 +71,7 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"urem")->add(
 			llvm::Value* V2 = args[1]->evalV(r, id);
 			return new ConstantData(r.builder.CreateURem(V, V2), this);
 }), PositionID(0,0,"#int"));
+*/
 /*
 LANG_M.addFunction(PositionID(0,0,"#int"),"print")->add(
 	new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(this)},&voidClass),
@@ -125,9 +127,6 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 		illegalLocal(id,s);
 		exit(1);
 	}
-	unsigned getWidth() const{
-		return ((llvm::IntegerType*)type)->getBitWidth();
-	}
 	llvm::ConstantInt* getZero(PositionID id, bool negative=false) const override final{
 		return llvm::ConstantInt::get((llvm::IntegerType*)type,(uint64_t)0);
 	}
@@ -138,35 +137,11 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 		return (toCast->classType==CLASS_INT && type==toCast->type)|| toCast->classType==CLASS_VOID;
 	}
 	inline bool hasFit(mpz_t const value) const{
-		if(mpz_sgn(value)<0){
-			auto t_width=mpz_sizeinbase(value,2)+1;
-			auto r_width = getWidth();
-			if(t_width > r_width) return false;
-			return true;
-		} else {
-			auto t_width = mpz_sizeinbase(value,2)+1;
-			auto r_width = getWidth();
-			if(t_width > r_width) return false;
-			return true;
-		}
+		return true;
 	}
 	inline void checkFit(PositionID id, int64_t const value) const{
-		if(value<0){
-			if((-value) >> getWidth() > 0) id.warning("Cannot fit negative integer literal in signed type");
-		} else {
-			if((value) >> getWidth() > 0) id.warning("Cannot fit positive integer literal in integral type");
-		}
 	}
 	inline void checkFit(PositionID id, mpz_t const value) const{
-		if(mpz_sgn(value)<0){
-			auto t_width=mpz_sizeinbase(value,2)+1;
-			auto r_width = getWidth();
-			if(t_width > r_width) id.warning("Cannot fit negative integer literal needing "+str(t_width)+" bits in signed type of size "+str(r_width)+" bits");
-		} else {
-			auto t_width = mpz_sizeinbase(value,2)+1;
-			auto r_width = getWidth();
-			if(t_width > r_width) id.warning("Cannot fit positive integer literal needing "+str(t_width)+" bits in integral type of size "+str(r_width)+" bits");
-		}
 	}
 	inline llvm::ConstantInt* getMaxValue () const {
 		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getSignedMaxValue(getWidth()));
@@ -190,12 +165,10 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getLowBitsSet(getWidth(),hiBit));
 	}
 	inline llvm::ConstantInt* getValue(PositionID id, const int64_t value) const{
-		checkFit(id,value);
 		llvm::ConstantInt* ret = llvm::ConstantInt::get((llvm::IntegerType*)(type),value);
 		return ret;
 	}
 	inline llvm::ConstantInt* getValue(PositionID id, const mpz_t& value) const override final{
-		checkFit(id,value);
 		char temp[mpz_sizeinbase (value, 10) + 2];
 		auto tmp =  mpz_get_str(temp, 10, value);
 		llvm::ConstantInt* ret = llvm::ConstantInt::get((llvm::IntegerType*)(type),llvm::StringRef(String(tmp)),10);
@@ -203,7 +176,7 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
 		if(toCast->classType==CLASS_VOID) return true;
-		if(toCast->layout!=PRIMITIVE_LAYOUT) return false;
+		/*if(toCast->layout!=PRIMITIVE_LAYOUT) return false;
 		switch(toCast->classType){
 		case CLASS_INT:{
 			IntClass* nex = (IntClass*)toCast;
@@ -215,7 +188,8 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 			return true;
 		default:
 			return false;
-		}
+		}*/
+		return false;
 	}
 
 	int compare(const AbstractClass* const a, const AbstractClass* const b) const override final;
