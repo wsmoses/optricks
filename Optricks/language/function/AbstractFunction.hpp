@@ -61,6 +61,8 @@ public:
 	}
 	SingleFunction(FunctionProto* const fp, llvm::Constant* const f):AbstractFunction(),proto(fp), myFunc(f){
 		assert(fp);
+		for(unsigned i=0; i<fp->declarations.size(); i++)
+			assert(fp->declarations[i].declarationType);
 		//if(f)
 		//assert(f->getReturnType());
 	};
@@ -171,6 +173,8 @@ public:
 	}
 	inline bool set(SingleFunction* t, PositionID id){
 		assert(t);
+		for(unsigned i=0; i<t->getSingleProto()->declarations.size(); i++)
+			assert(t->getSingleProto()->declarations[i].declarationType);
 		for(unsigned int i = 0; i<innerFuncs.size(); i++){
 			if(innerFuncs[i]->getSingleProto()->equals(t->getSingleProto(), id)){
 				innerFuncs[i] = t;

@@ -758,6 +758,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			if(i+(isClassMethod?1:0)>=(*best)->getSingleProto()->declarations.size() ||
 					i+(isClassMethod?1:0)>=(*current)->getSingleProto()->declarations.size()){
 				++current;
+				if(current == choices.end()) current = choices.begin();
 				continue;
 			}
 			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
@@ -877,8 +878,10 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			if(i>=(*best)->getSingleProto()->declarations.size() ||
 					i>=(*current)->getSingleProto()->declarations.size()){
 				++current;
+				if(current == choices.end()) current = choices.begin();
 				continue;
 			}
+			cerr << "best:" << std::distance(choices.begin(), best) << " current:" << std::distance(choices.begin(),current) << " length:" << choices.size() << endl << flush;
 			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			auto c2 = (*current)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			assert(c1);
