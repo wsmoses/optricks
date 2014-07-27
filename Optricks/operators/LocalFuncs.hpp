@@ -168,6 +168,8 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 			return new ConstantData(r.builder.CreatePtrToInt(inst->getValue(r, id), intClass.type),&intClass);
 		case CLASS_USER:{
 			auto uc = (const UserClass*)cc;
+			if(uc->type->isIntegerTy())
+				return new ConstantData(r.builder.CreateZExtOrTrunc(inst->getValue(r, id), intClass.type),&intClass);
 			return uc->callLocalFunction(r, id, s, t_args, v, inst);
 		}
 		default: break;

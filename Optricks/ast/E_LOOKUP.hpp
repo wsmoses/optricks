@@ -116,6 +116,10 @@ public:
 	}
 	const Data* evaluate(RData& a) const override{
 		auto eval = left->evaluate(a);
+		if(eval->type==R_VOID){
+			filePos.error("Cannot lookup void data");
+			return eval;
+		}
 		const AbstractClass* cla = eval->getReturnType();
 		///STATIC STUFF
 		if(cla->classType==CLASS_CLASS){

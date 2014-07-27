@@ -8,6 +8,8 @@
 #ifndef DECLARATIONDATA_HPP_
 #define DECLARATIONDATA_HPP_
 #include "../../ast/Declaration.hpp"
+
+#define DECL_DATA_C_
 class DeclarationData:public Data{
 public:
 	Declaration* const value;
@@ -16,7 +18,15 @@ public:
 		assert(val);
 	}
 	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		return value->fastEvaluate(r)->getMyClass(r,id);
+		value->fastEvaluate(r);
+		return value->finished->getMyClass(r,id);
+	}
+	ReferenceData* toReference(RData& r) const{
+		return new ReferenceData(value->finished);
+	}
+	inline void setValue(RData& r, llvm::Value* v) const{
+		value->fastEvaluate(r);
+		value->finished->setValue(r,v);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
 		return value->getReturnType()->hasCast(a);
@@ -25,7 +35,8 @@ public:
 		return value->getReturnType()->compare(a,b);
 	}
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		return value->fastEvaluate(r)->callFunction(r, id, args, instance);
+		value->fastEvaluate(r);
+		return value->finished->callFunction(r, id, args, instance);
 	}
 	const AbstractClass* getReturnType() const override final{
 		return value->getReturnType();
@@ -39,13 +50,16 @@ public:
 		return value->fastEvaluate(r)->getValue(r,id);
 	}
 	inline const Data* toValue(RData& r,PositionID id) const override final{
-		return value->fastEvaluate(r)->toValue(r,id);
+		value->fastEvaluate(r);
+		return value->finished->toValue(r,id);
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		return value->fastEvaluate(r)->castTo(r, right,id);
+		value->fastEvaluate(r);
+		return value->finished->castTo(r, right,id);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		return value->fastEvaluate(r)->castToV(r, right,id);
+		value->fastEvaluate(r);
+		return value->finished->castToV(r, right,id);
 	}
 };
 

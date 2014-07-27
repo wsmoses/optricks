@@ -9,13 +9,47 @@
 #define LOCATIONP_HPP_
 #include "./Location.hpp"
 
-llvm::Value* StandardLocation::getValue(RData& r, PositionID id){
+
+		Location* UpgradeLocation::getInner(RData& r, PositionID id, unsigned idx){
+			return new StandardLocation(r.builder.CreateConstGEP1_32(getPointer(r,id), idx));
+		}
+		Location* UpgradeLocation::getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2){
+			return new StandardLocation(r.builder.CreateConstGEP2_32(getPointer(r,id), idx1, idx2));
+		}
+llvm::Value* UpgradeLocation::getValue(RData& r, PositionID id){
+	auto position = getPointer(r, id);
 	assert(position);
+	if(!position->getType()->isPointerTy()){
+		position->dump();
+		cerr << endl << flush;
+		position->getType()->dump();
+		cerr << endl << flush;
+	}
 	assert(position->getType()->isPointerTy());
 	auto V = r.builder.CreateLoad(position);
 	assert(V);
 	assert(V->getType());
 	return V;
+}
+llvm::Value* StandardLocation::getValue(RData& r, PositionID id){
+	assert(position);
+	if(!position->getType()->isPointerTy()){
+		position->dump();
+		cerr << endl << flush;
+		position->getType()->dump();
+		cerr << endl << flush;
+	}
+	assert(position->getType()->isPointerTy());
+	auto V = r.builder.CreateLoad(position);
+	assert(V);
+	assert(V->getType());
+	return V;
+}
+void UpgradeLocation:: setValue(llvm::Value* v, RData& r){
+	auto position = getPointer(r, PositionID(0,0,"#"));
+	assert(position);
+	assert(position->getType()->isPointerTy());
+	r.builder.CreateStore(v, position);
 }
 void StandardLocation:: setValue(llvm::Value* v, RData& r){
 	assert(position);

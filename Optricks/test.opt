@@ -7,11 +7,11 @@ File f = File('hi.txt','w')
 f << 128;
 f.close();
 */
-import 'stdlib/fd.opt'
-object o = FileDescriptor(0)
-println(o)
-println(o.hash())
-println(o==o)
+//import 'stdlib/fd.opt'
+//object o = FileDescriptor(0)
+//println(o)
+//println(o.hash())
+//println(o==o)
 //mapdir('.',lambda lang.c.string s: lang.c.printf("%s %s\n", s, getInfo(s).getAccessTime()))
 /*
 extern lang.c.size_t _msize(lang.c.pointer)
@@ -27,3 +27,6 @@ for(int i=0; i<a.length; i++){
 	fflush();
 }
 */
+import 'gui.opt'
+auto w=Window('hey',400,400,400,400);
+Surface& s=w.getSurface();

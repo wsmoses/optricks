@@ -1,3 +1,4 @@
+/*
 class primitive Color{
 	byte red;
 	byte green;
@@ -79,3 +80,5 @@ def void glPixel(double x, double y, Color c){
 //	print(y);
 	(extern void glVertex2d(double x, double y))(x,y);
 }
+
+*/

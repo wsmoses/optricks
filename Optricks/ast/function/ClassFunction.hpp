@@ -27,6 +27,7 @@ class ClassFunction : public E_FUNCTION{
 				filePos.error("Name 'iterator' is reserved for generators");
 				exit(1);
 			}
+			if(!staticF)
 			module.addVariable(filePos,"this",&VOID_DATA);
 		}
 		void registerFunctionPrototype(RData& a) const override final{
@@ -145,7 +146,7 @@ class ClassFunction : public E_FUNCTION{
 			a.addJump(&j);
 			methodBody->evaluate(a);
 			if( !a.hadBreak()){
-				const Data* th = module.getVariable(filePos, "this");
+				const Data* th = (staticF)?nullptr:module.getVariable(filePos, "this");
 				for(const auto& dat: module.vars){
 					if(dat!=th) decrementCount(a, filePos, dat);
 				}

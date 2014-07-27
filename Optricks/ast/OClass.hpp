@@ -424,25 +424,149 @@ void initClasses(){
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
 		}), false);
-#define SDL_A(A,B) AF->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(AF->type,A,false),AF));
-		SDL_A(AUDIO_S8, S8);
-		SDL_A(AUDIO_U8, U8);
-		SDL_A(AUDIO_S16LSB, S16LSB);
-		SDL_A(AUDIO_S16MSB, S16MSB);
-		SDL_A(AUDIO_S16SYS, S16SYS);
-		SDL_A(AUDIO_S16, S16);
-		SDL_A(AUDIO_U16LSB, U16LSB);
-		SDL_A(AUDIO_U16MSB, U16MSB);
-		SDL_A(AUDIO_U16SYS, U16SYS);
-		SDL_A(AUDIO_U16, U16);
-		SDL_A(AUDIO_S32LSB, S32LSB);
-		SDL_A(AUDIO_S32MSB, S32MSB);
-		SDL_A(AUDIO_S32SYS, S32SYS);
-		SDL_A(AUDIO_S32, S32);
-		SDL_A(AUDIO_F32LSB, F32LSB);
-		SDL_A(AUDIO_F32MSB, F32MSB);
-		SDL_A(AUDIO_F32SYS, F32SYS);
-		SDL_A(AUDIO_F32, F32);
+#define COMPARE(AF)\
+		AF->addLocalFunction(":<", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpULT(V,V2),&boolClass);\
+		}), false);\
+		AF->addLocalFunction(":<=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpULE(V,V2),&boolClass);\
+		}), false);\
+		AF->addLocalFunction(":>", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpUGT(V,V2),&boolClass);\
+		}), false);\
+		AF->addLocalFunction(":>=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpUGE(V,V2),&boolClass);\
+		}), false);\
+		AF->addLocalFunction(":==", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpEQ(V,V2),&boolClass);\
+		}), false);\
+		AF->addLocalFunction(":!=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateICmpNE(V,V2),&boolClass);\
+		}), false);
+
+		COMPARE(AF)
+#define SDL_A(T, A,B) T->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(T->type,A,false),T));
+		SDL_A(AF, AUDIO_S8, S8);
+		SDL_A(AF, AUDIO_U8, U8);
+		SDL_A(AF, AUDIO_S16LSB, S16LSB);
+		SDL_A(AF, AUDIO_S16MSB, S16MSB);
+		SDL_A(AF, AUDIO_S16SYS, S16SYS);
+		SDL_A(AF, AUDIO_S16, S16);
+		SDL_A(AF, AUDIO_U16LSB, U16LSB);
+		SDL_A(AF, AUDIO_U16MSB, U16MSB);
+		SDL_A(AF, AUDIO_U16SYS, U16SYS);
+		SDL_A(AF, AUDIO_U16, U16);
+		SDL_A(AF, AUDIO_S32LSB, S32LSB);
+		SDL_A(AF, AUDIO_S32MSB, S32MSB);
+		SDL_A(AF, AUDIO_S32SYS, S32SYS);
+		SDL_A(AF, AUDIO_S32, S32);
+		SDL_A(AF, AUDIO_F32LSB, F32LSB);
+		SDL_A(AF, AUDIO_F32MSB, F32MSB);
+		SDL_A(AF, AUDIO_F32SYS, F32SYS);
+		SDL_A(AF, AUDIO_F32, F32);
+
+		auto PF = new UserClass(&SDL->staticVariables,"PixelFormat",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),32));
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),PF);
+		COMPARE(PF)
+		SDL_A(PF, SDL_PIXELFORMAT_UNKNOWN, UNKNOWN)
+		SDL_A(PF, SDL_PIXELFORMAT_INDEX1LSB, INDEX1LSB)
+		SDL_A(PF, SDL_PIXELFORMAT_INDEX1MSB, INDEX1MSB)
+		SDL_A(PF, SDL_PIXELFORMAT_INDEX4LSB, INDEX4LSB)
+		SDL_A(PF, SDL_PIXELFORMAT_INDEX4MSB, INDEX4MSB)
+		SDL_A(PF, SDL_PIXELFORMAT_INDEX8, INDEX8)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB332, RGB332)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB444, RGB444)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB555, RGB555)
+		SDL_A(PF, SDL_PIXELFORMAT_BGR555, BGR555)
+		SDL_A(PF, SDL_PIXELFORMAT_ARGB4444, ARGB4444)
+		SDL_A(PF, SDL_PIXELFORMAT_ABGR4444, ABGR4444)
+		SDL_A(PF, SDL_PIXELFORMAT_BGRA4444, BGRA4444)
+		SDL_A(PF, SDL_PIXELFORMAT_ARGB1555, ARGB1555)
+		SDL_A(PF, SDL_PIXELFORMAT_RGBA5551, RGBA5551)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB565, RGB565)
+		SDL_A(PF, SDL_PIXELFORMAT_BGR565, BGR565)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB24, RGB24)
+		SDL_A(PF, SDL_PIXELFORMAT_BGR24, BGR24)
+		SDL_A(PF, SDL_PIXELFORMAT_RGB888, RGB888)
+		SDL_A(PF, SDL_PIXELFORMAT_RGBX8888, RGBX8888)
+		SDL_A(PF, SDL_PIXELFORMAT_BGR888, BGR888)
+		SDL_A(PF, SDL_PIXELFORMAT_BGRX8888, BGRX8888)
+		SDL_A(PF, SDL_PIXELFORMAT_ARGB8888, ARGB8888)
+		SDL_A(PF, SDL_PIXELFORMAT_RGBA8888, RGBA8888)
+		SDL_A(PF, SDL_PIXELFORMAT_ABGR8888, ABGR8888)
+		SDL_A(PF, SDL_PIXELFORMAT_BGRA8888, BGRA8888)
+		SDL_A(PF, SDL_PIXELFORMAT_ARGB2101010, ARGB2101010)
+		SDL_A(PF, SDL_PIXELFORMAT_YV12, YV12)
+		SDL_A(PF, SDL_PIXELFORMAT_IYUV, IYUV)
+		SDL_A(PF, SDL_PIXELFORMAT_YUY2, YUY2)
+		SDL_A(PF, SDL_PIXELFORMAT_UYVY, UYVY)
+		SDL_A(PF, SDL_PIXELFORMAT_YVYU, YVYU)
+
+
+		auto TA = new UserClass(&SDL->staticVariables,"TextureAccess",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(int)));
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),TA);
+		COMPARE(TA)
+		SDL_A(TA, 0, DEFAULT)
+		SDL_A(TA, SDL_TEXTUREACCESS_STATIC, STATIC)
+		SDL_A(TA, SDL_TEXTUREACCESS_STREAMING, STREAMING)
+		SDL_A(TA, SDL_TEXTUREACCESS_TARGET, TARGET)
+
+		auto RF = new UserClass(&SDL->staticVariables,"Renderer",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),32));
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),RF);
+		COMPARE(RF)
+
+#define CREATE_OR(RF)\
+		RF->addLocalFunction(":|", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":|",{AbstractDeclaration(RF),AbstractDeclaration(RF)},RF),\
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+			assert(args.size()==1);\
+			assert(instance);\
+			llvm::Value* V = instance->getValue(r, id);\
+			llvm::Value* V2 = args[0]->evalV(r, id);\
+			return new ConstantData(r.builder.CreateOr(V,V2),RF);\
+		}), false);
+
+		CREATE_OR(RF)
+
+
+		auto FLIP = new UserClass(&SDL->staticVariables,"Flip",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(SDL_RendererFlip)));
+		SDL->staticVariables.addClass(PositionID("#sdl",0,0),FLIP);
+		COMPARE(FLIP)
+		CREATE_OR(FLIP)
+		SDL_A(FLIP, SDL_FLIP_NONE, NONE)
+		SDL_A(FLIP, SDL_FLIP_HORIZONTAL, HORIZONTAL)
+		SDL_A(FLIP, SDL_FLIP_VERTICAL,VERTICAL)
+
+#undef COMPARE
 #undef SDL_A
 
 

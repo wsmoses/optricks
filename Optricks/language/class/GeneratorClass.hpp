@@ -79,7 +79,7 @@ public:
 				auto LD = ((const LocationData*)instance)->value;
 				return new LocationData(LD, thisClass);
 			} else if(instance->type==R_DEC){
-				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 				return new LocationData(LD, thisClass);
 			} else {
 				assert(instance->type==R_CONST);
@@ -95,7 +95,7 @@ public:
 				auto LD = ((const LocationData*)instance)->value;
 				return new LocationData(LD, innerTypes[0].first);
 			} else if(instance->type==R_DEC){
-				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 				return new LocationData(LD, innerTypes[0].first);
 			} else {
 				assert(instance->type==R_CONST);
@@ -118,7 +118,7 @@ public:
 				auto LD = ((const LocationData*)instance)->value;
 				return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i].first);
 			} else if(instance->type==R_DEC){
-				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+				auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 				return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i].first);
 			} else {
 				assert(instance->type==R_CONST);

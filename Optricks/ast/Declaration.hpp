@@ -20,9 +20,11 @@
 #define DECLR_P_
 class Declaration: public ErrorStatement{
 private:
+	friend DeclarationData;
 	Statement* classV;
 	mutable const AbstractClass* returnType;
 	mutable unsigned isReference;
+	mutable const LocationData* finished;
 public:
 	const AbstractClass* getMyClass(RData& r, PositionID id)const{
 				id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
@@ -39,7 +41,6 @@ public:
 	E_VAR variable;
 	Statement* value;
 	bool global;
-	mutable const LocationData* finished;
 	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) :
 		ErrorStatement(id),
 	classV(v),returnType(nullptr),isReference(2),variable(loc),value(e),global(glob),finished(nullptr){
@@ -117,8 +118,8 @@ public:
 	void reset() const override final{
 		finished = nullptr;
 	}
-	const LocationData* fastEvaluate(RData& r){
-		if(finished) return finished;
+	Location* fastEvaluate(RData& r){
+		if(finished) return finished->value;
 		getReturnType();
 		assert(returnType);
 		if(returnType->layout==LITERAL_LAYOUT){
@@ -129,6 +130,7 @@ public:
 		if(isReference == 1){
 			filePos.error("Cannot find references early");
 		}
+		Location* loc;
 		if(global){
 			llvm::Constant* VAL;
 			if(returnType->layout==POINTER_LAYOUT){
@@ -140,17 +142,18 @@ public:
 				VAL = llvm::UndefValue::get(returnType->type);
 			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
-			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(GV),returnType));
 		}
 		else{
 			auto TheFunction = r.builder.GetInsertBlock()->getParent();
 			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
 			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
-			variable.getMetadata().setObject(finished=new LocationData(getLazy(variable.pointer.name,r,al,nullptr,nullptr),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(loc=getLazy(variable.pointer.name,r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
-		return finished;
+		return loc;
 	}
+public:
 	const LocationData* evaluate(RData& r) const final override{
 		if(finished){
 			if(value){
@@ -177,9 +180,13 @@ public:
 				exit(1);
 			}
 			const ReferenceData* R = (const ReferenceData*)D;
-			variable.getMetadata().setObject(R->value);
+
+			if(global) finished = new LocationData(R->value->value->getGlobal(r), returnType);
+			else finished = R->value;
+
+			variable.getMetadata().setObject(finished);
 			filePos.warning("Garbage collection of references not implemented yet");
-			return finished=R->value;
+			return finished;
 		}
 		llvm::Value* tmp = (value==NULL || value->getToken()==T_VOID)?NULL:(D->castToV(r, returnType, filePos));
 		assert(returnType->type);

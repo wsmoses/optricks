@@ -89,7 +89,7 @@ const Data* TupleClass::getLocalData(RData& r, PositionID id, String s, const Da
 		if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 	} else if(instance->type==R_DEC){
-		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 		if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 		else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 	} else {

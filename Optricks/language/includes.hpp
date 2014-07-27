@@ -195,6 +195,11 @@ class Data;
 class ConstantData;
 #endif
 
+#ifndef DECL_DATA_C_
+#define DECL_DATA_C_
+class DeclarationData;
+#endif
+
 #ifndef SCOPABLE_C_
 #define SCOPABLE_C_
 class Scopable;

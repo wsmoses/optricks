@@ -18,6 +18,47 @@ class Location{
 		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
+		virtual Location* getGlobal(RData& r)=0;
+};
+
+class UpgradeLocation : public Location{
+	private:
+	llvm::GlobalVariable* const metaposition;
+	std::map<llvm::Function*,llvm::Value*> MAP;
+	public:
+		~UpgradeLocation() override{};
+		UpgradeLocation(RData& r, llvm::Value* a): metaposition(new llvm::GlobalVariable(*r.lmod, a->getType(),false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(a->getType()))){
+			assert(a); assert(a->getType()->isPointerTy());
+			r.builder.CreateStore(a, metaposition);
+			MAP[r.builder.GetInsertBlock()->getParent()] = a;
+		}
+		Location* getGlobal(RData& r) override final{
+			return this;
+		}
+		llvm::Value* getValue(RData& r, PositionID id) override final;
+		void setValue(llvm::Value* v, RData& r) override final;
+		llvm::Type* getType() override final{
+			auto T=metaposition->getType();
+			assert(llvm::dyn_cast<llvm::PointerType>(T));
+			return ((llvm::PointerType*) T)->getElementType()->getPointerElementType();
+		}
+		llvm::Value* getPointer(RData& r,PositionID id) override final{
+			auto PARENT = r.builder.GetInsertBlock();
+			auto F = PARENT->getParent();
+			auto find = MAP.find(F);
+			if(find==MAP.end()){
+				auto& BB = F->front();
+				if(BB.empty())
+					r.builder.SetInsertPoint(& BB);
+				else
+					r.builder.SetInsertPoint(& BB.front());
+				auto T = r.builder.CreateLoad(metaposition);
+				r.builder.SetInsertPoint(PARENT);
+				return MAP[F] = T;
+			} else return find->second;
+		}
+		Location* getInner(RData& r, PositionID id, unsigned idx) override final;
+		Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2) override final;
 };
 
 class StandardLocation : public Location{
@@ -26,6 +67,19 @@ class StandardLocation : public Location{
 	public:
 		~StandardLocation() override{};
 		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
+		Location* getGlobal(RData& r) override final{
+			llvm::Value* tmp = position;
+			while(auto CA = llvm::dyn_cast<llvm::CastInst>(tmp))
+				tmp = CA->getOperand(0);
+			if(auto GV = llvm::dyn_cast<llvm::Constant>(tmp)){
+				return this;
+			}
+			//if(auto AL = llvm::dyn_cast<llvm::AllocaInst>(tmp)){
+			//	AL->
+			//}
+			//cerr << "Unknown upgrade...?" << endl << flush;
+			return new UpgradeLocation(r, position);
+		}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
 		llvm::Type* getType() override final{
@@ -72,6 +126,15 @@ public:
 		}
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
+	}Location* getGlobal(RData& r) override final{
+		llvm::Value* tmp = position;
+		while(auto CA = llvm::dyn_cast<llvm::CastInst>(tmp))
+			tmp = CA->getOperand(0);
+		//if(auto AL = llvm::dyn_cast<llvm::AllocaInst>(tmp)){
+		//	AL->
+		//}
+		cerr << "Unknown upgrade 2...?" << endl << flush;
+		return new UpgradeLocation(r, position);
 	}
 	llvm::Type* getType() override final{
 		return type;

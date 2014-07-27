@@ -116,7 +116,10 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		}*/
 
 	const AbstractClass* retType = (dat->type==R_VOID)?(&voidClass):(dat->getReturnType());
-
+	if(retType->classType==CLASS_REF){
+		retType = ((ReferenceClass*)retType)->innerType;
+		dat = ((ReferenceData*)dat)->value;
+	}
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
 		retType = &voidClass;
 		getRData().builder.CreateRetVoid();

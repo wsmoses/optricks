@@ -365,7 +365,7 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, d2->getValue(r, filePos));
 				else if(dat->type==R_DEC)
-					((const DeclarationData*)dat)->value->fastEvaluate(r)->setValue(r, d2->getValue(r, filePos));
+					((const DeclarationData*)dat)->setValue(r, d2->getValue(r, filePos));
 				else
 					filePos.error("Cannot set value of non-variable '"+name+"'");
 				return;
@@ -384,7 +384,7 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, v);
 				else if(dat->type==R_DEC)
-					((const DeclarationData*)dat)->value->fastEvaluate(r)->setValue(r, v);
+					((const DeclarationData*)dat)->setValue(r, v);
 				else
 					filePos.error("Cannot set value of non-variable '"+name+"'");
 				return;

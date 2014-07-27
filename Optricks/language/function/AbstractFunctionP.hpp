@@ -379,7 +379,7 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){
-				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->value->getPointer(r, id);
+				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->getPointer(r, id);
 			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
 				exit(1);
@@ -451,7 +451,7 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){
-				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->value->getPointer(r, id);
+				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->getPointer(r, id);
 			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
 				exit(1);
@@ -881,6 +881,8 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 			}
 			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			auto c2 = (*current)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
+			assert(c1);
+			assert(c2);
 			if(c1->classType==CLASS_LAZY) c1 = ((LazyClass*)c1)->innerType;
 			if(c2->classType==CLASS_LAZY) c2 = ((LazyClass*)c2)->innerType;
 			auto c=args[i]->compareValue(c1,c2);

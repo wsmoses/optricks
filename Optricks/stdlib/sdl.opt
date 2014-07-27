@@ -1,3 +1,4 @@
+import 'gui.opt'
 extern lang.c.pointer SDL_RWFromFile(lang.c.string,lang.c.string);
 extern lang.c.pointer SDL_LoadWAV_RW(lang.c.pointer, lang.c.int, sdl.AudioSpec&, long&, int&)
 def SDL_LoadWAV(lang.c.string file, sdl.AudioSpec& spec, long& buf, lang.c.int& len){

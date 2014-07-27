@@ -1,0 +1,309 @@
+def setClip(lang.c.string s){
+	return (extern lang.c.int SDL_SetClipboardText(lang.c.string))(s)==0;
+}
+def getClip(){
+	return (extern lang.c.string SDL_GetClipboardText())();
+}
+def hasClip(){
+	return (extern bool SDL_HasClipboardText())();
+}
+
+class primitive Texture{
+	lang.c.pointer D;
+	def update(){}
+	def lock(){
+		//todo
+	}
+	def unlock(){
+		(extern void SDL_UnlockTexture(lang.c.pointer))(this.D);
+	}
+	def destroy(){
+		(extern void SDL_DestroyTexture(lang.c.pointer))(this.D);
+	}
+}
+class primitive Graphics{
+	lang.c.pointer D;
+	def createTexture((int,int) size,sdl.PixelFormat format=sdl.PixelFormat.ARGB8888,sdl.TextureAccess access=sdl.TextureAccess.TARGET){
+		return (extern Texture SDL_CreateTexture(lang.c.pointer,sdl.PixelFormat,sdl.TextureAccess,lang.c.int,lang.c.int))(this.D,format,access,lang.c.int(size._0),lang.c.int(size._1));
+	}
+	def getTarget(){
+		return (extern Texture SDL_GetRenderTarget(lang.c.pointer))(this.D);
+	}
+	def createBuffer(sdl.PixelFormat format=sdl.PixelFormat.ARGB8888){
+		lang.c.int x=0;
+		lang.c.int y=0;
+		(extern void SDL_RenderOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+
+
+		Graphics g;
+		Texture t;
+		t.D = (extern lang.c.pointer SDL_CreateTexture(lang.c.pointer,sdl.PixelFormat,sdl.TextureAccess,lang.c.int,lang.c.int))
+			(this.D,format,sdl.TextureAccess.TARGET,x,y);
+		auto m=(extern lang.c.int SDL_SetRenderTarget(lang.c.pointer,lang.c.pointer))(g.D,t.D);
+		return (t,g);
+	}
+
+	def createBuffer(Surface& s,sdl.PixelFormat format=sdl.PixelFormat.ARGB8888){
+		//can free surface after this!
+		return (extern Texture SDL_CreateTextureFromSurface(lang.c.pointer,Surface&))(this.D,&s);
+	}
+	def setSize((int,int) size){
+		return 0==(extern lang.c.int SDL_RenderSetLogicalSize(lang.c.pointer,lang.c.int,lang.c.int))(this.D,lang.c.int(size._0),lang.c.int(size._1));
+	}
+	def getSize(){
+		lang.c.int x=0;
+		lang.c.int y=0;
+		(extern void SDL_RenderOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+		return (int(x),int(y));
+	}
+	def setColor(byte r,byte g, byte b, byte a=byte(255)){
+		return 0==(extern lang.c.int SDL_SetRenderDrawColor(lang.c.pointer,byte,byte,byte,byte))(this.D,r,g,b,a);
+	}
+	def drawTexture(Texture t){
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer))(this.D,t.D,null,null);
+	}
+	def drawTexture(Texture t, Rect& dst){
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,Rect&))(this.D,t.D,null,&dst);
+	}
+	def drawTexture(Texture t, Rect& src,Rect& dst){
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,Rect&,Rect&))(this.D,t.D,&src,&dst);
+	}
+	def drawTexture(Texture t, Rect& src,bool b=true){
+		assert(b);
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,Rect&,lang.c.pointer))(this.D,t.D,&src,null);
+	}
+	def drawTexture(Texture t, double angle, (int,int) center,sdl.Flip flip){
+		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+			(this.D,t.D,null,null,angle,&tp,flip);
+	}
+	def drawTexture(Texture t, Rect& dst,double angle, (int,int) center,sdl.Flip flip){
+		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,Rect&,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+			(this.D,t.D,null,&dst,angle,&tp,flip);
+	}
+	def drawTexture(Texture t, Rect& src,Rect& dst,double angle, (int,int) center,sdl.Flip flip){
+		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,Rect&,Rect&,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+			(this.D,t.D,&src,&dst,angle,&tp,flip);
+	}
+	def drawTexture(Texture t, Rect& src, bool b=true,double angle, (int,int) center,sdl.Flip flip){
+		assert(b)
+		//fix parse error!
+		//(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
+		auto tp = (lang.c.int(center._0),lang.c.int(center._1));
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,Rect&,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+			(this.D,t.D,&src,null,angle,&tp,flip);
+	}
+	def drawLine((int,int) start,(int,int) end){
+		return 0==(extern lang.c.int SDL_RenderDrawLine(lang.c.pointer,lang.c.int,lang.c.int,lang.c.int,lang.c.int))
+			(this.D,lang.c.int(start._0),lang.c.int(start._1),lang.c.int(end._0),lang.c.int(end._1));	
+	}
+	def drawLines((lang.c.int,lang.c.int)[] points){
+		return 0==(extern lang.c.int SDL_RenderDrawLines(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,points.carr,lang.c.int(points.length));
+	}
+	def drawPoint((int,int) start){
+		return 0==(extern lang.c.int SDL_RenderDrawPoint(lang.c.pointer,lang.c.int,lang.c.int))
+			(this.D,lang.c.int(start._0),lang.c.int(start._1));
+	}
+	def drawPoints((lang.c.int,lang.c.int)[] points){
+		return 0==(extern lang.c.int SDL_RenderDrawPoints(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,points.carr,lang.c.int(points.length));
+	}
+	def clear(){
+		return (extern lang.c.int SDL_RenderClear(lang.c.pointer))(this.D)==0;
+	}
+	def drawRect(){
+		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,lang.c.pointer))(this.D,null);
+	}
+	def drawRect(Rect& r){
+		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,Rect&))(this.D,&r);
+	}	
+	def drawRect((int:x,int:y) pos,(int:w,int:h) size){
+		Rect r = Rect(pos.x,pos.y,size.w,size.h);
+		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,Rect&))(this.D,&r);
+	}	
+	def drawRects(Rect[] r){
+		return 0==(extern lang.c.int SDL_RenderDrawRects(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,r.carr,lang.c.int(r.length));
+	}	
+	def fillRect(){
+		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,lang.c.pointer))(this.D,null);
+	}
+	def fillRect(Rect& r){
+		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,Rect&))(this.D,&r);
+	}	
+	def fillRect((int:x,int:y) pos,(int:w,int:h) size){
+		Rect r = Rect(pos.x,pos.y,size.w,size.h);
+		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,Rect&))(this.D,&r);
+	}	
+	def fillRects(Rect[] r){
+		return 0==(extern lang.c.int SDL_RenderFillRects(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,r.carr,lang.c.int(r.length));
+	}
+	def disableClip(){
+		return 0==(extern lang.c.int SDL_RenderSetClipRect(lang.c.pointer,lang.c.pointer))(this.D,null);
+	}
+	def setClip(Rect& r){
+		return 0==(extern lang.c.int SDL_RenderSetClipRect(lang.c.pointer,Rect&))(this.D,&r);
+	}
+	def getClip(){
+		Rect r;
+		(extern lang.c.int SDL_RenderGetClipRect(lang.c.pointer,Rect&))(this.D,&r);
+		return r;
+	}
+	def flush(){
+		(extern void SDL_RenderPresent(lang.c.pointer))(this.D);
+	}
+	def destroy(){
+		(extern void SDL_DestroyRenderer(lang.c.pointer))(this.D);
+	}
+}
+
+class primitive Window{
+	lang.c.pointer D;
+	Graphics graphics;
+	def Window(lang.c.string s,int w,int h,int x=0,int y=0,int flags=0){
+//		this.D = (extern lang.c.pointer SDL_CreateWindow(lang.c.string,lang.c.int,lang.c.int,lang.c.int,lang.c.int,int))(s,lang.c.int(x),lang.c.int(y),lang.c.int(w),lang.c.int(h),flags);
+		(extern lang.c.int SDL_CreateWindowAndRenderer(lang.c.int,lang.c.int,int,lang.c.pointer&,lang.c.pointer&))(w,h,flags,&this.D,&this.graphics.D);
+	}
+	def setIcon(Surface& s){
+		(extern void SDL_SetWindowIcon(lang.c.pointer,Surface&))(this.D,&s);
+	}
+	def setBrightness(float f=1.0){
+		return 0==(extern lang.c.int SDL_SetWindowBrightness(lang.c.pointer,float))(this.D,f);
+	}
+	def getBrightness(){
+		return (extern float SDL_GetWindowBrightness(lang.c.pointer))(this.D);
+	}
+	def setPosition((int,int) pos){
+		(extern void SDL_SetWindowPosition(lang.c.pointer,lang.c.int,lang.c.int))
+			(this.D,lang.c.int(pos._0),lang.c.int(pos._1));
+	}
+	def getPosition(){
+		lang.c.int x=0;
+		lang.c.int y=0;
+		(extern void SDL_GetWindowPosition(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+		return (int(x),int(y));
+	}
+	def setSize((int,int) pos){
+		(extern void SDL_SetWindowSize(lang.c.pointer,lang.c.int,lang.c.int))
+			(this.D,lang.c.int(pos._0),lang.c.int(pos._1));
+	}
+	def getSize(){
+		lang.c.int x=0;
+		lang.c.int y=0;
+		(extern void SDL_GetWindowSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+		return (int(x),int(y));
+	}
+	def hide(){
+		(extern void SDL_HideWindow(lang.c.pointer))(this.D);
+	}
+	def void maximize(){
+		(extern void SDL_MaximizeWindow(lang.c.pointer))(this.D);
+	}
+	def void minimize(){
+		(extern void SDL_MinimizeWindow(lang.c.pointer))(this.D);
+	}
+	def setFullScreen(bool b){
+		//TODO USER REAL VALUE OF SDL_WINDOW_FULLSCREEN_DESKTOP;
+		int flags = b?int(0):int(1);
+		return 0==(extern lang.c.int SDL_SetWindowFullscreen(lang.c.pointer,int))(this.D,flags);
+	}
+	def setBorder(bool b){
+		(extern void SDL_SetWindowBordered(lang.c.pointer,bool))(this.D,b);
+	}
+	def setTitle(lang.c.string s){
+		(extern void SDL_SetWindowTitle(lang.c.pointer,lang.c.string))(this.D,s);
+	}
+	def getTitle(){
+		return (extern lang.c.string SDL_GetWindowTitle(lang.c.pointer))(this.D);
+	}
+	def destroy(){
+		(extern void SDL_DestroyWindow(lang.c.pointer))(this.D);
+	}
+	def Surface& getSurface(){
+		return (extern Surface& SDL_GetWindowSurface(lang.c.pointer))(this.D);
+	}
+}
+
+class primitive Rectangle{
+	lang.c.pointer D;
+}
+
+/*class primitive PixelFormat{
+	lang.c.pointer D;
+	def PixelFormat(Surface& s){
+		this.D = s.format.D;
+	}
+}
+class primitive Color{
+	int value;
+	def Color(PixelFormat f, byte r, byte g, byte b){
+		this.value = (extern int SDL_MapRGB(PixelFormat,byte,byte,byte))(f,r,g,b);
+	}
+	def Color(PixelFormat f, byte r, byte g, byte b,byte a){
+		this.value = (extern int SDL_MapRGB(PixelFormat,byte,byte,byte,byte))(f,r,g,b,a);
+	}
+	def Color(Surface& s, byte r, byte g, byte b){
+		this.value = (extern int SDL_MapRGB(PixelFormat,byte,byte,byte))(s.format,r,g,b);
+	}
+	def Color(Surface& s, byte r, byte g, byte b,byte a){
+		this.value = (extern int SDL_MapRGB(PixelFormat,byte,byte,byte,byte))(s.format,r,g,b,a);
+	}
+}*/
+
+class primitive Rect{
+	lang.c.int x;
+	lang.c.int y;
+	lang.c.int w;
+	lang.c.int h;
+	def Rect(int _w, int _h, int _x=0, int _y=0){
+		this.x = _x;
+		this.y = _y;
+		this.w = _w;
+		this.h = _h;
+	}
+}
+class primitive Surface{
+	int flags;
+	lang.c.pointer format;//pointer
+	lang.c.int w;
+	lang.c.int h;
+	lang.c.pointer pixels;
+	lang.c.pointer userdata;
+	int locked;
+	lang.c.pointer lock_data;
+	Rect clip_rect;
+	lang.c.pointer map;
+	int refcount;
+/*	
+	def getColor(byte r, byte g, byte b){
+		return Color(this.format,r,g,b);
+	}
+	def getColor(byte r, byte g, byte b,byte a){
+		return Color(this.format,r,g,b,a);
+	}
+	def fill(Color c){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,null,c);
+	}
+	def fillRect(Rectangle rect, Color c){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,rect.D,c);
+	}
+	def fill(byte r, byte g, byte b){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,null,Color(this.format,r,g,b));
+	}
+	def fillRect(Rectangle rect, byte r, byte g, byte b){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,rect.D,Color(this.format,r,g,b));
+	}
+	def fill(byte r, byte g, byte b, byte a){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,null,Color(this.format,r,g,b,a));
+	}
+	def fillRect(Rectangle rect, byte r, byte g, byte b, byte a){
+		return 0==(extern lang.c.int SDL_FillRect(Surface&,lang.c.pointer,Color))(&this,rect.D,Color(this.format,r,g,b,a));
+	}
+*/
+	static def loadBMP(lang.c.string file){
+		return (extern Surface SDL_LoadBMP(lang.c.string))(file);
+	}
+	def destroy(){
+		(extern void SDL_FreeSurface(Surface&))(&this);
+	}
+}

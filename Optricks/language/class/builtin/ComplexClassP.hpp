@@ -158,7 +158,7 @@ const Data* ComplexClass::getLocalData(RData& r, PositionID id, String s, const 
 		return new LocationData(LD->getInner(r, id, 0, (s=="real")?0:1), innerClass);
 	} else {
 		assert(instance->type==R_DEC);
-		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value;
+		auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 		return new LocationData(LD->getInner(r, id, 0, (s=="real")?0:1), innerClass);
 	}
 	exit(1);

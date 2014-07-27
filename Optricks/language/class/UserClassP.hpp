@@ -77,7 +77,7 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 		if(instance->type==R_LOC){
 			return new LocationData(((LocationData*)instance)->value, &c_pointerClass);
 		} else if(instance->type==R_DEC){
-			return new LocationData(((DeclarationData*)instance)->value->fastEvaluate(r)->value, &c_pointerClass);
+			return new LocationData(((DeclarationData*)instance)->value->fastEvaluate(r), &c_pointerClass);
 		} else {
 			assert(instance->type==R_CONST);
 			return new ConstantData(((ConstantData*)instance)->value, &c_pointerClass);
@@ -89,8 +89,6 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 				auto fd = tmp->localMap.find(s);
 				if(fd!=tmp->localMap.end()){
 					unsigned start = tmp->start+fd->second;
-					if(instance->type==R_DEC)
-						instance = ((const DeclarationData*)instance)->value->fastEvaluate(r);
 					assert(instance->type==R_DEC || instance->type==R_LOC || instance->type==R_CONST
 							/*|| instance->type==R_REF*/);
 					assert(instance->getReturnType()==this);
@@ -109,12 +107,12 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 					} else if(instance->type==R_DEC){
 						Location* ld;
 						if(layout==PRIMITIVE_LAYOUT){
-							ld = ((const DeclarationData*)instance)->value->fastEvaluate(r)->value->getInner(r, id, 0, start);
+							ld = ((const DeclarationData*)instance)->value->fastEvaluate(r)->getInner(r, id, 0, start);
 							assert(ld);
 						}
 						else{
 							ld = new StandardLocation(r.builder.CreateConstGEP2_32(
-									((const DeclarationData*)instance)->value->fastEvaluate(r)->value->getValue(r,id),0,start));
+									((const DeclarationData*)instance)->value->fastEvaluate(r)->getValue(r,id),0,start));
 							assert(ld);
 						}
 						return new LocationData(ld, tmp->localVars[fd->second]);
