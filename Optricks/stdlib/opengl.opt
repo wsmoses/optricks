@@ -1,39 +1,3 @@
-/*
-class primitive Color{
-	byte red;
-	byte green;
-	byte blue;
-	def Color(byte a, byte b, byte c){
-		this.red = a;
-		this.green = b;
-		this.blue = c;
-	}
-	def Color(double a, double b, double c){
-		this.red = byte(255*a);
-		this.green = byte(255*b);
-		this.blue = byte(255*c);
-	}
-}
-
-def void println(Color c){
-	print('(');
-	print(c.red);
-	print(', ');
-	print(c.green);
-	print(', ');
-	print(c.blue);
-	println(')');
-}
-def void print(Color c){
-	print('(');
-	print(c.red);
-	print(', ');
-	print(c.green);
-	print(', ');
-	print(c.blue);
-	println(')');
-}
-
 extern void glMatrixMode(int);
 extern void glLoadIdentity();
 extern void glFlush();
@@ -64,21 +28,16 @@ extern void glBegin(int a);
 extern void glEnd();
 extern void glutSwapBuffers();
 extern void glColor3ub(byte a, byte b, byte c);
-def void glColor(Color c){
-	glColor3ub(c.red,c.green,c.blue);
-}
-def void glColor((byte:red,byte:green,byte:blue) c){
-	glColor3ub(c.red,c.green,c.blue);
+def void glColor((byte:r,byte:g,byte:b) c){
+	glColor3ub(c.r,c.g,c.b);
 }
 def void glColor(byte red,byte green,byte blue){
 	glColor3ub(red,green,blue);
 }
 
-def void glPixel(double x, double y, Color c){
+def void glPixel(double x, double y, (byte:r,byte:g,byte:b) c){
 	glColor(c);
 //	print(x);
 //	print(y);
 	(extern void glVertex2d(double x, double y))(x,y);
 }
-
-*/

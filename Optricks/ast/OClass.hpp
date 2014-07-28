@@ -364,6 +364,57 @@ void initClasses(){
 			V = r.builder.CreateSExtOrTrunc(V, intClass.type);
 			return new ConstantData(V, &intClass);
 		}), PositionID(0,0,"#int"));
+
+#define SDL_A(T, A,B) T->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(T->type,A,false),T));
+#define COMPARE(AF)\
+	AF->addLocalFunction(":<", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpULT(V,V2),&boolClass);\
+	}), false);\
+	AF->addLocalFunction(":<=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpULE(V,V2),&boolClass);\
+	}), false);\
+	AF->addLocalFunction(":>", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpUGT(V,V2),&boolClass);\
+	}), false);\
+	AF->addLocalFunction(":>=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpUGE(V,V2),&boolClass);\
+	}), false);\
+	AF->addLocalFunction(":==", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpEQ(V,V2),&boolClass);\
+	}), false);\
+	AF->addLocalFunction(":!=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
+			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
+		assert(args.size()==1);\
+		assert(instance);\
+		llvm::Value* V = instance->getValue(r, id);\
+		llvm::Value* V2 = args[0]->evalV(r, id);\
+		return new ConstantData(r.builder.CreateICmpNE(V,V2),&boolClass);\
+	}), false);
 #ifdef USE_SDL
 	auto SDL = new ScopeClass(&LANG_M, PositionID("#init",0,0), "sdl");
 	{
@@ -424,58 +475,8 @@ void initClasses(){
 			llvm::Value* V = instance->getValue(r, id);
 			return new ConstantData(r.builder.CreateTrunc(r.builder.CreateAnd(V, llvm::ConstantInt::get(shortClass.type,SDL_AUDIO_MASK_BITSIZE)),byteClass.type),&byteClass);
 		}), false);
-#define COMPARE(AF)\
-		AF->addLocalFunction(":<", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpULT(V,V2),&boolClass);\
-		}), false);\
-		AF->addLocalFunction(":<=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":<=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpULE(V,V2),&boolClass);\
-		}), false);\
-		AF->addLocalFunction(":>", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpUGT(V,V2),&boolClass);\
-		}), false);\
-		AF->addLocalFunction(":>=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":>=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpUGE(V,V2),&boolClass);\
-		}), false);\
-		AF->addLocalFunction(":==", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":==",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpEQ(V,V2),&boolClass);\
-		}), false);\
-		AF->addLocalFunction(":!=", PositionID("#sdl",0,0), new BuiltinInlineFunction(new FunctionProto(":!=",{AbstractDeclaration(AF),AbstractDeclaration(AF)},&boolClass),\
-				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{\
-			assert(args.size()==1);\
-			assert(instance);\
-			llvm::Value* V = instance->getValue(r, id);\
-			llvm::Value* V2 = args[0]->evalV(r, id);\
-			return new ConstantData(r.builder.CreateICmpNE(V,V2),&boolClass);\
-		}), false);
 
 		COMPARE(AF)
-#define SDL_A(T, A,B) T->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(T->type,A,false),T));
 		SDL_A(AF, AUDIO_S8, S8);
 		SDL_A(AF, AUDIO_U8, U8);
 		SDL_A(AF, AUDIO_S16LSB, S16LSB);
@@ -631,6 +632,33 @@ void initClasses(){
 		#undef SDL_A
 		auto MUS = new EnumClass(&SDL->staticVariables,"MusicType",E_D,PositionID("#sdl",0,0),llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(Mix_MusicType)));
 		SDL->staticVariables.addClass(PositionID("#sdl",0,0),MUS);
+	}
+#endif
+#ifdef USE_OPENGL
+	{
+#define GL_A(T, A,B) T->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(T->type,A##B,false),T));
+
+		auto PF = new UserClass(&SDL->staticVariables,"GLenum",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(GLenum)));
+		LANG_M.addClass(PositionID("#sdl",0,0),PF);
+		//COMPARE(PF)
+		GL_A(PF, GL_, RGB)
+		//GL_A(PF, GL_, BGR)
+		GL_A(PF, GL_, RGBA)
+		//GL_A(PF, GL_, BGRA)
+		GL_A(PF, GL_, RED)
+		GL_A(PF, GL_, GREEN)
+		GL_A(PF, GL_, BLUE)
+		GL_A(PF, GL_, ALPHA)
+		GL_A(PF, GL_, LUMINANCE)
+		GL_A(PF, GL_, LUMINANCE_ALPHA)
+		GL_A(PF, GL_, UNSIGNED_BYTE)
+		GL_A(PF, GL_, BYTE)
+		GL_A(PF, GL_, BITMAP)
+		GL_A(PF, GL_, UNSIGNED_SHORT)
+		GL_A(PF, GL_, SHORT)
+		GL_A(PF, GL_, UNSIGNED_INT)
+		GL_A(PF, GL_, INT)
+		GL_A(PF, GL_, FLOAT)
 	}
 #endif
 	{

@@ -269,6 +269,8 @@ struct RData{
 			assert(name!="memset");
 			assert(name!="free");
 			assert(name!="rand");
+			assert(name!="pthread_create");
+			assert(name!="pthread_join");
 			for(unsigned i=0; i<FT->getNumParams(); i++)
 				assert(FT->getParamType(i));
 			auto G = lmod->getOrInsertFunction(llvm::StringRef(name), FT);
@@ -893,6 +895,62 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 #endif
 		}
 
+		//returns thread id*
+		llvm::Value* createThread(llvm::Value* toRun, llvm::Value* arg=llvm::ConstantPointerNull::get(C_POINTERTYPE), llvm::Value* threadPos=nullptr){
+			static auto PTHREAD_TYPE = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t));
+			if(threadPos==nullptr)
+				threadPos = builder.CreateAlloca(PTHREAD_TYPE);
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,4> args(4);
+				args[0] = llvm::PointerType::getUnqual(PTHREAD_TYPE);
+				args[1] = C_POINTERTYPE; // attributes, using null
+				args[2] = llvm::PointerType::getUnqual(llvm::FunctionType::get(C_POINTERTYPE,llvm::SmallVector<llvm::Type*,1>(1, C_POINTERTYPE),false));
+				args[3] = C_POINTERTYPE;
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE,args,false), llvm::Function::ExternalLinkage,
+						"pthread_create", lmod);
+				assert(F->getName()=="pthread_create");
+
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NonNull);
+
+				//F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				getExec()->updateGlobalMapping(F,(void*)(& ::pthread_create));
+			}
+			auto C = builder.CreateCall4(F, threadPos, llvm::ConstantPointerNull::get(C_POINTERTYPE),toRun,arg);
+			//todo opt_assert(C==0)
+			return threadPos;
+		}
+
+		void joinThread(llvm::Value* threadID,llvm::Value* ret_p=nullptr){
+			static auto PTHREAD_TYPE = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t));
+			assert(PTHREAD_TYPE==threadID->getType());
+			if(ret_p==nullptr)
+				ret_p = builder.CreateAlloca(C_POINTERTYPE);
+			else assert(ret_p->getType()==llvm::PointerType::getUnqual(C_POINTERTYPE));
+			static llvm::Function* F=nullptr;
+			if(F == nullptr) {
+				llvm::SmallVector<llvm::Type*,2> args(2);
+				args[0] = PTHREAD_TYPE;
+				args[1] = llvm::PointerType::getUnqual(C_POINTERTYPE);
+
+				F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE,args,false), llvm::Function::ExternalLinkage,
+						"pthread_join", lmod);
+				assert(F->getName()=="pthread_join");
+
+				//F->addAttribute(1, llvm::Attribute::AttrKind::NoCapture);
+				//F->addAttribute(2, llvm::Attribute::AttrKind::NonNull);
+
+				//F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
+
+				getExec()->updateGlobalMapping(F,(void*)(& ::pthread_join));
+			}
+			auto C = builder.CreateCall2(F, threadID, ret_p);
+			//todo opt_assert(C==0)
+		}
+
 		llvm::Value* closedir(llvm::Value* dir){
 			assert(dir);
 			assert(dir->getType()==C_POINTERTYPE);
@@ -902,7 +960,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				llvm::SmallVector<llvm::Type*,1> args(1);
 				args[0] = C_POINTERTYPE;
 
-				F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE,args,true), llvm::Function::ExternalLinkage,
+				F = llvm::Function::Create(llvm::FunctionType::get(C_INTTYPE,args,false), llvm::Function::ExternalLinkage,
 						"closedir", lmod);
 				assert(F->getName()=="closedir");
 
@@ -937,7 +995,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				llvm::SmallVector<llvm::Type*,1> args(1);
 				args[0] = C_POINTERTYPE;
 
-				F = llvm::Function::Create(llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::ArrayType::get(CHARTYPE, sizeof(struct dirent))),args,true), llvm::Function::ExternalLinkage,
+				F = llvm::Function::Create(llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::ArrayType::get(CHARTYPE, sizeof(struct dirent))),args,false), llvm::Function::ExternalLinkage,
 						"readdir", lmod);
 				assert(F->getName()=="readdir");
 

@@ -32,7 +32,7 @@ class primitive Graphics{
 	def createBuffer(sdl.PixelFormat format=sdl.PixelFormat.ARGB8888){
 		lang.c.int x=0;
 		lang.c.int y=0;
-		(extern void SDL_RenderOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+		(extern void SDL_GetRendererOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
 
 
 		Graphics g;
@@ -53,7 +53,7 @@ class primitive Graphics{
 	def getSize(){
 		lang.c.int x=0;
 		lang.c.int y=0;
-		(extern void SDL_RenderOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
+		(extern void SDL_GetRendererOutputSize(lang.c.pointer,lang.c.int&,lang.c.int&))(this.D,&x,&y);
 		return (int(x),int(y));
 	}
 	def setColor(byte r,byte g, byte b, byte a=byte(255)){
@@ -63,14 +63,14 @@ class primitive Graphics{
 		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer))(this.D,t.D,null,null);
 	}
 	def drawTexture(Texture t, Rect& dst){
-		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,Rect&))(this.D,t.D,null,&dst);
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer))(this.D,t.D,null,&dst);
 	}
 	def drawTexture(Texture t, Rect& src,Rect& dst){
-		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,Rect&,Rect&))(this.D,t.D,&src,&dst);
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer))(this.D,t.D,&src,&dst);
 	}
 	def drawTexture(Texture t, Rect& src,bool b=true){
 		assert(b);
-		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,Rect&,lang.c.pointer))(this.D,t.D,&src,null);
+		return 0==(extern lang.c.int SDL_RenderCopy(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer))(this.D,t.D,&src,null);
 	}
 	def drawTexture(Texture t, double angle, (int,int) center,sdl.Flip flip){
 		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
@@ -79,12 +79,12 @@ class primitive Graphics{
 	}
 	def drawTexture(Texture t, Rect& dst,double angle, (int,int) center,sdl.Flip flip){
 		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
-		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,Rect&,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
 			(this.D,t.D,null,&dst,angle,&tp,flip);
 	}
 	def drawTexture(Texture t, Rect& src,Rect& dst,double angle, (int,int) center,sdl.Flip flip){
 		(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
-		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,Rect&,Rect&,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
 			(this.D,t.D,&src,&dst,angle,&tp,flip);
 	}
 	def drawTexture(Texture t, Rect& src, bool b=true,double angle, (int,int) center,sdl.Flip flip){
@@ -92,7 +92,7 @@ class primitive Graphics{
 		//fix parse error!
 		//(lang.c.int,lang.c.int) tp = (lang.c.int(center._0),lang.c.int(center._1));
 		auto tp = (lang.c.int(center._0),lang.c.int(center._1));
-		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,Rect&,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
+		return 0==(extern lang.c.int SDL_RenderCopyEx(lang.c.pointer,lang.c.pointer,lang.c.pointer,lang.c.pointer,double,(lang.c.int,lang.c.int)&,sdl.Flip))
 			(this.D,t.D,&src,null,angle,&tp,flip);
 	}
 	def drawLine((int,int) start,(int,int) end){
@@ -116,11 +116,13 @@ class primitive Graphics{
 		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,lang.c.pointer))(this.D,null);
 	}
 	def drawRect(Rect& r){
-		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,Rect&))(this.D,&r);
+		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 	}	
 	def drawRect((int:x,int:y) pos,(int:w,int:h) size){
 		Rect r = Rect(pos.x,pos.y,size.w,size.h);
-		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,Rect&))(this.D,&r);
+		//println{lang.c.pointer}(&r);
+		//lang.c.printf("%d %d %d %d\n",r.x,r.y,r.w,r.h);
+		return 0==(extern lang.c.int SDL_RenderDrawRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 	}	
 	def drawRects(Rect[] r){
 		return 0==(extern lang.c.int SDL_RenderDrawRects(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,r.carr,lang.c.int(r.length));
@@ -129,11 +131,11 @@ class primitive Graphics{
 		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,lang.c.pointer))(this.D,null);
 	}
 	def fillRect(Rect& r){
-		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,Rect&))(this.D,&r);
+		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 	}	
 	def fillRect((int:x,int:y) pos,(int:w,int:h) size){
 		Rect r = Rect(pos.x,pos.y,size.w,size.h);
-		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,Rect&))(this.D,&r);
+		return 0==(extern lang.c.int SDL_RenderFillRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 	}	
 	def fillRects(Rect[] r){
 		return 0==(extern lang.c.int SDL_RenderFillRects(lang.c.pointer,lang.c.pointer,lang.c.int))(this.D,r.carr,lang.c.int(r.length));
@@ -142,11 +144,11 @@ class primitive Graphics{
 		return 0==(extern lang.c.int SDL_RenderSetClipRect(lang.c.pointer,lang.c.pointer))(this.D,null);
 	}
 	def setClip(Rect& r){
-		return 0==(extern lang.c.int SDL_RenderSetClipRect(lang.c.pointer,Rect&))(this.D,&r);
+		return 0==(extern lang.c.int SDL_RenderSetClipRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 	}
 	def getClip(){
 		Rect r;
-		(extern lang.c.int SDL_RenderGetClipRect(lang.c.pointer,Rect&))(this.D,&r);
+		(extern lang.c.int SDL_RenderGetClipRect(lang.c.pointer,lang.c.pointer))(this.D,&r);
 		return r;
 	}
 	def flush(){
@@ -301,7 +303,10 @@ class primitive Surface{
 	}
 */
 	static def loadBMP(lang.c.string file){
-		return (extern Surface SDL_LoadBMP(lang.c.string))(file);
+		return (extern Surface& SDL_LoadBMP(lang.c.string))(file);
+	}
+	static def loadImage(lang.c.string file){
+		return (extern Surface& IMG_Load(lang.c.string))(file);
 	}
 	def destroy(){
 		(extern void SDL_FreeSurface(Surface&))(&this);

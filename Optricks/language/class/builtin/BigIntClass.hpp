@@ -134,7 +134,7 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 		return llvm::ConstantInt::get((llvm::IntegerType*)type,(uint64_t)1);
 	}
 	bool noopCast(const AbstractClass* const toCast) const override{
-		return (toCast->classType==CLASS_INT && type==toCast->type)|| toCast->classType==CLASS_VOID;
+		return (toCast->classType==CLASS_BIGINT && type==toCast->type)|| toCast->classType==CLASS_VOID;
 	}
 	inline bool hasFit(mpz_t const value) const{
 		return true;
@@ -142,27 +142,6 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 	inline void checkFit(PositionID id, int64_t const value) const{
 	}
 	inline void checkFit(PositionID id, mpz_t const value) const{
-	}
-	inline llvm::ConstantInt* getMaxValue () const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getSignedMaxValue(getWidth()));
-	}
-	inline llvm::ConstantInt* getMinValue () const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getSignedMinValue(getWidth()));
-	}
-	inline llvm::ConstantInt* getAllOnes() const{
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getAllOnesValue(getWidth()));
-	}
-	inline llvm::ConstantInt* getOneBitSet(unsigned BitNo) const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getOneBitSet(getWidth(),BitNo));
-	}
-	inline llvm::ConstantInt* getBitsSet(unsigned loBit, unsigned hiBit) const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getBitsSet(getWidth(),loBit,hiBit));
-	}
-	inline llvm::ConstantInt* getHighBitsSet( unsigned hiBit) const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getHighBitsSet(getWidth(),hiBit));
-	}
-	inline llvm::ConstantInt* getLowBitsSet( unsigned hiBit) const {
-		return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt::getLowBitsSet(getWidth(),hiBit));
 	}
 	inline llvm::ConstantInt* getValue(PositionID id, const int64_t value) const{
 		llvm::ConstantInt* ret = llvm::ConstantInt::get((llvm::IntegerType*)(type),value);
@@ -176,6 +155,7 @@ LANG_M.addFunction(PositionID(0,0,"#int"),"println")->add(
 	}
 	bool hasCast(const AbstractClass* const toCast) const override{
 		if(toCast->classType==CLASS_VOID) return true;
+		if(toCast->classType==CLASS_BIGINT) return true;
 		/*if(toCast->layout!=PRIMITIVE_LAYOUT) return false;
 		switch(toCast->classType){
 		case CLASS_INT:{

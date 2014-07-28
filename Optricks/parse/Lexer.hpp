@@ -18,6 +18,7 @@
 #include "../ast/Block.hpp"
 #include "../ast/ImportStatement.hpp"
 #include "../ast/E_ARR.hpp"
+#include "../ast/E_PARALLEL.hpp"
 #include "../ast/E_RETURN.hpp"
 #include "../ast/E_BINOP.hpp"
 #include "../ast/E_LOOKUP.hpp"
@@ -661,6 +662,81 @@ public:
 		pos().compilerError("Switch statement not allowed yet");
 		exit(1);
 	}
+	E_PARALLEL* getParallel(ParseData data, String temp=""){
+		if(temp=="") temp = f->getNextName(EOF);
+		if(f->trim(EOF)) f->error("Uncompleted parallel body");
+		auto p_pos = pos();
+		if (temp == "parallel" || temp=="spawn"){
+			bool toJoin = temp=="parallel";
+			bool paren=f->peek()=='(';
+			if(paren){
+				f->read();
+				f->trim(EOF);
+			}
+			String name=paren?getNextName(EOF):"._pid";
+			OModule* nmod = new OModule(data.mod);
+			nmod->addVariable(pos(), name,&VOID_DATA);
+			E_PARALLEL* parallel = new E_PARALLEL(p_pos, E_VAR( Resolvable(nmod,name,pos()), false),toJoin);
+			f->trim(EOF);
+			if(paren){
+				if(f->read()!=')') f->error("Need ')' to end paren'd statement");
+				f->trim(EOF);
+			}
+			bool enclosed = f->peek()=='{';
+			if(!enclosed){
+				if(temp=="parallel") f->error("parallel body requires '{' to surround");
+				parallel->body.push_back(std::pair<Statement*,Statement*>(&ONE_LITERAL,getNextStatement(data.getLoc(PARSE_LOCAL))));
+			} else {
+				f->read();
+				f->trim(EOF);
+				auto tmp = f->getNextName(EOF);
+				if(tmp!="case")
+					f->error("Cannot begin parallel body without 'case' but '"+tmp+"' "+String(1,f->peek()));
+				while(true){
+					f->trim(EOF);
+					Statement* num;
+					if(f->peek()==':'){
+						f->read();
+						num = &ONE_LITERAL;
+					} else {
+						num = getNextStatement(data.getExpr());
+						f->trim(EOF);
+						if(f->read()!=':')
+							f->error("Requires ':' after thread count in parallel block");
+						f->trim(EOF);
+					}
+					auto blocks = new Block(pos(), nmod);
+					while(true){
+						//todo place case thing here!
+						if(f->peek()=='}') break;
+						else if(f->peek()=='c'){
+							auto m=f->getMarker();
+							if(f->getNextName(EOF)=="case"){
+								break;
+							} else f->undoMarker(m);
+						}
+						Statement* e = getNextStatement(data.getModule(&(blocks->module)));
+						if(e->getToken()==T_VOID){
+							pos().error("Needed '}' to end block, found '"+String(1,f->peek())+"'");
+							exit(1);
+						}
+						if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
+						trim(EOF);
+						while(!f->done && f->peek()==';'){f->read();trim(data);}
+						trim(EOF);
+					}
+					parallel->body.push_back(std::pair<Statement*,Statement*>(num,blocks));
+					if(f->peek()=='}') break;
+				}
+				f->read();
+				trim(data.endWith);
+			}
+			return parallel;
+		} else{
+			f->error("Invalid parallelization start -- used "+temp);
+			return nullptr;
+		}
+	}
 	Statement* getLambdaFunction(ParseData data, bool read=false){
 		if(!read && f->getNextName(data.endWith)!="lambda") f->error("Could not find 'lambda' in lambda function");
 		if(f->trim(EOF)) f->error("Uncompleted lambda function");
@@ -1181,6 +1257,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="do") return getDoLoop(data,true);
 		else if(temp=="lambda") return getLambdaFunction(data,true);
 		else if(temp=="switch") return getSwitch(data,true);
+		else if(temp=="spawn"||temp=="parallel") return getParallel(data,temp);
 		else if(temp=="gen" || temp=="def" || temp=="inl" || temp=="extern") return getFunction(data,temp);
 		else if(temp=="import"){
 			trim(data);
@@ -1208,7 +1285,12 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="break" || temp=="continue"){
 			//			if(!data.allowsDec()) f->error("Cannot have return here");
 			trim(data.endWith);
+			auto m=f->getMarker();
 			String name = (isStartName(f->peek()))?(getNextName(EOF)):"";
+			if(name=="case"){
+				name = "";
+				f->undoMarker(m);
+			}
 			return new E_RETURN(pos(), nullptr, name, (temp=="break")?BREAK:CONTINUE );
 		}
 		else{

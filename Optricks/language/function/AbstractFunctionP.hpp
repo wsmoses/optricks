@@ -695,7 +695,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
+		if(a->getSingleProto()->declarations.size()>=args.size()+(isClassMethod?1:0) || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(i+(isClassMethod?1:0)>=a->getSingleProto()->declarations.size()) continue;
@@ -814,7 +814,7 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 	}
 	std::list<SingleFunction*> choices;
 	for(auto& a: innerFuncs){
-		if(a->getSingleProto()->declarations.size()>=args.size() || a->getSingleProto()->varArg){
+		if(a->getSingleProto()->declarations.size()>=args.size()+(isClassMethod?1:0) || a->getSingleProto()->varArg){
 			bool valid=true;
 			for(unsigned int i=0; i<args.size(); i++){
 				if(i+(isClassMethod?1:0)>=a->getSingleProto()->declarations.size()) continue;
@@ -858,7 +858,9 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 				}
 			}
 			if(!valid) continue;
-			choices.push_back(a);
+			else{
+				choices.push_back(a);
+			}
 		}
 	}
 	if(choices.size()==0){
@@ -875,13 +877,12 @@ SingleFunction* OverloadedFunction::getBestFit(const PositionID id, const std::v
 		++current;
 		for(; current!=best;){
 			//less means better
-			if(i>=(*best)->getSingleProto()->declarations.size() ||
-					i>=(*current)->getSingleProto()->declarations.size()){
+			if(i+(isClassMethod?1:0)>=(*best)->getSingleProto()->declarations.size() ||
+					i+(isClassMethod?1:0)>=(*current)->getSingleProto()->declarations.size()){
 				++current;
 				if(current == choices.end()) current = choices.begin();
 				continue;
 			}
-			cerr << "best:" << std::distance(choices.begin(), best) << " current:" << std::distance(choices.begin(),current) << " length:" << choices.size() << endl << flush;
 			auto c1 = (*best)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			auto c2 = (*current)->getSingleProto()->declarations[i+(isClassMethod?1:0)].declarationType;
 			assert(c1);

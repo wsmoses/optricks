@@ -399,6 +399,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					}
 					else {
 						auto tmp = val->castToV(*this, jumps[i]->returnType, id);
+						assert(tmp);
 						assert(jumps[i]->scope);
 						for(const auto& dat: jumps[i]->scope->vars){
 							decrementCount(*this, id, dat);
@@ -455,6 +456,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 			for(int i = jumps.size()-1; ; i--){
 				if(jumps[i]->toJump == LOOP){
 					//jumps[i]->endings.push_back(std::pair<BasicBlock*,Value*>(bb,val));
+					assert((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));
 					builder.CreateBr((jump==BREAK)?(jumps[i]->end):(jumps[i]->start));
 					return;
 				} else {

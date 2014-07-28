@@ -1,14 +1,22 @@
 sdl.init(sdl.INIT_EVERYTHING)
 auto window = Window('Jeu de la vie',400,400,640,480);
-println(window.D)
-println(window.graphics.D)
+
 auto renderer = window.graphics
-renderer.setColor(255,0,0,255)
+auto s = renderer.getSize();
+
+lang.c.printf("%d %d\n", s._0,s._1);
+
 renderer.clear()
-Rect r = Rect(50,50,50,50)
-renderer.drawRect(&r)
-renderer.show()
+
+renderer.setColor(255,0,0,255)
+
+renderer.drawRect((50,50),(50,50))
+
+//Rect r = Rect(50,50,50,50)
+//renderer.drawRect(&r)
+
+renderer.flush();
 
 (extern lang.c.int SDL_Delay(lang.c.int))(5000);
-window.destroy()
+window.destroy();
 (extern void SDL_Quit())();

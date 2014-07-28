@@ -1,15 +1,15 @@
 double angle=0;
-def Color mand(complex z0){
+def mand(complex z0){
 	complex z = z0
 	for(int iter=0; iter<500; iter++)
 		if( abs2(z) > 4 ){
 			double val = 1-
 			(iter +1 -log(.5*log(z.real**2+z.imag**2)/log(2))/log(2))/1000;
 			val = 1-val*val;
-			return Color(val,val,.4+.6*val)
+			return (byte(val*255),byte(val*255),byte(255*(.4+.6*val)))
 		}
 		else z = z*z + complex(cos(angle),sin(angle))
-	return Color(0,0,0);
+	return (0,0,0);
 }
 
 def void display(){
@@ -21,7 +21,7 @@ def void display(){
 	glEnd();
 	glFlush();
 	glutSwapBuffers();
-	printf("%f\n", angle);
+	println(angle);
 	fflush();
 }
 def idle(){
