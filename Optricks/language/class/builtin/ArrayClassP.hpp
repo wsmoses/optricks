@@ -13,7 +13,7 @@
 ArrayClass::ArrayClass(const AbstractClass* a):
 		AbstractClass(nullptr,str(a),nullptr,PRIMITIVE_LAYOUT,CLASS_ARRAY,true,getArrayType(a)),inner(a){
 		if(a){
-			assert(a->classType!=CLASS_LAZY);
+		//	assert(a->classType!=CLASS_LAZY);
 			assert(a->classType!=CLASS_REF);
 		}
 		LANG_M.addFunction(PositionID(0,0,"#array"),"print")->add(

@@ -301,7 +301,13 @@ void initClasses(){
 			}
 			return ArrayClass::get(args[0]);
 		}),"array");
-
+	LANG_M.addClass(PositionID(0,0,"#lazy"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+		if(args.size()!=1){
+			id.error("Must use template class 'lazy' with one argument");
+			return nullptr;
+		}
+		return LazyClass::get(args[0]);
+	}),"lazy");
 	LANG_M.addClass(PositionID(0,0,"#priorityqueue"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			//if(args.size()==0) return ComplexClass::get(&doubleClass);
 			if(args.size()!=1){
