@@ -84,11 +84,11 @@ public:
 			if(ad[Idx].declarationType->classType==CLASS_REF){
 				auto ic = ((ReferenceClass*)ad[Idx].declarationType)->innerType;
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(llvm::UndefValue::get(ic->type),ic))
+					(new ConstantData(getUndef(ic->type),ic))
 				);
 			} else{
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(llvm::UndefValue::get(ad[Idx].declarationType->type),ad[Idx].declarationType))
+					(new ConstantData(getUndef(ad[Idx].declarationType->type),ad[Idx].declarationType))
 				);
 			}
 		}

@@ -61,7 +61,7 @@ const Data* ImaginaryLiteral::castTo(RData& r, const AbstractClass* const right,
 		if(ar[0]!=nullptr && ar[1]!=nullptr)
 			return new ConstantData(llvm::ConstantVector::get(ar),cc);
 		else{
-			llvm::Value* V = llvm::UndefValue::get(cc->type);
+			llvm::Value* V = getUndef(cc->type);
 			V = r.builder.CreateInsertElement(V, ar[0]?((llvm::Value*)ar[0]):nreal, getInt32(0));
 			V = r.builder.CreateInsertElement(V, nimag, getInt32(1));
 			return new ConstantData(V, cc);
@@ -95,7 +95,7 @@ llvm::Value* ImaginaryLiteral::castToV(RData& r, const AbstractClass* const righ
 		if(ar[0]!=nullptr && ar[1]!=nullptr)
 			return llvm::ConstantVector::get(ar);
 		else{
-			llvm::Value* V = llvm::UndefValue::get(cc->type);
+			llvm::Value* V = getUndef(cc->type);
 			V = r.builder.CreateInsertElement(V, ar[0]?((llvm::Value*)ar[0]):nreal, getInt32(0));
 			V = r.builder.CreateInsertElement(V, nimag, getInt32(1));
 			return V;

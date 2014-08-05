@@ -109,7 +109,7 @@ public:
 		if(toCast->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast named tuple class to "+toCast->getName());
 		const NamedTupleClass* tc = (const NamedTupleClass*)toCast;
 		if(tc->innerTypes.size()!=innerTypes.size()) id.error(toStr("Cannot cast named tuple class of length ",innerTypes.size()," to named tuple class of length ",tc->innerTypes.size()));
-		llvm::Value* V =llvm:: UndefValue::get(toCast->type);
+		llvm::Value* V = getUndef(toCast->type);
 		assert(valueToCast->getType()==type);
 		for(unsigned i=0; i<innerTypes.size(); i++){
 			if(innerNames[i]!=tc->innerNames[i]) id.error("Cannot cast named tuple "+getName()+" to "+tc->getName());

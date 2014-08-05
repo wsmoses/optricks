@@ -139,15 +139,14 @@ public:
 				VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
 			}
 			else
-				VAL = llvm::UndefValue::get(returnType->type);
+				VAL = r.getGlobal(returnType->type,false);
 			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
 			variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(GV),returnType));
 		}
 		else{
-			auto TheFunction = r.builder.GetInsertBlock()->getParent();
-			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
-			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
+			assert(0);
+			auto al = r.createAlloca(returnType->type);
 			variable.getMetadata().setObject(finished=new LocationData(loc=getLazy(variable.pointer.name,r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
@@ -203,7 +202,7 @@ public:
 					VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
 				}
 				else
-					VAL = llvm::UndefValue::get(returnType->type);
+					VAL = r.getGlobal(returnType->type,false);
 				GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
@@ -211,9 +210,7 @@ public:
 			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
 		}
 		else{
-			auto TheFunction = r.builder.GetInsertBlock()->getParent();
-			llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),TheFunction->getEntryBlock().begin());
-			auto al = TmpB.CreateAlloca(returnType->type, NULL,llvm::Twine(variable.pointer.name));
+			auto al = r.createAlloca(returnType->type);
 			variable.getMetadata().setObject(finished=new LocationData(getLazy(variable.pointer.name,r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
@@ -222,146 +219,4 @@ public:
 		return finished;
 	}
 };
-
-/*
-void initFuncsMeta(RData& rd){
-	//cout << "SIZE OF C_STR: " <<rd.lmod->getPointerSize() << endl << flush;
-	//cout << "SIZE OF ANY: " << Module::PointerSize::AnyPointerSize << endl << flush;
-	//cout << "SIZE OF x32: " << Module::PointerSize::Pointer32 << endl << flush;
-	//cout << "SIZE OF x64: " << Module::PointerSize::Pointer64 << endl << flush;
-	//cout << "SIZE OF PTR: " << sizeof(char*) << endl << flush;
-	//TODO begin conversion of constructors to generators
-	{
-	}
-
-	c_stringClass->addLocalFunction(PositionID(0,0,"<start.initFuncsMeta>"),"length").add(Data*::getFunction(o_strlen,new FunctionProto("length", intClass)),PositionID(0,0,"<start.initFuncsMeta>"));
-	charClass->addCast(c_stringClass) = new ouopNative(
-			[](Data* av, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m,id);
-		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
-			APInt va = constantInt->getValue();
-			char t = (char)(va.getSExtValue () );
-			return new ConstantData(m.builder.CreateGlobalStringPtr(String(1,t),"tmpstr"),c_stringClass);
-		}
-		id.error("Cannot convert from non-const char to string");
-		return VOID;
-	},c_stringClass);
-	/ *charClass->addCast(stringClass) = new ouopNative(
-			[](Data* av, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m);
-		if(ConstantInt* c = dyn_cast<ConstantInt>(a)){
-			auto va = c->getValue();
-			char t = (char)(va.getSExtValue () );
-			Value* st = m.builder.CreateGlobalStringPtr(String(1,t),"tmpstr");
-			Value* str = UndefValue::get(stringClass->getType(m));
-			str= m.builder.CreateInsertValue(str,st,{0});
-			str= m.builder.CreateInsertValue(str,getInt(1),{1});
-			return new ConstantData(str,stringClass);
-		}
-		Value* str = UndefValue::get(stringClass->getType(m));
-		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "a");
-		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
-		Module &M = *N;
-		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-				false, GlobalValue::PrivateLinkage,StrConstant);
-		GV->setName("idk");
-		GV->setUnnamedAddr(true);
-		Value *Args[] = {getInt32(0),getInt32(0)};
-
-		Value* st = m.builder.CreateInBoundsGEP(GV, Args);
-
-		m.builder.CreateStore(a,st);
-
-		str= m.builder.CreateInsertValue(str,st,{0});
-		str= m.builder.CreateInsertValue(str,getInt(1),{1});
-		return new ConstantData(str,stringClass);
-	},stringClass);* /
-	//c_stringClass->addBinop("+",c_stringClass) = new obinopNative(
-	//		[](Value* ay, Value* by, RData& m) -> Data*{
-	//TODO string addition (need malloc)
-	//},c_stringClass);
-
-	intClass->addBinop("*",charClass) = new obinopNative(
-			[](Data* av, Data* bv, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m,id);
-		Value* b = bv.getValue(m,id);
-		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(b)){
-			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(a)){
-				APInt va = constantInt->getValue();
-				char t = (char)(va.getSExtValue () );
-				APInt va2 = cons2->getValue();
-				auto len = (va2.getSExtValue () );
-				return new ConstantData(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"),c_stringClass);
-			}
-		}
-		PositionID(0,0,"!done").error("Could not find constant");
-		return VOID;
-	}
-	,c_stringClass);
-	charClass->addBinop("*",intClass) = new obinopNative(
-			[](Data* av, Data* bv, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m,id);
-		Value* b = bv.getValue(m,id);
-		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
-			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
-				APInt va = constantInt->getValue();
-				char t = (char)(va.getSExtValue () );
-				APInt va2 = cons2->getValue();
-				auto len = (va2.getSExtValue () );
-				return new ConstantData(m.builder.CreateGlobalStringPtr(String(len,t),"tmpstr"),c_stringClass);
-			}
-		}
-		PositionID(0,0,"!done").error("Could not find constant");
-		return VOID;
-	}
-	,c_stringClass);
-
-	charClass->addBinop("+",charClass) = new obinopNative(
-			[](Data* av, Data* bv, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m,id);
-		Value* b = bv.getValue(m,id);
-		if(ConstantInt* constantInt = dyn_cast<ConstantInt>(a)){
-			if(ConstantInt* cons2 = dyn_cast<ConstantInt>(b)){
-				APInt va = constantInt->getValue();
-				char t = (char)(va.getSExtValue () );
-				APInt va2 = cons2->getValue();
-				char t2 = (char)(va2.getSExtValue () );
-				return new ConstantData(m.builder.CreateGlobalStringPtr(String(1,t)+String(1,t2),"tmpstr"),c_stringClass);
-			}
-		}
-		Constant *StrConstant = ConstantDataArray::getString(getGlobalContext(), "ab");
-		Module *N = (m.builder.GetInsertBlock()->getParent()->getParent());
-		Module &M = *N;
-		GlobalVariable *GV = new GlobalVariable(M, StrConstant->getType(),
-				false, GlobalValue::PrivateLinkage,StrConstant);
-		GV->setName("idk");
-		GV->setUnnamedAddr(true);
-		Value *Args[] = {getInt32(0),getInt32(0)};
-		Value* st = m.builder.CreateInBoundsGEP(GV, Args);
-		m.builder.CreateStore(a,st);
-		Value *Args2[] = {getInt32(0),getInt32(1)};
-		Value* st2 = m.builder.CreateInBoundsGEP(GV, Args2);
-		m.builder.CreateStore(b,st2);
-		return new ConstantData(st,c_stringClass);
-	},c_stringClass);
-
-	/ *c_stringClass->addBinop("+",stringClass) = new ouopNative(
-				[](Data* a, RData& m) -> Data*{
-					Value* len = m.builder.CreateCall(strLen, a);
-					Data* str(UndefValue::get(stringClass->getType(m)));
-					str= m.builder.CreateInsertValue(str,a,{0});
-					str= m.builder.CreateInsertValue(str,len,{1});
-					return str;
-		},stringClass);*/
-/*c_stringClass->addCast(stringClass) = new ouopNative(
-			[](Data* av, RData& m, PositionID id) -> Data*{
-		Value* a = av.getValue(m);
-		Value* len = m.builder.CreateCall(strLen, a);
-		Value* str = UndefValue::get(stringClass->getType(m));
-		str= m.builder.CreateInsertValue(str,a,{0});
-		str= m.builder.CreateInsertValue(str,len,{1});
-		return new ConstantData(str,stringClass);
-	},stringClass);* /
-}
- */
 #endif /* Declaration_HPP_ */

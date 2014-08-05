@@ -44,7 +44,7 @@ inline llvm::Value* TupleClass::castTo(const AbstractClass* const toCast, RData&
 				if(innerTypes.size()==1){
 					return innerTypes[0]->castTo(tc->innerTypes[0], r, id, valueToCast);
 				}
-				llvm::Value* res = llvm::UndefValue::get(tc->type);
+				llvm::Value* res = getUndef(tc->type);
 				for(unsigned j=0; j<i; j++)
 					r.builder.CreateInsertValue(res, r.builder.CreateExtractValue(valueToCast,j),j);
 				for( ; i<innerTypes.size(); i++)

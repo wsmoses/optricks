@@ -169,15 +169,17 @@ struct RData{
 		//static llvm::Function* LLVM_MEMSET=nullptr;
 	public:
 		bool enableAsserts;
+		bool enablePNACL;
 		llvm::Module* lmod;
+		llvm::DataLayout* dlayout;
 		llvm::IRBuilder<> builder;
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
 		bool debug;
-		RData(): enableAsserts(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),
-				builder(llvm::getGlobalContext())
+		RData(): enableAsserts(false),enablePNACL(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),builder(llvm::getGlobalContext())
 		,fpm(lmod),mpm(){
-			lmod->setDataLayout("p:64:64:64");
+			//lmod->setDataLayout("p:64:64:64");
+			dlayout = new llvm::DataLayout(lmod);
 			exec=nullptr;
 			LLVM_REALLOC = nullptr;
 			LLVM_CALLOC = nullptr;
@@ -198,6 +200,7 @@ struct RData{
 			debug = false;
 
 		};
+
 		llvm::ExecutionEngine* getExec(){
 			if(exec) return exec;
 			else{
@@ -407,7 +410,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 		inline llvm::Value* integerCast(llvm::Value* V, llvm::IntegerType* T=nullptr, bool zext=true){
 			assert(V->getType()->isIntOrIntVectorTy());
-			if(llvm::isa<llvm::UndefValue>(V)) return llvm::UndefValue::get(T);
+			if(llvm::isa<llvm::UndefValue>(V)) return getUndef(T);
 			llvm::Value* VN =  (V->getType()==T)?V:nullptr;
 			while(auto C = llvm::dyn_cast<llvm::CastInst>(V)){
 				auto ST = C->getSrcTy();
@@ -429,7 +432,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			//TODO
 			assert(T);
 			assert(P->getType()->isPointerTy());
-			if(llvm::isa<llvm::UndefValue>(P)) return llvm::UndefValue::get(T);
+			if(llvm::isa<llvm::UndefValue>(P)) return getUndef(T);
 			llvm::Value* VN =  (P->getType()==T)?P:nullptr;
 			while(auto C = llvm::dyn_cast<llvm::CastInst>(P)){
 				P = C->getOperand(0);
@@ -446,7 +449,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			assert(P->getType()==llvm::PointerType::getUnqual(T));
 			assert(SIZE->getType()->isIntegerTy());
 			P = pointerCast(P);
-			uint64_t s = llvm::DataLayout(lmod).getTypeAllocSize(T);
+			uint64_t s = dlayout->getTypeAllocSize(T);
 			if(s==0 || isIntZero(SIZE)){
 				free(P);
 				return llvm::ConstantPointerNull::getNullValue(llvm::PointerType::getUnqual(T));
@@ -474,7 +477,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		llvm::Value* allocate(llvm::Type* T, llvm::Value* SIZE=getSizeT(1), llvm::Value* DEFAULT=nullptr){
 			assert(T);
 			assert(SIZE);
-			auto s = llvm::DataLayout(lmod).getTypeAllocSize(T);
+			auto s = dlayout->getTypeAllocSize(T);
 			if(DEFAULT) assert(DEFAULT->getType()==T);
 
 			if(s==0 || isIntZero(SIZE)){
@@ -527,6 +530,37 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				}
 				return p;
 			}
+		}
+		llvm::Constant* getGlobal(llvm::Type* T, bool prefer_undef){
+			if(!enablePNACL && prefer_undef)
+				return llvm::UndefValue::get(T);
+			else if(T->isIntegerTy())
+				return llvm::ConstantInt::get(T, 0);
+			else if(T->isFloatingPointTy())
+				return llvm::ConstantFP::get(T, 0);
+			else if(T->isStructTy() || T->isArrayTy() || T->isVectorTy())
+				return llvm::ConstantAggregateZero::get(T);
+			else{
+				assert(T->isPointerTy());
+				assert(llvm::dyn_cast<llvm::PointerType>(T));
+				return llvm::ConstantPointerNull::get((llvm::PointerType*)T);
+			}
+		}
+		llvm::Value* createAlloca(llvm::Type* T, llvm::Value* V=nullptr){
+			llvm::Value* M;
+			if(!enablePNACL){
+				M = builder.CreateAlloca(T,V);
+			} else {
+				auto s = dlayout->getTypeAllocSize(T);
+				if(V)
+					M = builder.CreateAlloca(CHARTYPE,builder.CreateMul(V,llvm::ConstantInt::get(V->getType(), s)));
+				else
+					M = builder.CreateAlloca(CHARTYPE,getInt32(s));
+				M = builder.CreatePointerCast(M, llvm::PointerType::getUnqual(T));
+			}
+			assert(M->getType()->isPointerTy());
+			assert(M->getType()->getPointerElementType()==T);
+			return M;
 		}
 		void exitLLVM(llvm::Value* V){
 			assert(V);
@@ -867,7 +901,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
 			}*/
-			auto AL = builder.CreateAlloca(C_STRINGTYPE);
+			auto AL = createAlloca(C_STRINGTYPE);
 			auto vs = V.size();
 			llvm::SmallVector<llvm::Value*,5> a_args(vs+5);
 			a_args[0] = AL;
@@ -899,7 +933,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		llvm::Value* createThread(llvm::Value* toRun, llvm::Value* arg=llvm::ConstantPointerNull::get(C_POINTERTYPE), llvm::Value* threadPos=nullptr){
 			static auto PTHREAD_TYPE = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t));
 			if(threadPos==nullptr)
-				threadPos = builder.CreateAlloca(PTHREAD_TYPE);
+				threadPos = createAlloca(PTHREAD_TYPE);
 			static llvm::Function* F=nullptr;
 			if(F == nullptr) {
 				llvm::SmallVector<llvm::Type*,4> args(4);
@@ -928,7 +962,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			static auto PTHREAD_TYPE = llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t));
 			assert(PTHREAD_TYPE==threadID->getType());
 			if(ret_p==nullptr)
-				ret_p = builder.CreateAlloca(C_POINTERTYPE);
+				ret_p = createAlloca(C_POINTERTYPE);
 			else assert(ret_p->getType()==llvm::PointerType::getUnqual(C_POINTERTYPE));
 			static llvm::Function* F=nullptr;
 			if(F == nullptr) {
@@ -1047,7 +1081,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				return C->isZeroValue();
 			else return false;
 		}
-		bool isZero(llvm::Value *V/*, const llvm::DataLayout *DL*/) {
+		bool isZero(llvm::Value *V) {
 			// Assume undef could be zero.
 			if (llvm::isa<llvm::UndefValue>(V)) return true;
 			// Per-component check doesn't work with zeroinitializer
@@ -1099,6 +1133,26 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 			return b;
 		}
 		void makeJump(String name, JumpType jump, const Data* val, PositionID id);
+		llvm::Value* getIntType(llvm::Value* V){
+			llvm::Type* DestTy;
+			llvm::Type* SrcTy = V->getType();
+			if(SrcTy->isIntOrIntVectorTy()) return V;
+			if(SrcTy->isPtrOrPtrVectorTy()){
+				DestTy = llvm::IntegerType::get(SrcTy->getContext(), dlayout->getPointerSizeInBits());
+				if(SrcTy->isVectorTy()){
+					DestTy = llvm::VectorType::get(DestTy, SrcTy->getVectorNumElements());
+				}
+			}
+			else {
+				assert(SrcTy->isFPOrFPVectorTy());
+				if(SrcTy->isVectorTy()){
+					DestTy = llvm::VectorType::getInteger((llvm::VectorType*)SrcTy);
+				} else {
+					DestTy = llvm::IntegerType::get(SrcTy->getContext(), SrcTy->getPrimitiveSizeInBits());
+				}
+			}
+			return builder.CreateBitCast(V, DestTy);
+		}
 };
 
 RData& getRData(){

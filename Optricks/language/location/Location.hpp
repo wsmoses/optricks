@@ -27,7 +27,7 @@ class UpgradeLocation : public Location{
 	std::map<llvm::Function*,llvm::Value*> MAP;
 	public:
 		~UpgradeLocation() override{};
-		UpgradeLocation(RData& r, llvm::Value* a): metaposition(new llvm::GlobalVariable(*r.lmod, a->getType(),false, llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(a->getType()))){
+		UpgradeLocation(RData& r, llvm::Value* a): metaposition(new llvm::GlobalVariable(*r.lmod, a->getType(),false, llvm::GlobalValue::PrivateLinkage,r.getGlobal(a->getType(),true))){
 			assert(a); assert(a->getType()->isPointerTy());
 			r.builder.CreateStore(a, metaposition);
 			MAP[r.builder.GetInsertBlock()->getParent()] = a;

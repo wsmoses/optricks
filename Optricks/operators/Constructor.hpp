@@ -293,7 +293,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 		else if(args.size()==2){
 			if(((const ComplexClass*)this)->innerClass->classType==CLASS_INT ||
 					((const ComplexClass*)this)->innerClass->classType==CLASS_FLOAT){
-				llvm::Value* V = llvm::UndefValue::get(this->type);
+				llvm::Value* V = getUndef(this->type);
 				V = r.builder.CreateInsertElement(V,
 						args[0]->evaluate(r)->castToV(r, ((const ComplexClass*)this)->innerClass, filePos), getInt32(0));
 				V = r.builder.CreateInsertElement(V,

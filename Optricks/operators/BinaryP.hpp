@@ -539,7 +539,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				if(mpz_sgn(IL->value)<0){
 					filePos.error("Cannot multiply string by negative integer");
 					exit(1);
-				} else if(mpz_cmp_ui(IL->value, UINT_MAX)>0){
+				} else if(mpz_cmp_ui(IL->value, std::numeric_limits<unsigned int>::max())>0){
 					filePos.error("Cannot multiply string by integer -- too large "+
 							IL->toString());
 					exit(1);
@@ -591,8 +591,84 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			else if(operation=="==") return new ConstantData(r.builder.CreateICmpEQ(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
 			else if(operation=="!=") return new ConstantData(r.builder.CreateICmpNE(value->castToV(r, max, filePos), ev->evaluate(r)->castToV(r, max, filePos)), &boolClass);
 			else if(operation=="**"){
-				filePos.compilerError("Todo -- integer pow");
-				exit(1);
+				llvm::Value* V1 = value->getValue(r, filePos);
+				llvm::Value* V2 = ev->evalV(r, filePos);
+				if(auto C2 = llvm::dyn_cast<llvm::ConstantInt>(V2)){
+					if(C2->isOne()){
+						if(value->type==R_CONST) return value;
+						else return new ConstantData(V1, cc);
+					} else if(C2->isZero()){
+						return new ConstantData(((IntClass*)cc)->getOne(filePos), cc);
+					} else if(C2->isNegative()){
+						return new ConstantData(((IntClass*)cc)->getZero(filePos), cc);
+					} else if(auto C1 = llvm::dyn_cast<llvm::ConstantInt>(V1)){
+						//todo ap-int stuff
+						auto exp = C2->getZExtValue();
+						auto v = C1->getSExtValue();
+						auto result = (exp & 1)?v:1;
+						exp >>= 1;
+						while(exp>0) {
+							v*= v;
+							if(exp & 1)
+								result*= v;
+							exp>>=1;
+						}
+						if(result - (result & (1ULL<<((IntClass*)cc)->getWidth()) ) > 0){
+							filePos.error("Integer exponentiation result out of range of data type: "+cc->getName());
+						}
+						return new ConstantData(llvm::ConstantInt::getSigned(cc->type, result), cc);
+					} else {
+						auto exp = C2->getZExtValue();
+						llvm::Value* result = (exp & 1)?V1:nullptr;
+						exp >>= 1;
+						while(exp>0) {
+							V1 = r.builder.CreateMul(V1, V1);
+							if(exp & 1){
+								if(result)
+									result = r.builder.CreateMul(result, V1);
+								else
+									result = V1;
+							}
+							exp>>=1;
+						}
+						return new ConstantData(result, cc);
+					}
+				}
+				auto START = r.builder.GetInsertBlock();
+				auto F = START->getParent();
+				auto PRELOOP = r.CreateBlockD("preloop", F);
+				auto LOOP = r.CreateBlockD("loop", F);
+				auto DONE = r.CreateBlockD("done",F);
+				auto ZERO_2 = llvm::ConstantInt::get(dd->type, 0);
+				r.builder.CreateCondBr(r.builder.CreateICmpSLT(V2, ZERO_2), DONE, PRELOOP);
+
+				r.builder.SetInsertPoint(DONE);
+				auto PHI = r.builder.CreatePHI(cc->type,2);
+				PHI->addIncoming(llvm::ConstantInt::get(cc->type, 0), START);
+
+				r.builder.SetInsertPoint(PRELOOP);
+				llvm::Value* result = r.builder.CreateSelect(r.builder.CreateTrunc(V2, BOOLTYPE),V1,llvm::ConstantInt::get(cc->type, 1));
+				V2 = r.builder.CreateLShr(V2, (unsigned int)1);
+				r.builder.CreateCondBr(r.builder.CreateICmpUGT(V2, ZERO_2), LOOP, DONE);
+				PHI->addIncoming(result, PRELOOP);
+
+				r.builder.SetInsertPoint(LOOP);
+				auto VV1 = r.builder.CreatePHI(V1->getType(), 2);
+				VV1->addIncoming(V1, PRELOOP);
+				auto RES2 = r.builder.CreatePHI(cc->type, 2);
+				RES2->addIncoming(result, PRELOOP);
+				auto VV2 = r.builder.CreatePHI(V2->getType(), 2);
+				VV2->addIncoming(V2, PRELOOP);
+				auto VDIV2 = r.builder.CreateLShr(VV2, (unsigned)1);
+				VV2->addIncoming(VDIV2, LOOP);
+				VV1->addIncoming(V1 = r.builder.CreateMul(VV1, VV1), LOOP);
+				result = r.builder.CreateSelect(r.builder.CreateTrunc(VV2, BOOLTYPE),r.builder.CreateMul(RES2, V1),RES2);
+				RES2->addIncoming(result, LOOP);
+				r.builder.CreateCondBr(r.builder.CreateICmpUGT(VDIV2, ZERO_2), LOOP, DONE);
+				PHI->addIncoming(result, LOOP);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(PHI, cc);
 			}
 			else {
 				filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
@@ -750,7 +826,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					}
 				}
 				else {
-					if(mpz_cmp_ui(tmp2, UINT_MAX)<=0){
+					if(mpz_cmp_ui(tmp2, std::numeric_limits<unsigned int>::max())<=0){
 						auto ret = new IntLiteral(0,0,0);
 						mpz_pow_ui(ret->value, tmp1, mpz_get_ui(tmp2));
 						return ret;
@@ -827,11 +903,151 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				exit(1);
 			}
 		}
-		case CLASS_INT:
-		case CLASS_INTLITERAL:{
-			if(operation=="**" && dd->hasCast(&intClass)){
-				auto INTR = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::powi, llvm::SmallVector<llvm::Type*,1>(1,cc->type));
-				return new ConstantData(r.builder.CreateCall2(INTR, value->getValue(r, filePos), ev->evaluate(r)->castToV(r, &intClass, filePos)), cc);
+		case CLASS_INTLITERAL:
+			if(operation=="**"){
+				llvm::Value* V1 = value->getValue(r, filePos);
+				mpz_t& c2 = ((IntLiteral*) ev->evaluate(r))->value;
+				auto sgn = mpz_sgn(c2);
+				if(sgn==0){
+					return new ConstantData(((RealClass*)cc)->getOne(filePos), cc);
+				} else if(sgn<0){
+					return new ConstantData(((RealClass*)cc)->getZero(filePos), cc);
+				} else if(mpz_cmp_ui(c2, 1)){
+					if(value->type==R_CONST) return value;
+					else return new ConstantData(V1, cc);
+				} else if(auto C1 = llvm::dyn_cast<llvm::ConstantFP>(V1)){
+					//todo ap-int stuff
+					auto exp = mpz_get_ui(c2);
+					llvm::APFloat v = C1->getValueAPF();
+					llvm::APFloat result(* ((FloatClass*)cc)->getSemantics());
+					bool set = false;
+					if(exp & 1){
+						result = v;
+						set = true;
+					}
+					exp >>= 1;
+					while(exp>0) {
+						v.multiply(v, llvm::APFloat::roundingMode::rmTowardZero);
+						if(exp & 1){
+							if(set)
+								result.multiply(v, llvm::APFloat::roundingMode::rmTowardZero);
+							else
+								result = v;
+							set = true;
+						}
+						exp>>=1;
+					}
+					return new ConstantData(llvm::ConstantFP::get(llvm::getGlobalContext(), result), cc);
+				} else {
+					auto exp = mpz_get_ui(c2);
+					llvm::Value* result = (exp & 1)?V1:nullptr;
+					exp >>= 1;
+					while(exp>0) {
+						V1 = r.builder.CreateFMul(V1, V1);
+						if(exp & 1){
+							if(result)
+								result = r.builder.CreateFMul(result, V1);
+							else
+								result = V1;
+						}
+						exp>>=1;
+					}
+					return new ConstantData(result, cc);
+				}
+			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
+		case CLASS_INT:{
+			if(operation=="**"){
+				llvm::Value* V1 = value->getValue(r, filePos);
+				llvm::Value* V2 = ev->evalV(r, filePos);
+				if(auto C2 = llvm::dyn_cast<llvm::ConstantInt>(V2)){
+					if(C2->isOne()){
+						if(value->type==R_CONST) return value;
+						else return new ConstantData(V1, cc);
+					} else if(C2->isZero()){
+						return new ConstantData(((RealClass*)cc)->getOne(filePos), cc);
+					} else if(C2->isNegative()){
+						return new ConstantData(((RealClass*)cc)->getZero(filePos), cc);
+					} else if(auto C1 = llvm::dyn_cast<llvm::ConstantFP>(V1)){
+						//todo ap-int stuff
+						auto exp = C2->getZExtValue();
+						llvm::APFloat v = C1->getValueAPF();
+						llvm::APFloat result(* ((FloatClass*)cc)->getSemantics());
+						bool set = false;
+						if(exp & 1){
+							result = v;
+							set = true;
+						}
+						exp >>= 1;
+						while(exp>0) {
+							v.multiply(v, llvm::APFloat::roundingMode::rmTowardZero);
+							if(exp & 1){
+								if(set)
+									result.multiply(v, llvm::APFloat::roundingMode::rmTowardZero);
+								else
+									result = v;
+								set = true;
+							}
+							exp>>=1;
+						}
+						return new ConstantData(llvm::ConstantFP::get(llvm::getGlobalContext(), result), cc);
+					} else {
+						auto exp = C2->getZExtValue();
+						llvm::Value* result = (exp & 1)?V1:nullptr;
+						exp >>= 1;
+						while(exp>0) {
+							V1 = r.builder.CreateFMul(V1, V1);
+							if(exp & 1){
+								if(result)
+									result = r.builder.CreateFMul(result, V1);
+								else
+									result = V1;
+							}
+							exp>>=1;
+						}
+						return new ConstantData(result, cc);
+					}
+				}
+				auto START = r.builder.GetInsertBlock();
+				auto F = START->getParent();
+				auto PRELOOP = r.CreateBlockD("preloop", F);
+				auto LOOP = r.CreateBlockD("loop", F);
+				auto DONE = r.CreateBlockD("done",F);
+				auto ZERO_2 = llvm::ConstantInt::get(dd->type, 0);
+				r.builder.CreateCondBr(r.builder.CreateICmpSLT(V2, ZERO_2), DONE, PRELOOP);
+
+				r.builder.SetInsertPoint(DONE);
+				auto PHI = r.builder.CreatePHI(cc->type,2);
+				PHI->addIncoming(llvm::ConstantFP::get(cc->type, "0"), START);
+
+				r.builder.SetInsertPoint(PRELOOP);
+				llvm::Value* result = r.builder.CreateSelect(r.builder.CreateTrunc(V2, BOOLTYPE),V1,llvm::ConstantFP::get(cc->type, 1));
+				V2 = r.builder.CreateLShr(V2, (unsigned int)1);
+				r.builder.CreateCondBr(r.builder.CreateICmpUGT(V2, ZERO_2), LOOP, DONE);
+				PHI->addIncoming(result, PRELOOP);
+
+				r.builder.SetInsertPoint(LOOP);
+				auto VV1 = r.builder.CreatePHI(V1->getType(), 2);
+				VV1->addIncoming(V1, PRELOOP);
+				auto RES2 = r.builder.CreatePHI(cc->type, 2);
+				RES2->addIncoming(result, PRELOOP);
+				auto VV2 = r.builder.CreatePHI(V2->getType(), 2);
+				VV2->addIncoming(V2, PRELOOP);
+				auto VDIV2 = r.builder.CreateLShr(VV2, (unsigned)1);
+				VV2->addIncoming(VDIV2, LOOP);
+				VV1->addIncoming(V1 = r.builder.CreateFMul(VV1, VV1), LOOP);
+				result = r.builder.CreateSelect(r.builder.CreateTrunc(VV2, BOOLTYPE),r.builder.CreateFMul(RES2, V1),RES2);
+				RES2->addIncoming(result, LOOP);
+				r.builder.CreateCondBr(r.builder.CreateICmpUGT(VDIV2, ZERO_2), LOOP, DONE);
+				PHI->addIncoming(result, LOOP);
+
+				r.builder.SetInsertPoint(DONE);
+				return new ConstantData(PHI, cc);
+
+#ifndef PNACL
+//				auto INTR = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::powi, llvm::SmallVector<llvm::Type*,1>(1,cc->type));
+	//			return new ConstantData(r.builder.CreateCall2(INTR, V1, V2), cc);
+#else
+#endif
 			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
 		}
 		case CLASS_MATHLITERAL:
@@ -1068,7 +1284,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 							r.builder.CreateAdd(I1, I2):
 							r.builder.CreateFAdd(I1, I2);
 
-				llvm::Value* V = llvm::UndefValue::get(comp->type);
+				llvm::Value* V = getUndef(comp->type);
 				V = r.builder.CreateInsertElement(V, NR, getInt32(0));
 				V = r.builder.CreateInsertElement(V, NI, getInt32(1));
 				return new ConstantData(V,comp);

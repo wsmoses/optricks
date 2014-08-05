@@ -27,7 +27,7 @@ public:
 		return & mathType;
 	}
 	llvm::Value* getValue(RData& r, PositionID id) const override final{
-		return llvm::UndefValue::get(mathType.type);
+		return getUndef(mathType.type);
 	}
 	String toString() const{
 		switch(mathType.mathType){
@@ -96,7 +96,7 @@ public:
 	}
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right==&mathType)
-			return llvm::UndefValue::get(mathType.type);
+			return getUndef(mathType.type);
 		switch(right->classType){
 		case CLASS_FLOAT:{
 			llvm::Constant* cfp;

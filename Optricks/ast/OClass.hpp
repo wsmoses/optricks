@@ -133,7 +133,14 @@ void initClasses(){
 		return &VOID_DATA;
 	}), PositionID(0,0,"#int"));
 
-
+	objectClass.addLocalFunction("getClass", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto("hash",{AbstractDeclaration(&objectClass)},&classClass),
+				[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
+			assert(args.size()==0);
+			assert(instance);
+			llvm::Value* V = instance->getValue(r, id);
+			//todo assert is not null?
+			return new ConstantData(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)),&classClass);
+		}), false);
 	objectClass.addLocalFunction("hash", PositionID("#object",0,0), new BuiltinInlineFunction(new FunctionProto("hash",{AbstractDeclaration(&objectClass)},&intClass),
 			[=](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==0);
@@ -742,7 +749,7 @@ void initClasses(){
 			r.sprintf<4>(V);
 
 			auto stat_t = llvm::ArrayType::get(CHARTYPE, sizeof(struct stat));
-			auto P = r.builder.CreateAlloca(stat_t);
+			auto P = r.createAlloca(stat_t);
 
 			llvm::SmallVector<llvm::Type*,2> stat_args(2);
 			stat_args[0] = C_STRINGTYPE;
@@ -825,7 +832,7 @@ void initClasses(){
 			r.sprintf<4>(V);
 
 			auto stat_t = llvm::ArrayType::get(CHARTYPE, sizeof(struct stat));
-			auto P = r.builder.CreateAlloca(stat_t);
+			auto P = r.createAlloca(stat_t);
 
 			llvm::SmallVector<llvm::Type*,2> stat_args(2);
 			stat_args[0] = C_STRINGTYPE;

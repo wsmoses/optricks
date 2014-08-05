@@ -30,18 +30,21 @@ class E_PARALLEL : public ErrorStatement{
 		void registerClasses() const override final{
 			for(auto& a: body){
 				std::get<0>(a)->registerClasses();
+				if(std::get<1>(a))
 				std::get<1>(a)->registerClasses();
 			}
 		}
 		void registerFunctionPrototype(RData& r) const override final{
 			for(auto& a: body){
 				std::get<0>(a)->registerFunctionPrototype(r);
+				if(std::get<1>(a))
 				std::get<1>(a)->registerFunctionPrototype(r);
 			}
 		}
 		void buildFunction(RData& r) const override final{
 			for(auto& a: body){
 				std::get<0>(a)->buildFunction(r);
+				if(std::get<1>(a))
 				std::get<1>(a)->buildFunction(r);
 			}
 		}
@@ -57,6 +60,7 @@ class E_PARALLEL : public ErrorStatement{
 		void reset() const override final{
 			for(auto& a: body){
 				std::get<0>(a)->reset();
+				if(std::get<1>(a))
 				std::get<1>(a)->reset();
 			}
 		}
@@ -138,7 +142,7 @@ class E_PARALLEL : public ErrorStatement{
 
 			if(llvm::isa<llvm::ConstantInt>(p_sum[p_index]) && ((llvm::ConstantInt*)p_sum[p_index])->isOne()){
 
-				auto THREADS = ra.builder.CreateAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)));
+				auto THREADS = ra.createAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)));
 				ra.createThread(F, ra.builder.CreateIntToPtr(getSizeT(0),C_POINTERTYPE),THREADS);
 
 				//no more threads!
@@ -155,10 +159,10 @@ class E_PARALLEL : public ErrorStatement{
 				DONE = ra.CreateBlockD("done_threads", FUNC);
 				llvm::Value* alloc;
 
-				auto THREADS = ra.builder.CreateAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)),
-						(toJoin)?p_sum[p_index]:(llvm::Value*)getInt32(1));
+				auto THREADS = ra.createAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)),
+						(toJoin)?ra.builder.CreateIntCast(p_sum[p_index],INT32TYPE,false):(llvm::Value*)getInt32(1));
 				if(toJoin)
-					alloc = ra.builder.CreateAlloca(C_POINTERTYPE);
+					alloc = ra.createAlloca(C_POINTERTYPE);
 
 				ra.builder.CreateBr(LOOP);
 				ra.builder.SetInsertPoint(LOOP);

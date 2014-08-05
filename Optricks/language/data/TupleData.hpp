@@ -43,7 +43,7 @@ public:
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
-		llvm::Value* v = llvm::UndefValue::get(tc->type);
+		llvm::Value* v = getUndef(tc->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->castToV(r,tc->innerTypes[i],id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
@@ -68,7 +68,7 @@ public:
 		}
 		assert(vec.size()==inner.size());
 		auto t = TupleClass::get(vec);
-		llvm::Value* v = llvm::UndefValue::get(t->type);
+		llvm::Value* v = getUndef(t->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getValue(r,id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
@@ -93,7 +93,7 @@ public:
 		}
 		assert(vec.size()==inner.size());
 		auto t = TupleClass::get(vec);
-		llvm::Value* v = llvm::UndefValue::get(t->type);
+		llvm::Value* v = getUndef(t->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->getValue(r,id);
 			v = r.builder.CreateInsertValue(v, tmp, i);
@@ -105,7 +105,7 @@ public:
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
-		llvm::Value* v = llvm::UndefValue::get(tc->type);
+		llvm::Value* v = getUndef(tc->type);
 		for(unsigned int i=0; i<inner.size(); i++){
 			auto tmp = inner[i]->castToV(r,tc->innerTypes[i],id);
 			v = r.builder.CreateInsertValue(v, tmp, i);

@@ -19,6 +19,7 @@
 #include "../ast/ImportStatement.hpp"
 #include "../ast/E_ARR.hpp"
 #include "../ast/E_PARALLEL.hpp"
+#include "../ast/E_SWITCH.hpp"
 #include "../ast/E_RETURN.hpp"
 #include "../ast/E_BINOP.hpp"
 #include "../ast/E_LOOKUP.hpp"
@@ -645,22 +646,64 @@ public:
 		return new DoWhileLoop(pos(), cond, blocks);
 		//TODO implement do loop naming
 	}
-	Statement* getSwitch(ParseData data, bool read=false){
-		if(!read && f->getNextName(data.endWith)!="switch") f->error("Could not find 'switch' in lambda function");
-		if(f->trim(EOF)) f->error("Uncompleted switch statement");
-		/*
-		auto SWITCH = new SwitchStatement(pos(), data.mod);
-		if(!f->done) parseArguments(SWITCH->declaration, ParseData(EOF, & SWITCH->module, true,PARSE_LOCAL),':');
-		if(f->trim(EOF)) f->error("Switch without body");
-		if(!f->done && f->peek()==':'){
-			f->read();
-			if(f->trim(EOF)) f->error("Lambda Function without body (c)");
+	E_SWITCH* getSwitch(ParseData data, bool read=false){
+		if(!read && f->getNextName(data.endWith)!="switch") f->error("Could not find 'switch' in switch statement");
+		if(f->trim(EOF)) f->error("Uncompleted switch body");
+		auto p_pos = pos();
+		Statement* toSwitch = getNextStatement(data.getEndWith(EOF));
+		f->trim(EOF);
+		E_SWITCH* parallel = new E_SWITCH(p_pos, toSwitch);
+		bool enclosed = f->peek()=='{';
+		if(f->read()!='{') f->error("switch body requires '{' to surround");
+
+		f->trim(EOF);
+		auto tmp = f->getNextName(EOF);
+		if(tmp!="case" && tmp!="default")
+			f->error("Cannot begin parallel body without 'case' but '"+tmp+"' "+String(1,f->peek()));
+		while(true){
+			f->trim(EOF);
+			Statement* num;
+			if(tmp=="default"){
+				if(f->peek()==':') f->read();
+				num=nullptr;
+			} else {
+				num = getNextStatement(data.getExpr());
+				f->trim(EOF);
+				if(f->peek()==':') f->read();
+				f->trim(EOF);
+			}
+			auto blocks = new Block(pos(), data.mod);
+			while(true){
+				//todo place case thing here!
+				if(f->peek()=='}') break;
+				else if(f->peek()=='c' || f->peek()=='d'){
+					auto m=f->getMarker();
+					tmp = f->getNextName(EOF);
+					if(tmp=="case" || tmp=="default"){
+						break;
+					} else f->undoMarker(m);
+				}
+				Statement* e = getNextStatement(data.getModule(&(blocks->module)));
+				if(e->getToken()==T_VOID){
+					pos().error("Needed '}' to end block, found '"+String(1,f->peek())+"'");
+					exit(1);
+				}
+				if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
+				trim(EOF);
+				while(!f->done && f->peek()==';'){f->read();trim(data);}
+				trim(EOF);
+			}
+			if(blocks->values.size()==0){
+				delete blocks;
+				parallel->body.push_back(std::pair<Statement*,Statement*>(num,nullptr));
+			} else
+				parallel->body.push_back(std::pair<Statement*,Statement*>(num,blocks));
+
+			if(f->peek()=='}') break;
 		}
-		LAMBDA->methodBody = getNextBlock(ParseData(data.endWith, & SWITCH->module,true,PARSE_LOCAL));
-		return SWITCH;
-		*/
-		pos().compilerError("Switch statement not allowed yet");
-		exit(1);
+		f->read();
+		trim(data.endWith);
+		return parallel;
 	}
 	E_PARALLEL* getParallel(ParseData data, String temp=""){
 		if(temp=="") temp = f->getNextName(EOF);
@@ -725,7 +768,11 @@ public:
 						while(!f->done && f->peek()==';'){f->read();trim(data);}
 						trim(EOF);
 					}
-					parallel->body.push_back(std::pair<Statement*,Statement*>(num,blocks));
+					if(blocks->values.size()==0){
+						delete blocks;
+						parallel->body.push_back(std::pair<Statement*,Statement*>(num,nullptr));
+					} else
+						parallel->body.push_back(std::pair<Statement*,Statement*>(num,blocks));
 					if(f->peek()=='}') break;
 				}
 				f->read();
@@ -1287,7 +1334,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 			trim(data.endWith);
 			auto m=f->getMarker();
 			String name = (isStartName(f->peek()))?(getNextName(EOF)):"";
-			if(name=="case"){
+			if(name=="case" || name=="default"){
 				name = "";
 				f->undoMarker(m);
 			}

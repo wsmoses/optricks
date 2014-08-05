@@ -19,7 +19,6 @@ private:
 	std::map<String,unsigned int> localMap;
 	std::map<String,UnaryFunction> preop;
 	std::map<String,UnaryFunction> postop;
-	llvm::GlobalVariable* vtable;
 public:
 	mutable OverloadedFunction constructors;
 private:

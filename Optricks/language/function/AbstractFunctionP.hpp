@@ -577,7 +577,7 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 		r.builder.CreateRet(F->arg_begin());
 	else {
 		assert(llvm::dyn_cast<llvm::StructType>(gt)!=nullptr);
-		llvm::Value* V = llvm::UndefValue::get(gt);
+		llvm::Value* V = getUndef(gt);
 		auto const tmp=fp->declarations.size();
 		unsigned Idx = 0;
 		for (llvm::Function::arg_iterator AI = F->arg_begin(); Idx != tmp;
@@ -599,7 +599,7 @@ llvm::Function* GeneratorFunction::getSingleFunc() const{
 }
 const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) const{
 	auto gt=proto->returnType;
-	llvm::Value* V = llvm::UndefValue::get(gt->type);
+	llvm::Value* V = getUndef(gt->type);
 	return new ConstantData(validatePrototypeStruct(r,id,args,instance,V),gt);
 }
 

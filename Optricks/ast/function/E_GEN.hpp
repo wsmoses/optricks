@@ -97,7 +97,7 @@ public:
 			else tA = upperClass;
 			ad.push_back(AbstractDeclaration(tA, "this"));
 		//	args[0] = tA->type;
-			ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
+			ConstantData* TEMP = new ConstantData(getUndef(upperClass->type),upperClass);
 			module.setVariable(filePos, "this", TEMP);
 		}
 		std::vector<std::pair<const AbstractClass*,String>> V;
@@ -116,11 +116,11 @@ public:
 			if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
 				auto ic = ((ReferenceClass*)ad[Idx+(staticF?0:1)].declarationType)->innerType;
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(llvm::UndefValue::get(ic->type),ic))
+					(new ConstantData(getUndef(ic->type),ic))
 				);
 			} else{
 				declaration[Idx]->variable.getMetadata().setObject(
-					(new ConstantData(llvm::UndefValue::get(ad[Idx+(staticF?0:1)].declarationType->type),ad[Idx+(staticF?0:1)].declarationType))
+					(new ConstantData(getUndef(ad[Idx+(staticF?0:1)].declarationType->type),ad[Idx+(staticF?0:1)].declarationType))
 				);
 			}
 		}

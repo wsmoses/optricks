@@ -477,7 +477,9 @@ struct TemplateArg {
 };
 */
 
-
+llvm::Constant* getUndef(llvm::Type* T){
+	return llvm::UndefValue::get(T);
+}
 #include "lib.hpp"
 
 struct T_ARGS {

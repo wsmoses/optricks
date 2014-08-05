@@ -97,13 +97,9 @@ llvm::CallInst* RData::seed(llvm::Value* REAL_S, llvm::Value* REAL_MT){
 	static llvm::Function* F=nullptr;
 	if(REAL_MT==nullptr){
 		if(GLOBAL_MT==nullptr){
-			//GLOBAL_IDX_P = new llvm::GlobalVariable(*lmod,INT32TYPE,false,llvm::GlobalValue::PrivateLinkage,
-			//		llvm::ConstantInt::get(INT32TYPE,N,false));
-
-			GLOBAL_MT = new llvm::GlobalVariable(*lmod,llvm::ArrayType::get(INT32TYPE,N+1),false,llvm::GlobalValue::PrivateLinkage,llvm::UndefValue::get(llvm::ArrayType::get(INT32TYPE,N+1)));
+			GLOBAL_MT = new llvm::GlobalVariable(*lmod,llvm::ArrayType::get(INT32TYPE,N+1),false,llvm::GlobalValue::PrivateLinkage,getGlobal(llvm::ArrayType::get(INT32TYPE,N+1),true));
 		}
 		REAL_MT = builder.CreatePointerCast(GLOBAL_MT, llvm::PointerType::getUnqual(INT32TYPE));
-		//REAL_IDX_P = GLOBAL_IDX_P;
 	}
 	if(F==nullptr){
 		auto PARENT = builder.GetInsertBlock();
@@ -512,7 +508,7 @@ llvm::Value* RData::phiRecur(std::set<llvm::PHINode*> done, std::vector<LazyLoca
 		if(!warned){
 			PositionID("#unknown",0,0).warning("Unknown variable undefined");
 		}
-		run = llvm::UndefValue::get(target->getType());
+		run = getUndef(target->getType());
 	}
 
 	assert(target->getType()==run->getType());
@@ -578,7 +574,7 @@ llvm::Value* RData::getLastValueOf(std::set<llvm::PHINode*> done,std::vector<Laz
 			//NO DEFINITION
 			if(PI==E){
 				id.warning("Variable "+ll->getName()+" undefined");
-				return llvm::UndefValue::get(ll->type);
+				return getUndef(ll->type);
 			} else {
 				auto tmp = builder.GetInsertBlock();
 				builder.SetInsertPoint(b);
@@ -620,7 +616,7 @@ void RData::FinalizeFunction(llvm::Function* f){
 			//NO DEFINITION
 			if(PI==E){
 				it->second.second.warning("Variable "+ll->getName()+" undefined");
-				auto run = llvm::UndefValue::get(ll->type);
+				auto run = getUndef(ll->type);
 				phiRecur(done,V, idx, np, run);
 			} else {
 

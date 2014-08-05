@@ -49,7 +49,8 @@ enum Token {
 	T_TUPLE = 43,
 	T_NAMED_TUPLE=44,
 	T_DOWHILE=45,
-	T_PARALLEL=46
+	T_PARALLEL=46,
+	T_SWITCH
 };
 
 

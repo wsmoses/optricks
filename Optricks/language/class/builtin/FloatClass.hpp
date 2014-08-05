@@ -43,21 +43,21 @@ public:
 			return new ConstantData(V, this);
 		}), PositionID(0,0,"#float"));
 #define SINGLE_FUNC_DECLR(X,Y) LANG_M.addFunction(PositionID(0,0,"#float"), X)->add(new IntrinsicFunction<llvm::Intrinsic::Y>(new FunctionProto(X,{AbstractDeclaration(this)},this)), PositionID(0,0,"#float"));
-		SINGLE_FUNC_DECLR("abs",fabs)
+		SINGLE_FUNC_DECLR("abs",fabs)//NO PNACL
 		SINGLE_FUNC_DECLR("sqrt",sqrt)
-		SINGLE_FUNC_DECLR("sin",sin)
-		SINGLE_FUNC_DECLR("cos",cos)
-		SINGLE_FUNC_DECLR("exp",exp)
-		SINGLE_FUNC_DECLR("exp2",exp2)
-		SINGLE_FUNC_DECLR("log",log)
-		SINGLE_FUNC_DECLR("log2",log2)
-		SINGLE_FUNC_DECLR("log10",log10)
-		SINGLE_FUNC_DECLR("floor",floor)
-		SINGLE_FUNC_DECLR("ceil",ceil)
-		SINGLE_FUNC_DECLR("trunc",trunc)
-		SINGLE_FUNC_DECLR("rint",rint)
+		SINGLE_FUNC_DECLR("sin",sin)//NO PNACL
+		SINGLE_FUNC_DECLR("cos",cos)//NO PNACL
+		SINGLE_FUNC_DECLR("exp",exp)//NO PNACL
+		SINGLE_FUNC_DECLR("exp2",exp2)//NO PNACL
+		SINGLE_FUNC_DECLR("log",log)//NO PNACL
+		SINGLE_FUNC_DECLR("log2",log2)//NO PNACL
+		SINGLE_FUNC_DECLR("log10",log10)//NO PNACL
+		SINGLE_FUNC_DECLR("floor",floor)//NO PNACL
+		SINGLE_FUNC_DECLR("ceil",ceil)//NO PNACL
+		SINGLE_FUNC_DECLR("trunc",trunc)//NO PNACL
+		SINGLE_FUNC_DECLR("rint",rint)//NO PNACL
 
-		SINGLE_FUNC_DECLR("nearbyint",nearbyint)
+		SINGLE_FUNC_DECLR("nearbyint",nearbyint)//NO PNACL
 		//SINGLE_FUNC_DECLR("round",round)
 
 

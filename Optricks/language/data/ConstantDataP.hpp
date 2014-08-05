@@ -15,7 +15,7 @@
 
 const LocationData* ConstantData::toLocation(RData& r, String name) const{
 	//TODO complete ConstantData toLocation
-	auto L = r.builder.CreateAlloca(value->getType(), nullptr);
+	auto L = r.createAlloca(value->getType());
 	return new LocationData(getLazy(name,r,L,r.builder.GetInsertBlock(),value), type);
 }
 

@@ -43,7 +43,7 @@ class ClassFunction : public E_FUNCTION{
 				else tA = upperClass;
 				ad.push_back(AbstractDeclaration(tA, "this"));
 				args[0] = tA->type;
-				ConstantData* TEMP = new ConstantData(llvm::UndefValue::get(upperClass->type),upperClass);
+				ConstantData* TEMP = new ConstantData(getUndef(upperClass->type),upperClass);
 				module.setVariable(filePos, "this", TEMP);
 			}
 			for(unsigned i=0; i<declaration.size(); i++){
@@ -60,11 +60,11 @@ class ClassFunction : public E_FUNCTION{
 				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
 					auto ic = ((ReferenceClass*)ad[Idx+(staticF?0:1)].declarationType)->innerType;
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(llvm::UndefValue::get(ic->type),ic))
+						(new ConstantData(getUndef(ic->type),ic))
 					);
 				} else{
 					declaration[Idx]->variable.getMetadata().setObject(
-						(new ConstantData(llvm::UndefValue::get(ad[Idx+(staticF?0:1)].declarationType->type),ad[Idx+(staticF?0:1)].declarationType))
+						(new ConstantData(getUndef(ad[Idx+(staticF?0:1)].declarationType->type),ad[Idx+(staticF?0:1)].declarationType))
 					);
 				}
 			}

@@ -6,7 +6,6 @@
  */
 //TODO allow returning references, but forbid returning local reference
 //TODO add bigint/bigfloat with reference counting / gmp/mpfr
-//TODO print/println floatLiteral/float
 //TODO FIX typeof w/ templates
 //TODO create website that finds best price considering sales tax / student discount /etc
 //TODO nullptr/choice{vector}
@@ -32,9 +31,9 @@ hi(r(12),&b,r(35))
 #include "./language/Post.hpp"
 #include "./parse/Lexer.hpp"
 #include "./language/ffi/F_Class.hpp"
-/**
- * TODO create allocation of global memory after function prototype but before built
- */
+
+#define VERSION 0.4.0
+#define VERSION_STRING STR(VERSION)
 
 struct __attribute__((__packed__)) TYPE_DATA {
 	void* first;
@@ -422,7 +421,7 @@ int main(int argc, char** argv){
 			assert(d->type==R_LAZY);
 			a = ((LazyWrapperData*)d)->value->evaluate(r)->getMyClass(r, id);
 		}
-		uint64_t s = llvm::DataLayout(r.lmod).getTypeAllocSize(a->type);
+		uint64_t s = getRData().dlayout->getTypeAllocSize(a->type);
 		return new IntLiteral(s);
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
@@ -440,10 +439,32 @@ int main(int argc, char** argv){
 		}
 		else if(s=="-ir" || s=="--ir") { llvmIR=true; }
 		else if(s=="-i") { forceInt = true; interactive = true; }
-		else if(s=="-ni") { forceInt = true; interactive = false; }
-		else if(startsWithEq(s, "--inter")){
-			forceInt = true;
-			interactive = testFor(s,"--inter");
+		else if(s=="--help" || s=="-h"){
+			std::cout <<
+				"Usage: gcc.exe [options] file...\n"
+				"Options:\n"
+				"   -ir --ir                 Emit LLVM IR instead of executable\n"
+				"   -i                       Force an interactive session\n"
+				"   --interactive=yes|no     Force an interactive session on or off, default yes if no file or command otherwise no\n"
+				"   --assert=yes|no          Enable the evaluation of an assertion default=no\n"
+				"   --pnacl=yes|no           Emit a PNACL executable or compatible IR\n"
+				"   --command='...'          Runs the following command instead of a file\n"
+				"   -c ...                   Runs the following command instead of a file\n"
+				"   --help                   Display this information\n"
+				"   --version                Display compiler version information\n"
+				"   -output=<file>           Place the output into <file>\n"
+				"   -o <file>                Place the output into <file>\n"
+				"\n"
+				"For bug reporting instructions, please see:\n"
+				"  <http://optricks.xvm.mit.edu/>." << flush;
+			return 0;
+		} else if(s=="--version"){
+			std::cout << "Optricks version " << VERSION_STRING << endl << flush;
+			std::cout << "Created by Billy Moses" << endl << endl << flush;
+			return 0;
+		}
+		else if(startsWithEq(s, "--pnacl")){
+			getRData().enablePNACL = testFor(s,"--pnacl");
 		}
 		else if(startsWithEq(s, "--assert")){
 			getRData().enableAsserts = testFor(s,"--assert");
@@ -525,7 +546,7 @@ int main(int argc, char** argv){
 	initClasses();
 
 	if(interactive) {
-		std::cout << "Optricks version 0.2.3" << endl << flush;
+		std::cout << "Optricks version " << VERSION_STRING << endl << flush;
 		std::cout << "Created by Billy Moses" << endl << endl << flush;
 	}
 

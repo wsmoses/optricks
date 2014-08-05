@@ -24,7 +24,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 						(llvm::Type*)llvm::StructType::create(llvm::getGlobalContext(), llvm::StringRef(nam)))
 				)
 				)),
-						constructors(nam, nullptr),start(0),final(false),vtable(nullptr)
+						constructors(nam, nullptr),start(0),final(false)
 		{
 			if(t==PRIMITIVEPOINTER_LAYOUT){
 				PositionID(0,0,"#class").warning("Garbage collection for primitivepointers is not implemented");
@@ -56,7 +56,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 
 llvm::Value* UserClass::generateData(RData& r, PositionID id) const{
 	if(!final) id.compilerError("Cannot generateData of non-finalized type");
-	if(layout==PRIMITIVEPOINTER_LAYOUT || layout==PRIMITIVE_LAYOUT) return llvm::UndefValue::get(type);
+	if(layout==PRIMITIVEPOINTER_LAYOUT || layout==PRIMITIVE_LAYOUT) return getUndef(type);
 	else {
 		assert(type);
 		assert(llvm::dyn_cast<llvm::PointerType>(type));
