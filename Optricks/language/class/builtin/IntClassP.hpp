@@ -43,7 +43,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 
 				llvm::SmallVector<llvm::Type*,1> ar(1);
 				ar[0] = this->type;
-				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
+				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
 				return new ConstantData(V, this);}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#intL"),"trailingZeros")->add(
 				new BuiltinInlineFunction(new FunctionProto("trailingZeros",{AbstractDeclaration(this)},this),
@@ -53,7 +53,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 
 				llvm::SmallVector<llvm::Type*,1> ar(1);
 				ar[0] = this->type;
-				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::cttz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
+				V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::cttz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
 				return new ConstantData(V, this);}), PositionID(0,0,"#float"));
 		LANG_M.addFunction(PositionID(0,0,"#int"),"ilog2")->add(
 					new BuiltinInlineFunction(new FunctionProto("ilog2",{AbstractDeclaration(this)},this),
@@ -63,7 +63,7 @@ Value* getCharFromDigit(RData& r, PositionID id, Value* V){
 
 					llvm::SmallVector<llvm::Type*,1> ar(1);
 					ar[0] = this->type;
-					V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
+					V = r.builder.CreateCall2(llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::ctlz,ar),V,llvm::ConstantInt::get(BOOLTYPE,0,false));
 					V = r.builder.CreateSub(llvm::ConstantInt::get(this->type,len-1,false),V);
 					return new ConstantData(V, this);
 		}), PositionID(0,0,"#int"));

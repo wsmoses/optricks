@@ -14,7 +14,7 @@
 #include "../data/LazyWrapperData.hpp"
 
 const Data* ExternalFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
-	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
+	llvm::Value* cal = r.builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 	else if(proto->returnType->classType==CLASS_REF)
 		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
@@ -32,12 +32,12 @@ llvm::Constant* ExternalFunction::getSingleFunc() const{
 		assert(ar[i]);
 	}
 	auto FT = llvm::FunctionType::get(proto->returnType->type, ar, proto->varArg);
-	return myFunc = getRData().getExtern(proto->name, FT, lib);
+	return myFunc = rdata.getExtern(proto->name, FT, lib);
 }
 
 template<decltype(llvm::Intrinsic::sqrt) A>
 const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const{
-	llvm::Value* cal = getRData().builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
+	llvm::Value* cal = r.builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 	else if(proto->returnType->classType==CLASS_REF)
 		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
@@ -55,7 +55,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		ar[i] = proto->declarations[i].declarationType->type;
 		assert(ar[i]);
 	}
-	llvm::Function* F = llvm::Intrinsic::getDeclaration(getRData().lmod, A,ar);
+	llvm::Function* F = llvm::Intrinsic::getDeclaration(rdata.lmod, A,ar);
 	myFunc = F;
 	return F;
 }
@@ -126,9 +126,9 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 	llvm::Function* BuiltinInlineFunction::getSingleFunc() const{
 		if(myFunc!=nullptr) return (llvm::Function*)myFunc;
 		myFunc = getF(proto);
-		llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
-		llvm::BasicBlock* BB = getRData().CreateBlockD("entry", ((llvm::Function*)myFunc));
-		getRData().builder.SetInsertPoint(BB);
+		llvm::BasicBlock* Parent = rdata.builder.GetInsertBlock();
+		llvm::BasicBlock* BB = rdata.CreateBlockD("entry", ((llvm::Function*)myFunc));
+		rdata.builder.SetInsertPoint(BB);
 
 		unsigned Idx = 0;
 		std::vector<const Evaluatable*> args;
@@ -141,25 +141,25 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 				args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 		}
 		//ASSUMES NO INLINE LOCAL METHODS
-		const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args,nullptr);
-		if(! getRData().hadBreak()){
+		const Data* ret = inlined(rdata, PositionID(0,0,"#inliner"), args,nullptr);
+		if(! rdata.hadBreak()){
 			if(proto->returnType->classType==CLASS_VOID)
-				getRData().builder.CreateRetVoid();
+				rdata.builder.CreateRetVoid();
 			else{
-				llvm::Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
-				getRData().builder.CreateRet(V);
+				llvm::Value* V = ret->getValue(rdata,PositionID(0,0,"#inliner"));
+				rdata.builder.CreateRet(V);
 			}
 		}
-		getRData().FinalizeFunctionD((llvm::Function*)myFunc);
-		if(Parent) getRData().builder.SetInsertPoint( Parent );
+		rdata.FinalizeFunctionD((llvm::Function*)myFunc);
+		if(Parent) rdata.builder.SetInsertPoint( Parent );
 		return (llvm::Function*)myFunc;
 	}
 	llvm::Function* BuiltinCompiledFunction::getSingleFunc() const{
 			if(myFunc!=nullptr) return (llvm::Function*)myFunc;
 			myFunc = BuiltinInlineFunction::getF(proto);
-			llvm::BasicBlock* Parent = getRData().builder.GetInsertBlock();
-			llvm::BasicBlock* BB = getRData().CreateBlockD("entry", ((llvm::Function*)myFunc));
-			getRData().builder.SetInsertPoint(BB);
+			llvm::BasicBlock* Parent = rdata.builder.GetInsertBlock();
+			llvm::BasicBlock* BB = rdata.CreateBlockD("entry", ((llvm::Function*)myFunc));
+			rdata.builder.SetInsertPoint(BB);
 
 			unsigned Idx = 0;
 			std::vector<const Evaluatable*> args;
@@ -172,17 +172,17 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 					args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 			}
 			//ASSUMES NO INLINE LOCAL METHODS
-			const Data* ret = inlined(getRData(), PositionID(0,0,"#inliner"), args,nullptr);
-			if(! getRData().hadBreak()){
+			const Data* ret = inlined(rdata, PositionID(0,0,"#inliner"), args,nullptr);
+			if(! rdata.hadBreak()){
 				if(proto->returnType->classType==CLASS_VOID)
-					getRData().builder.CreateRetVoid();
+					rdata.builder.CreateRetVoid();
 				else{
-					llvm::Value* V = ret->getValue(getRData(),PositionID(0,0,"#inliner"));
-					getRData().builder.CreateRet(V);
+					llvm::Value* V = ret->getValue(rdata,PositionID(0,0,"#inliner"));
+					rdata.builder.CreateRet(V);
 				}
 			}
-			getRData().FinalizeFunctionD((llvm::Function*)myFunc);
-			if(Parent) getRData().builder.SetInsertPoint( Parent );
+			rdata.FinalizeFunctionD((llvm::Function*)myFunc);
+			if(Parent) rdata.builder.SetInsertPoint( Parent );
 			return (llvm::Function*)myFunc;
 		}
 
@@ -197,7 +197,7 @@ inline llvm::Function* BuiltinInlineFunction::getF(FunctionProto* fp){
 	assert(fp->returnType);
 	assert(T || PositionID(0,0,"#getF").warning(fp->returnType->getName()+"  has no type"));;
 	llvm::FunctionType* FT = llvm::FunctionType::get(T, ar, false);
-	return getRData().CreateFunctionD(fp->name, FT, LOCAL_FUNC);
+	return rdata.CreateFunctionD(fp->name, FT, LOCAL_FUNC);
 }
 String toClassArgString(String funcName, const std::vector<const AbstractClass*>& args){
 	String s=funcName+"(";
@@ -595,7 +595,7 @@ const AbstractClass* GeneratorFunction::getMyClass(RData& r, PositionID id) cons
 
 llvm::Function* GeneratorFunction::getSingleFunc() const{
 		if(myFunc!=nullptr) return (llvm::Function*)myFunc;
-		return (llvm::Function*)(myFunc = createGeneratorFunction(proto, getRData(), filePos));
+		return (llvm::Function*)(myFunc = createGeneratorFunction(proto, rdata, filePos));
 }
 const Data* GeneratorFunction::callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) const{
 	auto gt=proto->returnType;

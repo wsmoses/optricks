@@ -177,7 +177,7 @@ public:
 		return getValue(r,id);
 	}
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
-		return getMyClass(getRData(), id);
+		return getMyClass(rdata, id);
 	}
 };
 

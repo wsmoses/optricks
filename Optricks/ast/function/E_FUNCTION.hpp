@@ -33,11 +33,11 @@ class E_FUNCTION:public ErrorStatement{
 			return myFunction;
 		}
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod) const override final{
-			if(!myFunction) registerFunctionPrototype(getRData());
+			if(!myFunction) registerFunctionPrototype(rdata);
 			return myFunction->getSingleProto()->returnType;
 		}
 		const AbstractClass* getReturnType() const override final{
-			if(!myFunction) registerFunctionPrototype(getRData());
+			if(!myFunction) registerFunctionPrototype(rdata);
 			return myFunction->getSingleProto()->getFunctionClass();
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{

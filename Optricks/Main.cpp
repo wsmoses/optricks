@@ -56,8 +56,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	}
 	//if(debug && n->getToken()!=T_VOID) std::cout << n << endl << flush;
 	n->registerClasses();
-	n->registerFunctionPrototype(getRData());
-	n->buildFunction(getRData());
+	n->registerFunctionPrototype(rdata);
+	n->buildFunction(rdata);
 	//const AbstractClass* retType = n->getReturnType();
 	//n->checkTypes();
 	llvm::FunctionType* FT;
@@ -67,10 +67,10 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	else
 		FT = llvm::FunctionType::get(VOIDTYPE, llvm::SmallVector<llvm::Type*,0>(0), false);
 
-	llvm::Function* F = getRData().CreateFunction(":input_",FT,EXTERN_FUNC);
+	llvm::Function* F = rdata.CreateFunction(":input_",FT,EXTERN_FUNC);
 	llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
-	getRData().builder.SetInsertPoint(BB);
-	const Data* dat = n->evaluate(getRData());
+	rdata.builder.SetInsertPoint(BB);
+	const Data* dat = n->evaluate(rdata);
 	assert(dat);
 	if(dat->type==R_INT){
 		IntLiteral* i = (IntLiteral*)dat;
@@ -122,12 +122,12 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	}
 	if(n->getToken()==T_FUNC || n->getToken()==T_CLASS || n->getToken()==T_DECLARATION){
 		retType = &voidClass;
-		getRData().builder.CreateRetVoid();
+		rdata.builder.CreateRetVoid();
 	} else {
 		if(retType==TIME_CLASS || retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
-			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(getRData(),PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
+			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(rdata,PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 			retType = &voidClass;
-			getRData().builder.CreateRetVoid();
+			rdata.builder.CreateRetVoid();
 		} else if(retType->layout==POINTER_LAYOUT){
 			llvm::SmallVector<llvm::Type*,2> TYPES(2);
 			TYPES[0] = retType->type;
@@ -136,33 +136,31 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 			llvm::FunctionType* FT = llvm::FunctionType::get(ST, llvm::SmallVector<llvm::Type*,1>(1,llvm::PointerType::getUnqual(CLASSTYPE)), false);
 			F->mutateType(llvm::PointerType::getUnqual(FT));
 
-			llvm::Value* V = dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>"));
+			llvm::Value* V = dat->getValue(rdata,PositionID(0,0,"<interpreter.main>"));
 
-			RData& r = getRData();
+			auto STAR = rdata.builder.GetInsertBlock();
 
-			auto STAR = r.builder.GetInsertBlock();
+			llvm::BasicBlock* END = rdata.CreateBlockD("is_null", F);
+			llvm::BasicBlock* NOT_NULL = rdata.CreateBlockD("not_null", F);
 
-			llvm::BasicBlock* END = r.CreateBlockD("is_null", F);
-			llvm::BasicBlock* NOT_NULL = r.CreateBlockD("not_null", F);
-
-			r.builder.CreateCondBr(r.builder.CreateIsNull(V),END,NOT_NULL);
-			r.builder.SetInsertPoint(NOT_NULL);
+			rdata.builder.CreateCondBr(rdata.builder.CreateIsNull(V),END,NOT_NULL);
+			rdata.builder.SetInsertPoint(NOT_NULL);
 
 			assert(V->getType());
 			assert(V->getType()->isPointerTy());
 			assert(((llvm::PointerType*)V->getType())->getElementType()->isStructTy());
 			assert(((llvm::StructType*)((llvm::PointerType*)V->getType())->getElementType())->getStructNumElements()>=2);
-			r.builder.CreateStore(r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1)),F->arg_begin());
-			r.builder.CreateBr(END);
-			r.builder.SetInsertPoint(END);
+			rdata.builder.CreateStore(rdata.builder.CreateLoad(rdata.builder.CreateConstGEP2_32(V, 0, 1)),F->arg_begin());
+			rdata.builder.CreateBr(END);
+			rdata.builder.SetInsertPoint(END);
 
-			r.builder.CreateRet(V);
+			rdata.builder.CreateRet(V);
 
 		} else if(retType->classType!=CLASS_VOID){
 			llvm::FunctionType* FT = llvm::FunctionType::get(retType->type, llvm::SmallVector<llvm::Type*,0>(0), false);
 			F->mutateType(llvm::PointerType::getUnqual(FT));
-			getRData().builder.CreateRet(dat->getValue(getRData(),PositionID(0,0,"<interpreter.main>")));
-#ifndef NDEBUG
+			rdata.builder.CreateRet(dat->getValue(rdata,PositionID(0,0,"<interpreter.main>")));
+#ifdef WITH_ASSERTS
 	if(F->getReturnType()!=retType->type){
 		F->getReturnType()->dump();
 		retType->type->dump();
@@ -171,11 +169,11 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	}
 #endif
 	assert(F->getReturnType()==retType->type);
-		} else getRData().builder.CreateRetVoid();
+		} else rdata.builder.CreateRetVoid();
 	}
-	getRData().FinalizeFunction(F);
+	rdata.FinalizeFunction(F);
 
-	void *FPtr = getRData().getExec()->getPointerToFunction(F);
+	void *FPtr = rdata.getExec()->getPointerToFunction(F);
 
 	//TODO introduce new error literal
 
@@ -322,45 +320,42 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 	assert(F);
 	F->eraseFromParent();
 }
-/**
- * Returns whether s starts with b;
- */
-bool startsWith(String s, String b){
-	if(s.length() < b.length()) return false;
-	for(unsigned int i = 0; i<b.length(); i++){
-		if(s[i]!=b[i]) return false;
+
+template<size_t N>
+//+1 for the '\0'
+inline bool startsWithEqFor(const char(&M)[N],const String s, bool& toPlace){
+	assert(M[N-1]=='\0');
+	auto sl = s.length();
+	if(sl < N-1) return false;
+	for(unsigned int i = 0; i<N-1; i++){
+		if(s[i]!=M[i]) return false;
 	}
+	if(sl==N-1){
+		toPlace = true;
+		return true;
+	}
+	if(sl>=N && s[N-1]=='='){
+		//todo optionally force it to be either y/n or yes/no
+		toPlace= s[N]=='y';
+		return true;
+	}
+	else return false;
+}
+
+template<size_t N>
+//+1 for the '\0'
+inline bool startsWithEqString(const char(&M)[N],String& s){
+	assert(M[N-1]=='\0');
+	auto sl = s.length();
+	if(sl < N) return false;
+	for(unsigned int i = 0; i<N-1; i++){
+		if(s[i]!=M[i]) return false;
+	}
+	if(s[N-1]!='=') return false;
+	s = s.substr(N);
 	return true;
 }
-bool startsWithEq(String s, String b){
-	if(s==b) return true;
-	b+="=";
-	if(s.length() < b.length()) return false;
-	for(unsigned int i = 0; i<b.length(); i++){
-		if(s[i]!=b[i]) return false;
-	}
-	return true;
-}
-String testString(String toTest, String testing){
-	String tmp = "";
-	if(startsWith(toTest, testing+"=")) tmp = toTest.substr(testing.length()+1);
-	if(tmp.length()==0){
-		cerr << "Unknown value of " << tmp << " for variable " << toTest << " -- no operation" << endl << flush;
-		exit(1);
-	}
-	return tmp;
-}
-bool testFor(String toTest, String testing){
-	if(toTest==testing) return true;
-	if(!startsWith(toTest, testing+"=")) return false;
-	String tmp = toTest.substr(testing.length()+1);
-	if(tmp=="y" || tmp=="yes") return true;
-	else if(tmp=="n" || tmp=="no") return false;
-	else{
-		cerr << "Unknown value of " << tmp << " for variable " << toTest << " you must use yes/no" << endl << flush;
-		exit(1);
-	}
-}
+
 int main(int argc, char** argv){
 	//PlaySound("dance.wav",nullptr,SND_FILENAME | SND_ASYNC);
 	LANG_M.addFunction(PositionID(0,0,"#str"),"assert")->add(
@@ -368,7 +363,7 @@ int main(int argc, char** argv){
 					new FunctionProto("assert",{AbstractDeclaration(LazyClass::get(&boolClass))},&voidClass),
 					[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
-		if(!getRData().enableAsserts) return &VOID_DATA;
+		if(!r.enableAsserts) return &VOID_DATA;
 		std::vector<const Evaluatable*> EV;
 		const Data* D = args[0]->evaluate(r)->callFunction(r,id,EV,nullptr);
 		assert(D->getReturnType()->classType==CLASS_BOOL);
@@ -422,7 +417,7 @@ int main(int argc, char** argv){
 			assert(d->type==R_LAZY);
 			a = ((LazyWrapperData*)d)->value->evaluate(r)->getMyClass(r, id);
 		}
-		uint64_t s = getRData().dlayout->getTypeAllocSize(a->type);
+		uint64_t s = r.dlayout->getTypeAllocSize(a->type);
 		return new IntLiteral(s);
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
@@ -435,8 +430,7 @@ int main(int argc, char** argv){
 	bool forceInt = false;
 	for(int i = 1; i<argc; ++i){
 		String s = String(argv[i]);
-		if(startsWithEq(s, "--debug")){
-			getRData().debug = testFor(s,"--debug");
+		if(startsWithEqFor("--debug",s,rdata.debug)){
 		}
 		else if(s=="-ir" || s=="--ir") {
 			if(outputFormat!=0){ cerr << "Error: output file already set when trying to set format as LLVM-IR" << endl << flush; exit(1); }
@@ -470,18 +464,14 @@ int main(int argc, char** argv){
 			std::cout << "Created by Billy Moses" << endl << endl << flush;
 			return 0;
 		}
-		else if(startsWithEq(s, "--pnacl")){
-			getRData().enablePNACL = testFor(s,"--pnacl");
+		else if(startsWithEqFor("--pnacl",s,rdata.enablePNACL)){
 		}
-		else if(startsWithEq(s, "--assert")){
-			getRData().enableAsserts = testFor(s,"--assert");
+		else if(startsWithEqFor("--assert",s,rdata.enableAsserts)){
 		}
-		else if(startsWithEq(s, "--interactive")){
+		else if(startsWithEqFor("--interactive",s,interactive)){
 			forceInt = true;
-			interactive = testFor(s,"--interactive");
 		}
-		else if(startsWithEq(s,"--command")){
-			s = testString(s, "--command");
+		else if(startsWithEqString("--command",s)){
 			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set command as " << s << endl << flush; exit(1); }
 			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
 			command=s;
@@ -497,8 +487,7 @@ int main(int argc, char** argv){
 			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
 			command=s;
 		}
-		else if(startsWithEq(s,"--output")){
-			s = testString(s, "--output");
+		else if(startsWithEqString("--output",s)){
 			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
 			output=s;
 		}
@@ -512,8 +501,7 @@ int main(int argc, char** argv){
 			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
 			output=s;
 		}
-		else if(startsWithEq(s,"--file")){
-			s = testString(s, "--file");
+		else if(startsWithEqString("--file",s)){
 			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
 			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
 			file=s;

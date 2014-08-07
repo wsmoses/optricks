@@ -39,7 +39,7 @@ public:
 					}), PositionID(0,0,"#int"));
 		LANG_M.addFunction(PositionID(0,0,"#cstr"), "println")->add(
 				new CompiledFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),
-						getRData().getExtern("puts",&c_intClass, {this})), PositionID(0,0,"#cstr"));
+						rdata.getExtern("puts",&c_intClass, {this})), PositionID(0,0,"#cstr"));
 		/*
 				LANG_M.addFunction(PositionID(0,0,"#cstr"),"println")->add(
 					new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(this)},&voidClass),

@@ -35,7 +35,7 @@ public:
 		assert(isClassMethod==false);
 		const AbstractClass* cla= left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			return left->getMyClass(getRData(), filePos)->staticVariables.getFunctionReturnTypeHere(id,right,t_args, args);
+			return left->getMyClass(rdata, filePos)->staticVariables.getFunctionReturnTypeHere(id,right,t_args, args);
 		} else {
 			if(cla->hasLocalData(right)){
 				const AbstractClass* tmp = cla->getLocalReturnClass(id,right);
@@ -70,7 +70,7 @@ public:
 	const AbstractClass* getReturnType() const override final{
 		const AbstractClass* superC = left->getReturnType();
 		if(superC->classType==CLASS_CLASS){
-			return left->getMyClass(getRData(), filePos)->staticVariables.getReturnClassHere(filePos,right, t_args);
+			return left->getMyClass(rdata, filePos)->staticVariables.getReturnClassHere(filePos,right, t_args);
 		} else {
 			return superC->getLocalReturnClass(filePos, right);
 		}
@@ -79,7 +79,7 @@ public:
 	bool hasCastValue(const AbstractClass* const a) const override{
 		const AbstractClass* cla = left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			const AbstractClass* c = left->getMyClass(getRData(), filePos);
+			const AbstractClass* c = left->getMyClass(rdata, filePos);
 			return c->staticVariables.getHere(filePos, right, t_args)->hasCastValue(a);
 		} else {
 			if(cla->hasLocalData(right))
@@ -98,7 +98,7 @@ public:
 		assert(hasCastValue(b));
 		const AbstractClass* cla = left->getReturnType();
 		if(cla->classType==CLASS_CLASS){
-			const AbstractClass* c = left->getMyClass(getRData(), filePos);
+			const AbstractClass* c = left->getMyClass(rdata, filePos);
 			return c->staticVariables.getHere(filePos, right, t_args)->compareValue(a,b);
 		} else {
 			if(cla->hasLocalData(right))

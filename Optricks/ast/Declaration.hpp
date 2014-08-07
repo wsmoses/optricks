@@ -73,7 +73,7 @@ public:
 				exit(1);
 			}
 		}
-		returnType = classV->getMyClass(getRData(), filePos);
+		returnType = classV->getMyClass(rdata, filePos);
 		if(returnType->classType==CLASS_REF){
 			returnType = ((ReferenceClass*)returnType)->innerType;
 			isReference = 1;

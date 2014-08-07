@@ -149,7 +149,7 @@ public:
 			exit(1);
 			return nullptr;
 		}
-		return HashMapClass::get(inner[0].first->getMyClass(getRData(), id), inner[0].second->getMyClass(getRData(), id));
+		return HashMapClass::get(inner[0].first->getMyClass(rdata, id), inner[0].second->getMyClass(rdata, id));
 	}
 };
 

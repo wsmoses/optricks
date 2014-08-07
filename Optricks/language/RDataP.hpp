@@ -74,7 +74,7 @@ llvm::Value* RData::randInt(llvm::Value* MAX,llvm::Value* REAL_MT){
 		llvm::SmallVector<llvm::Type*,1> ar(1);
 		ar[0] = INT32TYPE;
 		//ar[1] = BOOLTYPE;
-		llvm::Value* BITS = builder.CreateCall2(llvm::Intrinsic::getDeclaration(getRData().lmod, llvm::Intrinsic::ctlz,ar),MAX,llvm::ConstantInt::get(BOOLTYPE,0,false));
+		llvm::Value* BITS = builder.CreateCall2(llvm::Intrinsic::getDeclaration(lmod, llvm::Intrinsic::ctlz,ar),MAX,llvm::ConstantInt::get(BOOLTYPE,0,false));
 		BITS = builder.CreateSub(llvm::ConstantInt::get(INT32TYPE,32,false),BITS);
 		MASK = builder.CreateSub(builder.CreateShl(getInt32(1),BITS),getInt32(1));
 	}

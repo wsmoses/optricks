@@ -54,7 +54,7 @@ public:
 		const AbstractClass* ac;
 		const AbstractClass* V = value->getReturnType();
 		if(V->classType==CLASS_CLASS && operation=="[]" && pre==UOP_POST){
-			return ArrayClass::get(value->getMyClass(getRData(), id));
+			return ArrayClass::get(value->getMyClass(rdata, id));
 		}
 		if(pre==UOP_PRE)
 			return getPreopReturnType(filePos, V, operation);

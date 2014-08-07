@@ -176,7 +176,7 @@ struct RData{
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
 		bool debug;
-		RData(): enableAsserts(false),enablePNACL(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),builder(llvm::getGlobalContext())
+		RData(bool b): enableAsserts(false),enablePNACL(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),builder(llvm::getGlobalContext())
 		,fpm(lmod),mpm(){
 			//lmod->setDataLayout("p:64:64:64");
 			dlayout = new llvm::DataLayout(lmod);
@@ -1155,8 +1155,6 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		}
 };
 
-RData& getRData(){
-	static RData rdata;
-	return rdata;
-}
+static RData rdata(true);
+
 #endif /* RDATA_HPP_ */

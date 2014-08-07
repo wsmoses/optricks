@@ -127,7 +127,7 @@ public:
 		main_args[1] = llvm::PointerType::getUnqual(C_STRINGTYPE); /* Argument vector*/
 		llvm::FunctionType* FT = llvm::FunctionType::get(C_INTTYPE, main_args, false);
 		assert(FT);
-		llvm::Function* F = getRData().CreateFunction("main",FT,EXTERN_FUNC);
+		llvm::Function* F = rdata.CreateFunction("main",FT,EXTERN_FUNC);
 		assert(F);
 		llvm::BasicBlock* BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
 
@@ -135,25 +135,25 @@ public:
 		getStatements(global, fileNames, stats);
 		for(auto& n: stats) n->registerClasses();
 		for(auto& n: stats){
-			n->registerFunctionPrototype(getRData());
+			n->registerFunctionPrototype(rdata);
 		}
 		for(auto& n: stats){
-			n->buildFunction(getRData());
+			n->buildFunction(rdata);
 		}
 
-		getRData().builder.SetInsertPoint(BB);
-		for(auto& n: stats) n->evaluate(getRData());
-		getRData().builder.CreateRet(getCInt(0));
-		getRData().FinalizeFunction(F);
-		if(getRData().debug){
+		rdata.builder.SetInsertPoint(BB);
+		for(auto& n: stats) n->evaluate(rdata);
+		rdata.builder.CreateRet(getCInt(0));
+		rdata.FinalizeFunction(F);
+		if(rdata.debug){
 			this->myMod->write(cerr);
-			getRData().lmod->dump();
+			rdata.lmod->dump();
 			cerr << endl << flush;
 		}
 		if(outputFormat>0)
-			llvm::verifyModule(* getRData().lmod);
+			llvm::verifyModule(* rdata.lmod);
 		//flush function mappings
-		getRData().getExec();
+		rdata.getExec();
 		//auto modOpt = new PassManager();
 		//FunctionPassManager* fnOpt = new FunctionPassManager(getRData().lmod);
 
@@ -195,29 +195,29 @@ public:
 			assert(file);
 			llvm::formatted_raw_ostream FOS(*file);
 			auto outputType = (outputFormat==0)?llvm::TargetMachine::CodeGenFileType::CGFT_ObjectFile:llvm::TargetMachine::CodeGenFileType::CGFT_AssemblyFile;
-			if(Target.addPassesToEmitFile(getRData().mpm, FOS,outputType)){
-				llvm::errs() << "Target doesn't support generation of executable (assembly)\n";
+			if(Target.addPassesToEmitFile(rdata.mpm, FOS,outputType)){
+				cerr << "Target doesn't support generation of executable (assembly)\n" << endl << flush;
 				exit(1);
 			}
-			getRData().mpm.run(* getRData().lmod);
-			if(getRData().debug)
+			rdata.mpm.run(* rdata.lmod);
+			if(rdata.debug)
 				cerr << "Ran pass" << endl << flush;
 			return;
 		} else if(outputFormat>0){
-			getRData().mpm.run(* getRData().lmod);
+			rdata.mpm.run(* rdata.lmod);
 		}
 
-		if(getRData().debug){
+		if(rdata.debug){
 			cerr << "Ran pass" << endl << flush;
 			//getRData().lmod->dump();
 		}
 		if(outputFormat==1){
 			//write ir to file
 			assert(file);
-			getRData().lmod->print(*file,0);
+			rdata.lmod->print(*file,0);
 		} else {
 			assert(outputFormat==-1 || outputFormat==-2);
-			getRData().getExec()->runFunctionAsMain(F, {""},nullptr);
+			rdata.getExec()->runFunctionAsMain(F, {""},nullptr);
 		}
 	}
 	String getNextName(char endWith){
@@ -401,8 +401,7 @@ public:
 				}
 				if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
 				trim(EOF);
-				while(!f->done && f->peek()==';'){f->move1(';');trim(data);}
-				trim(EOF);
+				while(!f->done && f->peek()==';'){f->move1(';');trim(EOF);}
 			}
 			f->move1('}');
 			trim(data);
@@ -417,8 +416,8 @@ public:
 	}
 	Statement* getNextType(ParseData data, bool allowsAuto){
 		trim(EOF);
-		if(f->done || !isStartType(f->peek())) f->error("Could not find alphanumeric start for type parsing, found "+String(1,f->peek()));
 		auto tc = f->peek();
+		if(f->done || !isStartType(tc)) f->error("Could not find alphanumeric start for type parsing, found "+String(1,tc));
 		Statement* currentType;
 		if(!isStartName(tc)){
 			if(tc=='('){
@@ -717,7 +716,6 @@ public:
 			}
 			auto blocks = new Block(pos(), data.mod);
 			while(true){
-				//todo place case thing here!
 				auto pek=f->peek();
 				if(pek=='}') break;
 				else if(pek=='c' || pek=='d'){
@@ -734,8 +732,7 @@ public:
 				}
 				if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
 				trim(EOF);
-				while(!f->done && f->peek()==';'){f->move1(';');trim(data);}
-				trim(EOF);
+				while(!f->done && f->peek()==';'){f->move1(';');trim(EOF);}
 			}
 			if(blocks->values.size()==0){
 				delete blocks;
@@ -788,13 +785,13 @@ public:
 				} else {
 					num = getNextStatement(data.getExpr());
 					f->trim(EOF);
-					if(f->read()!=':')
+					if(f->read()!=':'){
 						f->error("Requires ':' after thread count in parallel block");
-					f->trim(EOF);
+						f->trim(EOF);
+					}
 				}
 				auto blocks = new Block(pos(), nmod);
 				while(true){
-					//todo place case thing here!
 					auto pek=f->peek();
 					if(pek=='}') break;
 					else if(pek=='c'){
@@ -810,8 +807,7 @@ public:
 					}
 					if(e!=nullptr && e->getToken()!=T_VOID) blocks->values.push_back(e);
 					trim(EOF);
-					while(!f->done && f->peek()==';'){f->move1(';');trim(data);}
-					trim(EOF);
+					while(!f->done && f->peek()==';'){f->move1(';');trim(EOF);}
 				}
 				if(blocks->values.size()==0){
 					delete blocks;
@@ -863,12 +859,13 @@ public:
 			} else returnNameTemp = nullptr;
 
 			std::vector<std::pair<String,PositionID> > methodName;
-			while(isStartName(f->peek()) || f->peek()==':'){
+			auto pek=f->peek();
+			while(isStartName(pek) || pek==':'){
 				String method;
-				if(f->peek()==':'){
+				if(pek==':'){
 					f->move1(':');
 					f->trim(EOF);
-					auto pek=f->peek();
+					pek=f->peek();
 					if(pek=='['){
 						f->move1('[');
 						pek=f->peek();
@@ -898,6 +895,7 @@ public:
 				f->trim(EOF);
 				methodName.push_back(std::pair<String,PositionID>(method,pos()));
 				if(!op) break;
+				else pek=f->peek();
 			}
 			E_FUNCTION* func;
 			if(methodName.size()<=1 && outer==nullptr){
@@ -1015,7 +1013,7 @@ public:
 		if(superClass==nullptr){
 			if(primitive==POINTER_LAYOUT) superC = &objectClass;
 			else superC = nullptr;
-		} else superC = superClass->getMyClass(getRData(), pos());
+		} else superC = superClass->getMyClass(rdata, pos());
 		//todo register in outer class instead of whereever this place is...
 		if(superC){
 			assert(superC);
@@ -1263,8 +1261,6 @@ public:
 			else return nex;
 		}
 		else if(tchar=='('){
-			//TODO parse function args,  cannot do getNextStatement
-			// due to operatorCheck on tuple
 			//TODO do better job of this actually parsing arguments
 			Statement* e = getNextStatement(ParseData(data.endWith, data.mod, false,PARSE_EXPR));
 			Statement* ret;
@@ -1361,6 +1357,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		else if(temp=="spawn"||temp=="parallel") return getParallel(data,temp);
 		else if(temp=="gen" || temp=="def" || temp=="inl" || temp=="extern") return getFunction(data,temp);
 		else if(temp=="import"){
+			//TODO consider importing right here?
 			trim(data);
 			auto tmp = f->read();
 			if(tmp!='"' && tmp!='\''){
@@ -1386,7 +1383,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 			//TODO prevent returns from use in iterator
 			auto pk=f->peek();
 			if(pk!='}' && pk!=',' && pk!=':' && pk!=')') t = getNextStatement(data.getLoc(PARSE_EXPR));
-			return new E_RETURN(pos(), t, "", (temp=="return")?RETURN:YIELD);
+			return new E_RETURN(pos(), t, "", (temp[0]=='r')?RETURN:YIELD);
 		}
 		else if(temp=="break" || temp=="continue"){
 			//			if(!data.allowsDec()) f->error("Cannot have return here");
@@ -1397,7 +1394,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 				name = "";
 				f->undoMarker(m);
 			}
-			return new E_RETURN(pos(), nullptr, name, (temp=="break")?BREAK:CONTINUE );
+			return new E_RETURN(pos(), nullptr, name, (temp[0]=='b')?BREAK:CONTINUE );
 		}
 		else{
 			f->undoMarker(undoRead);

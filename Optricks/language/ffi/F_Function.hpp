@@ -17,7 +17,7 @@ template<typename R, typename... B> SingleFunction* import_c_function_h(R (*func
 		ad.push_back(AbstractDeclaration(a));
 	return new CompiledFunction(
 			new FunctionProto(name, ad, C->returnType, false),
-			getRData().getExtern(name, C->returnType, C->argumentTypes, false, lib));
+			rdata.getExtern(name, C->returnType, C->argumentTypes, false, lib));
 };
 
 /*
@@ -120,7 +120,7 @@ template<typename R, typename... B> SingleFunction* import_cpp_function_h(R (*fu
 	cerr << name << " vs " << s.str() << endl << flush;
 	auto CF = new CompiledFunction(
 			new FunctionProto(name, ad, C->returnType, false),
-			getRData().getExtern(s.str(), C->returnType, C->argumentTypes, false, lib));
+			rdata.getExtern(s.str(), C->returnType, C->argumentTypes, false, lib));
 	if(scope){
 		scope->addFunction(id, name)->add(CF, id);
 	}

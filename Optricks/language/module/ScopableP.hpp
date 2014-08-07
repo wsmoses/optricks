@@ -21,16 +21,16 @@ const AbstractClass* Scopable::getClass(PositionID id, const String name, const 
 	switch(f.second->second.type){
 		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
-			return f.first->vars[f.second->second.pos]->getMyClass(getRData(), id);
+			return f.first->vars[f.second->second.pos]->getMyClass(rdata, id);
 		}
 		case SCOPE_FUNC:{
 			if(!t_args.inUse)
-				return f.first->funcs[f.second->second.pos]->getMyClass(getRData(), id);
+				return f.first->funcs[f.second->second.pos]->getMyClass(rdata, id);
 			else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(getRData(), id), false)->getMyClass(getRData(), id);
+				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(rdata, id), false)->getMyClass(rdata, id);
 		}
 		case SCOPE_CLASS:
-			return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+			return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 		default:
 			id.error(name+" found at current scope, but was not class");
 			exit(1);
@@ -42,16 +42,16 @@ const AbstractClass* Scopable::getClassHere(PositionID id, const String name, co
 	switch(f.second->second.type){
 		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
-			return f.first->vars[f.second->second.pos]->getMyClass(getRData(), id);
+			return f.first->vars[f.second->second.pos]->getMyClass(rdata, id);
 		}
 		case SCOPE_FUNC:{
 			if(!t_args.inUse)
-				return f.first->funcs[f.second->second.pos]->getMyClass(getRData(), id);
+				return f.first->funcs[f.second->second.pos]->getMyClass(rdata, id);
 			else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(getRData(), id), false)->getMyClass(getRData(), id);
+				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(rdata, id), false)->getMyClass(rdata, id);
 		}
 		case SCOPE_CLASS:
-			return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+			return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 		default:
 			id.error(name+" found at current scope, but was not class");
 			exit(1);
@@ -99,7 +99,7 @@ void Scopable::addClass(PositionID id, const MetaClass* c, String s){
 			if(!t_args.inUse)
 				return f.first->funcs[f.second->second.pos]->getReturnType();
 			else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(getRData(), id), false)->getReturnType();
+				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(rdata, id), false)->getReturnType();
 		}
 		case SCOPE_CLASS:
 			return &classClass;//classClass
@@ -121,7 +121,7 @@ void Scopable::addClass(PositionID id, const MetaClass* c, String s){
 				if(!t_args.inUse)
 					return f.first->funcs[f.second->second.pos]->getReturnType();
 				else
-					return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(getRData(), id), false)->getReturnType();
+					return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(rdata, id), false)->getReturnType();
 			}
 			case SCOPE_CLASS:
 				return &classClass;//classClass
@@ -139,7 +139,7 @@ const AbstractClass* Resolvable::getReturnType(const T_ARGS& t_args) const{
 			if(!t_args.inUse)
 				return d.first->funcs[d.second->second.pos]->getReturnType();
 			else
-				return d.first->funcs[d.second->second.pos]->getBestFit(filePos, t_args.eval(getRData(), filePos), false)->getReturnType();
+				return d.first->funcs[d.second->second.pos]->getBestFit(filePos, t_args.eval(rdata, filePos), false)->getReturnType();
 		}
 		case SCOPE_CLASS:{
 			return &classClass;
@@ -218,12 +218,12 @@ const AbstractClass* Scopable::getFunctionReturnType(PositionID id, const String
 			if(!t_args.inUse){
 				d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
 			} else
-				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(getRData(), id),false);
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(rdata, id),false);
 			ret = d->getSingleProto()->returnType;
 			break;
 		}
 		case SCOPE_CLASS:{
-			ret = f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+			ret = f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 			break;
 		}
 		case SCOPE_VAR:{
@@ -245,12 +245,12 @@ const AbstractClass* Scopable::getFunctionReturnTypeHere(PositionID id, const St
 			if(!t_args.inUse){
 				d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
 			} else
-				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(getRData(), id),false);
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(rdata, id),false);
 			ret = d->getSingleProto()->returnType;
 			break;
 		}
 		case SCOPE_CLASS:{
-			ret = f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+			ret = f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 			break;
 		}
 		case SCOPE_VAR:{
@@ -273,15 +273,15 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 			if(!t_args.inUse){
 				d = f.first->funcs[f.second->second.pos]->getBestFit(id,fp,nullptr);
 			} else
-				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(getRData(), id),false);
+				d = f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(rdata, id),false);
 			ret = std::pair<const Data*,SCOPE_TYPE>(d, SCOPE_FUNC);
 			break;
 		}
 		case SCOPE_CLASS:{
 			auto d = f.first->classes[f.second->second.pos];
 			const AbstractClass* R;
-			if(t_args.inUse) R = d->resolveClass(getRData(), id, t_args.eval(getRData(), id));
-			else R = d->resolveClass(getRData(), id, {});
+			if(t_args.inUse) R = d->resolveClass(rdata, id, t_args.eval(rdata, id));
+			else R = d->resolveClass(rdata, id, {});
 			ret = std::pair<const Data*,SCOPE_TYPE>(R, SCOPE_CLASS);
 			break;
 		}
@@ -306,12 +306,12 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 			if(!t_args.inUse)
 				return f.first->funcs[f.second->second.pos];
 			 else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(getRData(), id),false);
+				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(rdata, id),false);
 		case SCOPE_CLASS:
 			//TODO reconsider?
 			if(t_args.inUse)
-				return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, {});
-			else return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+				return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, {});
+			else return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 		default:
 			id.error(name+" found at current scope, but was not static -- needed static variable/class");
 			exit(1);
@@ -329,12 +329,12 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 			if(!t_args.inUse)
 				return f.first->funcs[f.second->second.pos];
 			 else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(getRData(), id),false);
+				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(rdata, id),false);
 		case SCOPE_CLASS:
 			//TODO reconsider?
 			if(t_args.inUse)
-				return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, {});
-			else return f.first->classes[f.second->second.pos]->resolveClass(getRData(), id, t_args.eval(getRData(), id));
+				return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, {});
+			else return f.first->classes[f.second->second.pos]->resolveClass(rdata, id, t_args.eval(rdata, id));
 		default:
 			id.error(name+" found at current scope, but was not static -- needed static variable/class");
 			exit(1);

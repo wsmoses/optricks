@@ -79,7 +79,7 @@ class OClass: public ErrorStatement
 				else{
 					for(const auto& d:data){
 						if(!d.first) {
-							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(getRData(), filePos));
+							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(rdata, filePos));
 						}
 					}
 					//TODO allow default in constructor
@@ -598,16 +598,16 @@ void initClasses(){
 		AS->finalize(PositionID("#sdl",0,0));
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"init")->add(
 				new CompiledFunction(new FunctionProto("init",{AbstractDeclaration(&intClass)},&c_intClass),
-						getRData().getExtern("SDL_Init",&c_intClass,{&intClass})),PositionID("#sdl",0,0));
+						rdata.getExtern("SDL_Init",&c_intClass,{&intClass})),PositionID("#sdl",0,0));
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"initSubsystem")->add(
 				new CompiledFunction(new FunctionProto("initSubSystem",{AbstractDeclaration(&intClass)},&c_intClass),
-						getRData().getExtern("SDL_InitSubSystem",&c_intClass,{&intClass})),PositionID("#sdl",0,0));
+						rdata.getExtern("SDL_InitSubSystem",&c_intClass,{&intClass})),PositionID("#sdl",0,0));
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"quit")->add(
 						new CompiledFunction(new FunctionProto("quit",std::vector<AbstractDeclaration>({}),&voidClass),
-								getRData().getExtern("SDL_Quit",&voidClass,{})),PositionID("#sdl",0,0));
+								rdata.getExtern("SDL_Quit",&voidClass,{})),PositionID("#sdl",0,0));
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"quitSubsystem")->add(
 						new CompiledFunction(new FunctionProto("quitSubsystem",{AbstractDeclaration(&intClass)},&voidClass),
-								getRData().getExtern("SDL_QuitSubSystem",&voidClass,{&intClass})),PositionID("#sdl",0,0));
+								rdata.getExtern("SDL_QuitSubSystem",&voidClass,{&intClass})),PositionID("#sdl",0,0));
 #define LOAD(M,N)\
 		SDL->staticVariables.addVariable(PositionID("#sdl",0,0),#N, new ConstantData(getInt32(M), &intClass));
 		LOAD(SDL_INIT_TIMER,INIT_TIMER);
@@ -622,11 +622,11 @@ void initClasses(){
 #undef LOAD
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"getError")->add(
 						new CompiledFunction(new FunctionProto("getError",&c_stringClass),
-								getRData().getExtern("SDL_GetError",&c_stringClass,{})),PositionID("#sdl",0,0));
+								rdata.getExtern("SDL_GetError",&c_stringClass,{})),PositionID("#sdl",0,0));
 
 		SDL->staticVariables.addFunction(PositionID("#sdl",0,0),"clearError")->add(
 						new CompiledFunction(new FunctionProto("clearError",&voidClass),
-								getRData().getExtern("SDL_ClearError",&voidClass,{})),PositionID("#sdl",0,0));
+								rdata.getExtern("SDL_ClearError",&voidClass,{})),PositionID("#sdl",0,0));
 
 	}
 	{

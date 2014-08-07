@@ -249,7 +249,7 @@ public:
 	bool start;
 	bool allowUndo;
 	bool done;
-	PositionID pos() const {
+	inline PositionID pos() const {
 		assert(this);
 		return PositionID(readChars.size(), readChars.back().size(),fileName);
 	}
