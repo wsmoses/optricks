@@ -517,7 +517,7 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 		auto myDec = proto->declarations[i+(instance?1:0)];
 		const AbstractClass* const t = myDec.declarationType;
 		if(myDec.defaultValue==nullptr){
-			id.error("Error: No default argument available for argument "+str(i+1));
+			id.error("No default argument available for argument "+str(i+1));
 			exit(1);
 		}
 		assert(i<llvm::dyn_cast<llvm::StructType>(V->getType())->getNumElements());

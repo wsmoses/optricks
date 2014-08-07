@@ -168,7 +168,7 @@ public:
 	inline void add(SingleFunction* t, PositionID id){
 		assert(t);
 		if(set(t,id)){
-			id.error("Error overwriting function "+t->getSingleProto()->toString());
+			id.error("Overwriting function "+t->getSingleProto()->toString());
 		}
 	}
 	inline bool set(SingleFunction* t, PositionID id){

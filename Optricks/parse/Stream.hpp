@@ -78,25 +78,35 @@ private:
 	std::vector<int> cache;
 	std::vector<std::vector<int> > readChars;
 	unsigned int curCount;
-    void * operator new   (size_t)=delete;
-    void * operator new[] (size_t)=delete;
+	void * operator new   (size_t)=delete;
+	void * operator new[] (size_t)=delete;
+	void writeNonLine(int c){
+		//done = false;
+		assert(c!='\n');
+		assert(c!=EOF);
+		assert(readChars.size()>0);
+		assert(readChars.back().size()>0);
+		assert(readChars.back().back()==c);
+		cache.push_back(c);
+		readChars.back().pop_back();
+		curCount--;
+	}
 	void write(){
-			done = false;
-			if(readChars[readChars.size()-1].empty()){
-				if(readChars.size()==0){
-					error("Wrote more than available chars...?",true);
-				}
-				readChars.pop_back();
-				cache.push_back('\n');
-			}
-			else{
-				cache.push_back(readChars.back().back());
-				readChars.back().pop_back();
-			}
-			curCount--;
+		done = false;
+		if(readChars[readChars.size()-1].empty()){
+			assert(readChars.size()!=0 && "Wrote more than available chars...?");
+			readChars.pop_back();
+			cache.push_back('\n');
+		}
+		else{
+			cache.push_back(readChars.back().back());
+			readChars.back().pop_back();
+		}
+		curCount--;
 	}
 public:
 	bool enableOut;
+	friend Lexer;
 	Stream(String file, bool i): interactive(i){
 		enableOut = false;
 		done = false;
@@ -135,33 +145,34 @@ public:
 		}
 		std::cout << c << flush;
 	}
+	/*
 	void write(char c){
-			done = false;
-			if(readChars[readChars.size()-1].empty()){
-				if(readChars.size()==0){
-					error("Wrote more than available chars...?",true);
-				}
-				if(c!='\n'){
-					error("Cannot re-insert non \\n",true);
-				}
-				readChars.pop_back();
-				cache.push_back('\n');
+		done = false;
+		if(readChars[readChars.size()-1].empty()){
+			if(readChars.size()==0){
+				error("Wrote more than available chars...?",true);
 			}
-			else{
-				char t = readChars.back().back();
-				if(t!=c){
-					error("Cannot re-insert incorrect char",true);
-				}
-				cache.push_back(t);
-				readChars.back().pop_back();
+			if(c!='\n'){
+				error("Cannot re-insert non \\n",true);
 			}
-			curCount--;
+			readChars.pop_back();
+			cache.push_back('\n');
+		}
+		else{
+			char t = readChars.back().back();
+			if(t!=c){
+				error("Cannot re-insert incorrect char",true);
+			}
+			cache.push_back(t);
+			readChars.back().pop_back();
+		}
+		curCount--;
 	}
 	void write(String c){
 		for(unsigned int i = 0; i<c.size(); ++i){
 			write(c[i]);
 		}
-	}
+	}*/
 	unsigned int getMarker(){
 		return curCount;
 	}
@@ -173,32 +184,50 @@ public:
 		int c;
 		if(cache.size()==0){
 			if(readChar(f,&c)){
-				error("Error reading from file",true);
+				error("Cannot read from file",true);
 			}
 			if(c=='\n' && interactive && enableOut){
-				 std::cout << CONT << flush;
+				std::cout << CONT << flush;
 			}
 		}
 		else{
 			c = cache.back();
 			cache.pop_back();
 		}
-		if(c=='\r') return read();
+		if(c=='\r'){
+			do{
+				if(readChar(f,&c)){
+					error("Cannot read from file",true);
+				}
+			}while(c=='\r');
+			if(c=='\n' && interactive && enableOut){
+				std::cout << CONT << flush;
+			}
+		}
 		if(c=='\n'){
 			readChars.push_back(std::vector<int>());
 		} else readChars.back().push_back(c);
 		curCount++;
 		return c;
 	}
+	//to follow a peek if meant to be read
+	inline void move1(int c){
+		assert(cache.size()>0);
+		assert(c==cache.back());
+		if(c=='\n'){
+			readChars.push_back(std::vector<int>());
+		} else readChars.back().push_back(c);
+		curCount++;
+
+		cache.pop_back();
+	}
 	int peek(){
 		if(cache.size()>0) return cache.back();
 		int c;
 		if(readChar(f,&c)){
-			error("Error peeking from file",true);
+			error("Cannot peek from file",true);
 		}
-		if(c!=EOF){
-			if(returnChar(f,c)) error("Error returning to file (peek)",true);
-		} else cache.push_back(c);
+		cache.push_back(c);
 		return c;
 	}
 	bool start;
@@ -210,6 +239,18 @@ public:
 	}
 	virtual ~Stream(){
 		fclose(f);
+	}
+	//checks if is single equals (not ==) and reads the single equals if so
+	//otherwise leaves unchanged
+	bool isSingleEquals(){
+		if(peek()!='=') return false;
+		move1('=');
+		if(peek()=='='){
+			writeNonLine('=');
+			return false;
+		}
+		else
+			return true;
 	}
 	unsigned int peekOctDigit(){
 		char c = peek();
@@ -247,17 +288,15 @@ public:
 			exit(0);
 		}
 	}
+
 	/**
-	 * Precondition: read() gives a single or double quote
-	 *
+	 * Precondition: already read the quote
 	 */
-	String readString(char endWith){
+	String readString(char endWith, bool isDouble){
 		String filling = "";
 		trim(endWith);
-		if(peek()!='\'' && peek()!='"') error("Cannot read false string literal",true);
-		bool isDouble = read()=='"';
 		int escape = 0;
-		bool doneV = false;
+		//bool doneV = false;
 		do{
 			auto front = read();
 			if(front==EOF){
@@ -267,11 +306,15 @@ public:
 			if(escape == 0)
 				switch(front){
 				case '"':
-					if(isDouble){doneV = true; break; }
+					if(isDouble){
+						goto doneLoop;
+					}
 					else filling+=front;
 					break;
 				case '\'':
-					if(!isDouble){doneV = true; break; }
+					if(!isDouble){
+						goto doneLoop;
+					}
 					else filling+=front;
 					break;
 				case '\\':
@@ -289,7 +332,7 @@ public:
 					escape = 0;
 					break;
 				case '\r':
-					if(peek()=='\n') read();
+					if(peek()=='\n') move1('\n');
 					escape = 0;
 					break;
 				case '\n':
@@ -384,21 +427,27 @@ public:
 					break;
 				}
 			}
-		}while(!doneV);
+		}while(true);
+
+		doneLoop:
 		trim(endWith);
 		if(done) return filling;
-		if(peek()=='"' || peek()=='\'') return filling+readString(endWith);
-		return filling;
+		auto tmp = read();
+		if(tmp=='"' || tmp=='\''){
+			return filling+readString(endWith,tmp=='"');
+		} else{
+			writeNonLine(tmp);
+			return filling;
+		}
 	}
 
 	String readWhile(const bool (*fun)(char)){
 		String st;
-		char load;
 		do{
-			load = peek();
+			auto load = peek();
 			if(!fun(load)){
 				break;
-			} else read();
+			} else move1(load);
 			st+=load;
 		}while(true);
 		return st;
@@ -441,39 +490,41 @@ public:
 		if(done){
 			return true;
 		}
-		char c;
 		do{
-			c = peek();
+			auto c = peek();
 			if(c==EOF){
 				done = true;
 				return true;
-			}
-			else if(c==endWith){
+			} else if(c==endWith){
 				return false;
-			} else read();
-		/*	else if(endAtLines && c=='\n'){
+			} else if(c==' ' || c=='\t' || c=='\r') {
+				move1(c);
+			} else {
+				break;
+			}
+			/*	else if(endAtLines && c=='\n'){
 				done = true;
 				return true;
 			}*/
-		}while(c==' ' || c=='\t' || c=='\r');
-		write();
+		}while(true);
 		return false;
 	}
 
 	bool trimEndOfLine(){
-		char c;
 		if(done){
 			return true;
 		}
 		do{
-			c = read();
+			auto c = peek();
 			if(c==EOF){
-				write();
 				done = true;
 				return true;
+			} else{
+				move1(c);
+				if(c=='\n') break;
 			}
-		}while(c!='\n');
-		if(read()!='\r') write();
+		}while(true);
+		if(peek()=='\r') move1('\r');
 		//done |= endAtLines;
 		return done;//endAtLines;
 	}
@@ -489,42 +540,37 @@ public:
 			if(trimNonLine(endWith)){
 				return true;
 			}
-			char c = peek();
+			auto c = peek();
 			if(c==EOF /*|| (endAtLines && c=='\n')*/){
 				done = true;
 				return true;
-			}
-			if(c==endWith){
+			} else if(c==endWith){
 				return false;
-			}
-			if(c=='\n'){
-				read();
+			} else if(c=='\n'){
+				move1('\n');
 				continue;
-			}
-			if(c=='#' && trimEndOfLine()){
-				return true;
-			}
-			if(c=='/'){
-				read();
-				char n = peek();
-				if(n=='/' && trimEndOfLine()){
-					return true;
-				}
-				else if(n=='*'){
+			} else if(c=='#'){
+				if(trimEndOfLine()) return true;
+			} else if(c=='/'){
+				move1('/');
+				auto n = peek();
+				if(n=='/'){
+					if(trimEndOfLine()) return true;
+				} else if(n=='*'){
 					char prev = ' ';
 					char cur = ' ';
 					do{
 						prev = cur;
-						cur = read();
+						cur = peek();
 						if(cur==EOF){
-							write();
 							error("Unclosed /* comment");
 							exit(0);
 							return true;
-						}
+						} else move1(cur);
 					}while(prev!='*' || cur!='/');
+				} else{
+					writeNonLine('/');
 				}
-				else write();
 			}
 		}while(tmp!=curCount);
 		return false;
@@ -537,8 +583,9 @@ public:
 			if(temp.size()==0) return vals;
 			vals.push_back(temp);
 			if(trim(endWith)) return vals;
-			if(done || peek()!=',') return vals;
-			else read();
+			if(done) return vals;
+			if(peek()!=',') return vals;
+			else move1(',');
 		}
 		while(true);
 		return vals;
@@ -556,112 +603,113 @@ public:
 					done = true;
 					return temp;
 				}
-				if(isalnum(tchar) || tchar=='$' || tchar=='_')	temp+=read();
+				if(isalnum(tchar) || tchar=='$' || tchar=='_'){
+					temp+=tchar;
+					move1(tchar);
+				}
 				else break;
 			}while(true);
 			return temp;
 		}
 		return "";
 	}
-	Literal* readNumber(char endWith){
-		String hi;
-		char tchar;
+	/**
+	 * Reads a number (not preceded by leading + or -)
+	 */
+	Literal* readNumber(char endWith, bool negative){
+		assert(endWith < '0' || endWith > '9');
+		assert(endWith != 'b');
+		assert(endWith != 'B');
+		assert(endWith != 'x');
+		assert(endWith != 'X');
+		assert(endWith != '-');
+		assert(endWith != '+');
+		if(done) return &ZERO_LITERAL;
+		String hi=negative?"-":"";
+		char tchar=peek();
+		int base;
+		if(tchar=='0'){
+			move1('0');
+			tchar = peek();
+			if(tchar=='x' || tchar=='X'){
+				move1(tchar);
+				base=16;
+				tchar = peek();
+			}
+			else if(tchar=='b' || tchar=='B'){
+				move1(tchar);
+				base = 2;
+				tchar = peek();
+			}
+			else if(tchar>='0' && tchar<='7'){
+				move1(tchar);
+				base = 8;
+				hi+=tchar;
+				tchar = peek();
+			} else base = 10;
+		} else base = 10;
+
 		bool decimal = false;
-		int pos = 0;
-		int base = 10;
-		bool te = false;
+		bool exponent = false;
 		do{
 			if(done) break;
-			tchar = peek();
 			if(tchar==endWith){
 				done=true;
 				break;
-			}
-			read();
-			if(pos==0 && tchar=='-'){
+			} else if(tchar=='.'){
+				move1('.');
 				hi+=tchar;
-			}
-			else if(tchar=='.' || (base<15 && (tchar=='e' || tchar=='E'))){
-				hi+=tchar; decimal=true; te = true;
-				pos++; continue;
-			}
-			else if(pos==0 && tchar=='0'){
-				//hi+=tchar;
-				base=-1;
-			}
-			else if(pos==1 && base==-1){
-				if(tchar=='x' || tchar=='X'){
-					base=16;
-					//	hi.pop_back();
-				}
-				else if(tchar=='b' || tchar=='B'){
-					base = 2;
-					//hi.pop_back();
-				}
-				else if(tchar>='0' && tchar<='7'){
-					base = 8;
-					hi+=tchar;
-				}
-				else{
-					write();
-					break;
-				}
+				decimal = true;
+			} else if(base<15 && !exponent && (tchar=='e' || tchar=='E')){
+				move1(tchar);
+				hi+=tchar;
+				exponent = true;
+				tchar = peek();
+				if(tchar=='-' || tchar=='+') hi+=tchar;
+				else continue;
 			}
 			else if(isdigit(tchar) || (tchar>='a' && tchar<='f')  || (tchar>='A' && tchar<='F')){
+				move1(tchar);
 				hi+=tchar;
 			}
-			else if(te && tchar=='-') hi+=tchar;
 			else{
-				write();
 				break;
 			}
-			pos++;
-			te = false;
+			tchar = peek();
 		}while(true);
-		if(base==-1) base=10;
-		//hi.pop_back();
+
 		Literal* tmp = (decimal)?((Literal*)(new FloatLiteral(hi.c_str(),base))):(
 				(Literal*)(new IntLiteral(hi.c_str(),base)));
 		if(done) return tmp;
 		auto pek = peek();
-		if(pek=='i' || pek=='j'){
-			read();
+		if(pek=='i' || pek=='j' || pek=='I'){
+			move1(tchar);
 			return new ImaginaryLiteral(nullptr,tmp);
 		}
 		else return tmp;
 	}
 	String getNextOperator(char endWith){
 		trim(endWith);
-		if (isOperator(peek())) {
-			bool alpha = false;
-			String temp = readWhile(isOperator);
-			if(temp.size()==0){
-				temp = readString(endWith);
-				alpha = true;
-			}
-			bool binop = false;
-			do{
-			for(const auto& a:BINARY_OPERATORS){
-				if(a==temp){
-					binop = true;
-					break;
+		String temp;
+		int valid=0;
+		while(true){
+			auto tmp = peek();
+			if(!isOperator(tmp)){
+				unsigned int i=temp.length();
+				if(i==valid) return temp;
+				while(true){
+					writeNonLine(temp[i-1]);
+					if(i==valid+1) break;
+					else i--;
 				}
-			}
-			if(binop) break;
-			if(temp.size()==0) break;
-			else {
-				write();
-				temp.resize(temp.length()-1);
-			}
-			}while(!alpha);
-			if(binop){
-				trim(endWith);
+				temp.resize(valid);
 				return temp;
 			}
-			else for(unsigned int i = 0; i<temp.size(); ++i) write();
-			return "";
+			String t2=temp+String(1,tmp);
+			if(in<String>(BINARY_OPERATORS, t2)) valid=t2.length();
+			move1(tmp);
+			temp = t2;
 		}
-		return "";
 	}
 
 };

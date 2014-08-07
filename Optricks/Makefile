@@ -16,7 +16,9 @@ SDL = -DUSE_SDL -lSDL2_mixer -lSDL2_image `sdl2-config --cflags --libs`
 RELEASE = -O3 -static-libgcc -DNDEBUG
 #RELEASE = -O3 -static-libgcc -DNDEBUG -static
 
-ifneq (,$(findstring MINGW, $(UNAME)))
+# MSYS or CYGWIN or MINGW
+ifneq (,$(findstring NT, $(UNAME)))
+#	FLAGS += -ws2_32
 	LLVM += -limagehlp
 	SDL += -lWinmm
 	OPENGL += -lopengl32 -lglu32 -lglut
@@ -51,6 +53,11 @@ bare:
 	@echo "Disabled SDL"
 	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(DEBUG)
 
+bare-wall:
+	@echo "Disabled OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(DEBUG) -Wall -fdiagnostics-color=always
+
 release-all: 
 release:
 	@echo "Enabled  OpenGL"
@@ -70,4 +77,15 @@ release-no-sdl:
 release-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++
+
+profile-bare:
+	@echo "Disabled OpenGL"
+	@echo "Disabled SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++ -pg
+
+profile-all:
+profile:
+	@echo "Enabled  OpenGL"
+	@echo "Enabled  SDL"
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++ -pg

@@ -1204,6 +1204,170 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 		break;
 	}
 	case CLASS_COMPLEX:{
+		if(operation=="**"){
+			const ComplexClass* comp = (const ComplexClass*)cc;
+			auto RV = ev->evaluate(r);
+			assert(value->type==R_IMAG);
+			const ImaginaryLiteral* IL = (const ImaginaryLiteral*)value;
+			switch(comp->innerClass->classType){
+			case CLASS_INTLITERAL:{
+				if(IL->real) assert(IL->real->type==R_INT);
+				assert(IL->imag->type==R_INT);
+				auto LR = (IntLiteral*) (IL->real?IL->real:(&ZERO_LITERAL));
+				auto LI = (IntLiteral*) IL->imag;
+				if(dd->classType==CLASS_INTLITERAL){
+					auto TO_EXP = (IntLiteral*)RV;
+					auto tmp = mpz_sgn(TO_EXP->value);
+					if(tmp < 0)
+						return new ImaginaryLiteral(&ZERO_LITERAL, &ZERO_LITERAL,"");
+					else if(tmp==0){
+						return new ImaginaryLiteral(&ONE_LITERAL, &ZERO_LITERAL, "");
+					} else if(IL->real==nullptr || mpz_sgn(LR->value)==0){
+						IntLiteral* M = new IntLiteral(0,0,0);
+						auto exp = mpz_get_ui(TO_EXP->value);
+						mpz_pow_ui(M->value, LI->value, exp);
+						if( (exp/2) %2 == 1){
+							mpz_neg(M->value, M->value);
+						}
+						if(exp %2 == 1)
+							return new ImaginaryLiteral(nullptr, M);
+						else
+							return new ImaginaryLiteral(M, &ZERO_LITERAL);
+					} else{
+						auto exp = mpz_get_ui(TO_EXP->value);
+						if(exp==1) return IL;
+						IntLiteral* RE;
+						IntLiteral* IM;
+						if(exp & 1){
+							RE = new IntLiteral(LR->value);
+							IM = new IntLiteral(LI->value);
+						} else RE = nullptr;
+						mpz_t re;
+						mpz_init_set(re, LR->value);
+						mpz_t im;
+						mpz_init_set(im, LI->value);
+						exp >>= 1;
+						mpz_t tmp;
+						mpz_init(tmp);
+						mpz_t tmp2;
+						mpz_init(tmp2);
+						while(exp>0) {
+							mpz_set(tmp, re);
+							mpz_mul(re, re, re);
+							mpz_mul(tmp, tmp, im);
+							mpz_mul_2exp(tmp, tmp, 1);
+							mpz_mul(im, im, im);
+							mpz_sub(re, re, im);
+							mpz_set(im, tmp);
+							if(exp & 1){
+								if(RE){
+									mpz_set(tmp, RE->value);
+									mpz_set(tmp2, IM->value);
+									mpz_mul(RE->value, RE->value, re);
+									mpz_mul(IM->value, IM->value, im);
+									mpz_sub(RE->value, RE->value, IM->value);
+									mpz_mul(tmp, tmp, im);
+									mpz_mul(tmp2, tmp2, re);
+									mpz_add(IM->value, tmp, tmp2);
+								}
+								else{
+									RE = new IntLiteral(re);
+									IM = new IntLiteral(im);
+								}
+							}
+							exp>>=1;
+						}
+						mpz_clear(tmp);
+						mpz_clear(tmp2);
+						return new ImaginaryLiteral(RE,IM);
+					}
+				}else if(dd->classType==CLASS_INT){
+
+				}
+				break;
+			}
+			case CLASS_FLOATLITERAL:{
+				if(IL->real) assert(IL->real->type==R_FLOAT);
+				assert(IL->imag->type==R_FLOAT);
+				auto LR = (FloatLiteral*) (IL->real?IL->real:(&ZEROF_LITERAL));
+				auto LI = (FloatLiteral*) IL->imag;
+				if(dd->classType==CLASS_INTLITERAL){
+					auto TO_EXP = (IntLiteral*)RV;
+					auto tmp = mpz_sgn(TO_EXP->value);
+					if(tmp < 0)
+						return new ImaginaryLiteral(&ZEROF_LITERAL, &ZEROF_LITERAL,"");
+					else if(tmp==0){
+						return new ImaginaryLiteral(&ONE_LITERAL, &ZEROF_LITERAL, "");
+					} else if(IL->real==nullptr || mpfr_zero_p(LR->value)!=0){
+						FloatLiteral* M = new FloatLiteral(0,0,0);
+						auto exp = mpz_get_ui(TO_EXP->value);
+						mpfr_pow_ui(M->value, LI->value, exp, MPFR_RNDN);
+						if( (exp/2) %2 == 1){
+							mpfr_neg(M->value, M->value, MPFR_RNDN);
+						}
+						if(exp %2 == 1)
+							return new ImaginaryLiteral(nullptr, M);
+						else
+							return new ImaginaryLiteral(M, &ZEROF_LITERAL);
+					} else{
+						auto exp = mpz_get_ui(TO_EXP->value);
+						if(exp==1) return IL;
+						FloatLiteral* RE;
+						FloatLiteral* IM;
+						if(exp & 1){
+							RE = new FloatLiteral(LR->value);
+							IM = new FloatLiteral(LI->value);
+						} else RE = nullptr;
+						mpfr_t re;
+						mpfr_init_set(re, LR->value,MPFR_RNDN);
+						mpfr_t im;
+						mpfr_init_set(im, LI->value,MPFR_RNDN);
+						exp >>= 1;
+						mpfr_t tmp;
+						mpfr_init(tmp);
+						mpfr_t tmp2;
+						mpfr_init(tmp2);
+						while(exp>0) {
+							mpfr_set(tmp, re,MPFR_RNDN);
+							mpfr_mul(re, re, re,MPFR_RNDN);
+							mpfr_mul(tmp, tmp, im,MPFR_RNDN);
+							mpfr_mul_2exp(tmp, tmp, 1,MPFR_RNDN);
+							mpfr_mul(im, im, im,MPFR_RNDN);
+							mpfr_sub(re, re, im,MPFR_RNDN);
+							mpfr_set(im, tmp,MPFR_RNDN);
+							if(exp & 1){
+								if(RE){
+									mpfr_set(tmp, RE->value,MPFR_RNDN);
+									mpfr_set(tmp2, IM->value,MPFR_RNDN);
+									mpfr_mul(RE->value, RE->value, re,MPFR_RNDN);
+									mpfr_mul(IM->value, IM->value, im,MPFR_RNDN);
+									mpfr_sub(RE->value, RE->value, IM->value,MPFR_RNDN);
+									mpfr_mul(tmp, tmp, im,MPFR_RNDN);
+									mpfr_mul(tmp2, tmp2, re,MPFR_RNDN);
+									mpfr_add(IM->value, tmp, tmp2,MPFR_RNDN);
+								}
+								else{
+									RE = new FloatLiteral(re);
+									IM = new FloatLiteral(im);
+								}
+							}
+							exp>>=1;
+						}
+						mpfr_clear(tmp);
+						mpfr_clear(tmp2);
+						return new ImaginaryLiteral(RE,IM);
+					}
+				}
+				break;
+			}
+			case CLASS_FLOAT:
+				break;
+			case CLASS_INT:
+				break;
+			}
+			filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+			return &VOID_DATA;
+		}
 		const ComplexClass* comp = (const ComplexClass*)getMin(cc, dd, filePos);
 		switch(comp->innerClass->classType){
 		case CLASS_FLOATLITERAL:

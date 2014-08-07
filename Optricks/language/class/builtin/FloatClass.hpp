@@ -230,7 +230,7 @@ public:
 				out = std::string(s);
 
 				mpfr_free_str(s);
-			} else id.compilerError("Error creating string for float to llvm conversion");
+			} else id.compilerError("Cannot creating string for float to llvm conversion");
 			return llvm::ConstantFP::get(llvm::getGlobalContext(),llvm::APFloat(*getSemantics(),out));
 		}
 		else if(mpfr_nan_p(value)) return getNaN();

@@ -43,7 +43,7 @@ public:
 	bool global;
 	Declaration(PositionID id, Statement* v, const E_VAR& loc, bool glob, Statement* e) :
 		ErrorStatement(id),
-	classV(v),returnType(nullptr),isReference(2),variable(loc),value(e),global(glob),finished(nullptr){
+	classV(v),returnType(nullptr),isReference(2),finished(nullptr),variable(loc),value(e),global(glob){
 	}
 	void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
 	}

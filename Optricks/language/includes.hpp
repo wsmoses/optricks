@@ -69,7 +69,9 @@
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/Triple.h>
 #include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/CodeGen/CommandFlags.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Analysis/Passes.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -82,8 +84,11 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/PassManager.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FormattedStream.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/InitializePasses.h>
 #include <llvm/Support/raw_os_ostream.h>

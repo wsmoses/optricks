@@ -40,12 +40,17 @@ public:
 				if(mpz_sgn(i->value)!=0){
 					char temp[mpz_sizeinbase (i->value, 10) + 2];
 					auto tmp =  mpz_get_str(temp, 10, i->value);
-					s << tmp << "+";
+					s << tmp;
+					if( (imag->type==R_INT && mpz_sgn( ((IntLiteral*)imag)->value )>=0 )
+						|| (imag->type==R_FLOAT && mpfr_sgn( ((FloatLiteral*)imag)->value )>=0 ) )
+					s << "+";
 				}
 			} else if(imag->type==R_FLOAT){
 				FloatLiteral* i = (FloatLiteral*)real;
 				if(! mpfr_zero_p(i->value)){
 					i->toStream(s);
+					if( (imag->type==R_INT && mpz_sgn( ((IntLiteral*)imag)->value )>=0 )
+						|| (imag->type==R_FLOAT && mpfr_sgn( ((FloatLiteral*)imag)->value )>=0 ) )
 					s << "+";
 				}
 			}

@@ -171,7 +171,7 @@ const Data* AbstractClass::callFunction(RData& r, PositionID filePos, const std:
 			auto V = L->getReturnType();
 			if(V->classType==CLASS_INT){
 				llvm::Value* M = L->getValue(r, filePos);
-				const IntClass* I = (const IntClass*)V;
+				assert(intClass.getWidth()==32);
 				LEN = r.builder.CreateSExtOrTrunc(M, intClass.type);
 			} else if(V->classType==CLASS_INTLITERAL){
 				const IntLiteral* IL = (const IntLiteral*)L;

@@ -49,7 +49,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		String dir, file;
 		getDir(import->toImport, dir, file);
 		if(chdir(dir.c_str())!=0) import->error("Could not change directory to "+dir+"/"+file);
-		lexer.execFiles(true,{file}, NULL,0);
+		//TODO PREVENT THIS FROM BEING MAIN...............
+		lexer.execFiles(true,{file}, nullptr, -2);
 		if(chdir(cwd)!=0) import->error("Could not change directory back to "+String(cwd));
 		return;
 	}
@@ -429,7 +430,7 @@ int main(int argc, char** argv){
 	String file = "";
 	String command = "";
 	String output = "";
-	bool llvmIR = false;
+	int outputFormat = 0; // 0 is default, 1 is IR, 2 is assembly
 	bool interactive = false;
 	bool forceInt = false;
 	for(int i = 1; i<argc; ++i){
@@ -437,12 +438,18 @@ int main(int argc, char** argv){
 		if(startsWithEq(s, "--debug")){
 			getRData().debug = testFor(s,"--debug");
 		}
-		else if(s=="-ir" || s=="--ir") { llvmIR=true; }
-		else if(s=="-i") { forceInt = true; interactive = true; }
+		else if(s=="-ir" || s=="--ir") {
+			if(outputFormat!=0){ cerr << "Error: output file already set when trying to set format as LLVM-IR" << endl << flush; exit(1); }
+			outputFormat=1;
+		} else if(s=="-asm" || s=="--asm") {
+			if(outputFormat!=0){ cerr << "Error: output file already set when trying to set format as Assembly" << endl << flush; exit(1); }
+			outputFormat=2;
+		} else if(s=="-i") { forceInt = true; interactive = true; }
 		else if(s=="--help" || s=="-h"){
 			std::cout <<
 				"Usage: gcc.exe [options] file...\n"
 				"Options:\n"
+				"   -asm --asm               Emit Assembly instead of executable\n"
 				"   -ir --ir                 Emit LLVM IR instead of executable\n"
 				"   -i                       Force an interactive session\n"
 				"   --interactive=yes|no     Force an interactive session on or off, default yes if no file or command otherwise no\n"
@@ -532,7 +539,7 @@ int main(int argc, char** argv){
 	//ofstream fout (output);
 	String error="";
 	llvm::raw_fd_ostream* outStream;
-	if(llvmIR){
+	if(outputFormat!=0 || output.length()>0){
 		if(output=="-" || output==""){
 			outStream = new llvm::raw_fd_ostream(1, true);
 			output = "-";
@@ -542,7 +549,8 @@ int main(int argc, char** argv){
 			cerr << error << endl << flush;
 			exit(1);
 		}
-	}
+	} else outStream = nullptr;
+
 	initClasses();
 
 	if(interactive) {
@@ -575,10 +583,13 @@ int main(int argc, char** argv){
 			cerr << "Commands not supported yet!" << endl << flush;
 			exit(1);
 		}
-		lexer.execFiles(true,files, outStream,(output.length()==0)?1:((llvmIR)?2:3));
+		lexer.execFiles(true,files, outStream,outStream?outputFormat:-1);
+		if(outStream){
+			outStream->close();
+		}
 	}
 	else{
-		lexer.execFiles(true,files, outStream,0);
+		lexer.execFiles(true,files, nullptr, -1);
 		Statement* n;
 		Stream st(file, true);
 		lexer.f = &st;

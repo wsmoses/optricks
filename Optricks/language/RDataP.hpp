@@ -413,7 +413,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 				if(i <= 0){
 					for(auto a: jumps)
 						cerr << a->name << " and " << str(a->toJump) << endl << flush;
-					id.compilerError("Error could not find returning block - func");
+					id.compilerError("Could not find returning block - func");
 					exit(1);
 				}
 			}
@@ -444,7 +444,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					}*/
 				}
 				if(i <= 0){
-					id.compilerError("Error could not find returning block - gen");
+					id.compilerError("Could not find returning block - gen");
 					exit(1);
 				}
 			}
@@ -463,7 +463,7 @@ void RData::makeJump(String name, JumpType jump, const Data* val, PositionID id)
 					}
 				}
 				if(i <= 0){
-					id.compilerError("Error could not find continue/break block");
+					id.compilerError("Could not find continue/break block");
 					exit(1);
 				}
 			}

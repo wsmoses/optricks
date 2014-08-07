@@ -74,8 +74,12 @@ public:
 	}
 	static LazyClass* get(const AbstractClass* const arg) {
 		static std::map<const AbstractClass*,LazyClass*> map;
-		LazyClass*& fc = map[arg];
-		if(fc==nullptr) fc = new LazyClass(arg);
+		auto find = map.find(arg);
+		LazyClass* fc;
+		if(find==map.end()){
+			fc = new LazyClass(arg);
+			map.insert(std::pair<const AbstractClass*,LazyClass*>(arg, fc));
+		} else fc = find->second;
 		return fc;
 	}
 };

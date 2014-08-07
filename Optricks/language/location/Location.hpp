@@ -71,7 +71,8 @@ class StandardLocation : public Location{
 			llvm::Value* tmp = position;
 			while(auto CA = llvm::dyn_cast<llvm::CastInst>(tmp))
 				tmp = CA->getOperand(0);
-			if(auto GV = llvm::dyn_cast<llvm::Constant>(tmp)){
+			if(auto GV=llvm::dyn_cast<llvm::Constant>(tmp)){
+				assert(GV);
 				return this;
 			}
 			//if(auto AL = llvm::dyn_cast<llvm::AllocaInst>(tmp)){

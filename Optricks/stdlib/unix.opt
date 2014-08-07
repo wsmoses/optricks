@@ -10,7 +10,8 @@ def cat(lang.c.string s){
 
 def bool cd(lang.c.string s){
 	if(os.self==os.windows){
-		return (extern bool SetCurrentDirectory(lang.c.string))(s);
+		return (extern lang.c.int _chdir(lang.c.string))(s)==0;
+//		return (extern bool SetCurrentDirectory(lang.c.string))(s);
 	} else {
 		return (extern lang.c.int chdir(lang.c.string))(s)==0;
 	}

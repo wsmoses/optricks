@@ -71,8 +71,12 @@ public:
 	}
 	static ReferenceClass* get(const AbstractClass* const arg) {
 		static std::map<const AbstractClass*,ReferenceClass*> map;
-		ReferenceClass*& fc = map[arg];
-		if(fc==nullptr) fc = new ReferenceClass(arg);
+		auto find = map.find(arg);
+		ReferenceClass* fc;
+		if(find==map.end()){
+			fc = new ReferenceClass(arg);
+			map.insert(std::pair<const AbstractClass*,ReferenceClass*>(arg, fc));
+		} else fc = find->second;
 		return fc;
 	}
 };
