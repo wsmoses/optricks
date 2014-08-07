@@ -36,7 +36,7 @@ public:
 	//TODO allow cast to string (c_char ?)
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
-		if(value.size()==1 && right->classType==CLASS_CHAR)
+		if(value.size()==1 && right==&charClass)
 			return new ConstantData(CharClass::getValue(value[0]), &charClass);
 		if(right==&stringLiteralClass) return this;
 		if(right->classType==CLASS_CSTRING){
@@ -47,12 +47,13 @@ public:
 	}
 	//TODO
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		if(value.size()==1 && right->classType==CLASS_CHAR)
+		assert(right);
+		if(value.size()==1 && right==&charClass)
 			return CharClass::getValue(value[0]);
 		if(right->classType==CLASS_CSTRING){
 			return r.getConstantCString(value);
 		}
-		id.compilerError("String literal not implemented yet");
+		id.compilerError("String literal not implemented yet '"+value+"' "+right->getName()+" "+str(right->classType)+" "+((right==&charClass)?"true":"false"));
 		exit(1);
 	}
 };

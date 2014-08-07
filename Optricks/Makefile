@@ -13,6 +13,7 @@ OPENGL = -DUSE_OPENGL
 
 SDL = -DUSE_SDL -lSDL2_mixer -lSDL2_image `sdl2-config --cflags --libs`
 
+DEBUG = -DWITH_ASSERTS -g -ggdb
 RELEASE = -O3 -static-libgcc -DNDEBUG
 #RELEASE = -O3 -static-libgcc -DNDEBUG -static
 
@@ -28,8 +29,6 @@ else ifeq ($(UNAME), Darwin)
 else
 	OPENGL += -lGLU -lglut
 endif
-
-DEBUG = -g -ggdb
 
 STD = -std=c++11
 

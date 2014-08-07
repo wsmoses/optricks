@@ -24,7 +24,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#ifdef WITH_ASSERTS
+#ifndef WITH_ASSERTS
 #define NDEBUG
 #endif
 #include <unistd.h>

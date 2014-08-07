@@ -91,6 +91,22 @@ private:
 		readChars.back().pop_back();
 		curCount--;
 	}
+	void writePLine(int c){
+		done = false;
+		assert(c!=EOF);
+		assert(readChars.size()>0);
+		assert(readChars.back().size()>0);
+		assert(readChars.back().back()==c);
+		if(c=='\n'){
+			assert(readChars.back().empty());
+			cache.push_back('\n');
+			readChars.pop_back();
+		} else {
+			cache.push_back(c);
+			readChars.back().pop_back();
+		}
+		curCount--;
+	}
 	void write(){
 		done = false;
 		if(readChars[readChars.size()-1].empty()){
@@ -294,16 +310,14 @@ public:
 	 */
 	String readString(char endWith, bool isDouble){
 		String filling = "";
-		trim(endWith);
 		int escape = 0;
-		//bool doneV = false;
 		do{
 			auto front = read();
 			if(front==EOF){
 				pos().error("Unclosed string literal");
 				exit(1);
 			}
-			if(escape == 0)
+			if(escape == 0){
 				switch(front){
 				case '"':
 					if(isDouble){
@@ -324,6 +338,7 @@ public:
 					filling+=front;
 					break;
 				}
+			}
 			else if(escape==1){
 				unsigned int n;
 				switch(front){
@@ -432,11 +447,11 @@ public:
 		doneLoop:
 		trim(endWith);
 		if(done) return filling;
-		auto tmp = read();
+		auto tmp = peek();
 		if(tmp=='"' || tmp=='\''){
+			move1(tmp);
 			return filling+readString(endWith,tmp=='"');
 		} else{
-			writeNonLine(tmp);
 			return filling;
 		}
 	}

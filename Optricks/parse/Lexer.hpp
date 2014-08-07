@@ -1057,7 +1057,7 @@ public:
 				Statement* func = getFunction(nd, temp,proto,stat);
 				selfClass->under.push_back(func);
 			} else if(temp=="extern"){
-				pos().error("Optricks does not allow the use of external functions in the definition classes!");
+				pos().error("Optricks does not allow the use of external functions in the definition of classes!");
 			} else{
 				f->undoMarker(mark);
 				Declaration* dec = getNextDeclaration(nd,stat,true,false);
