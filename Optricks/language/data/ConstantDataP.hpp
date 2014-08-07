@@ -13,6 +13,18 @@
 #include "../class/builtin/BoolClass.hpp"
 #include "LocationData.hpp"
 
+
+const AbstractClass* ConstantData::getMyClass(PositionID id) const {
+	if(type->classType!=CLASS_CLASS) id.error("Cannot use non-class type as a class");
+	if(auto c = llvm::dyn_cast<llvm::ConstantInt>(value)){
+		auto t = static_cast<size_t>(c->getLimitedValue());
+		return (const AbstractClass*)t;
+	} else{
+		id.error("Cannot use non-constant class type");
+		exit(1);
+	}
+}
+
 const LocationData* ConstantData::toLocation(RData& r, String name) const{
 	//TODO complete ConstantData toLocation
 	auto L = r.createAlloca(value->getType());

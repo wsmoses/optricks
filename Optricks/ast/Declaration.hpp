@@ -26,12 +26,12 @@ private:
 	mutable unsigned isReference;
 	mutable const LocationData* finished;
 public:
-	const AbstractClass* getMyClass(RData& r, PositionID id)const{
-				id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
-			}
-	const AbstractClass* getClass(RData& r, PositionID id)const{
+	const AbstractClass* getMyClass(PositionID id)const override{
+		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
+	}
+	const AbstractClass* getClass(PositionID id)const{
 		if(classV){
-			return classV->getMyClass(r, id);
+			return classV->getMyClass(id);
 		}
 		else{
 			id.error("Cannot use auto declaration");
@@ -73,7 +73,7 @@ public:
 				exit(1);
 			}
 		}
-		returnType = classV->getMyClass(rdata, filePos);
+		returnType = classV->getMyClass(filePos);
 		if(returnType->classType==CLASS_REF){
 			returnType = ((ReferenceClass*)returnType)->innerType;
 			isReference = 1;

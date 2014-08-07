@@ -18,7 +18,7 @@ public:
 	String name;
 	virtual ~DoWhileLoop(){};
 
-	const AbstractClass* getMyClass(RData& r, PositionID id)const{
+	const AbstractClass* getMyClass(PositionID id)const{
 		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 	}
 

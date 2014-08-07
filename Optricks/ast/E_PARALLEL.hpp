@@ -24,7 +24,7 @@ class E_PARALLEL : public ErrorStatement{
 		E_PARALLEL(PositionID id, const E_VAR& var, bool toJ) :
 			ErrorStatement(id), localVariable(var),body(),toJoin(toJ){
 		}
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		void registerClasses() const override final{

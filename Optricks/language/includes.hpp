@@ -497,7 +497,7 @@ public:
 	void add(Statement* a){
 		evals.push_back((const AbstractClass*)a);
 	}
-	std::vector<const AbstractClass*>& eval(RData& r, PositionID id) const;
+	std::vector<const AbstractClass*>& eval(PositionID id) const;
 };
 const T_ARGS NO_TEMPLATE(false);
 #define TemplateArg const AbstractClass*

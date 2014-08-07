@@ -30,13 +30,13 @@ public:
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(a, filePos);
+			const AbstractClass* ac = b->getClass(filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			assert(ac->type);
 		}
 		assert(returnV);
-		const AbstractClass* returnType = returnV->getMyClass(a, filePos);
+		const AbstractClass* returnType = returnV->getMyClass(filePos);
 		myFunction = new ExternalFunction(new FunctionProto(name, ad, returnType), ""/*lib*/);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 		for(auto& d: declaration) d->registerFunctionPrototype(a);

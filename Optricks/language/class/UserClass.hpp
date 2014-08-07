@@ -72,7 +72,7 @@ public:
 					if(!t_args.inUse)
 						return find->second->getBestFit(id,v, true)->callFunction(r, id, v, instance);
 					else
-						return find->second->getBestFit(id, t_args.eval(r, id), true)->callFunction(r, id, v, instance);
+						return find->second->getBestFit(id, t_args.eval(id), true)->callFunction(r, id, v, instance);
 				}
 				tmp = (const UserClass*)(tmp->superClass);
 			}while(tmp);
@@ -87,7 +87,7 @@ public:
 					if(!t_args.inUse)
 						SF = find->second->getBestFit(id, v, true);
 					else
-						SF = find->second->getBestFit(id, t_args.eval(r, id), true);
+						SF = find->second->getBestFit(id, t_args.eval(id), true);
 					break;
 				}
 				tmp = (const UserClass*)(tmp->superClass);
@@ -158,7 +158,7 @@ public:
 						if(!t_args.inUse)
 							SF = find->second->getBestFit(id, v, true);
 						else
-							SF = find->second->getBestFit(id, t_args.eval(r, id), true);
+							SF = find->second->getBestFit(id, t_args.eval(id), true);
 						auto dat = SF->callFunction(r, id, v, instance);
 						if(!isVoid)
 							PHI->addIncoming(dat->castToV(r, retType, id), r.builder.GetInsertBlock());
@@ -186,7 +186,7 @@ public:
 				if(!t_args.inUse)
 					return find->second->getBestFit(id, v, true)->getSingleProto()->returnType;
 				else
-					return find->second->getBestFit(id, t_args.eval(rdata, id), true)->getSingleProto()->returnType;
+					return find->second->getBestFit(id, t_args.eval(id), true)->getSingleProto()->returnType;
 			}
 			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);
@@ -201,7 +201,7 @@ public:
 				if(!t_args.inUse)
 					return find->second->getBestFit(id, v, true)->getSingleProto()->returnType;
 				else
-					return find->second->getBestFit(id, t_args.eval(rdata, id), true)->getSingleProto()->returnType;
+					return find->second->getBestFit(id, t_args.eval(id), true)->getSingleProto()->returnType;
 			}
 			tmp = (const UserClass*)(tmp->superClass);
 		}while(tmp);

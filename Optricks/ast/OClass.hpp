@@ -40,7 +40,7 @@ class OClass: public ErrorStatement
 
 		void reset() const override final{}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{
@@ -79,7 +79,7 @@ class OClass: public ErrorStatement
 				else{
 					for(const auto& d:data){
 						if(!d.first) {
-							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(rdata, filePos));
+							proto->addLocalVariable(filePos,d.second->variable.pointer.name, d.second->getClass(filePos));
 						}
 					}
 					//TODO allow default in constructor
@@ -262,7 +262,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("print",{AbstractDeclaration(&classClass)},&voidClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}";
@@ -274,7 +274,7 @@ void initClasses(){
 		new BuiltinInlineFunction(new FunctionProto("println",{AbstractDeclaration(&classClass)},&voidClass),
 		[](RData& r,PositionID id,const std::vector<const Evaluatable*>& args,const Data* instance) -> Data*{
 		assert(args.size()==1);
-		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(r, id);
+		const AbstractClass* ac = args[0]->evaluate(r)->getMyClass(id);
 		auto CU = r.getExtern("putchar", &c_intClass, {&c_intClass});
 		std::stringstream s;
 		s << "class{" << ac << ", '"<< ac->getName() << "'}" << endl;
@@ -283,7 +283,7 @@ void initClasses(){
 		}
 		return &VOID_DATA;}), PositionID(0,0,"#int"));
 
-	LANG_M.addClass(PositionID(0,0,"#complex"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#complex"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 		if(args.size()==0) return ComplexClass::get(&doubleClass);
 		if(args.size()!=1){
 			id.error("Cannot use template class 'complex' with more than one argument");
@@ -300,7 +300,7 @@ void initClasses(){
 		}
 		return nullptr;
 	}),"complex");
-	LANG_M.addClass(PositionID(0,0,"#array"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#array"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			//if(args.size()==0) return ComplexClass::get(&doubleClass);
 			if(args.size()!=1){
 				id.error("Must use template class 'array' with one argument");
@@ -308,14 +308,14 @@ void initClasses(){
 			}
 			return ArrayClass::get(args[0]);
 		}),"array");
-	LANG_M.addClass(PositionID(0,0,"#lazy"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#lazy"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 		if(args.size()!=1){
 			id.error("Must use template class 'lazy' with one argument");
 			return nullptr;
 		}
 		return LazyClass::get(args[0]);
 	}),"lazy");
-	LANG_M.addClass(PositionID(0,0,"#priorityqueue"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#priorityqueue"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			//if(args.size()==0) return ComplexClass::get(&doubleClass);
 			if(args.size()!=1){
 				id.error("Must use template class 'PriorityQueue' with one argument");
@@ -323,7 +323,7 @@ void initClasses(){
 			}
 			return PriorityQueueClass::get(args[0]);
 		}),"PriorityQueue");
-	LANG_M.addClass(PositionID(0,0,"#map"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#map"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			//if(args.size()==0) return ComplexClass::get(&doubleClass);
 			if(args.size()!=2){
 				id.error("Must use template class 'map' with one argument");
@@ -331,7 +331,7 @@ void initClasses(){
 			}
 			return HashMapClass::get(args[0], args[1]);
 		}),"map");
-	LANG_M.addClass(PositionID(0,0,"#tuple"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#tuple"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 		if(args.size()==0) {
 			id.error("Must use template class 'tuple' with at least one argument - found "+str(args.size()));
 			return nullptr;
@@ -341,7 +341,7 @@ void initClasses(){
 			ar.push_back(args[i]);
 			return TupleClass::get(ar);
 		}),"tuple");
-	LANG_M.addClass(PositionID(0,0,"#function"),new BuiltinClassTemplate([](RData& r,PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
+	LANG_M.addClass(PositionID(0,0,"#function"),new BuiltinClassTemplate([](PositionID id,const std::vector<const AbstractClass*>& args) -> const AbstractClass*{
 			if(args.size()==0) {
 				id.error("Must use template class 'function' with at least one argument - found "+str(args.size()));
 				return nullptr;

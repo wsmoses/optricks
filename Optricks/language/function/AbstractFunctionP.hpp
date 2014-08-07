@@ -589,7 +589,7 @@ llvm::Function* const createGeneratorFunction(FunctionProto* const fp, RData& r,
 	return F;
 }
 
-const AbstractClass* GeneratorFunction::getMyClass(RData& r, PositionID id) const {
+const AbstractClass* GeneratorFunction::getMyClass(PositionID id) const {
 	return proto->returnType;
 }
 

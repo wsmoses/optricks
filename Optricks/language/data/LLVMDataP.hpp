@@ -76,16 +76,4 @@ const Data* LLVMData::callFunction(RData& r, PositionID id, const std::vector<co
 			return type->compare(a, b);
 		}
 
-		const AbstractClass* LLVMData::getMyClass(RData& r, PositionID id) const{
-			if(type->classType!=CLASS_CLASS) id.error("Cannot use non-class type as a class");
-			llvm::Value* v = getValue(r,id);
-			if(auto c = llvm::dyn_cast<llvm::ConstantInt>(v)){
-				auto t = static_cast<size_t>(c->getLimitedValue());
-				return (const AbstractClass*)t;
-			} else{
-				id.error("Cannot use non-constant class type");
-				exit(1);
-			}
-		}
-
 #endif /* LLVMDATAP_HPP_ */

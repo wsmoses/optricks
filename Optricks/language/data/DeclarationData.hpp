@@ -17,9 +17,9 @@ public:
 		Data(R_DEC),value(val){
 		assert(val);
 	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
-		value->fastEvaluate(r);
-		return value->finished->getMyClass(r,id);
+	const AbstractClass* getMyClass(PositionID id) const override final{
+		id.error("Cannot get class from declared variable");
+		exit(1);
 	}
 	ReferenceData* toReference(RData& r) const{
 		return new ReferenceData(value->finished);

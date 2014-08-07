@@ -24,6 +24,7 @@ public:
 	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
 	static ConstantData* getTrue();
 	static ConstantData* getFalse();
+	const AbstractClass* getMyClass(PositionID id) const override final;
 };
 
 #endif /* CONSTANTDATA_HPP_ */

@@ -30,7 +30,7 @@ struct SCOPE_POS{
 class MetaClass{
 public:
 	virtual ~MetaClass(){};
-	virtual const AbstractClass* resolveClass(RData& r, PositionID id, const std::vector<TemplateArg>&) const=0;
+	virtual const AbstractClass* resolveClass(PositionID id, const std::vector<TemplateArg>&) const=0;
 };
 #define SCOPABLE_C_
 class Scopable{
@@ -193,7 +193,7 @@ public:
 		assert(n!="auto");
 	};
 	const AbstractClass* getReturnType(const T_ARGS&) const;
-	inline const Data* getObject(RData& r, const T_ARGS&) const;
+	inline const Data* getObject(const T_ARGS&) const;
 	void setObject(const Data* da) const;
 	inline llvm::Value* getValue(RData& r, const T_ARGS&) const;
 	inline void setValue(RData& r, Data* d2) const;

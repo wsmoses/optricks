@@ -36,6 +36,11 @@ public:
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final;
+	const AbstractClass* getMyClass(PositionID id) const override final{
+		if(type->classType!=CLASS_CLASS) id.error("Cannot use non-class type as a class");
+		id.error("Cannot use non-constant class type");
+		exit(1);
+	}
 };
 
 

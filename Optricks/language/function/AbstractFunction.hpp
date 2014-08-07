@@ -26,7 +26,7 @@ String toClassArgString(String funcName, const std::vector<const Evaluatable*>& 
 class AbstractFunction: public Data{
 public:
 	virtual ~AbstractFunction(){};
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override {
+	const AbstractClass* getMyClass(PositionID id) const override {
 		id.error("Cannot use function as class");
 		exit(1);
 	}
@@ -107,7 +107,7 @@ public:
 	}
 	llvm::Function* getSingleFunc() const override final;
 
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override;
+	const AbstractClass* getMyClass(PositionID id) const override;
 	const Data* callFunction(RData& r,PositionID id,const std::vector<const Evaluatable*>& args, const Data* instance) const override final;
 };
 

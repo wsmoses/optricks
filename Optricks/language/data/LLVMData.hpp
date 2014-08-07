@@ -15,7 +15,6 @@ public:
 	LLVMData(DataType tp, const AbstractClass* const r);
 //	virtual Location* getLocation() const=0;
 	virtual const LocationData* toLocation(RData& r, String name) const=0;
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final;
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final;

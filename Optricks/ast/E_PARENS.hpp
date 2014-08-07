@@ -37,8 +37,8 @@ public:
 		return inner->getReturnType();
 	}
 
-	const AbstractClass* getMyClass(RData& r, PositionID id)const{
-		return inner->getMyClass(r, id);
+	const AbstractClass* getMyClass(PositionID id)const{
+		return inner->getMyClass(id);
 	}
 };
 

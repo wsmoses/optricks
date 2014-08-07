@@ -31,7 +31,7 @@ public:
 		if(getReturnType()==right) return this;
 		return new ConstantData(castToV(r, right, id), right);
 	}
-	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	AbstractClass* getMyClass(PositionID id) const override final{
 		id.error("Cannot use array as class");
 		exit(1);
 		//return voidClass;

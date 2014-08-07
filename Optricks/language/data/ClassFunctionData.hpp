@@ -57,7 +57,7 @@ public:
 	/**
 	 * Returns the class that this represents, if it represents a class
 	 */
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	const AbstractClass* getMyClass(PositionID id) const override final{
 		id.compilerError("Cannot use function closure as class");
 		exit(1);
 	}

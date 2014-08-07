@@ -16,7 +16,7 @@ public:
 		Data(R_REF),value(val){
 		assert(val);
 	}
-	const AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	const AbstractClass* getMyClass(PositionID id) const override final{
 		id.error("Cannot use reference as class");
 		exit(1);
 	}

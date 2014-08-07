@@ -39,7 +39,7 @@ public:
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
-		if(right->classType==CLASS_CLASS) return getMyClass(r, id);
+		if(right->classType==CLASS_CLASS) return getMyClass(id);
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
@@ -59,7 +59,7 @@ public:
 			if(tmp->classType!=CLASS_CLASS) break;
 		}
 		if(i==inner.size()){
-			return getMyClass(r, id)->getValue(r, id);
+			return getMyClass(id)->getValue(r, id);
 		} else {
 			i++;
 			for(; i<inner.size(); i++){
@@ -84,7 +84,7 @@ public:
 			if(tmp->classType!=CLASS_CLASS) break;
 		}
 		if(i==inner.size()){
-			return getMyClass(r, id);
+			return getMyClass(id);
 		} else {
 			i++;
 			for(; i<inner.size(); i++){
@@ -101,7 +101,7 @@ public:
 		return new ConstantData(v, t);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		if(right->classType==CLASS_CLASS) return getMyClass(r, id)->getValue(r, id);
+		if(right->classType==CLASS_CLASS) return getMyClass(id)->getValue(r, id);
 		if(right->classType!=CLASS_TUPLE && right->classType!=CLASS_NAMED_TUPLE) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
 		TupleClass* tc = (TupleClass*)right;
 		if(tc->innerTypes.size()!=inner.size()) id.error("Cannot cast tuple literal to '"+right->getName()+"'");
@@ -168,10 +168,10 @@ public:
 	/**
 	 * Returns the class that this represents, if it represents a class
 	 */
-	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	AbstractClass* getMyClass(PositionID id) const override final{
 		std::vector<const AbstractClass*> vec(inner.size());
 		for(unsigned int i=0; i<inner.size(); i++){
-			vec[i] = inner[i]->getMyClass(r,id);
+			vec[i] = inner[i]->getMyClass(id);
 		}
 		assert(vec.size()==inner.size());
 		return TupleClass::get(vec);

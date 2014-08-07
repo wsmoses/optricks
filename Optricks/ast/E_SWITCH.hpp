@@ -24,7 +24,7 @@ class E_SWITCH : public ErrorStatement{
 		E_SWITCH(PositionID id, Statement* var) :
 			ErrorStatement(id), toSwitch(var),body(){
 		}
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		void registerClasses() const override final{

@@ -22,7 +22,7 @@ class E_SET: public ErrorStatement{
 		}
 
 		void reset() const override final{ variable->reset(); value->reset(); }
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{

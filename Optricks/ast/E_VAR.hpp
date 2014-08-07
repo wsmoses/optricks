@@ -39,10 +39,10 @@ class E_VAR : public VariableReference {
 		}
 
 		bool hasCastValue(const AbstractClass* const a) const override{
-			return pointer.getObject(rdata, t_args)->hasCastValue(a);
+			return pointer.getObject(t_args)->hasCastValue(a);
 		}
 		int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override{
-			return pointer.getObject(rdata, t_args)->compareValue(a,b);
+			return pointer.getObject(t_args)->compareValue(a,b);
 		}
 		const Data* evaluate(RData& r) const override final{
 			assert(pointer.module);
@@ -50,7 +50,7 @@ class E_VAR : public VariableReference {
 				pointer.filePos.warning("Using only class templates");
 				return pointer.getClass(t_args);
 			}*/
-			auto tmp = pointer.getObject(r, t_args);
+			auto tmp = pointer.getObject(t_args);
 			assert(tmp);
 			return tmp;
 		}
@@ -74,7 +74,7 @@ class E_VAR : public VariableReference {
 			return pointer.getFunctionReturnType(t_args, args);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			return pointer.getClass(t_args);
 		}
 		void collectReturns(std::vector<const AbstractClass*>& vals,const AbstractClass* const toBe) override final{

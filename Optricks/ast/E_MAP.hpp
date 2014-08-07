@@ -47,7 +47,7 @@ class E_MAP : public ErrorStatement{
 				exit(1);
 				return nullptr;
 			}
-			return HashMapClass::get(inner[0].first->getMyClass(rdata, id), inner[0].second->getMyClass(rdata, id));
+			return HashMapClass::get(inner[0].first->getMyClass(id), inner[0].second->getMyClass(id));
 		}
 
 		void collectReturns(std::vector<const AbstractClass*>& vals, const AbstractClass* const toBe) override final{
@@ -66,10 +66,10 @@ class E_MAP : public ErrorStatement{
 		};
 
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			if(inner.size()!=1)
 				id.error("Cannot use map literal of size!=1 as class");
-			return HashMapClass::get(inner[0].first->getMyClass(r, id), inner[0].second->getMyClass(r, id));
+			return HashMapClass::get(inner[0].first->getMyClass(id), inner[0].second->getMyClass(id));
 		}
 		void buildFunction(RData& r) const override final{
 			for(auto& a:inner){

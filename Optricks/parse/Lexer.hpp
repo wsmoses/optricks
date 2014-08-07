@@ -1013,7 +1013,7 @@ public:
 		if(superClass==nullptr){
 			if(primitive==POINTER_LAYOUT) superC = &objectClass;
 			else superC = nullptr;
-		} else superC = superClass->getMyClass(rdata, pos());
+		} else superC = superClass->getMyClass(pos());
 		//todo register in outer class instead of whereever this place is...
 		if(superC){
 			assert(superC);

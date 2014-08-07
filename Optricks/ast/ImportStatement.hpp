@@ -24,7 +24,7 @@ class ImportStatement:public ErrorStatement{
 			exit(1);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractClass* getReturnType() const override final{

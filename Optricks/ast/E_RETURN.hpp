@@ -52,7 +52,7 @@ class E_RETURN : public ErrorStatement{
 			id.error("Return statement cannot act as function");
 			exit(1);
 		}
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}
 		const AbstractClass* getReturnType() const override final{

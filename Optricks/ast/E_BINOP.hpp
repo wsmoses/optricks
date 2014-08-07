@@ -127,7 +127,7 @@ public:
 		right->buildFunction(r);
 	};
 
-	const AbstractClass* getMyClass(RData& r, PositionID id)const{
+	const AbstractClass* getMyClass(PositionID id)const{
 		id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 	}
 	static Statement* createBinop(PositionID id, Statement* L, Statement* R, String operation){

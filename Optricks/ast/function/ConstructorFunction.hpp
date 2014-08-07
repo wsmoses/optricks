@@ -74,7 +74,7 @@ public:
 		std::vector<AbstractDeclaration> ad;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(a, filePos);
+			const AbstractClass* ac = b->getClass(filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			if(ac->type==nullptr) error("Type argument "+ac->getName()+" is null");
@@ -92,7 +92,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = myClass->getMyClass(a, filePos);
+		const AbstractClass* returnType = myClass->getMyClass(filePos);
 		assert(returnType);
 		if(returnType->classType!=CLASS_USER) filePos.error("Cannot make constructor for built-in types");
 		llvm::Type* r = returnType->type;

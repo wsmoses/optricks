@@ -415,7 +415,7 @@ int main(int argc, char** argv){
 		if(a->classType==CLASS_CLASS){
 			const Data* d = args[0]->evaluate(r);
 			assert(d->type==R_LAZY);
-			a = ((LazyWrapperData*)d)->value->evaluate(r)->getMyClass(r, id);
+			a = ((LazyWrapperData*)d)->value->evaluate(r)->getMyClass(id);
 		}
 		uint64_t s = r.dlayout->getTypeAllocSize(a->type);
 		return new IntLiteral(s);

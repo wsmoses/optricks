@@ -39,8 +39,8 @@ public:
 	};
 
 	void reset() const override final{ value->reset(); }
-	const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
-		auto t = value->getMyClass(r, id);
+	const AbstractClass* getMyClass(PositionID id)const override final{
+		auto t = value->getMyClass(id);
 		if(pre==UOP_POST){
 			if(operation=="[]") return ArrayClass::get(t);
 			if(operation=="&") return ReferenceClass::get(t);
@@ -54,7 +54,7 @@ public:
 		const AbstractClass* ac;
 		const AbstractClass* V = value->getReturnType();
 		if(V->classType==CLASS_CLASS && operation=="[]" && pre==UOP_POST){
-			return ArrayClass::get(value->getMyClass(rdata, id));
+			return ArrayClass::get(value->getMyClass(id));
 		}
 		if(pre==UOP_PRE)
 			return getPreopReturnType(filePos, V, operation);

@@ -33,15 +33,15 @@ public:
 		return HashMapClass::get(A, B);
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		if(right->classType==CLASS_CLASS) return getMyClass(r, id);
+		if(right->classType==CLASS_CLASS) return getMyClass(id);
 		if(right->classType==CLASS_VOID) return &VOID_DATA;
 		if(getReturnType()==right) return this;
 		return new ConstantData(castToV(r, right, id), right);
 	}
-	AbstractClass* getMyClass(RData& r, PositionID id) const override final{
+	AbstractClass* getMyClass(PositionID id) const override final{
 		if(inner.size()!=1)
 			id.error("Cannot use map literal of size!=1 as class");
-		return HashMapClass::get(inner[0].first->getMyClass(r, id), inner[0].second->getMyClass(r, id));
+		return HashMapClass::get(inner[0].first->getMyClass(id), inner[0].second->getMyClass(id));
 	}
 	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
 		return castToV(r,getReturnType(),id);
@@ -54,7 +54,7 @@ public:
 		return new MapData(filePos, vec);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		if(right->classType==CLASS_CLASS) return getMyClass(r, id)->getValue(r, id);
+		if(right->classType==CLASS_CLASS) return getMyClass(id)->getValue(r, id);
 		if(right->classType!=CLASS_HASHMAP){
 			id.error("Cannot cast map literal to '"+right->getName()+"'");
 			exit(1);
@@ -140,7 +140,7 @@ public:
 			id.error("Cannot use map as function");
 			return &VOID_DATA;
 		}
-		return HashMapClass::get(inner[0].first->getMyClass(r, id), inner[0].second->getMyClass(r, id))->callFunction(r, id, args, i);
+		return HashMapClass::get(inner[0].first->getMyClass(id), inner[0].second->getMyClass(id))->callFunction(r, id, args, i);
 	}
 
 	const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool b)const override{
@@ -149,7 +149,7 @@ public:
 			exit(1);
 			return nullptr;
 		}
-		return HashMapClass::get(inner[0].first->getMyClass(rdata, id), inner[0].second->getMyClass(rdata, id));
+		return HashMapClass::get(inner[0].first->getMyClass(id), inner[0].second->getMyClass(id));
 	}
 };
 

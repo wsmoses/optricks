@@ -49,10 +49,10 @@ class E_TUPLE : public Statement{
 		};
 
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			std::vector<const AbstractClass*> vec(values.size());
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec[i] = values[i]->getMyClass(r, id);
+				vec[i] = values[i]->getMyClass(id);
 			}
 			assert(vec.size()==values.size());
 			return TupleClass::get(vec);
@@ -116,16 +116,16 @@ class E_NAMED_TUPLE : public ErrorStatement{
 		const AbstractClass* evaluate(RData& m) const override {
 			std::vector<const AbstractClass*> vec(values.size());
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec[i] = values[i]->getMyClass(m, filePos);
+				vec[i] = values[i]->getMyClass(filePos);
 			}
 			assert(vec.size()==values.size());
 			return NamedTupleClass::get(vec,names);
 		}
 
-		const AbstractClass* getMyClass(RData& r, PositionID id)const override final{
+		const AbstractClass* getMyClass(PositionID id)const override final{
 			std::vector<const AbstractClass*> vec(values.size());
 			for(unsigned int i = 0; i<values.size(); i++){
-				vec[i] = values[i]->getMyClass(r, id);
+				vec[i] = values[i]->getMyClass(id);
 			}
 			assert(values.size()==vec.size());
 			assert(vec.size()==names.size());

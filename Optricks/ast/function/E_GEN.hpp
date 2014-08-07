@@ -88,7 +88,7 @@ public:
 		llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
 		//llvm::SmallVector<llvm::Type*,0> args((staticF)?(declaration.size()):(declaration.size()+1));
 		std::vector<AbstractDeclaration> ad;
-		auto upperClass = (surroundingClass)?(surroundingClass->getMyClass(a, filePos)):nullptr;
+		auto upperClass = (surroundingClass)?(surroundingClass->getMyClass(filePos)):nullptr;
 		if(!staticF){
 			assert(upperClass);
 			const AbstractClass* tA;
@@ -103,7 +103,7 @@ public:
 		std::vector<std::pair<const AbstractClass*,String>> V;
 		for(unsigned i=0; i<declaration.size(); i++){
 			const auto& b = declaration[i];
-			const AbstractClass* ac = b->getClass(a, filePos);
+			const AbstractClass* ac = b->getClass(filePos);
 			assert(ac);
 			ad.push_back(AbstractDeclaration(ac, b->variable.pointer.name, b->value));
 			V.push_back(std::pair<const AbstractClass*,String>(ac, b->variable.pointer.name));
@@ -124,7 +124,7 @@ public:
 				);
 			}
 		}
-		const AbstractClass* returnType = (returnV)?(returnV->getMyClass(a, filePos)):(nullptr);
+		const AbstractClass* returnType = (returnV)?(returnV->getMyClass(filePos)):(nullptr);
 
 		if(returnType==nullptr){
 			std::vector<const AbstractClass*> yields;
