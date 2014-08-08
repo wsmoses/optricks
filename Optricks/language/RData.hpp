@@ -859,7 +859,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 		}
 		void error(String code, PositionID id, const std::vector<llvm::Value*> V){
 
-#if (defined(WIN32) || defined(_WIN32))
+#if (defined(NO_WIN32) || defined(NO__WIN32))
 			static llvm::Function* F=nullptr;
 			if(F == nullptr) {
 				llvm::SmallVector<llvm::Type*,2> args(2);

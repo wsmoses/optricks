@@ -13,6 +13,9 @@
 #define VERIFY(A)
 //#define VERIFY(A) verifyFunction(A);
 #ifdef USE_OPENGL
+#if defined(WIN32) || defined(_WIN32)
+#define GLUT_DISABLE_ATEXIT_HACK
+#endif
 #include <GL/glut.h>
 #endif
 #undef VOID

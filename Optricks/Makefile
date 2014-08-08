@@ -11,18 +11,18 @@ UNAME := $(shell uname)
 
 OPENGL = -DUSE_OPENGL
 
-SDL = -DUSE_SDL -lSDL2_mixer -lSDL2_image `sdl2-config --cflags --libs`
+SDL = -DUSE_SDL -lSDL2_mixer `sdl2-config --cflags --libs`
 
 DEBUG = -DWITH_ASSERTS -g -ggdb
-RELEASE = -O3 -static-libgcc -DNDEBUG
+RELEASE = -O3 -static -static-libgcc -static-libstdc++ -lstdc++ -lpthread -Wl,-Bdynamic
 #RELEASE = -O3 -static-libgcc -DNDEBUG -static
 
 # MSYS or CYGWIN or MINGW
 ifneq (,$(findstring NT, $(UNAME)))
-#	FLAGS += -ws2_32
+	#FLAGS += -static -lglibc -Wl,-Bdynamic
 	LLVM += -limagehlp
 	SDL += -lWinmm
-	OPENGL += -lopengl32 -lglu32 -lglut
+	OPENGL += -lglut -lglu32 -lopengl32
 else ifeq ($(UNAME), Darwin)
 	OPENGL += -I/opt/X11/include -framework OpenGL -framework GLUT -framework Cocoa
 	GCC = g++-4.9
@@ -61,30 +61,30 @@ release-all:
 release:
 	@echo "Enabled  OpenGL"
 	@echo "Enabled  SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) $(OPENGL) $(SDL)
 
 release-no-graphics:
 	@echo "Disabled OpenGL"
 	@echo "Enabled  SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) $(SDL)
 
 release-no-sdl:	
 	@echo "Enabled  OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(RELEASE) -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) $(OPENGL)
 
 release-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static
 
 profile-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -static-libgcc -static-libstdc++ -pg
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -pg
 
 profile-all:
 profile:
 	@echo "Enabled  OpenGL"
 	@echo "Enabled  SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(OPENGL) $(SDL) $(RELEASE) -static-libgcc -static-libstdc++ -pg
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) $(OPENGL) $(SDL) -pg

@@ -651,7 +651,7 @@ void initClasses(){
 	{
 #define GL_A(T, A,B) T->staticVariables.addVariable(PositionID("#sdl",0,0),#B, new ConstantData(llvm::ConstantInt::get(T->type,A##B,false),T));
 
-		auto PF = new UserClass(&SDL->staticVariables,"GLenum",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(GLenum)));
+		auto PF = new UserClass(&LANG_M,"GLenum",nullptr,PRIMITIVE_LAYOUT,true,false,llvm::IntegerType::get(llvm::getGlobalContext(),8*sizeof(GLenum)));
 		LANG_M.addClass(PositionID("#sdl",0,0),PF);
 		//COMPARE(PF)
 		GL_A(PF, GL_, RGB)
