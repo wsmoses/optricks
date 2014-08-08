@@ -187,7 +187,25 @@ public:
 			else  // 2
 				OLvl = llvm::CodeGenOpt::Level::Default;
 
-			llvm::TargetOptions Options = InitTargetOptionsFromCodeGenFlags();
+			  llvm::TargetOptions Options;
+			  Options.LessPreciseFPMADOption = EnableFPMAD;
+			  Options.NoFramePointerElim = DisableFPElim;
+			  Options.AllowFPOpFusion = FuseFPOps;
+			  Options.UnsafeFPMath = EnableUnsafeFPMath;
+			  Options.NoInfsFPMath = EnableNoInfsFPMath;
+			  Options.NoNaNsFPMath = EnableNoNaNsFPMath;
+			  Options.HonorSignDependentRoundingFPMathOption =
+			      EnableHonorSignDependentRoundingFPMath;
+			  Options.UseSoftFloat = GenerateSoftFloatCalls;
+			  if (FloatABIForCalls != FloatABI::Default)
+			    Options.FloatABIType = FloatABIForCalls;
+			  Options.NoZerosInBSS = DontPlaceZerosInBSS;
+			  Options.GuaranteedTailCallOpt = EnableGuaranteedTailCallOpt;
+			  Options.DisableTailCalls = DisableTailCalls;
+			  Options.StackAlignmentOverride = OverrideStackAlignment;
+			  Options.TrapFuncName = TrapFuncName;
+			  Options.PositionIndependentExecutable = EnablePIE;
+			  Options.UseInitArray = UseInitArray;
 
 			String FeaturesStr="";
 			auto target = TheTarget->createTargetMachine(TheTriple.getTriple(),MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
