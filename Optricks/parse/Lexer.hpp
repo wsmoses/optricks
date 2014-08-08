@@ -1313,7 +1313,7 @@ public:
 
 			f->trim(data.endWith);
 			if(f->read()!=':') f->error("Ternary operator requires ':'",true);
-			Statement* op2 = getNextStatement(ParseData(EOF, data.mod, true, PARSE_EXPR));
+			Statement* op2 = getNextStatement(ParseData(data.endWith, data.mod, true, PARSE_EXPR));
 			return new TernaryOperator(pos(), exp, op1, op2);
 		}
 		String tmp = f->getNextOperator(data.endWith);
@@ -1641,8 +1641,7 @@ Statement* Lexer::getNextStatement(ParseData data){
 		}
 	}
 	f->error("Unknown rest of file");
-	fprintf(stderr, "$$ %d %c (before had %d %c) \n", nex, nex, f->last(), f->last());
-	fflush(stderr);
+	cerr << "$$ " << (int)nex << nex << " (before had " << (int)(f->last()) << " " << f->last() << endl << flush;
 	return VOID_STATEMENT;
 }
 #endif /* LEXER_HPP_ */

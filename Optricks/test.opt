@@ -27,6 +27,7 @@ for(int i=0; i<a.length; i++){
 	fflush();
 }
 */
-import 'gui.opt'
-auto w=Window('hey',400,400,400,400);
-Surface& s=w.getSurface();
+//import 'gui.opt'
+//auto w=Window('hey',400,400,400,400);
+//Surface& s=w.getSurface();
+auto fib =lambda int i: (i<2)?1:(fib(i-1)+fib(i-2))
