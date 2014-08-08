@@ -38,9 +38,8 @@ class E_MAP : public ErrorStatement{
 			for(unsigned i=0; i<inner.size(); i++)
 				vec[i] = std::pair<const Data*,const Data*>(inner[i].first->evaluate(m),inner[i].second->evaluate(m));
 			assert(vec.size()==inner.size());
-			return new MapData(filePos, vec);
+			return new MapData(vec, filePos);
 		}
-
 		const AbstractClass* getFunctionReturnType(PositionID id, const std::vector<const Evaluatable*>& args, bool isClassMethod)const override final{
 			if(inner.size()!=1){
 				id.error("Cannot use map as function");

@@ -157,7 +157,7 @@ class ClassFunction : public E_FUNCTION{
 			a.FinalizeFunction(((llvm::Function*) myFunction->getSingleFunc()));
 			if(Parent) a.builder.SetInsertPoint( Parent );
 			auto tmp = a.popJump();
-			assert(tmp== &j);
+			assert(tmp == &j);
 			for(auto& d: declaration) d->buildFunction(a);
 			methodBody->buildFunction(a);
 		};

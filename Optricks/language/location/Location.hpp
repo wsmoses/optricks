@@ -18,6 +18,7 @@ class Location{
 		virtual llvm::Value* getValue(RData& r, PositionID id)=0;
 		virtual void setValue(llvm::Value* v, RData& r)=0;
 		virtual llvm::Value* getPointer(RData& r,PositionID id) =0;
+		virtual bool isPointerEqual(llvm::Value* V) const = 0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx)=0;
 		virtual Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2)=0;
 		virtual Location* getGlobal(RData& r)=0;
@@ -40,10 +41,21 @@ class UpgradeLocation : public Location{
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
 		llvm::Type* getType() override final{
-			auto T=metaposition->getType();
+			llvm::Type* T=metaposition->getType();
 			assert(llvm::dyn_cast<llvm::PointerType>(T));
 			return ((llvm::PointerType*) T)->getElementType()->getPointerElementType();
 		}
+		//false means unsure (can't check initial now can we?
+		bool isPointerEqual(llvm::Value* V) const override final{
+			if(auto LI = llvm::dyn_cast<llvm::LoadInst>(V)){
+				auto B = LI->getParent()->getParent();
+				auto find = MAP.find(B);
+				if(find==MAP.end()) return false;
+				else return find->second==V;
+			} else return false;
+		}
+
+
 		llvm::Value* getPointer(RData& r,PositionID id) override final{
 			auto PARENT = r.builder.GetInsertBlock();
 			auto F = PARENT->getParent();
@@ -71,7 +83,7 @@ class StandardLocation : public Location{
 		StandardLocation(bool isG, llvm::Value* a): Location(isG),position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		Location* getGlobal(RData& r) override final{
 			if(isGlobal) return this;
-			return new UpgradeLocation(r, position);
+			else return new UpgradeLocation(r, position);
 		}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
 		void setValue(llvm::Value* v, RData& r) override final;
@@ -79,6 +91,9 @@ class StandardLocation : public Location{
 			auto T=position->getType();
 			assert(llvm::dyn_cast<llvm::PointerType>(T));
 			return ((llvm::PointerType*) T)->getElementType();
+		}
+		bool isPointerEqual(llvm::Value* V) const override final{
+			return position==V;
 		}
 		llvm::Value* getPointer(RData& r,PositionID id) override final{
 			return position;
@@ -122,10 +137,15 @@ public:
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
 	}Location* getGlobal(RData& r) override final{
-		return new UpgradeLocation(r, position);
+		assert(0 && "LAZY LOCATION CAN'T BE GLOBAL!!!");
+		return nullptr;
 	}
 	llvm::Type* getType() override final{
 		return type;
+	}
+	bool isPointerEqual(llvm::Value* V) const override final{
+		assert(0 && "PointerEquality check should not happen for lazy location which cannot be done for globals...");
+		return position==V;
 	}
 	llvm::Value* getPointer(RData& r,PositionID id) override final{
 		llvm::BasicBlock* me = r.builder.GetInsertBlock();

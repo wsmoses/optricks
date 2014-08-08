@@ -80,7 +80,7 @@ public:
 					if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 				} else if(instance->type==R_DEC){
-					auto LD = ((const DeclarationData*)instance)->value->fastEvaluate(r);
+					auto LD = ((const DeclarationData*)instance)->value->fastEvaluate();
 					if(innerTypes.size()==1) return new LocationData(LD, innerTypes[0]);
 					else return new LocationData(LD->getInner(r, id, 0, i), innerTypes[i]);
 				} else {

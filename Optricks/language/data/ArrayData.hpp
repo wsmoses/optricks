@@ -13,10 +13,12 @@
 #include "../class/ClassLib.hpp"
 #include "../class/builtin/ClassClass.hpp"
 #include "./VoidData.hpp"
+
 class ArrayData:public Data{
 public:
 	PositionID filePos;
 	const std::vector<const Data*> inner;
+	ArrayData(PositionID id):Data(R_ARRAY),filePos(id){};
 	ArrayData(const std::vector<const Data*>& vec, PositionID id):Data(R_ARRAY),filePos(id),inner(vec){};
 	const AbstractClass* getReturnType() const override final{
 		std::vector<const AbstractClass*> vec;

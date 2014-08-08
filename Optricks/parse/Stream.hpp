@@ -706,7 +706,7 @@ public:
 	String getNextOperator(char endWith){
 		trim(endWith);
 		String temp;
-		int valid=0;
+		unsigned valid=0;
 		while(true){
 			auto tmp = peek();
 			if(!isOperator(tmp)){

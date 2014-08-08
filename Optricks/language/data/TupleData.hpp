@@ -19,6 +19,8 @@ public:
 	};
 	TupleData(const std::vector<const Data*>& vec):Data(R_TUPLE),inner(vec){
 	};
+	TupleData(bool b):Data(R_TUPLE){
+	};
 	const AbstractClass* getReturnType() const override final{
 		std::vector<const AbstractClass*> vec(inner.size());
 		unsigned int i;

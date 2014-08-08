@@ -379,7 +379,7 @@ llvm::SmallVector<llvm::Value*,0> SingleFunction::validatePrototypeNow(FunctionP
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){
-				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->getPointer(r, id);
+				T = ((DeclarationData*)instance)->value->fastEvaluate()->getPointer(r, id);
 			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
 				exit(1);
@@ -451,7 +451,7 @@ llvm::Value* SingleFunction::validatePrototypeStruct(RData& r,PositionID id,cons
 			else if(instance->type==R_LOC){
 				T = ((LocationData*)instance)->value->getPointer(r, id);
 			} else if(instance->type==R_DEC){
-				T = ((DeclarationData*)instance)->value->fastEvaluate(r)->getPointer(r, id);
+				T = ((DeclarationData*)instance)->value->fastEvaluate()->getPointer(r, id);
 			} else {
 				id.error("Cannot use constant "+str(instance->type)+" in place of location");
 				exit(1);

@@ -18,7 +18,8 @@ class MapData:public Data{
 public:
 	PositionID filePos;
 	const std::vector<std::pair<const Data*,const Data*> > inner;
-	MapData(PositionID id, const std::vector<std::pair<const Data*,const Data*> >& vec):Data(R_MAP),filePos(id),inner(vec){
+	MapData(PositionID id):Data(R_MAP),filePos(id){};
+	MapData(const std::vector<std::pair<const Data*,const Data*> >& vec, PositionID id):Data(R_MAP),filePos(id),inner(vec){
 		assert(inner.size()>0);
 	};
 	const AbstractClass* getReturnType() const override final{
@@ -51,7 +52,7 @@ public:
 		for(unsigned int i=0; i<inner.size(); i++){
 			vec[i] = std::pair<const Data*,const Data*>(inner[i].first->toValue(r, id),inner[i].second->toValue(r, id));
 		}
-		return new MapData(filePos, vec);
+		return new MapData(vec, filePos);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		if(right->classType==CLASS_CLASS) return getMyClass(id)->getValue(r, id);

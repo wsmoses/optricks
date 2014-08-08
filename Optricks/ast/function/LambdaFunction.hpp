@@ -12,9 +12,11 @@
 class LambdaFunction : public E_FUNCTION{
 private:
 	bool built;
+	mutable std::pair<std::map<llvm::Value*,llvm::PHINode*>, llvm::BasicBlock*> closureInfo;
 public:
 	LambdaFunction(PositionID id, OModule* superMod):
 		E_FUNCTION(id,OModule(superMod),""),built(false){
+		module.closureInfo = &closureInfo;
 	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
@@ -22,8 +24,7 @@ public:
 	void buildFunction(RData& ra) const override final{
 		if(built) return;
 		registerFunctionPrototype(ra);
-
-		llvm::BasicBlock* Parent = ra.builder.GetInsertBlock();
+		closureInfo.second = ra.builder.GetInsertBlock();
 		llvm::Function* F = ((llvm::Function*) myFunction->getSingleFunc());
 		ra.builder.SetInsertPoint(& (F->getEntryBlock()));
 		Jumpable j(name, FUNC, &module, nullptr,nullptr,nullptr);
@@ -40,8 +41,12 @@ public:
 			llvm::Value* V = ret->getValue(ra, filePos);
 			ra.builder.CreateRet(V);
 		}
+		if(closureInfo.first.size() > 0){
+			filePos.error("Function closures not currently supported: "+str(closureInfo.first.size()));
+		}
+
 		ra.FinalizeFunction(F);
-		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
+		if(closureInfo.second) ra.builder.SetInsertPoint( closureInfo.second );
 		auto tmp = ra.popJump();
 		assert(tmp== &j);
 

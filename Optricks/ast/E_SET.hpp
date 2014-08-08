@@ -55,7 +55,7 @@ class E_SET: public ErrorStatement{
 			if(to->type==R_LOC)
 				aloc = ((LocationData*)to)->getMyLocation();
 			else if(to->type==R_DEC)
-				aloc = ((DeclarationData*)to)->value->fastEvaluate(r);
+				aloc = ((DeclarationData*)to)->value->fastEvaluate();
 			else {
 				error("Cannot set a non-variable "+str(to->type));
 				return &VOID_DATA;

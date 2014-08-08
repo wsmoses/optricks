@@ -25,7 +25,7 @@ public:
 		return new ReferenceData(value->finished);
 	}
 	inline void setValue(RData& r, llvm::Value* v) const{
-		value->fastEvaluate(r);
+		value->fastEvaluate();
 		value->finished->setValue(r,v);
 	}
 	bool hasCastValue(const AbstractClass* const a) const override final{
@@ -35,7 +35,7 @@ public:
 		return value->getReturnType()->compare(a,b);
 	}
 	const Data* callFunction(RData& r, PositionID id, const std::vector<const Evaluatable*>& args, const Data* instance) const override final{
-		value->fastEvaluate(r);
+		value->fastEvaluate();
 		return value->finished->callFunction(r, id, args, instance);
 	}
 	const AbstractClass* getReturnType() const override final{
@@ -47,22 +47,20 @@ public:
 	}
 
 	inline llvm::Value* getValue(RData& r, PositionID id) const override final{
-		return value->fastEvaluate(r)->getValue(r,id);
+		return value->fastEvaluate()->getValue(r,id);
 	}
 	inline const Data* toValue(RData& r,PositionID id) const override final{
-		value->fastEvaluate(r);
+		value->fastEvaluate();
 		return value->finished->toValue(r,id);
 	}
 	inline const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final{
-		value->fastEvaluate(r);
+		value->fastEvaluate();
 		return value->finished->castTo(r, right,id);
 	}
 	inline llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
-		value->fastEvaluate(r);
+		value->fastEvaluate();
 		return value->finished->castToV(r, right,id);
 	}
 };
-
-
 
 #endif /* DECLARATIONDATA_HPP_ */

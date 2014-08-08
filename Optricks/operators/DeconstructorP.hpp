@@ -136,7 +136,7 @@ void decrementCount(RData& r, PositionID filePos, const Data* D){
 				if(D->type==R_LOC)
 					LD = ((const LocationData*)D)->value;
 				else
-					LD = ((const DeclarationData*)D)->value->fastEvaluate(r);
+					LD = ((const DeclarationData*)D)->value->fastEvaluate();
 				if(TC->innerTypes.size()==1){
 					LocationData LOCD(LD, TC->innerTypes[0]);
 					decrementCount(r, filePos, &LOCD);

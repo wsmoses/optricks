@@ -1378,10 +1378,10 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(R->type==R_IMAG);
 			const ImaginaryLiteral* IL = (const ImaginaryLiteral*)L;
 			const ImaginaryLiteral* IR = (const ImaginaryLiteral*)R;
-			auto LR = (IL->real)?IL->real:(&ZERO_LITERAL);
-			auto LI = IL->imag;
-			auto RR = (IR->real)?IR->real:(&ZERO_LITERAL);
-			auto RI = IR->imag;
+			const Literal* LR = (IL->real)?IL->real:(&ZERO_LITERAL);
+			const Literal* LI = IL->imag;
+			const Literal* RR = (IR->real)?IR->real:(&ZERO_LITERAL);
+			const Literal* RI = IR->imag;
 			if(operation=="+"){
 				auto L_L = getBinop(r, filePos, LR, RR, "+");
 				assert(L_L && dynamic_cast<const Literal*>(L_L));

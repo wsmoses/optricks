@@ -9,6 +9,7 @@
 #define LOCALFUNCS_HPP_
 
 #include "../language/class/AbstractClass.hpp"
+#include "../language/class/builtin/PriorityQueueClass.hpp"
 #include "./Binary.hpp"
 
 bool hasLocalFunction(String s, const AbstractClass* cc){

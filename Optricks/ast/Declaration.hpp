@@ -118,7 +118,7 @@ public:
 	void reset() const override final{
 		finished = nullptr;
 	}
-	Location* fastEvaluate(RData& r){
+	Location* fastEvaluate(){
 		if(finished) return finished->value;
 		getReturnType();
 		assert(returnType);
@@ -131,25 +131,18 @@ public:
 			filePos.error("Cannot find references early");
 		}
 		Location* loc;
-		if(global){
-			llvm::Constant* VAL;
-			if(returnType->layout==POINTER_LAYOUT){
-				assert(returnType->type);
-				assert(llvm::dyn_cast<llvm::PointerType>(returnType->type));
-				VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
-			}
-			else
-				VAL = r.getGlobal(returnType->type,false);
-			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
-			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
-			variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(true,GV),returnType));
+		assert(global);
+		llvm::Constant* VAL;
+		if(returnType->layout==POINTER_LAYOUT){
+			assert(returnType->type);
+			assert(llvm::dyn_cast<llvm::PointerType>(returnType->type));
+			VAL = llvm::ConstantPointerNull::get((llvm::PointerType*)returnType->type);
 		}
-		else{
-			assert(0);
-			auto al = r.createAlloca(returnType->type);
-			variable.getMetadata().setObject(finished=new LocationData(loc=getLazy(false,variable.pointer.name,r,al,nullptr,nullptr),returnType));
-		}
-		//todo check lazy for globals
+		else
+			VAL = rdata.getGlobal(returnType->type,false);
+		llvm::GlobalVariable* GV = new llvm::GlobalVariable(*rdata.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
+		((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
+		variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(true,GV),returnType));
 		return loc;
 	}
 public:

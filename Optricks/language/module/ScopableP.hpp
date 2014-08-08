@@ -13,8 +13,174 @@
 #include "../function/AbstractFunction.hpp"
 #include "../FunctionProto.hpp"
 #include "../data/LocationData.hpp"
+#include "../data/ClassFunctionData.hpp"
 #include "../class/builtin/ClassClass.hpp"
 
+// first is one actually there, second is cache
+const Data* Scopable::fixClosure(PositionID id, std::pair<std::map<llvm::Value*,llvm::PHINode*>, llvm::BasicBlock*>* tp, const Data* dat){
+	switch(dat->type){
+		case R_FLOAT:
+		case R_INT:
+		case R_MATH:
+		case R_RATIONAL:
+		case R_IMAG:
+		case R_STR:
+		case R_CLASS:
+		case R_GEN:
+		case R_NULL:
+		case R_FUNC:
+		case R_CLASSTEMPLATE:
+			return dat;
+		case R_ARRAY:{
+			auto d = (ArrayData*)dat;
+			unsigned i;
+			const Data* fv=nullptr;
+			for(i=0; i<d->inner.size(); i++){
+				auto m=fixClosure(id, tp, d->inner[i]);
+				if(m!=d->inner[i]){
+					fv = m;
+					break;
+				}
+			}
+			if(fv==nullptr) return dat;
+			std::vector<const Data* > V;
+			for(unsigned j=0; j<i; j++)
+				V.push_back(d->inner[i]);
+			V.push_back(fv);
+			for(unsigned j=i+1; j<d->inner.size(); j++)
+				V.push_back(fixClosure(id, tp, d->inner[i]));
+			assert(V.size()==d->inner.size());
+			return new ArrayData(V, id);
+		}
+		case R_CLASSFUNC:{
+			auto d = (ClassFunctionData*)dat;
+			auto m=fixClosure(id, tp, d->instance);
+			if(m==d->instance) return dat;
+			else return new ClassFunctionData(m, d->function, d->t_args);
+		}
+		case R_CONST:{
+			auto d = (ConstantData*)dat;
+			if(llvm::isa<llvm::Constant>(d->value)){
+				return dat;
+			} else {
+				auto find = tp->first.find(d->value);
+				if(find!=tp->first.end()){
+					return new ConstantData(find->second, d->getReturnType());
+				} else {
+					auto PN = rdata.builder.CreatePHI(d->value->getType(), 0);
+					tp->first.insert(std::pair<llvm::Value*,llvm::PHINode*>(d->value, PN));
+					return new ConstantData(PN, d->getReturnType());
+				}
+			}
+		}
+		case R_DEC:
+		case R_LOC:{
+			Location* L;
+			if(dat->type==R_DEC){
+				auto d = (DeclarationData*)dat;
+				assert(d);
+				assert(dynamic_cast<const DeclarationData*>(dat));
+				L = d->value->fastEvaluate();
+			} else {
+				assert(dat->type==R_LOC);
+				assert(dynamic_cast<const LocationData*>(dat));
+				auto d = (LocationData*)dat;
+				assert(d);
+				L = d->value;
+			}
+			assert(L);
+			if(L->isGlobal) return dat;
+			//removed check llvm::isa<llvm::Constant> of rawpointer
+			auto PARENT = rdata.builder.GetInsertBlock();
+			rdata.builder.SetInsertPoint(tp->second);
+			auto V = L->getValue(rdata, id);
+			assert(PARENT);
+			rdata.builder.SetInsertPoint(PARENT);
+			if(llvm::isa<llvm::Constant>(V)){
+				return new ConstantData(V, dat->getReturnType());
+			} else if(llvm::isa<llvm::LoadInst>(V) && llvm::isa<llvm::Constant>(((llvm::LoadInst*)V)->getPointerOperand()) &&
+					L->isPointerEqual( ((llvm::LoadInst*)V)->getPointerOperand() ) ){
+				return dat;
+			} else {
+				auto find = tp->first.find(V);
+				if(find!=tp->first.end()){
+					return new ConstantData(find->second, dat->getReturnType());
+				} else {
+					//if type of left != right then right should be load of left
+					auto PN = rdata.builder.CreatePHI(V->getType(), 0);
+					tp->first.insert(std::pair<llvm::Value*,llvm::PHINode*>(V, PN));
+					return new ConstantData(PN, dat->getReturnType());
+				}
+			}
+		}
+		case R_LAZY:{
+			assert(0 && "LAZY SHOULDN'T HAPPEN");
+			id.fatalError("Lazy shouldn't be inside closure like that?");
+			exit(1);
+		}
+		case R_MAP:{
+			auto d = (MapData*)dat;
+			unsigned i;
+			const Data* fv=nullptr;
+			const Data* f2=nullptr;
+			for(i=0; i<d->inner.size(); i++){
+				auto m=fixClosure(id, tp, d->inner[i].first);
+				if(m!=d->inner[i].first){
+					fv = m;
+					break;
+				}
+				auto n=fixClosure(id, tp, d->inner[i].second);
+				if(n!=d->inner[i].second){
+					f2 = n;
+					break;
+				}
+			}
+			if(fv==nullptr && f2==nullptr) return dat;
+			std::vector<std::pair<const Data*,const Data*> > V;
+			for(unsigned j=0; j<i; j++)
+				V.push_back(d->inner[i]);
+			V.push_back(std::pair<const Data*,const Data*>(fv?fv:d->inner[i].first, f2?f2:fixClosure(id, tp, d->inner[i].second)));
+			for(unsigned j=i+1; j<d->inner.size(); j++)
+				V.push_back(std::pair<const Data*,const Data*>(fixClosure(id, tp, d->inner[i].first),fixClosure(id, tp, d->inner[i].second)));
+			assert(V.size()==d->inner.size());
+			return new MapData(V, d->filePos);
+		}
+		case R_REF:{
+			assert(0 && "REF SHOULDN'T HAPPEN");
+			id.fatalError("Ref shouldn't be inside closure like that?");
+			exit(1);
+		}
+		case R_TUPLE:{
+			auto d = (TupleData*)dat;
+			unsigned i;
+			const Data* fv=nullptr;
+			for(i=0; i<d->inner.size(); i++){
+				auto m=fixClosure(id, tp, d->inner[i]);
+				if(m!=d->inner[i]){
+					fv = m;
+					break;
+				}
+			}
+			if(fv==nullptr) return dat;
+			std::vector<const Data* > V;
+			for(unsigned j=0; j<i; j++)
+				V.push_back(d->inner[i]);
+			V.push_back(fv);
+			for(unsigned j=i+1; j<d->inner.size(); j++)
+				V.push_back(fixClosure(id, tp, d->inner[i]));
+			assert(V.size()==d->inner.size());
+			return new TupleData(V);
+		}
+		case R_VOID:{
+			assert(0 && "Void shouldn't happen?");
+			return dat;
+		}
+
+		//todo slice data not implemented
+		case R_SLICE:
+			return dat;
+	}
+}
 const AbstractClass* Scopable::getClass(PositionID id, const String name, const T_ARGS& t_args) const{
 	auto f = find(id,name);
 	if(f.first==nullptr) return &voidClass;
@@ -75,7 +241,22 @@ const Data* Scopable::getVariable(PositionID id, const String name) const{
 	auto f = find(id,name);
 	if(f.first==nullptr) return &VOID_DATA;
 	if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
-	return f.first->vars[f.second->second.pos];
+	auto dat = f.first->vars[f.second->second.pos];
+	//todo fasfds closure
+	auto tmp = (f.first==this)?nullptr:this;
+	while(tmp!=nullptr){
+		if(tmp->closureInfo) break;
+		else if(tmp==f.first){
+			tmp = nullptr;
+			break;
+		}
+		tmp = tmp->surroundingScope;
+	}
+	if(tmp){
+		assert(tmp->closureInfo);
+		id.warning("FIXING CLOSURE FOR(1): " + name);
+		return Scopable::fixClosure(id, tmp->closureInfo, dat);
+	} else return dat;
 }
 void Scopable::addClass(PositionID id, AbstractClass* c){
 	addClass(id, c, c->name);
@@ -153,6 +334,7 @@ const AbstractClass* Resolvable::getReturnType(const T_ARGS& t_args) const{
 			exit(1);
 	}
 }
+
 const Data* Resolvable::getObject(const T_ARGS& t_args) const{
 	auto d = module->find(filePos,name);
 	if(d.first==nullptr) return &VOID_DATA;
@@ -172,27 +354,21 @@ const Data* Resolvable::getObject(const T_ARGS& t_args) const{
 		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
 			auto dat = d.first->vars[d.second->second.pos];
-			auto tmp = module;
+			//todo closure!
+			auto tmp = (d.first==module)?nullptr:module;
 			while(tmp!=nullptr){
 				if(tmp->closureInfo) break;
 				else if(tmp==d.first){
 					tmp = nullptr;
 					break;
 				}
+				tmp = tmp->surroundingScope;
 			}
-			//TODO
-			/*if(tmp){
+			if(tmp){
 				assert(tmp->closureInfo);
-				switch(dat->type){
-				case R_FLOAT:
-				case R_INT:
-				case R_MATH:
-				case R_RATIONAL:
-					return dat;
-				case R_SLICE:
-				case R_IMAG:
-				}
-			} else */return dat;
+				filePos.warning("FIXING CLOSURE FOR(2): " + name);
+				return Scopable::fixClosure(filePos, tmp->closureInfo, dat);
+			} else return dat;
 		}
 		default:
 			filePos.error("Unknown variable type getObject");
@@ -320,16 +496,31 @@ const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args
 		auto f = find(id,name);
 		if(f.first==nullptr) return &VOID_DATA;
 		switch(f.second->second.type){
-		case SCOPE_VAR:
+		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
-			return f.first->vars[f.second->second.pos];
+			auto dat = f.first->vars[f.second->second.pos];
+			//todo fdasfdsa closure
+			auto tmp = (f.first==this)?nullptr:this;
+			while(tmp!=nullptr){
+				if(tmp->closureInfo) break;
+				else if(tmp==f.first){
+					tmp = nullptr;
+					break;
+				}
+				tmp = tmp->surroundingScope;
+			}
+			if(tmp){
+				assert(tmp->closureInfo);
+				id.warning("FIXING CLOSURE FOR(3): " + name);
+				return Scopable::fixClosure(id, tmp->closureInfo, dat);
+			} else return dat;
+		}
 		case SCOPE_FUNC:
 			if(!t_args.inUse)
 				return f.first->funcs[f.second->second.pos];
 			 else
 				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false);
 		case SCOPE_CLASS:
-			//TODO reconsider?
 			if(t_args.inUse)
 				return f.first->classes[f.second->second.pos]->resolveClass(id, {});
 			else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id));
@@ -352,7 +543,6 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 			 else
 				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false);
 		case SCOPE_CLASS:
-			//TODO reconsider?
 			if(t_args.inUse)
 				return f.first->classes[f.second->second.pos]->resolveClass(id, {});
 			else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id));
@@ -375,7 +565,6 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 	}
 
 	inline llvm::Value* Resolvable::getValue(RData& r, const T_ARGS& t_args) const{
-		//TODO fdasfdas closure;
 		return getObject(t_args)->getValue(r,filePos);
 	}
 	inline void Resolvable::setValue(RData& r, Data* d2) const{
@@ -386,6 +575,20 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 			case SCOPE_VAR:{
 				//TODO fdasfdas closure
 				const Data* dat= d.first->vars[d.second->second.pos];
+				auto tmp = (d.first==module)?nullptr:module;
+				while(tmp!=nullptr){
+					if(tmp->closureInfo) break;
+					else if(tmp==d.first){
+						tmp = nullptr;
+						break;
+					}
+					tmp = tmp->surroundingScope;
+				}
+				if(tmp){
+					assert(tmp->closureInfo);
+					filePos.warning("FIXING CLOSURE FOR(4): " + name);
+					dat = Scopable::fixClosure(filePos, tmp->closureInfo, dat);
+				}
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, d2->getValue(r, filePos));
 				else if(dat->type==R_DEC)
@@ -407,6 +610,20 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 			case SCOPE_VAR:{
 				//TODO fdasfdas closure
 				const Data* dat= d.first->vars[d.second->second.pos];
+				auto tmp = (d.first==module)?nullptr:module;
+				while(tmp!=nullptr){
+					if(tmp->closureInfo) break;
+					else if(tmp==d.first){
+						tmp = nullptr;
+						break;
+					}
+					tmp = tmp->surroundingScope;
+				}
+				if(tmp){
+					assert(tmp->closureInfo);
+					filePos.warning("FIXING CLOSURE FOR(5): " + name);
+					dat = Scopable::fixClosure(filePos, tmp->closureInfo, dat);
+				}
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, v);
 				else if(dat->type==R_DEC)

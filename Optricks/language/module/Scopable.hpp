@@ -38,7 +38,7 @@ private:
 	const String name;
 public:
 	Scopable* const surroundingScope;
-	std::map<String,llvm::Value*>* closureInfo;
+	std::pair<std::map<llvm::Value*,llvm::PHINode* >, llvm::BasicBlock*>* closureInfo;
 	//protected:
 	std::map<const String,SCOPE_POS> mapping;
 	std::vector<OverloadedFunction*> funcs;
@@ -47,10 +47,12 @@ public:
 	std::vector<const MetaClass*> classes;
 public:
 	virtual ~Scopable(){};
-	Scopable(Scopable* above,String n="",std::map<String,llvm::Value*>* closure=nullptr):name(n),surroundingScope(above),closureInfo(nullptr){};
+	Scopable(Scopable* above,String n="",std::pair<std::map<llvm::Value*,llvm::PHINode* >, llvm::BasicBlock*>* closure=nullptr):name(n),surroundingScope(above),closureInfo(nullptr){};
 	const bool existsHere(String s) const{
 		return mapping.find(s)!=mapping.end();
 	}
+	// first is one actually there, second is cache
+	static const Data* fixClosure(PositionID id, std::pair<std::map<llvm::Value*,llvm::PHINode* >, llvm::BasicBlock*>* tp, const Data* dat);
 	const bool exists(String s) const{
 		auto tmp = this;
 		assert(tmp);

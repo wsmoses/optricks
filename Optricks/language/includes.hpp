@@ -377,18 +377,14 @@ enum DataType{
 	R_DEC,
 	R_LAZY,
 	R_LOC,
-	R_FUNCMAP,
 	R_FUNC,
 	R_GEN,
 	R_CLASS,
-	R_CHAR,
 	R_STR,
 	R_INT,
 	R_RATIONAL,
 	R_FLOAT,
-	R_FILE,
 	R_IMAG,
-	R_EXACT,
 	R_TUPLE,
 	R_ARRAY,
 	R_SET,
@@ -410,18 +406,14 @@ template<> String str<DataType>(DataType d){
 	case R_SLICE: return "R_SLICE";
 	case R_CONST: return "R_CONST"; // constant variable
 	case R_LOC: return "R_LOC";
-	case R_FUNCMAP: return "R_FUNCMAP";
 	case R_FUNC: return "R_FUNC";
 	case R_GEN: return "R_GEN";
 	case R_CLASS: return "R_CLASS";
-	case R_CHAR: return "R_CHAR";
 	case R_STR: return "R_STR";
 	case R_INT: return "R_INT";
 	case R_RATIONAL: return "R_RATIONAL";
 	case R_FLOAT: return "R_FLOAT";
-	case R_FILE: return "R_FILE";
 	case R_IMAG: return "R_IMAG";
-	case R_EXACT: return "R_EXACT";
 	case R_TUPLE: return "R_TUPLE";
 	case R_ARRAY: return "R_ARRAY";
 	case R_SET: return "R_SET";
