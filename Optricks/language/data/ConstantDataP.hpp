@@ -28,7 +28,7 @@ const AbstractClass* ConstantData::getMyClass(PositionID id) const {
 const LocationData* ConstantData::toLocation(RData& r, String name) const{
 	//TODO complete ConstantData toLocation
 	auto L = r.createAlloca(value->getType());
-	return new LocationData(getLazy(name,r,L,r.builder.GetInsertBlock(),value), type);
+	return new LocationData(getLazy(false,name,r,L,r.builder.GetInsertBlock(),value), type);
 }
 
 ConstantData* ConstantData::getTrue(){

@@ -15,12 +15,12 @@
 //TODO implement methods
 class ImaginaryLiteral:public Literal{
 public:
-	const Data* const real;
-	const Data* const imag;
+	const Literal* const real;
+	const Literal* const imag;
 	virtual ~ImaginaryLiteral(){};
 	bool hasCastValue(const AbstractClass* const a) const override final;
 	int compareValue(const AbstractClass* const a, const AbstractClass* const b) const override final;
-	ImaginaryLiteral(const Data* r, const Data* const i,String s=""):Literal(R_IMAG),real(r),imag(i){
+	ImaginaryLiteral(const Literal* r, const Literal* const i,String s=""):Literal(R_IMAG),real(r),imag(i){
 		if(r){
 			assert(real->type==R_INT || real->type==R_FLOAT);
 		}

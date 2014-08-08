@@ -142,12 +142,12 @@ public:
 				VAL = r.getGlobal(returnType->type,false);
 			llvm::GlobalVariable* GV = new llvm::GlobalVariable(*r.lmod, returnType->type,false, llvm::GlobalValue::PrivateLinkage,VAL);
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
-			variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(GV),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(loc=new StandardLocation(true,GV),returnType));
 		}
 		else{
 			assert(0);
 			auto al = r.createAlloca(returnType->type);
-			variable.getMetadata().setObject(finished=new LocationData(loc=getLazy(variable.pointer.name,r,al,nullptr,nullptr),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(loc=getLazy(false,variable.pointer.name,r,al,nullptr,nullptr),returnType));
 		}
 		//todo check lazy for globals
 		return loc;
@@ -207,11 +207,11 @@ public:
 				if(tmp!=NULL) r.builder.CreateStore(tmp,GV);
 			}
 			((llvm::Value*)GV)->setName(llvm::Twine(variable.getFullName()));
-			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(GV),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(new StandardLocation(true,GV),returnType));
 		}
 		else{
 			auto al = r.createAlloca(returnType->type);
-			variable.getMetadata().setObject(finished=new LocationData(getLazy(variable.pointer.name,r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
+			variable.getMetadata().setObject(finished=new LocationData(getLazy(false,variable.pointer.name,r,al,(tmp)?r.builder.GetInsertBlock():nullptr,tmp),returnType));
 		}
 		//todo check lazy for globals
 

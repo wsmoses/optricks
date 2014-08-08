@@ -171,7 +171,28 @@ const Data* Resolvable::getObject(const T_ARGS& t_args) const{
 		}
 		case SCOPE_VAR:{
 			assert(t_args.inUse==false);
-			return d.first->vars[d.second->second.pos];
+			auto dat = d.first->vars[d.second->second.pos];
+			auto tmp = module;
+			while(tmp!=nullptr){
+				if(tmp->closureInfo) break;
+				else if(tmp==d.first){
+					tmp = nullptr;
+					break;
+				}
+			}
+			//TODO
+			/*if(tmp){
+				assert(tmp->closureInfo);
+				switch(dat->type){
+				case R_FLOAT:
+				case R_INT:
+				case R_MATH:
+				case R_RATIONAL:
+					return dat;
+				case R_SLICE:
+				case R_IMAG:
+				}
+			} else */return dat;
 		}
 		default:
 			filePos.error("Unknown variable type getObject");
@@ -354,13 +375,16 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 	}
 
 	inline llvm::Value* Resolvable::getValue(RData& r, const T_ARGS& t_args) const{
+		//TODO fdasfdas closure;
 		return getObject(t_args)->getValue(r,filePos);
 	}
 	inline void Resolvable::setValue(RData& r, Data* d2) const{
+		assert(module);
 		auto d = module->find(filePos,name);
 		if(d.first==nullptr) return;
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
+				//TODO fdasfdas closure
 				const Data* dat= d.first->vars[d.second->second.pos];
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, d2->getValue(r, filePos));
@@ -376,10 +400,12 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 		}
 	}
 	inline void Resolvable::setValue(RData& r,llvm::Value* v) const{
+		assert(module);
 		auto d = module->find(filePos,name);
 		if(d.first==nullptr) return;
 		switch(d.second->second.type){
 			case SCOPE_VAR:{
+				//TODO fdasfdas closure
 				const Data* dat= d.first->vars[d.second->second.pos];
 				if(dat->type==R_LOC)
 					((const LocationData*)dat)->setValue(r, v);
@@ -395,21 +421,26 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 		}
 	}
 	inline void Resolvable::addFunction(SingleFunction* d) const{
+		assert(module);
 		module->addFunction(filePos,name)->add(d, filePos);
 	}
 	inline const AbstractClass* Resolvable::getClass(const T_ARGS& args) const{
+		assert(module);
 		return module->getClass(filePos, name, args);
 	}
 	inline void Resolvable::setFunction(SingleFunction* d) const{
+		assert(module);
 		module->addFunction(filePos,name)->set(d,filePos);
 	}
 	//const AbstractClass* Resolvable::getFunctionReturnType(const std::vector<const AbstractClass*>& fp) const{
 	//	return module->getFunctionReturnType(filePos,name,fp);
 	//}
 	const AbstractClass* Resolvable::getFunctionReturnType(const T_ARGS& args, const std::vector<const Evaluatable*>& fp) const{
+		assert(module);
 		return module->getFunctionReturnType(filePos,name,args, fp);
 	}
 	std::pair<const Data*,SCOPE_TYPE> Resolvable::getFunction(const String name, const T_ARGS& args, const std::vector<const AbstractClass*>& fp) const{
+		assert(module);
 		return module->getFunction(filePos,name,args, fp);
 	}
 #endif /* SCOPABLEP_HPP_ */

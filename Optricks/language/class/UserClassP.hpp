@@ -99,7 +99,8 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 							assert(ld);
 						}
 						else{
-							ld = new StandardLocation(r.builder.CreateConstGEP2_32(
+							ld = new StandardLocation(false,//TODO CHECK?
+									r.builder.CreateConstGEP2_32(
 									((const LocationData*)instance)->value->getValue(r,id),0,start));
 							assert(ld);
 						}
@@ -111,7 +112,8 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 							assert(ld);
 						}
 						else{
-							ld = new StandardLocation(r.builder.CreateConstGEP2_32(
+							ld = new StandardLocation(false,//TODO CHECK?
+									r.builder.CreateConstGEP2_32(
 									((const DeclarationData*)instance)->value->fastEvaluate(r)->getValue(r,id),0,start));
 							assert(ld);
 						}
@@ -140,7 +142,8 @@ const Data* UserClass::getLocalData(RData& r, PositionID id, String s, const Dat
 						if(layout==PRIMITIVE_LAYOUT)
 							return new ConstantData(r.builder.CreateExtractValue(v,start),tmp->localVars[fd->second]);
 						else{
-							return new LocationData(new StandardLocation(r.builder.CreateConstGEP2_32(v, 0, start)), tmp->localVars[fd->second]);
+							return new LocationData(new StandardLocation(false,//TODO CHECK?
+									r.builder.CreateConstGEP2_32(v, 0, start)), tmp->localVars[fd->second]);
 						}
 					}
 				}

@@ -320,7 +320,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				auto COUNT = r.builder.CreatePHI(intClass.type, 2);
 				COUNT->addIncoming(getInt32(0), TO_LOAD);
 				auto FOUND_LOC = r.builder.CreateGEP(DATA, IDX);
-				StandardLocation sl(FOUND_LOC);
+				StandardLocation sl(false,FOUND_LOC);
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_REPLACE, "==")->getValue(r, id);
 
@@ -379,7 +379,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				HI->addIncoming(lenM1, TO_LOAD);
 				auto MID = r.builder.CreateUDiv(r.builder.CreateAdd(LOW, HI),getInt32(2), "mid");
 
-				StandardLocation sl(r.builder.CreateGEP(DATA, MID));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, MID));
 				LocationData ld(&sl, AC->inner);
 
 				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
@@ -511,7 +511,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				IDX->addIncoming(getInt32(0), TO_LOAD);
 				auto COUNT = r.builder.CreatePHI(intClass.type, 2);
 				COUNT->addIncoming(getInt32(0), TO_LOAD);
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDX));
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
 
@@ -561,7 +561,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(TO_SEARCH);
 				auto IDX = r.builder.CreatePHI(intClass.type, 2);
 				IDX->addIncoming(getInt32(0), TO_LOAD);
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDX));
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
 
@@ -603,7 +603,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				auto IDX = r.builder.CreatePHI(intClass.type, 2);
 				IDX->addIncoming(LENGTH, TO_LOAD);
 				auto IDXM1 = r.builder.CreateSub(IDX, getInt32(1));
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDXM1));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDXM1));
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
 
@@ -709,7 +709,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(TO_SEARCH);
 				auto IDX = r.builder.CreatePHI(intClass.type, 2);
 				IDX->addIncoming(getInt32(0), TO_LOAD);
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDX));
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_CHECK, "==")->getValue(r, id);
 
@@ -752,7 +752,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(TO_SEARCH);
 				auto IDX = r.builder.CreatePHI(intClass.type, 2);
 				IDX->addIncoming(getInt32(0), TO_LOAD);
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDX));
 				LocationData ld(&sl, AC->inner);
 				auto cmp = getBinop(r, id, &ld, TO_REMOVE, "==")->getValue(r, id);
 				//LANG_M.getFunction(id, "print", NO_TEMPLATE, {AC->inner}).first->callFunction(r, id, {&ld}, nullptr);
@@ -802,7 +802,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(TO_DEC);
 				auto IDX = r.builder.CreatePHI(intClass.type, 2);
 				IDX->addIncoming(getInt32(0), STARTT);
-				StandardLocation sl(r.builder.CreateGEP(DATA, IDX));
+				StandardLocation sl(false,r.builder.CreateGEP(DATA, IDX));
 				LocationData ld(&sl, AC->inner);
 				decrementCount(r, id, &ld);
 				auto IDX2 = r.builder.CreateAdd(IDX, getInt32(1));

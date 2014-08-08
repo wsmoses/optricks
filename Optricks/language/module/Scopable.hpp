@@ -38,6 +38,7 @@ private:
 	const String name;
 public:
 	Scopable* const surroundingScope;
+	std::map<String,llvm::Value*>* closureInfo;
 	//protected:
 	std::map<const String,SCOPE_POS> mapping;
 	std::vector<OverloadedFunction*> funcs;
@@ -46,7 +47,7 @@ public:
 	std::vector<const MetaClass*> classes;
 public:
 	virtual ~Scopable(){};
-	Scopable(Scopable* above,String n=""):name(n),surroundingScope(above){};
+	Scopable(Scopable* above,String n="",std::map<String,llvm::Value*>* closure=nullptr):name(n),surroundingScope(above),closureInfo(nullptr){};
 	const bool existsHere(String s) const{
 		return mapping.find(s)!=mapping.end();
 	}
@@ -120,22 +121,22 @@ public:
 	}
 	inline std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator> find2(PositionID id, const String s) const {
 			const Scopable* tmp = this;
-			assert(tmp);
 			do{
+				assert(tmp);
 				std::map<const String,SCOPE_POS>::const_iterator it = tmp->mapping.find(s);
 				if(it!=tmp->mapping.end()) return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(tmp,it);
 				tmp = tmp->surroundingScope;
-			}while(tmp!=NULL);
+			}while(tmp);
 			return std::pair<const Scopable*,std::map<const String,SCOPE_POS>::const_iterator>(nullptr,mapping.end());
 		}
 	inline std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator> find2(PositionID id, const String s) {
 		Scopable* tmp = this;
-		assert(tmp);
 		do{
+			assert(tmp);
 			std::map<const String,SCOPE_POS>::iterator it = tmp->mapping.find(s);
 			if(it!=tmp->mapping.end()) return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(tmp,it);
 			tmp = tmp->surroundingScope;
-		}while(tmp!=NULL);
+		}while(tmp);
 		return std::pair<Scopable*,std::map<const String,SCOPE_POS>::iterator>(nullptr,mapping.end());
 	}
 	const AbstractClass* getClass(PositionID id, const String name, const T_ARGS&) const;

@@ -103,7 +103,7 @@ public:
 			((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx].declarationVariable));
 			if(ad[Idx].declarationType->classType==CLASS_REF){
 				declaration[Idx]->variable.getMetadata().setObject(
-					new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
+					new LocationData(new StandardLocation(false,AI),((ReferenceClass*) ad[Idx].declarationType)->innerType)
 				);
 			} else {
 				declaration[Idx]->variable.getMetadata().setObject(

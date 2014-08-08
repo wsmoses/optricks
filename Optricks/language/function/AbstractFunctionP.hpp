@@ -17,7 +17,7 @@ const Data* ExternalFunction::callFunction(RData& r,PositionID id,const std::vec
 	llvm::Value* cal = r.builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 	else if(proto->returnType->classType==CLASS_REF)
-		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
+		return new ReferenceData(new LocationData(new StandardLocation(false,cal), ((ReferenceClass*)proto->returnType)->innerType));
 	else{
 		return new ConstantData(cal,proto->returnType);
 	}
@@ -40,7 +40,7 @@ const Data* IntrinsicFunction<A>::callFunction(RData& r,PositionID id,const std:
 	llvm::Value* cal = r.builder.CreateCall(getSingleFunc(),validatePrototypeNow(proto,r,id,args, instance));
 	if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 	else if(proto->returnType->classType==CLASS_REF)
-		return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
+		return new ReferenceData(new LocationData(new StandardLocation(false,cal), ((ReferenceClass*)proto->returnType)->innerType));
 	else{
 		return new ConstantData(cal,proto->returnType);
 	}
@@ -87,7 +87,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 		llvm::Value* cal = r.builder.CreateCall(myFunc,validatePrototypeNow(proto,r,id,args, instance));
 		if(proto->returnType->classType==CLASS_VOID) return &VOID_DATA;
 		else if(proto->returnType->classType==CLASS_REF)
-			return new ReferenceData(new LocationData(new StandardLocation(cal), ((ReferenceClass*)proto->returnType)->innerType));
+			return new ReferenceData(new LocationData(new StandardLocation(false,cal), ((ReferenceClass*)proto->returnType)->innerType));
 		else{
 			return new ConstantData(cal,proto->returnType);
 		}
@@ -104,7 +104,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 				++AI, ++Idx) {
 			((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
 			if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
-				args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
+				args.push_back(new LocationData(new StandardLocation(false,AI),proto->declarations[Idx].declarationType));
 			else
 				args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 		}
@@ -136,7 +136,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 				++AI, ++Idx) {
 			((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
 			if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
-				args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
+				args.push_back(new LocationData(new StandardLocation(false,AI),proto->declarations[Idx].declarationType));
 			else
 				args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 		}
@@ -167,7 +167,7 @@ llvm::Function* IntrinsicFunction<A>::getSingleFunc() const{
 					++AI, ++Idx) {
 				((llvm::Value*)AI)->setName(llvm::Twine(proto->declarations[Idx].declarationVariable));
 				if(proto->declarations[Idx].declarationType->classType==CLASS_REF)
-					args.push_back(new LocationData(new StandardLocation(AI),proto->declarations[Idx].declarationType));
+					args.push_back(new LocationData(new StandardLocation(false,AI),proto->declarations[Idx].declarationType));
 				else
 					args.push_back(new ConstantData(AI,proto->declarations[Idx].declarationType));
 			}

@@ -11,10 +11,10 @@
 
 
 		Location* UpgradeLocation::getInner(RData& r, PositionID id, unsigned idx){
-			return new StandardLocation(r.builder.CreateConstGEP1_32(getPointer(r,id), idx));
+			return new StandardLocation(true,r.builder.CreateConstGEP1_32(getPointer(r,id), idx));
 		}
 		Location* UpgradeLocation::getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2){
-			return new StandardLocation(r.builder.CreateConstGEP2_32(getPointer(r,id), idx1, idx2));
+			return new StandardLocation(true,r.builder.CreateConstGEP2_32(getPointer(r,id), idx1, idx2));
 		}
 llvm::Value* UpgradeLocation::getValue(RData& r, PositionID id){
 	auto position = getPointer(r, id);

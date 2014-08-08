@@ -11,6 +11,8 @@
 
 class Location{
 	public:
+		bool isGlobal;
+		Location(bool isG):isGlobal(isG){};
 		virtual ~Location(){};
 		virtual llvm::Type* getType()=0;
 		virtual llvm::Value* getValue(RData& r, PositionID id)=0;
@@ -27,7 +29,7 @@ class UpgradeLocation : public Location{
 	std::map<llvm::Function*,llvm::Value*> MAP;
 	public:
 		~UpgradeLocation() override{};
-		UpgradeLocation(RData& r, llvm::Value* a): metaposition(new llvm::GlobalVariable(*r.lmod, a->getType(),false, llvm::GlobalValue::PrivateLinkage,r.getGlobal(a->getType(),true))){
+		UpgradeLocation(RData& r, llvm::Value* a): Location(true),metaposition(new llvm::GlobalVariable(*r.lmod, a->getType(),false, llvm::GlobalValue::PrivateLinkage,r.getGlobal(a->getType(),true))){
 			assert(a); assert(a->getType()->isPointerTy());
 			r.builder.CreateStore(a, metaposition);
 			MAP[r.builder.GetInsertBlock()->getParent()] = a;
@@ -66,19 +68,9 @@ class StandardLocation : public Location{
 	llvm::Value* const position;
 	public:
 		~StandardLocation() override{};
-		StandardLocation(llvm::Value* a):position(a){ assert(position); assert(position->getType()->isPointerTy());}
+		StandardLocation(bool isG, llvm::Value* a): Location(isG),position(a){ assert(position); assert(position->getType()->isPointerTy());}
 		Location* getGlobal(RData& r) override final{
-			llvm::Value* tmp = position;
-			while(auto CA = llvm::dyn_cast<llvm::CastInst>(tmp))
-				tmp = CA->getOperand(0);
-			if(auto GV=llvm::dyn_cast<llvm::Constant>(tmp)){
-				assert(GV);
-				return this;
-			}
-			//if(auto AL = llvm::dyn_cast<llvm::AllocaInst>(tmp)){
-			//	AL->
-			//}
-			//cerr << "Unknown upgrade...?" << endl << flush;
+			if(isGlobal) return this;
 			return new UpgradeLocation(r, position);
 		}
 		llvm::Value* getValue(RData& r, PositionID id) override final;
@@ -92,10 +84,10 @@ class StandardLocation : public Location{
 			return position;
 		}
 		Location* getInner(RData& r, PositionID id, unsigned idx) override final{
-			return new StandardLocation(r.builder.CreateConstGEP1_32(position, idx));
+			return new StandardLocation(isGlobal, r.builder.CreateConstGEP1_32(position, idx));
 		}
 		Location* getInner(RData& r, PositionID id, unsigned idx1, unsigned idx2) override final{
-			return new StandardLocation(r.builder.CreateConstGEP2_32(position, idx1, idx2));
+			return new StandardLocation(isGlobal, r.builder.CreateConstGEP2_32(position, idx1, idx2));
 		}
 };
 
@@ -113,7 +105,9 @@ private:
 public:
 	~LazyLocation() override{};
 	String getName(){ return varName; }
-	LazyLocation(String nam, void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):data(),position(p){
+	LazyLocation(bool isG, String nam, void* a, RData& r,llvm::Value* p, llvm::BasicBlock* b=NULL,llvm::Value* d=NULL,bool u = false):
+		Location(false),data(),position(p){
+		assert(isG==false);
 		used = u;
 		varName = nam;
 		assert(position);
@@ -128,13 +122,6 @@ public:
 		//if(d!=NULL) d->setName(name);
 		r.flocs.find(r.builder.GetInsertBlock()->getParent())->second.push_back(this);
 	}Location* getGlobal(RData& r) override final{
-		llvm::Value* tmp = position;
-		while(auto CA = llvm::dyn_cast<llvm::CastInst>(tmp))
-			tmp = CA->getOperand(0);
-		//if(auto AL = llvm::dyn_cast<llvm::AllocaInst>(tmp)){
-		//	AL->
-		//}
-		cerr << "Unknown upgrade 2...?" << endl << flush;
 		return new UpgradeLocation(r, position);
 	}
 	llvm::Type* getType() override final{
@@ -254,14 +241,15 @@ public:
 	}
 };
 
-Location* getLazy(String name, RData& r,llvm::Value* p, llvm::BasicBlock* b=nullptr,llvm::Value* d=nullptr,bool u = false){
+Location* getLazy(bool isG, String name, RData& r,llvm::Value* p, llvm::BasicBlock* b=nullptr,llvm::Value* d=nullptr,bool u = false){
+	assert(isG==false);
 	assert(p->getType()->isPointerTy());
 	llvm::Type* IT = ((llvm::PointerType*) p->getType())->getElementType();
 	assert(!IT->isVoidTy());
 	if(IT->isPointerTy() || IT->isIntegerTy() || IT->isHalfTy() || IT->isFloatTy()
 			|| IT->isDoubleTy() || IT->isX86_FP80Ty() || IT->isFP128Ty() || IT->isPPC_FP128Ty()
 			|| IT->isX86_MMXTy()){
-		return new LazyLocation(name, nullptr,r,p,b,d,u);
+		return new LazyLocation(false, name, nullptr,r,p,b,d,u);
 	} else{//todo allow structs
 		if(b && d){
 			auto Parent = r.builder.GetInsertBlock();
@@ -269,7 +257,7 @@ Location* getLazy(String name, RData& r,llvm::Value* p, llvm::BasicBlock* b=null
 			r.builder.CreateStore(d,p);
 			if(Parent) r.builder.SetInsertPoint(Parent);
 		}
-		return new StandardLocation(p);
+		return new StandardLocation(false, p);
 	}
 }
 #endif /* LOCATION_HPP_ */

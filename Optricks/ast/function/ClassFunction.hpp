@@ -107,7 +107,7 @@ class ClassFunction : public E_FUNCTION{
 
 				if(!(upperClass->layout==POINTER_LAYOUT || upperClass->layout==PRIMITIVEPOINTER_LAYOUT)){
 					assert(llvm::dyn_cast<llvm::PointerType>(AI->getType()));
-					Location* myLoc = getLazy("this",a, (llvm::Value*)AI,a.builder.GetInsertBlock(),nullptr);
+					Location* myLoc = getLazy(false,"this",a, (llvm::Value*)AI,a.builder.GetInsertBlock(),nullptr);
 					module.setVariable(filePos, "this", new LocationData(myLoc, upperClass));
 				} else{
 					module.setVariable(filePos, "this", new ConstantData(AI, upperClass));
@@ -121,7 +121,7 @@ class ClassFunction : public E_FUNCTION{
 				((llvm::Value*)AI)->setName(llvm::Twine(myFunction->getSingleProto()->declarations[Idx+(staticF?0:1)].declarationVariable));
 				if(ad[Idx+(staticF?0:1)].declarationType->classType==CLASS_REF){
 					declaration[Idx]->variable.getMetadata().setObject(
-						new LocationData(new StandardLocation(AI),((ReferenceClass*) ad[Idx+(staticF?0:1)].declarationType)->innerType)
+						new LocationData(new StandardLocation(false,AI),((ReferenceClass*) ad[Idx+(staticF?0:1)].declarationType)->innerType)
 					);
 				} else {
 					declaration[Idx]->variable.getMetadata().setObject(

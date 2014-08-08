@@ -1378,25 +1378,28 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			assert(R->type==R_IMAG);
 			const ImaginaryLiteral* IL = (const ImaginaryLiteral*)L;
 			const ImaginaryLiteral* IR = (const ImaginaryLiteral*)R;
-			const Data* LR = (IL->real)?IL->real:(&ZERO_LITERAL);
-			const Data* LI = IL->imag;
-			const Data* RR = (IR->real)?IR->real:(&ZERO_LITERAL);
-			const Data* RI = IR->imag;
+			auto LR = (IL->real)?IL->real:(&ZERO_LITERAL);
+			auto LI = IL->imag;
+			auto RR = (IR->real)?IR->real:(&ZERO_LITERAL);
+			auto RI = IR->imag;
 			if(operation=="+"){
-				return new ImaginaryLiteral(
-						getBinop(r, filePos, LR, RR, "+"),
-						getBinop(r, filePos, LI, RI, "+")
-				);
+				auto L_L = getBinop(r, filePos, LR, RR, "+");
+				assert(L_L && dynamic_cast<const Literal*>(L_L));
+				auto L_R = getBinop(r, filePos, LI, RI, "+");
+				assert(L_R && dynamic_cast<const Literal*>(L_R));
+				return new ImaginaryLiteral((const Literal*)L_L, (const Literal*)L_R);
 			} else if(operation=="-"){
-				return new ImaginaryLiteral(
-						getBinop(r, filePos, LR, RR, "-"),
-						getBinop(r, filePos, LI, RI, "-")
-				);
+				auto L_L = getBinop(r, filePos, LR, RR, "-");
+				assert(L_L && dynamic_cast<const Literal*>(L_L));
+				auto L_R = getBinop(r, filePos, LI, RI, "-");
+				assert(L_R && dynamic_cast<const Literal*>(L_R));
+				return new ImaginaryLiteral((const Literal*)L_L, (const Literal*)L_R);
 			} else if(operation=="*"){
-				return new ImaginaryLiteral(
-						getBinop(r, filePos, getBinop(r, filePos, LR, RR,"*"), getBinop(r, filePos, LI, RI,"*"), "-"),
-						getBinop(r, filePos, getBinop(r, filePos, LR, RI,"*"), getBinop(r, filePos, LI, RR,"*"), "+")
-				);
+				auto L_L = getBinop(r, filePos, getBinop(r, filePos, LR, RR,"*"), getBinop(r, filePos, LI, RI,"*"), "-");
+				assert(L_L && dynamic_cast<const Literal*>(L_L));
+				auto L_R = getBinop(r, filePos, getBinop(r, filePos, LR, RI,"*"), getBinop(r, filePos, LI, RR,"*"), "+");
+				assert(L_R && dynamic_cast<const Literal*>(L_R));
+				return new ImaginaryLiteral((const Literal*)L_L, (const Literal*)L_R);
 			} else if(operation=="=="){
 				auto re = getBinop(r, filePos, LR, RR, "==")->getValue(r, filePos);
 				auto im = getBinop(r, filePos, LI, RI, "==")->getValue(r, filePos);
@@ -1699,7 +1702,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 			llvm::Value* A = value->getValue(r,filePos);
 
 			llvm::Value* I = r.builder.CreateGEP(A, V);
-			return new LocationData(new StandardLocation(I), &charClass);
+			return new LocationData(new StandardLocation(false,I), &charClass);
 		}
 		else if(operation=="==" || operation=="!="){
 			ev->evaluate(r);
@@ -1790,7 +1793,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 								r.error("Illegal array index %d in %d", filePos, {V, LENGTH});
 				))
 				llvm::Value* I = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(A, 0,3));
-				return new LocationData(new StandardLocation(r.builder.CreateGEP(I, V)), AC->inner);
+				return new LocationData(new StandardLocation(false,r.builder.CreateGEP(I, V)), AC->inner);
 			}
 		} else if(operation=="[]="){
 			ArrayClass* AC = (ArrayClass*) cc;
@@ -2036,7 +2039,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					cmp = r.builder.CreateICmpEQ(r.builder.CreateBitCast(r.builder.CreateLoad(KEY_P),nt),
 							r.builder.CreateBitCast(KEY->getValue(r, filePos), nt));
 				} else {
-					StandardLocation SL(KEY_P);
+					StandardLocation SL(false,KEY_P);
 					LocationData LD(&SL, AC->key);
 					cmp = getBinop(r, filePos, &LD, KEY, "==")->getValue(r, filePos);
 				}
@@ -2050,7 +2053,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 
 				r.builder.SetInsertPoint(DONE);
 				return new LocationData(
-						new StandardLocation(r.builder.CreateConstGEP2_32(PHI,0,2)), AC->value);
+						new StandardLocation(false,r.builder.CreateConstGEP2_32(PHI,0,2)), AC->value);
 			}
 			//todo
 			if(value->type==R_MAP){
@@ -2178,7 +2181,7 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 					cmp = r.builder.CreateICmpEQ(r.builder.CreateBitCast(r.builder.CreateLoad(KEY_P),nt),
 							r.builder.CreateBitCast(KEY_V, nt));
 				} else {
-					StandardLocation SL(KEY_P);
+					StandardLocation SL(false,KEY_P);
 					LocationData LD(&SL, AC->key);
 					cmp = getBinop(r, filePos, &LD, &KEY, "==")->getValue(r, filePos);
 				}
