@@ -154,12 +154,14 @@ class ClassFunction : public E_FUNCTION{
 					a.builder.CreateRetVoid();
 				else error("Could not find return statement");
 			}
+
+			for(auto& d: declaration) d->buildFunction(a);
+			methodBody->buildFunction(a);
+
 			a.FinalizeFunction(((llvm::Function*) myFunction->getSingleFunc()));
 			if(Parent) a.builder.SetInsertPoint( Parent );
 			auto tmp = a.popJump();
 			assert(tmp == &j);
-			for(auto& d: declaration) d->buildFunction(a);
-			methodBody->buildFunction(a);
 		};
 
 		void registerClasses() const override final{

@@ -592,7 +592,7 @@ int main(int argc, char** argv){
 		//std::cout << convertClass(void (*)(bool, char),&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass(std::pair<bool, char>,&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass(void (*)(int, char),&LANG_M)->getName() << endl << flush;
-		std::cout << START << flush;
+		std::cout << INTERACTIVE_START << flush;
 		//st.force("{int:long} a\n");
 		//st.force("int[] a\n");
 		//st.force("complex{int} a;\n");
@@ -668,7 +668,7 @@ int main(int argc, char** argv){
 			}
 			st.done = false;
 			if(st.last()==EOF) break;
-			std::cout << START << flush;
+			std::cout << INTERACTIVE_START << flush;
 			while(st.peek()=='\n' || st.peek()==';') st.read();
 			st.done = false;
 

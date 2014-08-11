@@ -776,9 +776,8 @@ public:
 			f->trim(EOF);
 		}
 		String name=paren?getNextName(EOF):"._pid";
-		OModule* nmod = new OModule(data.mod);
-		nmod->addVariable(pos(), name,&VOID_DATA);
-		E_PARALLEL* parallel = new E_PARALLEL(p_pos, E_VAR( Resolvable(nmod,name,pos()), false),toJoin);
+		E_PARALLEL* parallel = new E_PARALLEL(p_pos, name, pos(),data.mod,toJoin);
+		parallel->module.addVariable(pos(),name,&VOID_DATA);
 		f->trim(EOF);
 		if(paren){
 			if(f->read()!=')') f->error("Need ')' to end paren'd statement");
@@ -808,7 +807,7 @@ public:
 						f->trim(EOF);
 					}
 				}
-				auto blocks = new Block(pos(), nmod);
+				auto blocks = new Block(pos(), & parallel->module);
 				while(true){
 					auto pek=f->peek();
 					if(pek=='}') break;

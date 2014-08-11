@@ -154,6 +154,9 @@ public:
 	const AbstractClass* getReturnClass(PositionID id, const String name, const T_ARGS&) const;
 	const Data* get(PositionID id, const String name, const T_ARGS&) const;
 
+	bool hasCastValue(PositionID id, const String name, const T_ARGS&,const AbstractClass* const a) const;
+	int compareValue(PositionID id, const String name, const T_ARGS&,const AbstractClass* const a, const AbstractClass* const b) const;
+
 	const AbstractClass* getReturnClassHere(PositionID id, const String name, const T_ARGS&) const;
 	const Data* getHere(PositionID id, const String name, const T_ARGS&) const;
 
@@ -195,6 +198,12 @@ public:
 		assert(module);
 		assert(n!="auto");
 	};
+	bool hasCastValue(const T_ARGS& t, const AbstractClass* const a) const{
+		return module->hasCastValue(filePos, name, t, a);
+	}
+	int compareValue(const T_ARGS& t, const AbstractClass* const a, const AbstractClass* const b) const{
+		return module->compareValue(filePos, name, t, a, b);
+	}
 	const AbstractClass* getReturnType(const T_ARGS&) const;
 	inline const Data* getObject(const T_ARGS&) const;
 	void setObject(const Data* da) const;

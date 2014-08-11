@@ -13,7 +13,7 @@
 class ConstructorFunction : public E_FUNCTION{
 private:
 	Statement* myClass;
-	bool built;
+	mutable bool built;
 public:
 	//TODO combine scope
 	ConstructorFunction(PositionID id, OModule* superScope,Statement* mc):
@@ -28,6 +28,7 @@ public:
 	}
 	void buildFunction(RData& ra) const override final{
 		if(built) return;
+		built = true;
 		registerFunctionPrototype(ra);
 		assert(returnV==nullptr);
 
@@ -56,13 +57,14 @@ public:
 			if(dat!=th) decrementCount(ra, filePos, dat);
 		}
 		ra.builder.CreateRet(V);
+
+		for(auto& d: declaration) d->buildFunction(ra);
+		methodBody->buildFunction(ra);
+
 		ra.FinalizeFunction(F);
 		if(Parent!=NULL) ra.builder.SetInsertPoint( Parent );
 		auto tmp = ra.popJump();
 		assert(tmp== &j);
-
-		for(auto& d: declaration) d->buildFunction(ra);
-		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;

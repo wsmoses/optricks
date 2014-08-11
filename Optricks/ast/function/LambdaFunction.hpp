@@ -11,11 +11,12 @@
 #include "../../operators/Deconstructor.hpp"
 class LambdaFunction : public E_FUNCTION{
 private:
-	bool built;
+	mutable bool built;
 	mutable std::pair<std::map<llvm::Value*,llvm::PHINode*>, llvm::BasicBlock*> closureInfo;
 public:
 	LambdaFunction(PositionID id, OModule* superMod):
 		E_FUNCTION(id,OModule(superMod),""),built(false){
+		closureInfo.second=nullptr;
 		module.closureInfo = &closureInfo;
 	}
 	void registerClasses() const override final{
@@ -23,6 +24,7 @@ public:
 	}
 	void buildFunction(RData& ra) const override final{
 		if(built) return;
+		built = true;
 		registerFunctionPrototype(ra);
 		closureInfo.second = ra.builder.GetInsertBlock();
 		llvm::Function* F = ((llvm::Function*) myFunction->getSingleFunc());
@@ -42,16 +44,19 @@ public:
 			ra.builder.CreateRet(V);
 		}
 		if(closureInfo.first.size() > 0){
-			filePos.error("Function closures not currently supported: "+str(closureInfo.first.size()));
+			filePos.error("Function closures not currently supported: "+str(closureInfo.first.size())+" values replaced with 0 or null");
+			for(auto& a: closureInfo.first){
+				a.second->replaceAllUsesWith(ra.getGlobal(a.first->getType(), false));
+			}
 		}
+
+		for(auto& d: declaration) d->buildFunction(ra);
+		methodBody->buildFunction(ra);
 
 		ra.FinalizeFunction(F);
 		if(closureInfo.second) ra.builder.SetInsertPoint( closureInfo.second );
 		auto tmp = ra.popJump();
 		assert(tmp== &j);
-
-		for(auto& d: declaration) d->buildFunction(ra);
-		methodBody->buildFunction(ra);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;

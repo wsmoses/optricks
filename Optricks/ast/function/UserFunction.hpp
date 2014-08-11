@@ -40,14 +40,15 @@ public:
 				a.builder.CreateRetVoid();
 			else error("Could not find return statement");
 		}
+
+		for(auto& d: declaration) d->buildFunction(a);
+		methodBody->buildFunction(a);
+
 		assert(F);
 		a.FinalizeFunction(F);
 		if(Parent) a.builder.SetInsertPoint( Parent );
 		auto tmp = a.popJump();
 		assert(tmp== &j);
-
-		for(auto& d: declaration) d->buildFunction(a);
-		methodBody->buildFunction(a);
 	}
 	void registerFunctionPrototype(RData& a) const override final{
 		if(myFunction) return;

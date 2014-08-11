@@ -21,8 +21,12 @@ class E_PARALLEL : public ErrorStatement{
 		//whether or not localVariable is used
 		std::vector< std::pair<Statement*,Statement*> > body;
 		bool toJoin; /* if true join (e.g. parallel body) otherwise don't (e.g. spawn) */
-		E_PARALLEL(PositionID id, const E_VAR& var, bool toJ) :
-			ErrorStatement(id), localVariable(var),body(),toJoin(toJ){
+		OModule module;
+		mutable std::pair<std::map<llvm::Value*,llvm::PHINode*>, llvm::BasicBlock*> closureInfo;
+		E_PARALLEL(PositionID id, String name, PositionID var_id, OModule* mod, bool toJ) :
+			ErrorStatement(id), localVariable(Resolvable(&module,name,var_id), false),body(),toJoin(toJ),module(mod){
+			closureInfo.second = nullptr;
+			module.closureInfo = &closureInfo;
 		}
 		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
@@ -82,7 +86,7 @@ class E_PARALLEL : public ErrorStatement{
 			assert(p_index>=1);
 			assert(p_sum[p_index]>0);
 			//todo force closures
-			llvm::BasicBlock* PARENT = ra.builder.GetInsertBlock();
+			closureInfo.second = ra.builder.GetInsertBlock();
 
 			auto FT = llvm::FunctionType::get(C_POINTERTYPE, llvm::SmallVector<llvm::Type*,1>(1, C_POINTERTYPE), false);
 			String nam = "!parallel";
@@ -91,8 +95,8 @@ class E_PARALLEL : public ErrorStatement{
 			ra.builder.SetInsertPoint(BB);
 
 			llvm::Value* args = F->arg_begin();
-			args = ra.builder.CreatePtrToInt(args, C_SIZETTYPE);
-			ConstantData cd(args, &c_size_tClass);
+			llvm::Instruction* arg_idx = fcast<llvm::Instruction>(ra.builder.CreatePtrToInt(args, INT32TYPE));
+			ConstantData cd(arg_idx, &intClass);
 			localVariable.pointer.setObject(&cd);
 			if(p_index == 1){
 				assert(std::get<1>(body.back()));
@@ -100,18 +104,15 @@ class E_PARALLEL : public ErrorStatement{
 				assert(!ra.hadBreak());
 				ra.builder.CreateRet(llvm::ConstantPointerNull::get(C_POINTERTYPE));
 			} else {
-				llvm::Value* args = F->arg_begin();
-				args = ra.builder.CreatePtrToInt(args, C_SIZETTYPE);
 				llvm::BasicBlock* tmpB = ra.CreateBlockD("block", F);
 				llvm::BasicBlock* END = ra.CreateBlockD("end", F);
-				Jumpable k("!parallel", LOOP, /*NO SCOPE -- force iterable to deconstruct*/
+				Jumpable k("!parallel", LOOP, /*TODO NO SCOPE -- force iterable to deconstruct*/
 										nullptr, nullptr, END, NULL);
 				ra.addJump(&k);
 
 				for(unsigned int i=1; i<p_index; i++){
-
 					BB = ra.CreateBlockD("entry", F);
-					ra.builder.CreateCondBr(ra.builder.CreateICmpULT(args, p_sum[i]),tmpB,BB);
+					ra.builder.CreateCondBr(ra.builder.CreateICmpULT(arg_idx, p_sum[i]),tmpB,BB);
 					ra.builder.SetInsertPoint(tmpB);
 					if(i==p_index-1)
 						tmpB = BB;
@@ -135,15 +136,59 @@ class E_PARALLEL : public ErrorStatement{
 				ra.builder.SetInsertPoint(END);
 				ra.builder.CreateRet(llvm::ConstantPointerNull::get(C_POINTERTYPE));
 			}
+
+			llvm::Type* PT;
+			if(closureInfo.first.size() > 0){
+				llvm::SmallVector<llvm::Type*,2> types(1+closureInfo.first.size());
+				types[0] = INT32TYPE;
+				unsigned idx = 1;
+				for(auto& a: closureInfo.first){
+					types[idx] = a.first->getType();
+					idx++;
+				}
+				llvm::SmallVector<llvm::Type*,1> NT(1);
+
+				llvm::Instruction* toload = fcast<llvm::Instruction>(ra.builder.CreatePointerCast(args,
+						llvm::PointerType::getUnqual(PT = llvm::StructType::get(llvm::getGlobalContext(),types))));
+				toload->moveBefore(arg_idx);
+
+				llvm::Instruction* load = fcast<llvm::Instruction>(ra.builder.CreateConstGEP2_32(toload,0,0));
+				load->moveBefore(arg_idx);
+				load = ra.builder.CreateLoad(load);
+				load->moveBefore(arg_idx);
+				arg_idx->replaceAllUsesWith(load);
+
+				idx = 1;
+				for(auto& a: closureInfo.first){
+					llvm::Instruction* load = fcast<llvm::Instruction>(ra.builder.CreateConstGEP2_32(toload,0,idx));
+					load->moveBefore(arg_idx);
+					load = ra.builder.CreateLoad(load);
+					load->moveBefore(arg_idx);
+					a.second->replaceAllUsesWith(load);
+					idx++;
+				}
+				arg_idx->eraseFromParent();
+			}
 			ra.FinalizeFunction(F);
 
-			ra.builder.SetInsertPoint(PARENT);
+			ra.builder.SetInsertPoint(closureInfo.second);
 
 
 			if(llvm::isa<llvm::ConstantInt>(p_sum[p_index]) && ((llvm::ConstantInt*)p_sum[p_index])->isOne()){
 
 				auto THREADS = ra.createAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)));
-				ra.createThread(F, ra.builder.CreateIntToPtr(getSizeT(0),C_POINTERTYPE),THREADS);
+				llvm::Value* PTR;
+				if(closureInfo.first.size()>0){
+					llvm::Value* MEM = ra.createAlloca(PT);
+					ra.builder.CreateStore(getInt32(0), ra.builder.CreateConstGEP2_32(MEM,0,0));
+					unsigned idx = 1;
+					for(auto& a: closureInfo.first){
+						ra.builder.CreateStore(a.first, ra.builder.CreateConstGEP2_32(MEM,0,idx));
+						idx++;
+					}
+					PTR = ra.builder.CreatePointerCast(MEM, C_POINTERTYPE);
+				} else PTR = ra.builder.CreateIntToPtr(getSizeT(0),C_POINTERTYPE);
+				ra.createThread(F, PTR,THREADS);
 
 				//no more threads!
 				if(toJoin){
@@ -151,27 +196,47 @@ class E_PARALLEL : public ErrorStatement{
 				}
 			} else {
 
-				auto FUNC = PARENT->getParent();
+				auto FUNC = closureInfo.second->getParent();
 				auto LOOP = ra.CreateBlockD("spawn_threads", FUNC);
 				llvm::BasicBlock* JOIN;
 				llvm::BasicBlock* DONE;
 				if(toJoin) JOIN = ra.CreateBlockD("join_threads", FUNC);
 				DONE = ra.CreateBlockD("done_threads", FUNC);
 				llvm::Value* alloc;
+				llvm::Value* NUM_THREADS = (toJoin || closureInfo.first.size() > 0) ?ra.builder.CreateIntCast(p_sum[p_index],INT32TYPE,false):getInt32(1);
 
 				auto THREADS = ra.createAlloca(llvm::IntegerType::get(llvm::getGlobalContext(), 8*sizeof(pthread_t)),
-						(toJoin)?ra.builder.CreateIntCast(p_sum[p_index],INT32TYPE,false):(llvm::Value*)getInt32(1));
+						NUM_THREADS);
 				if(toJoin)
 					alloc = ra.createAlloca(C_POINTERTYPE);
+				llvm::Value* MEM;
+				if(closureInfo.first.size()>0)
+					MEM = ra.createAlloca(PT, NUM_THREADS);
 
 				ra.builder.CreateBr(LOOP);
 				ra.builder.SetInsertPoint(LOOP);
-				auto PHI = ra.builder.CreatePHI(C_SIZETTYPE,2);
-				PHI->addIncoming(getSizeT(0),PARENT);
-				auto PHI_P1 = ra.builder.CreateAdd(getSizeT(1),PHI);
+				llvm::PHINode* PHI = ra.builder.CreatePHI((closureInfo.first.size()>0)?INT32TYPE:C_SIZETTYPE,2);
+				PHI->addIncoming((closureInfo.first.size()>0)?getInt32(0):getSizeT(0),closureInfo.second);
+				auto PHI_P1 = ra.builder.CreateAdd((closureInfo.first.size()>0)?getInt32(1):getSizeT(1),PHI);
 				PHI->addIncoming(PHI_P1, LOOP);
-				ra.createThread(F, ra.builder.CreateIntToPtr(PHI,C_POINTERTYPE),toJoin?(llvm::Value*)ra.builder.CreateGEP(THREADS,PHI):(llvm::Value*)THREADS);
-				ra.builder.CreateCondBr(ra.builder.CreateICmpEQ(PHI_P1, ra.builder.CreateZExtOrTrunc(p_sum[p_index],C_SIZETTYPE)), toJoin?JOIN:DONE, LOOP);
+
+				llvm::Value* PTR;
+				if(closureInfo.first.size()>0){
+					llvm::SmallVector<llvm::Value*,2> VALS(2);
+					VALS[0] = PHI;
+					VALS[1] = getInt32(0);
+					ra.builder.CreateStore(PHI, ra.builder.CreateInBoundsGEP(MEM,VALS));
+					unsigned idx = 1;
+					for(auto& a: closureInfo.first){
+						VALS[1] = getInt32(idx);
+						ra.builder.CreateStore(a.first, ra.builder.CreateInBoundsGEP(MEM,VALS));
+						idx++;
+					}
+					PTR = ra.builder.CreatePointerCast(ra.builder.CreateGEP(MEM,PHI), C_POINTERTYPE);
+				} else PTR = ra.builder.CreateIntToPtr(PHI,C_POINTERTYPE);
+
+				ra.createThread(F, PTR,toJoin?(llvm::Value*)ra.builder.CreateGEP(THREADS,PHI):(llvm::Value*)THREADS);
+				ra.builder.CreateCondBr(ra.builder.CreateICmpEQ(PHI_P1, ra.builder.CreateZExtOrTrunc(p_sum[p_index],PHI_P1->getType())), toJoin?JOIN:DONE, LOOP);
 
 				if(toJoin){
 					ra.builder.SetInsertPoint(JOIN);

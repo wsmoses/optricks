@@ -30,6 +30,7 @@
 #ifndef WITH_ASSERTS
 #define NDEBUG
 #endif
+
 #include <unistd.h>
 #include <cassert>
 #include <dirent.h>
@@ -495,6 +496,12 @@ public:
 	std::vector<const AbstractClass*>& eval(PositionID id) const;
 };
 const T_ARGS NO_TEMPLATE(false);
+
+template<typename N> inline N* fcast(llvm::Value* G){
+	assert(llvm::isa<N>(G));
+	return (N*)G;
+}
+
 #define TemplateArg const AbstractClass*
 #include "output.hpp"
 #endif /* INCLUDES_HPP_ */

@@ -89,7 +89,10 @@ const Data* Scopable::fixClosure(PositionID id, std::pair<std::map<llvm::Value*,
 				L = d->value;
 			}
 			assert(L);
-			if(L->isGlobal) return dat;
+			if(L->isGlobal){
+				assert(L!=nullptr && dynamic_cast<LazyLocation*>(L)==nullptr);
+				return dat;
+			}
 			//removed check llvm::isa<llvm::Constant> of rawpointer
 			auto PARENT = rdata.builder.GetInsertBlock();
 			rdata.builder.SetInsertPoint(tp->second);
@@ -100,6 +103,7 @@ const Data* Scopable::fixClosure(PositionID id, std::pair<std::map<llvm::Value*,
 				return new ConstantData(V, dat->getReturnType());
 			} else if(llvm::isa<llvm::LoadInst>(V) && llvm::isa<llvm::Constant>(((llvm::LoadInst*)V)->getPointerOperand()) &&
 					L->isPointerEqual( ((llvm::LoadInst*)V)->getPointerOperand() ) ){
+				assert(L!=nullptr && dynamic_cast<LazyLocation*>(L)==nullptr);
 				return dat;
 			} else {
 				auto find = tp->first.find(V);
@@ -243,18 +247,21 @@ const Data* Scopable::getVariable(PositionID id, const String name) const{
 	if(f.second->second.type!=SCOPE_VAR) id.error(name+" found at current scope, but not correct variable type -- needed non-class variable");
 	auto dat = f.first->vars[f.second->second.pos];
 	//todo fasfds closure
-	auto tmp = (f.first==this)?nullptr:this;
-	while(tmp!=nullptr){
-		if(tmp->closureInfo) break;
-		else if(tmp==f.first){
-			tmp = nullptr;
+	auto tmp = this;
+	decltype(tmp->closureInfo) clos=nullptr;
+	while(true){
+		assert(tmp);
+		if(tmp==f.first){
+			break;
+		} else if(tmp->closureInfo){
+			clos = tmp->closureInfo;
 			break;
 		}
 		tmp = tmp->surroundingScope;
 	}
-	if(tmp){
+	if(clos){
 		assert(tmp->closureInfo);
-		id.warning("FIXING CLOSURE FOR(1): " + name);
+		//id.warning("FIXING CLOSURE FOR(1): " + name);
 		return Scopable::fixClosure(id, tmp->closureInfo, dat);
 	} else return dat;
 }
@@ -291,26 +298,26 @@ void Scopable::addClass(PositionID id, const MetaClass* c, String s){
 	}
 
 	const AbstractClass* Scopable::getReturnClassHere(PositionID id, const String name, const T_ARGS& t_args) const{
-			auto f = findHere(id,name);
-			if(f.first==nullptr) return &voidClass;
-			switch(f.second->second.type){
-			case SCOPE_VAR:{
-				assert(t_args.inUse==false);
-				return f.first->vars[f.second->second.pos]->getReturnType();
-			}
-			case SCOPE_FUNC:{
-				if(!t_args.inUse)
-					return f.first->funcs[f.second->second.pos]->getReturnType();
-				else
-					return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(id), false)->getReturnType();
-			}
-			case SCOPE_CLASS:
-				return &classClass;//classClass
-			default:
-				id.error(name+" found at current scope, but was not static -- needed static variable/class");
-				exit(1);
-			}
+		auto f = findHere(id,name);
+		if(f.first==nullptr) return &voidClass;
+		switch(f.second->second.type){
+		case SCOPE_VAR:{
+			assert(t_args.inUse==false);
+			return f.first->vars[f.second->second.pos]->getReturnType();
 		}
+		case SCOPE_FUNC:{
+			if(!t_args.inUse)
+				return f.first->funcs[f.second->second.pos]->getReturnType();
+			else
+				return f.first->funcs[f.second->second.pos]->getBestFit(id, t_args.eval(id), false)->getReturnType();
+		}
+		case SCOPE_CLASS:
+			return &classClass;//classClass
+		default:
+			id.error(name+" found at current scope, but was not static -- needed static variable/class");
+			exit(1);
+		}
+	}
 
 const AbstractClass* Resolvable::getReturnType(const T_ARGS& t_args) const{
 	auto d = module->find(filePos,name);
@@ -355,19 +362,21 @@ const Data* Resolvable::getObject(const T_ARGS& t_args) const{
 			assert(t_args.inUse==false);
 			auto dat = d.first->vars[d.second->second.pos];
 			//todo closure!
-			auto tmp = (d.first==module)?nullptr:module;
-			while(tmp!=nullptr){
-				if(tmp->closureInfo) break;
-				else if(tmp==d.first){
-					tmp = nullptr;
+			auto tmp = module;
+			decltype(tmp->closureInfo) clos=nullptr;
+			while(true){
+				assert(tmp);
+				if(tmp==d.first){
+					break;
+				} else if(tmp->closureInfo){
+					clos = tmp->closureInfo;
 					break;
 				}
 				tmp = tmp->surroundingScope;
 			}
-			if(tmp){
-				assert(tmp->closureInfo);
-				filePos.warning("FIXING CLOSURE FOR(2): " + name);
-				return Scopable::fixClosure(filePos, tmp->closureInfo, dat);
+			if(clos){
+				//filePos.warning("FIXING CLOSURE FOR(2): " + name);
+				return Scopable::fixClosure(filePos, clos, dat);
 			} else return dat;
 		}
 		default:
@@ -492,43 +501,92 @@ inline std::pair<const Data*,SCOPE_TYPE> Scopable::getFunction(PositionID id, co
 	return ret;
 }
 
-const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args) const{
-		auto f = find(id,name);
-		if(f.first==nullptr) return &VOID_DATA;
-		switch(f.second->second.type){
-		case SCOPE_VAR:{
-			assert(t_args.inUse==false);
-			auto dat = f.first->vars[f.second->second.pos];
-			//todo fdasfdsa closure
-			auto tmp = (f.first==this)?nullptr:this;
-			while(tmp!=nullptr){
-				if(tmp->closureInfo) break;
-				else if(tmp==f.first){
-					tmp = nullptr;
-					break;
-				}
-				tmp = tmp->surroundingScope;
-			}
-			if(tmp){
-				assert(tmp->closureInfo);
-				id.warning("FIXING CLOSURE FOR(3): " + name);
-				return Scopable::fixClosure(id, tmp->closureInfo, dat);
-			} else return dat;
-		}
-		case SCOPE_FUNC:
-			if(!t_args.inUse)
-				return f.first->funcs[f.second->second.pos];
-			 else
-				return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false);
-		case SCOPE_CLASS:
-			if(t_args.inUse)
-				return f.first->classes[f.second->second.pos]->resolveClass(id, {});
-			else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id));
-		default:
-			id.error(name+" found at current scope, but was not static -- needed static variable/class");
-			exit(1);
-		}
+bool Scopable::hasCastValue(PositionID id, const String name, const T_ARGS& t_args,const AbstractClass* const a) const{
+	auto f = find2(id,name);
+	if(f.first==nullptr) return false;
+	switch(f.second->second.type){
+	case SCOPE_VAR:{
+		assert(t_args.inUse==false);
+		auto dat = f.first->vars[f.second->second.pos];
+		return dat->hasCastValue(a);
 	}
+	case SCOPE_FUNC:
+		if(!t_args.inUse)
+			return f.first->funcs[f.second->second.pos]->hasCastValue(a);
+		 else
+			return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false)->hasCastValue(a);
+	case SCOPE_CLASS:
+		if(t_args.inUse)
+			return f.first->classes[f.second->second.pos]->resolveClass(id, {})->hasCastValue(a);
+		else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id))->hasCastValue(a);
+	default:
+		return false;
+	}
+}
+
+int Scopable::compareValue(PositionID id, const String name, const T_ARGS& t_args,const AbstractClass* const a, const AbstractClass* const b) const{
+	auto f = find2(id,name);
+	if(f.first==nullptr) return 0;
+	switch(f.second->second.type){
+	case SCOPE_VAR:{
+		assert(t_args.inUse==false);
+		auto dat = f.first->vars[f.second->second.pos];
+		return dat->compareValue(a,b);
+	}
+	case SCOPE_FUNC:
+		if(!t_args.inUse)
+			return f.first->funcs[f.second->second.pos]->compareValue(a,b);
+		 else
+			return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false)->compareValue(a,b);
+	case SCOPE_CLASS:
+		if(t_args.inUse)
+			return f.first->classes[f.second->second.pos]->resolveClass(id, {})->compareValue(a,b);
+		else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id))->compareValue(a,b);
+	default:
+		return 0;
+	}
+}
+
+const Data* Scopable::get(PositionID id, const String name, const T_ARGS& t_args) const{
+	auto f = find(id,name);
+	if(f.first==nullptr) return &VOID_DATA;
+	switch(f.second->second.type){
+	case SCOPE_VAR:{
+		assert(t_args.inUse==false);
+		auto dat = f.first->vars[f.second->second.pos];
+		//todo fdasfdsa closure
+		auto tmp = this;
+		decltype(tmp->closureInfo) clos=nullptr;
+		while(true){
+			assert(tmp);
+			if(tmp==f.first){
+				break;
+			} else if(tmp->closureInfo){
+				clos = tmp->closureInfo;
+				break;
+			}
+			tmp = tmp->surroundingScope;
+		}
+		if(clos){
+			assert(tmp->closureInfo);
+			//id.warning("FIXING CLOSURE FOR(3): " + name);
+			return Scopable::fixClosure(id, tmp->closureInfo, dat);
+		} else return dat;
+	}
+	case SCOPE_FUNC:
+		if(!t_args.inUse)
+			return f.first->funcs[f.second->second.pos];
+		 else
+			return f.first->funcs[f.second->second.pos]->getBestFit(id,t_args.eval(id),false);
+	case SCOPE_CLASS:
+		if(t_args.inUse)
+			return f.first->classes[f.second->second.pos]->resolveClass(id, {});
+		else return f.first->classes[f.second->second.pos]->resolveClass(id, t_args.eval(id));
+	default:
+		id.error(name+" found at current scope, but was not static -- needed static variable/class");
+		exit(1);
+	}
+}
 
 const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_args) const{
 		auto f = findHere(id,name);
@@ -586,7 +644,7 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 				}
 				if(tmp){
 					assert(tmp->closureInfo);
-					filePos.warning("FIXING CLOSURE FOR(4): " + name);
+					//filePos.warning("FIXING CLOSURE FOR(4): " + name);
 					dat = Scopable::fixClosure(filePos, tmp->closureInfo, dat);
 				}
 				if(dat->type==R_LOC)
@@ -621,7 +679,7 @@ const Data* Scopable::getHere(PositionID id, const String name, const T_ARGS& t_
 				}
 				if(tmp){
 					assert(tmp->closureInfo);
-					filePos.warning("FIXING CLOSURE FOR(5): " + name);
+					//filePos.warning("FIXING CLOSURE FOR(5): " + name);
 					dat = Scopable::fixClosure(filePos, tmp->closureInfo, dat);
 				}
 				if(dat->type==R_LOC)

@@ -17,8 +17,8 @@
 #include "../ast/E_BINOP.hpp"
 #include "../ast/E_UOP.hpp"
 
-#define START "optricks> "
-#define CONT  "--------> "
+#define INTERACTIVE_START "optricks> "
+#define INTERACTIVE_CONT  "--------> "
 
 template<typename C> bool in(const std::vector<C> a, C b){
 	for(const auto& e: a)
@@ -203,7 +203,7 @@ public:
 				error("Cannot read from file",true);
 			}
 			if(c=='\n' && interactive && enableOut){
-				std::cout << CONT << flush;
+				std::cout << INTERACTIVE_CONT << flush;
 			}
 		}
 		else{
@@ -217,7 +217,7 @@ public:
 				}
 			}while(c=='\r');
 			if(c=='\n' && interactive && enableOut){
-				std::cout << CONT << flush;
+				std::cout << INTERACTIVE_CONT << flush;
 			}
 		}
 		if(c=='\n'){
