@@ -27,6 +27,10 @@ public:
 		else if(!staticF)
 			module.addVariable(filePos,"this",&VOID_DATA);
 	}
+	void reset() const override final{
+		myFunction = nullptr;
+		built = false;
+	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
 	}

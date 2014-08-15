@@ -23,7 +23,7 @@ class E_FUNCTION:public ErrorStatement{
 			//todo remove
 		}
 		//todo force override!
-		void reset() const override final{}
+		//void reset() const override final{}
 		const AbstractClass* getMyClass(PositionID id)const override final{
 			id.error("Cannot getSelfClass of statement "+str<Token>(getToken())); exit(1);
 		}

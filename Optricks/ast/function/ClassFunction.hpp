@@ -30,6 +30,10 @@ class ClassFunction : public E_FUNCTION{
 			if(!staticF)
 			module.addVariable(filePos,"this",&VOID_DATA);
 		}
+		void reset() const override final{
+			myFunction = nullptr;
+			built = false;
+		}
 		void registerFunctionPrototype(RData& a) const override final{
 			if(myFunction) return;
 			llvm::BasicBlock* Parent = a.builder.GetInsertBlock();

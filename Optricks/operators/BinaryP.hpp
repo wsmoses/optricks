@@ -551,8 +551,9 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				return new StringLiteral(s);
 			}
 		}
-		filePos.compilerError("TODO _STRING LITERAL");
-		exit(0);
+		filePos.error("Could not find binary operation '"+operation+"' between class '"+cc->getName()+"' and '"+dd->getName()+"'");
+		exit(1);
+		//TODO STRING LITERAL OPS )formatting)
 	}
 	case CLASS_VECTOR:{
 		//const VectorClass* vc = (const VectorClass*)cc;
@@ -1043,11 +1044,6 @@ inline const Data* getBinop(RData& r, PositionID filePos, const Data* value, con
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(PHI, cc);
 
-#ifndef PNACL
-//				auto INTR = llvm::Intrinsic::getDeclaration(r.lmod, llvm::Intrinsic::powi, llvm::SmallVector<llvm::Type*,1>(1,cc->type));
-	//			return new ConstantData(r.builder.CreateCall2(INTR, V1, V2), cc);
-#else
-#endif
 			} else return getBinop(r, filePos, value, new CastEval(ev, cc, filePos), operation);
 		}
 		case CLASS_MATHLITERAL:

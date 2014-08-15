@@ -21,6 +21,10 @@ public:
 		E_FUNCTION(id,OModule(superScope),"#constructor"),myClass(mc),built(false){
 		module.addVariable(filePos,"this",&VOID_DATA);
 	}
+	void reset() const override final{
+		myFunction = nullptr;
+		built = false;
+	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
 		//self->registerClasses();

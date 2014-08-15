@@ -12,19 +12,28 @@
 class UserFunction : public E_FUNCTION{
 private:
 	mutable bool built;
+	mutable std::pair<std::map<llvm::Value*,llvm::PHINode*>, llvm::BasicBlock*> closureInfo;
 public:
 	UserFunction(PositionID id, OModule* superScope,String n):
 		E_FUNCTION(id,OModule(superScope),n),built(false){
+		closureInfo.second=nullptr;
+		module.closureInfo = &closureInfo;
 	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
+	}
+	void reset() const override final{
+		built = false;
+		myFunction=nullptr;
+		closureInfo.second = nullptr;
+		closureInfo.first.clear();
 	}
 	void buildFunction(RData& a) const override final{
 		if(built) return;
 		built = true;
 		registerFunctionPrototype(a);
 
-		llvm::BasicBlock* Parent = a.builder.GetInsertBlock();
+		closureInfo.second = a.builder.GetInsertBlock();
 		auto F = (llvm::Function*)myFunction->getSingleFunc();
 		a.builder.SetInsertPoint(& (F->getEntryBlock()));
 
@@ -41,12 +50,19 @@ public:
 			else error("Could not find return statement");
 		}
 
+		if(closureInfo.first.size() > 0){
+			filePos.error("Function closures not currently supported: "+str(closureInfo.first.size())+" values replaced with 0 or null");
+			for(auto& ac: closureInfo.first){
+				ac.second->replaceAllUsesWith(a.getGlobal(ac.first->getType(), false));
+			}
+		}
+
 		for(auto& d: declaration) d->buildFunction(a);
 		methodBody->buildFunction(a);
 
 		assert(F);
 		a.FinalizeFunction(F);
-		if(Parent) a.builder.SetInsertPoint( Parent );
+		if(closureInfo.second) a.builder.SetInsertPoint( closureInfo.second );
 		auto tmp = a.popJump();
 		assert(tmp== &j);
 	}

@@ -15,6 +15,9 @@ public:
 		E_FUNCTION(id,OModule(o),n){
 		returnV=nullptr;
 	}
+	void reset() const override final{
+		myFunction = nullptr;
+	}
 	void registerClasses() const override final{
 		//returnV->registerClasses();
 	}

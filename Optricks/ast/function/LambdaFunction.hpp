@@ -19,6 +19,12 @@ public:
 		closureInfo.second=nullptr;
 		module.closureInfo = &closureInfo;
 	}
+	void reset() const override final{
+		built = false;
+		myFunction=nullptr;
+		closureInfo.second = nullptr;
+		closureInfo.first.clear();
+	}
 	void registerClasses() const override final{
 		methodBody->registerClasses();
 	}
