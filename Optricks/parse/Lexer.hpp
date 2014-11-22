@@ -121,7 +121,7 @@ public:
 			if(chdir(cwd)!=0) pos().error("Could not change directory back to "+String(cwd));
 		}
 	}
-	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, int outputFormat=0,unsigned int optLevel = 3){
+	void execFiles(bool global, std::vector<String> fileNames, llvm::raw_ostream* file, int outputFormat/*=0*/){
 		llvm::SmallVector<llvm::Type*,2> main_args(2);
 		main_args[0] = C_INTTYPE /*Argument Count*/;
 		main_args[1] = llvm::PointerType::getUnqual(C_STRINGTYPE); /* Argument vector*/
@@ -166,54 +166,10 @@ public:
 		//if(toFile>0) modOpt->run(*(getRData().lmod));
 		if(outputFormat==0 || outputFormat==2){
 			InitializeAllAsmPrinters();
-			llvm::Triple TheTriple(llvm::sys::getDefaultTargetTriple());
-			std::string Error;
-			String MARCH = "";
-			String MCPU = "";
-			if(MCPU=="native")
-				MCPU = llvm::sys::getHostCPUName();
-			const llvm::Target* TheTarget = llvm::TargetRegistry::lookupTarget(MARCH,TheTriple,Error);
-			if(!TheTarget){
-				llvm::errs() << ": " << Error;
-				exit(1);
-			}
-			llvm::CodeGenOpt::Level OLvl;
-			if(optLevel==0)
-				OLvl = llvm::CodeGenOpt::Level::None;
-			else if(optLevel==1)
-				OLvl = llvm::CodeGenOpt::Level::Less;
-			else if(optLevel==3)
-				OLvl = llvm::CodeGenOpt::Level::Aggressive;
-			else  // 2
-				OLvl = llvm::CodeGenOpt::Level::Default;
-
-			  llvm::TargetOptions Options;
-			  Options.LessPreciseFPMADOption = EnableFPMAD;
-			  Options.NoFramePointerElim = DisableFPElim;
-			  Options.AllowFPOpFusion = FuseFPOps;
-			  Options.UnsafeFPMath = EnableUnsafeFPMath;
-			  Options.NoInfsFPMath = EnableNoInfsFPMath;
-			  Options.NoNaNsFPMath = EnableNoNaNsFPMath;
-			  Options.HonorSignDependentRoundingFPMathOption =
-			      EnableHonorSignDependentRoundingFPMath;
-			  Options.UseSoftFloat = GenerateSoftFloatCalls;
-			  if (FloatABIForCalls != FloatABI::Default)
-			    Options.FloatABIType = FloatABIForCalls;
-			  Options.NoZerosInBSS = DontPlaceZerosInBSS;
-			  Options.GuaranteedTailCallOpt = EnableGuaranteedTailCallOpt;
-			  Options.DisableTailCalls = DisableTailCalls;
-			  Options.StackAlignmentOverride = OverrideStackAlignment;
-			  Options.TrapFuncName = TrapFuncName;
-			  Options.PositionIndependentExecutable = EnablePIE;
-			  //Options.UseInitArray = UseInitArray;
-
-			String FeaturesStr="";
-			auto target = TheTarget->createTargetMachine(TheTriple.getTriple(),MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
-			llvm::TargetMachine& Target = *target;
 			assert(file);
 			llvm::formatted_raw_ostream FOS(*file);
 			auto outputType = (outputFormat==0)?llvm::TargetMachine::CodeGenFileType::CGFT_ObjectFile:llvm::TargetMachine::CodeGenFileType::CGFT_AssemblyFile;
-			if(Target.addPassesToEmitFile(rdata.mpm, FOS,outputType)){
+			if(rdata.target->addPassesToEmitFile(rdata.mpm, FOS,outputType)){
 				cerr << "Target doesn't support generation of executable (assembly)\n" << endl << flush;
 				exit(1);
 			}

@@ -175,12 +175,16 @@ struct RData{
 		llvm::IRBuilder<> builder;
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
+		llvm::TargetMachine* target;
 		bool debug;
+		int optLevel;
 		RData(bool b): enableAsserts(false),enablePNACL(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),builder(llvm::getGlobalContext())
 		,fpm(lmod),mpm(){
 			//lmod->setDataLayout("p:64:64:64");
 			dlayout = new llvm::DataLayout(lmod);
+			optLevel = 3;//TODO CHANGE DEFAULT
 			exec=nullptr;
+			target = nullptr;
 			LLVM_REALLOC = nullptr;
 			LLVM_CALLOC = nullptr;
 			LLVM_FREE = nullptr;
@@ -201,16 +205,69 @@ struct RData{
 
 		};
 
+		void setTarget(String MCPU="native",String MARCH=""){
+
+			llvm::InitializeNativeTarget();
+			llvm::InitializeAllTargets();
+			llvm::InitializeNativeTargetAsmPrinter();
+			llvm::Triple TheTriple(llvm::sys::getDefaultTargetTriple());
+			std::string Error;
+			if(MCPU=="native")
+				MCPU = llvm::sys::getHostCPUName();
+			const llvm::Target* TheTarget = llvm::TargetRegistry::lookupTarget(MARCH,TheTriple,Error);
+
+			llvm::TargetRegistry::printRegisteredTargetsForVersion ();
+			fflush(0);
+			if(!TheTarget){
+				llvm::errs() << "Target error: " << Error;
+				exit(1);
+			}
+			llvm::CodeGenOpt::Level OLvl;
+			if(optLevel==0)
+				OLvl = llvm::CodeGenOpt::Level::None;
+			else if(optLevel==1)
+				OLvl = llvm::CodeGenOpt::Level::Less;
+			else if(optLevel==3)
+				OLvl = llvm::CodeGenOpt::Level::Aggressive;
+			else  // 2
+				OLvl = llvm::CodeGenOpt::Level::Default;
+
+			  llvm::TargetOptions Options;
+			  Options.LessPreciseFPMADOption = EnableFPMAD;
+			  Options.NoFramePointerElim = DisableFPElim;
+			  Options.AllowFPOpFusion = FuseFPOps;
+			  Options.UnsafeFPMath = EnableUnsafeFPMath;
+			  Options.NoInfsFPMath = EnableNoInfsFPMath;
+			  Options.NoNaNsFPMath = EnableNoNaNsFPMath;
+			  Options.HonorSignDependentRoundingFPMathOption =
+				  EnableHonorSignDependentRoundingFPMath;
+			  Options.UseSoftFloat = GenerateSoftFloatCalls;
+			  if (FloatABIForCalls != FloatABI::Default)
+				Options.FloatABIType = FloatABIForCalls;
+			  Options.NoZerosInBSS = DontPlaceZerosInBSS;
+			  Options.GuaranteedTailCallOpt = EnableGuaranteedTailCallOpt;
+			  Options.DisableTailCalls = DisableTailCalls;
+			  Options.StackAlignmentOverride = OverrideStackAlignment;
+			  Options.TrapFuncName = TrapFuncName;
+			  Options.PositionIndependentExecutable = EnablePIE;
+		  //Options.UseInitArray = UseInitArray;
+			String FeaturesStr="";
+
+#if defined(WIN32) || defined(_WIN32)
+			target = TheTarget->createTargetMachine(TheTriple.getTriple()+"-elf",MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
+#else
+			target = TheTarget->createTargetMachine(TheTriple.getTriple(),MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
+#endif
+		}
 		llvm::ExecutionEngine* getExec(){
 			if(exec) return exec;
 			else{
-
-				llvm::InitializeNativeTarget();
-				//llvm::InitializeAllTargets();
 				String erS;
-				exec = llvm::EngineBuilder(std::unique_ptr<Module>(lmod)  ).setErrorStr(& erS).create();
+				assert(target);
+				exec = llvm::EngineBuilder(std::unique_ptr<Module>(lmod)).setErrorStr(& erS).create(target);
 				if(!exec){
-					cerr << erS << endl << flush;
+					cerr << "Could not create engine: " << erS << endl << flush;
+					assert(0);
 					exit(1);
 				}
 				for(const auto& a: toPut){

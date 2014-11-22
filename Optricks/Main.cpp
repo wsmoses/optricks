@@ -523,6 +523,7 @@ int main(int argc, char** argv){
 			file=s;
 		}
 	}
+	rdata.setTarget();
 	if(!forceInt) interactive = file=="" && command=="";
 	//ofstream fout (output);
 	llvm::raw_fd_ostream* outStream;

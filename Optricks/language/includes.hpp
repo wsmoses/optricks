@@ -71,7 +71,7 @@
 #endif
 
 #include <llvm/IR/Intrinsics.h>
-//#include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/Triple.h>
 #include <llvm/Bitcode/ReaderWriter.h>
