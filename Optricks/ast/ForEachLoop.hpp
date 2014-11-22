@@ -48,7 +48,7 @@ class ForEachLoop : public ErrorStatement{
 		const AbstractClass* getReturnType() const override{
 			return &voidClass;
 		}
-		const E_GEN* setUp(RData& ra) const{
+		const E_GEN* setUp(const Data* toEv, RData& ra) const{
 			/*if(iterable->getToken()==T_FUNC_CALL){
 				E_FUNC_CALL* func = (E_FUNC_CALL*)iterable;
 				std::pair<std::vector<Value*>,const Data* > tempVal = func->getArgs(ra);
@@ -67,7 +67,6 @@ class ForEachLoop : public ErrorStatement{
 			//*/
 
 			///*
-			const Data* toEv = iterable->evaluate(ra);
 			const AbstractClass* iterC = toEv->getReturnType();
 			if(iterC->classType!=CLASS_GEN){
 				toEv = getLocalFunction(ra, filePos,"iterator",toEv, NO_TEMPLATE, {});
@@ -99,7 +98,41 @@ class ForEachLoop : public ErrorStatement{
 		}
 		const Data* evaluate(RData& ra) const override final{
 			//TODO instantly learn if calling "for i in range(3)", no need to create range-object
-			auto myGen = setUp(ra);
+
+			const Data* toEv = iterable->evaluate(ra);
+			if(toEv->type==R_ARRAY){
+				auto AD = (ArrayData*)toEv;
+				if(AD->inner.size()==0){
+					filePos.warning("Foreach loop of empty array");
+					return &VOID_DATA;
+				}
+				auto MT = AD->getReturnType();
+				if(MT->layout==LITERAL_LAYOUT){
+					llvm::BasicBlock* END = ra.CreateBlockD("", ra.builder.GetInsertBlock()->getParent());
+					llvm::BasicBlock* NEXT =
+							(AD->inner.size()==1)?END:ra.CreateBlock("", ra.builder.GetInsertBlock());
+					for(unsigned i=0; ; ){
+						Jumpable k(name, LOOP, /*NO SCOPE -- force iterable to deconstruct*/
+								nullptr, NEXT, END, NULL);
+						ra.addJump(&k);
+						toLoop->evaluate(ra);
+						if(ra.popJump()!= &k) error("Did not receive same func jumpable created (k foreach)");
+						if(!ra.hadBreak()) ra.builder.CreateBr(NEXT);
+						ra.builder.SetInsertPoint(NEXT);
+						if(NEXT==END) break;
+						i++;
+						if(i==AD->inner.size()-1)
+							NEXT = END;
+						else
+							NEXT = ra.CreateBlock("", ra.builder.GetInsertBlock());
+					}
+					return &VOID_DATA;
+				} else{
+					filePos.warning("Nonliteral literal array foreachloops not enabled");
+					return &VOID_DATA;
+				}
+			}
+			auto myGen = setUp(toEv, ra);
 			for(auto& a: myGen->declaration)
 				a->reset();
 			myGen->methodBody->reset();

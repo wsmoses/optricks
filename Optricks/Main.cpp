@@ -525,17 +525,20 @@ int main(int argc, char** argv){
 	}
 	if(!forceInt) interactive = file=="" && command=="";
 	//ofstream fout (output);
-	String error="";
 	llvm::raw_fd_ostream* outStream;
 	if(outputFormat!=0 || output.length()>0){
 		if(output=="-" || output==""){
 			outStream = new llvm::raw_fd_ostream(1, true);
 			output = "-";
 		}
-		else outStream = new llvm::raw_fd_ostream(output.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
-		if(error.length()>0){
-			cerr << error << endl << flush;
-			exit(1);
+		else{
+			std::error_code error;
+			std::error_condition ok;
+			outStream = new llvm::raw_fd_ostream(output.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
+			if(error!=ok){
+				cerr << error.message() << endl << flush;
+				exit(1);
+			}
 		}
 	} else outStream = nullptr;
 

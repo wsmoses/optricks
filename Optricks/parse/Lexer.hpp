@@ -205,7 +205,7 @@ public:
 			  Options.StackAlignmentOverride = OverrideStackAlignment;
 			  Options.TrapFuncName = TrapFuncName;
 			  Options.PositionIndependentExecutable = EnablePIE;
-			  Options.UseInitArray = UseInitArray;
+			  //Options.UseInitArray = UseInitArray;
 
 			String FeaturesStr="";
 			auto target = TheTarget->createTargetMachine(TheTriple.getTriple(),MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
@@ -629,7 +629,53 @@ public:
 			else FORLOOP->initialize = VOID_STATEMENT;
 
 			auto pek=f->peek();
-			if(!f->done && (pek==';' || pek==',')) f->move1(pek);
+			if(!f->done){
+				if(pek==';' || pek==',') f->move1(pek);
+				else if(pek==':'){
+					f->move1(pek);
+					//foreach
+					assert(FORLOOP->initialize);
+					String iterName;
+					PositionID var = pos();
+					if(FORLOOP->initialize->getToken()==T_DECLARATION){
+						auto d = ((Declaration*)FORLOOP->initialize);
+						assert(!d->global);
+						if(d->value) f->error("Cannot use declaration with value in foreach loop");
+						iterName = d->variable.pointer.name;
+						delete FORLOOP->initialize;
+						delete FORLOOP;
+					} else if(FORLOOP->initialize->getToken()==T_VAR){
+						iterName = ((E_VAR*) FORLOOP->initialize)->pointer.name;
+						delete FORLOOP->initialize;
+						delete FORLOOP;
+					} else {
+						f->error("Foreach loop did not start with variable or declaration");
+						delete FORLOOP->initialize;
+						delete FORLOOP;
+						return &VOID_DATA;
+					}
+					//TODO add back in declaration type
+					OModule* nmod = new OModule(data.mod);
+					nmod->addVariable(var, iterName,&VOID_DATA);
+
+					Statement* iterable = getNextStatement(ParseData(EOF, data.mod, true,PARSE_EXPR));
+
+					if(paren){
+						f->trim(EOF);
+						if(f->read()!=')'){
+							pos().error("Need ')' to end for-each loop");
+						}
+						f->trim(EOF);
+					}
+
+					if(f->peek()==':') f->move1(':');
+
+					Statement* blocks = getNextBlock(ParseData(data.endWith, nmod, true,PARSE_LOCAL));
+					//return new ForEachLoop(new E_VAR(module->addPointer(iterName,nullptr,nullptr,nullptr,nullptr,nullptr)),iterable,blocks,"");
+					//TODO implement for loop naming
+					return new ForEachLoop(pos(),E_VAR( Resolvable(nmod,iterName,var), false), iterable, blocks);
+				}
+			}
 			f->trim(EOF);
 
 			if(f->peek()!=';'){

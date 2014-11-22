@@ -208,7 +208,7 @@ struct RData{
 				llvm::InitializeNativeTarget();
 				//llvm::InitializeAllTargets();
 				String erS;
-				exec = llvm::EngineBuilder(lmod).setErrorStr(& erS).create();
+				exec = llvm::EngineBuilder(std::unique_ptr<Module>(lmod)  ).setErrorStr(& erS).create();
 				if(!exec){
 					cerr << erS << endl << flush;
 					exit(1);

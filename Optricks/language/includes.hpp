@@ -71,7 +71,7 @@
 #endif
 
 #include <llvm/IR/Intrinsics.h>
-#include <llvm/ExecutionEngine/JIT.h>
+//#include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/Triple.h>
 #include <llvm/Bitcode/ReaderWriter.h>
@@ -79,7 +79,6 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Analysis/Passes.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>

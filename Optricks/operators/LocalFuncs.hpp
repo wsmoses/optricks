@@ -10,6 +10,7 @@
 
 #include "../language/class/AbstractClass.hpp"
 #include "../language/class/builtin/PriorityQueueClass.hpp"
+#include "../ast/function/E_GEN.hpp"
 #include "./Binary.hpp"
 
 bool hasLocalFunction(String s, const AbstractClass* cc){
@@ -21,6 +22,7 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 	}
 	case CLASS_HASHMAP:
 		if(s=="containsKey") return true;
+		else if(s=="iterator") return true;
 		else if(s=="containsValue") return true;
 		else if(s=="setDefault") return true;
 		else if(s=="contains") return true;
@@ -30,6 +32,7 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 		else return false;
 	case CLASS_ARRAY:{
 		if(s=="add") return true;
+		else if(s=="iterator") return true;
 		else if(s=="shuffle") return true;
 		else if(s=="reverse") return true;
 		else if(s=="replace") return true;
@@ -50,6 +53,7 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 	}
 	case CLASS_PRIORITYQUEUE:{
 		if(s=="peek") return true;
+		else if(s=="iterator") return true;
 		else if(s=="poll") return true;
 		else if(s=="indexOf") return true;
 		else if(s=="lastIndexOf") return true;
@@ -65,6 +69,8 @@ bool hasLocalFunction(String s, const AbstractClass* cc){
 		return false;
 	}
 }
+std::map<const ArrayClass*, GeneratorClass*> ARRAY_ITERATORS;
+
 const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const AbstractClass* cc, const T_ARGS& t_args, const std::vector<const Evaluatable*>& v){
 	if(s=="hash" && v.size()==0)
 		return &intClass;
@@ -80,7 +86,21 @@ const AbstractClass* getLocalFunctionReturnType(PositionID id, String s, const A
 	}
 	case CLASS_ARRAY:{
 		auto AC = (const ArrayClass*)cc;
-		if(s=="add" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(AC->inner))
+		if(s=="iterator" && v.size()==0){
+			auto f=ARRAY_ITERATORS.find(AC);
+			if(f!=ARRAY_ITERATORS.end()) return f->second;
+			else {
+				//TODO
+				auto GEN = new E_GEN(PositionID("#array.iterator",0,0),nullptr,"iterator",false,(Statement*)AC);
+				GEN->returnV = (Statement*)AC->inner;
+				//GEN->methodBody = new ForLoop()
+				GEN->registerFunctionPrototype(rdata);
+				auto t= GEN->myFunction->getSingleProto()->returnType;
+				ARRAY_ITERATORS.insert(std::pair<const ArrayClass*,GeneratorClass*>(AC, (GeneratorClass*)t));
+				return t;
+			}
+		}
+		else if(s=="add" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(AC->inner))
 			/* adds value at index, shifting things right if needed */
 			return &voidClass;
 		else if(s=="shuffle" && v.size()==0)
@@ -176,6 +196,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 		default: break;
 		}
 	}
+	///*
 	switch(cc->classType){
 		case CLASS_USER:{
 			auto uc = (const UserClass*)cc;
@@ -195,14 +216,20 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 		case CLASS_ARRAY:{
 			//TODO assert non null
 			auto AC = (const ArrayClass*)cc;
-			auto V = inst->getValue(r, id);
 
 			if(s=="add" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(AC->inner)) {
-				/* adds value at index, shifting things right if needed */
+				// adds value at index, shifting things right if needed
+				id.fatalError("NOT IMPLEMENTED: ARRAY.ADD");
 				//TODO
 				return &voidClass;
 			} else if(s=="shuffle" && v.size()==0) {
-				/* shuffles in place*/
+				// shuffles in place
+				if(inst->type==R_ARRAY){
+					id.warning("array.shuffle (shuffles in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 
 				auto STARTT = r.builder.GetInsertBlock();
@@ -225,14 +252,14 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				auto MAX = r.builder.CreateSub(lenM1, IDX);
 				auto J = r.builder.CreateAdd(r.randInt(MAX),IDX);
 
-				/* basic alg *
-				 *  for(int i=0; ;){
-				 *  	int j = randInt(array.length-1-i)+i
-				 *  	array.swap(i,j);
-				 *  	i++;
-				 *  	if(i==array.length-1) break;
-				 *  }
-				 */
+				// basic alg *
+				 //  for(int i=0; ;){
+				 //  	int j = randInt(array.length-1-i)+i
+				 //  	array.swap(i,j);
+				 //  	i++;
+				 //  	if(i==array.length-1) break;
+				 //  }
+				 //
 
 				auto LEFT_P = r.builder.CreateGEP(DATA, IDX);
 				auto LEFT = r.builder.CreateLoad(LEFT_P);
@@ -249,7 +276,13 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return &VOID_DATA;
 			} else if(s=="reverse" && v.size()==0) {
-				/* reverses in place */
+				// reverses in place
+				if(inst->type==R_ARRAY){
+					id.warning("array.reverse (reverses in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 
 				auto STARTT = r.builder.GetInsertBlock();
@@ -291,9 +324,21 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return &VOID_DATA;
 			} else if(s=="replace" && v.size()==2 && v[0]->hasCastValue(AC->inner) && v[1]->hasCastValue(AC->inner)) {
-				/* # of replacements*/
+				// # of replacements
 
 				auto TO_REPLACE = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+
+				if(inst->type==R_ARRAY){
+					id.warning("array.replace (replaces in-place and returns number of replacements) used on literal array");
+					llvm::Value* RET_V = getInt32(0);
+					for(auto& a: ((ArrayData*)inst)->inner){
+						auto cmp = getBinop(r, id, a, TO_REPLACE, "==")->getValue(r, id);
+						RET_V = r.builder.CreateAdd(RET_V, r.builder.CreateZExtOrBitCast(cmp, INT32TYPE));
+					}
+					return new ConstantData(RET_V, &intClass);
+				}
+				auto V = inst->getValue(r, id);
+
 				auto REPLACE_WITH = v[1]->evaluate(r)->castTo(r, AC->inner, id)->getValue(r, id);
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 
@@ -348,8 +393,17 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				return new ConstantData(RET_V, &intClass);
 
 			} else if(s=="binarySearch" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* Assume sorted, Idx where found of -n-1 if not found*/
+				// Assume sorted, Idx where found of -n-1 if not found
 				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+
+				if(inst->type==R_ARRAY){
+					id.fatalError("optimized binary search on literal arrays not implemented yet");
+					llvm::Value* RET_V = getInt32(0);
+
+					return new ConstantData(RET_V, &intClass);
+				}
+				auto V = inst->getValue(r, id);
+
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 
 				auto STARTT = r.builder.GetInsertBlock();
@@ -414,7 +468,54 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(RET_V, &intClass);
 			} else if(s=="pop" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&intClass)) ) ){
-				/* Element found at idx (end if not specified) */
+				// Element found at idx (end if not specified)
+
+				if(inst->type==R_ARRAY){
+					auto AD = (ArrayData*)inst;
+					if(v.size()==0){
+						if(AD->inner.size()==0){
+							id.error("Cannot pop element from empty literal array");
+							return &VOID_DATA;
+						}
+						return AD->inner.back();
+					} else {
+						auto REMOVE_IDX = v[0]->evaluate(r)->castToV(r, &intClass, id);
+						if(auto ci = llvm::dyn_cast<llvm::ConstantInt>(REMOVE_IDX)){
+
+							if(ci->isNegative())
+								id.error("Illegal array index "+str(ci->getSExtValue())+" in "+str(AD->inner.size()));
+							else if(ci->getLimitedValue() >= AD->inner.size())
+								id.error("Illegal array index "+str(ci->getLimitedValue())+" in "+str(AD->inner.size()));
+							else {
+								return AD->inner[ci->getLimitedValue()];
+							}
+							return &VOID_DATA;
+						} else {
+							const AbstractClass* RT = ((ArrayClass*) AD->getReturnType())->inner;
+							llvm::BasicBlock* StartBB = r.builder.GetInsertBlock();
+							llvm::BasicBlock* ErrorBB = r.CreateBlock("arrayError",StartBB);
+							llvm::BasicBlock* MergeBB = r.CreateBlock("arrayMerge");
+							auto Switch = r.builder.CreateSwitch(REMOVE_IDX, ErrorBB, AD->inner.size());
+							r.builder.SetInsertPoint(MergeBB);
+							auto PHI = r.builder.CreatePHI(RT->type, AD->inner.size());
+							for(unsigned i=0; i<AD->inner.size(); i++){
+								llvm::BasicBlock* TmpBB = r.CreateBlock("arrayPiece",StartBB);
+								r.builder.SetInsertPoint(TmpBB);
+								auto VAL = AD->inner[i]->getValue(r, id);
+								PHI->addIncoming(VAL, TmpBB);
+								r.builder.CreateBr(MergeBB);
+								Switch->addCase(getInt32(i), TmpBB);
+							}
+							r.builder.SetInsertPoint(ErrorBB);
+							r.error("Illegal array index %d in %d", id, {REMOVE_IDX, getInt32(AD->inner.size())});
+
+							r.builder.SetInsertPoint(MergeBB);
+							return new ConstantData(PHI, RT);
+						}
+					}
+				}
+				auto V = inst->getValue(r, id);
+
 				if(v.size()==0){
 					auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
 					const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
@@ -480,13 +581,25 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 
 				}
 			} else if(s=="sort" && ( v.size()==0 || (v.size()==1 && v[0]->hasCastValue(&boolClass)) ) ){
-				/* Sorts naturally (reverse if bool is true, default false) */
+				// Sorts naturally (reverse if bool is true, default false)
 				//TODO
+				id.fatalError("NOT IMPLEMENTED: ARRAY.SORT");
 				return &voidClass;
 			} else if(s=="count" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* Number of occurences*/
+				// Number of occurences
 
 				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
+
+				if(inst->type==R_ARRAY){
+					llvm::Value* RET_V = getInt32(0);
+					for(auto& a: ((ArrayData*)inst)->inner){
+						auto cmp = getBinop(r, id, a, TO_CHECK, "==")->getValue(r, id);
+						RET_V = r.builder.CreateAdd(RET_V, r.builder.CreateZExtOrBitCast(cmp, INT32TYPE));
+					}
+					return new ConstantData(RET_V, &intClass);
+				}
+				auto V = inst->getValue(r, id);
+
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 
 				auto STARTT = r.builder.GetInsertBlock();
@@ -537,7 +650,13 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				return new ConstantData(RET_V, &intClass);
 
 			} else if(s=="indexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* Idx where found or -1 */
+				// Idx where found or -1
+
+				if(inst->type==R_ARRAY){
+					//TODO
+					id.error("array.indexOf not implemented fast for literal arrays");
+				}
+				auto V = inst->getValue(r, id);
 
 				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
@@ -578,7 +697,12 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(RET_V, &intClass);
 			} else if(s=="lastIndexOf" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* Idx where found or -1*/
+				// Idx where found or -1
+				if(inst->type==R_ARRAY){
+					//TODO
+					id.error("array.lastIndexOf not implemented fast for literal arrays");
+				}
+				auto V = inst->getValue(r, id);
 
 				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
@@ -620,6 +744,12 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				return new ConstantData(RET_V, &intClass);
 
 			} else if(s=="swap" && v.size()==2 && v[0]->hasCastValue(&intClass) && v[1]->hasCastValue(&intClass)){
+				if(inst->type==R_ARRAY){
+					id.warning("array.ensureCapacity (enlarges memory in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				auto IDX1 = v[0]->evaluate(r)->castToV(r, &intClass, id);
 				auto IDX2 = v[1]->evaluate(r)->castToV(r, &intClass, id);
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
@@ -647,7 +777,14 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				return &VOID_DATA;
 
 			} else if(s=="trim" && v.size()==0){
-				/* forces alloc to be size of used memory*/
+				// forces alloc to be size of used memory
+
+				if(inst->type==R_ARRAY){
+					id.warning("array.trim (trims memory in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
 				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
 
@@ -660,7 +797,13 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 
 				return &VOID_DATA;
 			} else if(s=="ensureCapacity" && v.size()==1 && v[0]->hasCastValue(&intClass)){
-				/* If memory is smaller. grow to size*/
+				// If memory is smaller, grow to size
+				if(inst->type==R_ARRAY){
+					id.warning("array.ensureCapacity (enlarges memory in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				auto NEWLEN = v[0]->evaluate(r)->castTo(r, &intClass, id)->getValue(r, id);
 				auto ALLOC_P = r.builder.CreateConstGEP2_32(V, 0, 2);
 				auto ALLOC = r.builder.CreateLoad(ALLOC_P);
@@ -685,7 +828,12 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return &VOID_DATA;
 			} else if(s=="contains" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* whether it contains */
+				// whether it contains
+				if(inst->type==R_ARRAY){
+					//TODO
+					id.error("array.contains not implemented fast for literal arrays");
+				}
+				auto V = inst->getValue(r, id);
 
 				auto TO_CHECK = v[0]->evaluate(r)->castTo(r, AC->inner, id);
 				const auto LENGTH = r.builder.CreateLoad(r.builder.CreateConstGEP2_32(V, 0, 1));
@@ -726,7 +874,13 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(RET_V, &boolClass);
 			} else if(s=="remove" && v.size()==1 && v[0]->hasCastValue(AC->inner)){
-				/* Idx where removed or -1 if not there*/
+				// Idx where removed or -1 if not there
+				if(inst->type==R_ARRAY){
+					//TODO
+					id.error("array.remove not implemented fast for literal arrays");
+				}
+				auto V = inst->getValue(r, id);
+
 				auto TO_REMOVE = v[0]->evaluate(r)->castTo(r, AC->inner, id);
 				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
 				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
@@ -784,11 +938,25 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 				r.builder.SetInsertPoint(DONE);
 				return new ConstantData(RET_V, &intClass);
 			} else if(s=="isEmpty" && v.size()==0){
+				if(inst->type==R_ARRAY){
+					if(((ArrayData*) inst)->inner.size()==0)
+						return ConstantData::getTrue();
+					else return ConstantData::getFalse();
+				}
+
+				auto V = inst->getValue(r, id);
 				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
 				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
 				return new ConstantData(r.builder.CreateICmpEQ(LENGTH,getInt32(0)), &boolClass);
 			} else if(s=="clear" && v.size()==0){
-				/* Empties array / decrements count / does not realloc */
+				// Empties array / decrements count / does not realloc
+
+				if(inst->type==R_ARRAY){
+					id.warning("array.clear (removes elements in-place and returns void) used on literal array");
+					return &VOID_DATA;
+				}
+				auto V = inst->getValue(r, id);
+
 				auto LENGTH_P = r.builder.CreateConstGEP2_32(V, 0, 1);
 				const auto LENGTH = r.builder.CreateLoad(LENGTH_P);
 				r.builder.CreateStore(getInt32(0),LENGTH_P);
@@ -940,6 +1108,7 @@ const Data* getLocalFunction(RData& r, PositionID id, String s, const Data* inst
 		}
 		default: break;
 	}
+	//*/
 	id.compilerError("Local functions not implemented yet  "+cc->getName());
 	exit(1);
 }
