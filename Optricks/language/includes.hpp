@@ -45,6 +45,7 @@
 #include <cmath>
 #include <fstream>
 #include <string>
+#include <system_error>
 #include <vector>
 #include <map>
 #include <set>
@@ -70,8 +71,13 @@
 #include <SDL2/SDL_mixer.h>
 #endif
 
+//#include <llvm/Support/CommandLine.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=4
+#include <llvm/ExecutionEngine/JIT.h>
+#endif
+#include <llvm/Support/DynamicLibrary.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/Triple.h>
 #include <llvm/Bitcode/ReaderWriter.h>

@@ -51,8 +51,7 @@ class OClass: public ErrorStatement
 			exit(1);
 		}
 		const AbstractClass* getReturnType() const override final{
-			filePos.error("Cannot use class-declaration as data");
-			exit(1);
+			return &voidClass;
 		}
 		const Data* evaluate(RData& r) const override final{
 			if(proto==NULL) registerClasses();

@@ -13,8 +13,8 @@ OPENGL = -DUSE_OPENGL
 
 SDL = -DUSE_SDL -lSDL2_mixer `sdl2-config --cflags --libs`
 
-DEBUG = -DWITH_ASSERTS -g -ggdb
-RELEASE = -O3 -static -static-libgcc -static-libstdc++ -lstdc++ -lpthread -Wl,-Bdynamic
+DEBUG = -DWITH_ASSERTS -g -ggdb -fno-rtti
+RELEASE = -O3 -lpthread -fno-rtti
 #RELEASE = -O3 -static-libgcc -DNDEBUG -static
 
 # MSYS or CYGWIN or MINGW
@@ -76,12 +76,12 @@ release-no-sdl:
 release-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE)
 
 profile-bare:
 	@echo "Disabled OpenGL"
 	@echo "Disabled SDL"
-	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -static -pg
+	$(CC) $(STD) Main.cpp -o Optricks $(FLAGS) $(LLVM) $(RELEASE) -pg
 
 profile-all:
 profile:

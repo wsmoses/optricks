@@ -90,24 +90,31 @@ public:
 	std::vector<String> visitedFiles;
 	virtual ~Lexer(){};
 	void getStatements(bool global, std::vector<String> fileNames,std::vector<Statement*>& stats){
+		char cwd[1024];
 		while(fileNames.size()>0){
+			//printf("Filenames.size()=%d %s\n", fileNames.size(), fileNames.back().c_str());fflush(0);
 			String fileName = fileNames.back();
 			fileNames.pop_back();
-			char cwd[1024];
 			if(getcwd(cwd,sizeof(cwd))==nullptr) PositionID(0,0,fileName).error("Could not determine Current Working Directory");
 			String dir, file;
 			getDir(fileName, dir, file);
 			if(dir!="." && chdir(dir.c_str())!=0) PositionID(0,0,fileName).error("Could not change directory to "+dir+"/"+file);
-			//cout << "Opened: " << dir << "/" << file << endl << flush;
+			//std::cout << "Opened: " << dir << "/" << file << endl << flush;
 			Stream* tmp = f;
 			Stream next(file,false);
 			f = &next;
-			while(true){
-				while(f->peek()==';') f->move1(';');
+			while(!f->done){
+				while(f->peek()==';'){
+					f->move1(';');
+					if(f->done) break;
+				}
 				Statement* s = getNextStatement(EOF,global);
 				if(s==nullptr || s->getToken()==T_VOID) break;
 				if(s->getToken()==T_IMPORT){
 					ImportStatement* import = (ImportStatement*)s;
+					if(import->toImport.length()==0){
+						pos().error("Cannot import file with 0 length!");
+					}
 					std::vector<String> pl = {import->toImport};
 					getStatements(global, pl, stats);
 					continue;
@@ -169,7 +176,7 @@ public:
 			assert(file);
 			llvm::formatted_raw_ostream FOS(*file);
 			auto outputType = (outputFormat==0)?llvm::TargetMachine::CodeGenFileType::CGFT_ObjectFile:llvm::TargetMachine::CodeGenFileType::CGFT_AssemblyFile;
-			if(rdata.target->addPassesToEmitFile(rdata.mpm, FOS,outputType)){
+			if(rdata.engineBuilder->selectTarget()->addPassesToEmitFile(rdata.mpm, FOS,outputType)){
 				cerr << "Target doesn't support generation of executable (assembly)\n" << endl << flush;
 				exit(1);
 			}
@@ -177,13 +184,13 @@ public:
 			if(rdata.debug)
 				cerr << "Ran pass" << endl << flush;
 			return;
-		} else if(outputFormat>0){
+		} else if(outputFormat>0 || outputFormat==-1){
 			rdata.mpm.run(* rdata.lmod);
 		}
 
 		if(rdata.debug){
 			cerr << "Ran pass" << endl << flush;
-			//getRData().lmod->dump();
+			rdata.lmod->dump();
 		}
 		if(outputFormat==1){
 			//write ir to file
@@ -989,11 +996,18 @@ public:
 			if(!retV) pos().error("Cannot use auto return type for external function");
 			trim(data);
 			String methodName = getNextName(EOF);
+			String library="";
+			f->trim(EOF);
+			if(f->peek()==':'){
+				f->move1(':');
+				f->trim(EOF);
+				library = getNextName(EOF);
+				f->trim(EOF);
+			}
 			data.mod->addFunction(pos(), methodName);
-			auto EXTERN = new ExternFunction(pos(), data.mod,methodName);
+			auto EXTERN = new ExternFunction(pos(), data.mod,methodName,library);
 			EXTERN->returnV = retV;
 			//todo check if necessary
-			trim(data);
 			if(f->peek()!='('){
 				f->error("'(' required after extern not "+String(1,f->peek()),true);
 			} else f->move1('(');

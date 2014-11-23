@@ -45,8 +45,8 @@ const Data* ImaginaryLiteral::castTo(RData& r, const AbstractClass* const right,
 		auto im = imag->castTo(r, cc->innerClass, id);
 		if(im==imag && re==real) return this;
 		else{
-			if(re) assert(dynamic_cast<const Literal*>(re));
-			assert(im && dynamic_cast<const Literal*>(im));
+			//if(re) assert(dynamic_cast<const Literal*>(re));
+			//assert(im && dynamic_cast<const Literal*>(im));
 			return new ImaginaryLiteral((const Literal*)re, (const Literal*)im);
 		}
 	}

@@ -22,7 +22,7 @@ def bool cp(lang.c.string from, lang.c.string to, bool overwrite=false){
 	if(os.self==os.windows){
 		return (extern bool CopyFile(lang.c.string,lang.c.string,bool))(from,to,!overwrite);
 	} else {
-		//todo import file descriptors and write/etc
+		//todo mimport file descriptors and write/etc
 		return false
 	}
 }

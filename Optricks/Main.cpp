@@ -124,7 +124,8 @@ void execF(Lexer& lexer, OModule* mod, Statement* n){
 		retType = &voidClass;
 		rdata.builder.CreateRetVoid();
 	} else {
-		if(retType==TIME_CLASS || retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE){
+		if(retType==TIME_CLASS || retType->classType==CLASS_HASHMAP || retType->classType==CLASS_ARRAY || retType->classType==CLASS_PRIORITYQUEUE
+				|| retType->classType==CLASS_BIGINT){
 			LANG_M.getFunction(PositionID(0,0,"<interpreter.main>"), "println", NO_TEMPLATE, {retType}).first->callFunction(rdata,PositionID(0,0,"<interpreter.main>"), {dat}, nullptr);
 			retType = &voidClass;
 			rdata.builder.CreateRetVoid();
@@ -421,125 +422,80 @@ int main(int argc, char** argv){
 		return new IntLiteral(s);
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
-
-	String file = "";
-	String command = "";
-	String output = "";
-	int outputFormat = 0; // 0 is default, 1 is IR, 2 is assembly
-	bool interactive = false;
-	bool forceInt = false;
-	for(int i = 1; i<argc; ++i){
-		String s = String(argv[i]);
-		if(startsWithEqFor("--debug",s,rdata.debug)){
+	StringMap<cl::Option*> Map;
+	cl::getRegisteredOptions(Map);
+	for(auto& a: Map){
+		if(a.first()=="debug"){
+			a.second->setArgStr("llvmdebug");
+			a.second->setDescription("Enable LLVM debug mode");
 		}
-		else if(s=="-ir" || s=="--ir") {
-			if(outputFormat!=0){ cerr << "Error: output file already set when trying to set format as LLVM-IR" << endl << flush; exit(1); }
-			outputFormat=1;
-		} else if(s=="-asm" || s=="--asm") {
-			if(outputFormat!=0){ cerr << "Error: output file already set when trying to set format as Assembly" << endl << flush; exit(1); }
-			outputFormat=2;
-		} else if(s=="-i") { forceInt = true; interactive = true; }
-		else if(s=="--help" || s=="-h"){
-			std::cout <<
-				"Usage: gcc.exe [options] file...\n"
-				"Options:\n"
-				"   -asm --asm               Emit Assembly instead of executable\n"
-				"   -ir --ir                 Emit LLVM IR instead of executable\n"
-				"   -i                       Force an interactive session\n"
-				"   --interactive=yes|no     Force an interactive session on or off, default yes if no file or command otherwise no\n"
-				"   --assert=yes|no          Enable the evaluation of an assertion default=no\n"
-				"   --pnacl=yes|no           Emit a PNACL executable or compatible IR\n"
-				"   --command='...'          Runs the following command instead of a file\n"
-				"   -c ...                   Runs the following command instead of a file\n"
-				"   --help                   Display this information\n"
-				"   --version                Display compiler version information\n"
-				"   -output=<file>           Place the output into <file>\n"
-				"   -o <file>                Place the output into <file>\n"
-				"\n"
-				"For bug reporting instructions, please see:\n"
-				"  <http://optricks.xvm.mit.edu/>." << flush;
-			return 0;
-		} else if(s=="--version"){
-			std::cout << "Optricks version " << VERSION_STRING << endl << flush;
-			std::cout << "Created by Billy Moses" << endl << endl << flush;
-			return 0;
-		}
-		else if(startsWithEqFor("--pnacl",s,rdata.enablePNACL)){
-		}
-		else if(startsWithEqFor("--assert",s,rdata.enableAsserts)){
-		}
-		else if(startsWithEqFor("--interactive",s,interactive)){
-			forceInt = true;
-		}
-		else if(startsWithEqString("--command",s)){
-			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set command as " << s << endl << flush; exit(1); }
-			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
-			command=s;
-		}
-		else if(s=="-c"){
-			i++;
-			if(i>=argc){
-				cerr << "No file when set with -f "<< endl << flush;
-				exit(1);
-			}
-			s = String(argv[i]);
-			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set command as " << s << endl << flush; exit(1); }
-			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set command as " << s << endl << flush; exit(1); }
-			command=s;
-		}
-		else if(startsWithEqString("--output",s)){
-			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
-			output=s;
-		}
-		else if(s=="-o"){
-			i++;
-			if(i>=argc){
-				cerr << "No file when set with -o "<< endl << flush;
-				exit(1);
-			}
-			s = String(argv[i]);
-			if(output!=""){ cerr << "Error: output file already set to " << output << " when trying to set file as " << s << endl << flush; exit(1); }
-			output=s;
-		}
-		else if(startsWithEqString("--file",s)){
-			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
-			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
-			file=s;
-		}
-		else if(s=="-f"){
-			i++;
-			if(i>=argc){
-				cerr << "No file when set with -f "<< endl << flush;
-				exit(1);
-			}
-			s = String(argv[i]);
-			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
-			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
-			file=s;
-		}
-		else {
-			if(file!=""){ cerr << "Error: input file already set to " << file << " when trying to set file as " << s << endl << flush; exit(1); }
-			else if(command!="") { cerr << "Error: command already set to " << command << " when trying to set file as " << s << endl << flush; exit(1); }
-			file=s;
-		}
+		else
+			a.second->setHiddenFlag(llvm::cl::OptionHidden::ReallyHidden);
 	}
-	rdata.setTarget();
-	if(!forceInt) interactive = file=="" && command=="";
+	llvm::cl::opt<bool> debug("debug", llvm::cl::desc("Enable debug mode"));
+	llvm::cl::opt<String> inputFile(llvm::cl::Positional, llvm::cl::desc("<filename>"), llvm::cl::value_desc(""));
+	llvm::cl::opt<String> outputFile("output", llvm::cl::desc("Specify output filename"), llvm::cl::value_desc(""));
+	llvm::cl::alias outputAlias("o", cl::desc("Alias for -output"), cl::aliasopt(outputFile));
+	llvm::cl::opt<String> command("command", llvm::cl::desc("Run a command"), llvm::cl::value_desc(""));
+	llvm::cl::alias commandAlias("c", cl::desc("Alias for -command"), cl::aliasopt(command));
+	llvm::cl::opt<llvm::cl::boolOrDefault> interA("interactive", llvm::cl::desc("Force an interactive session"));
+	llvm::cl::alias interactiveAlias("i", cl::desc("Alias for -interactive"), cl::aliasopt(interA));
+	llvm::cl::opt<bool> assembly("asm", llvm::cl::desc("Output assembly code"));
+	llvm::cl::opt<bool> ir("ir", llvm::cl::desc("Output LLVM IR code"));
+	llvm::cl::opt<bool> asserts("assert", llvm::cl::desc("Enable asserts"));
+	llvm::cl::opt<bool> pnacl("pnacl", llvm::cl::desc("Output compatable pnacl"));
+	llvm::cl::SetVersionPrinter([]()->void{
+		std::cout << "Optricks version " << VERSION_STRING << endl << flush;
+		std::cout << "Created by Billy Moses" << endl << endl << flush;
+	});
+	llvm::cl::ParseCommandLineOptions(argc, argv);
+
+	if(debug){
+		rdata.debug = true;
+	}
+	if(asserts) rdata.enableAsserts = true;
+	if(pnacl) rdata.enablePNACL = true;
+
+	int outputFormat = 0; // 0 is default, 1 is IR, 2 is assembly
+	if(assembly){
+		outputFormat = 2;
+	}
+	if(ir){
+		if(outputFormat!=0){ cerr << "Error: output already set to assembly when trying to set format as LLVM-IR" << endl << flush; exit(1); }
+		outputFormat = 1;
+	}
+	bool interactive;
+	if(command.length()>0 || inputFile.length()>0) interactive = false;
+	else{
+		interactive = (interA!=llvm::cl::BOU_FALSE);
+	}
+	if(inputFile.length()==0)
+		inputFile = "-";
+	//rdata.setTarget();
 	//ofstream fout (output);
 	llvm::raw_fd_ostream* outStream;
-	if(outputFormat!=0 || output.length()>0){
-		if(output=="-" || output==""){
+	if(outputFormat!=0 || outputFile.length()>0){
+		if(outputFile=="-" || outputFile==""){
 			outStream = new llvm::raw_fd_ostream(1, true);
-			output = "-";
+			outputFile = "-";
 		}
 		else{
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=4
+			String error;
+			outStream = new llvm::raw_fd_ostream(outputFile.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
+			if(error.size()!=0){
+				cerr << error << endl << flush;
+				exit(1);
+			}
+#else
 			std::error_code error;
 			std::error_condition ok;
-			outStream = new llvm::raw_fd_ostream(output.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
+			outStream = new llvm::raw_fd_ostream(outputFile.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
 			if(error!=ok){
 				cerr << error.message() << endl << flush;
 				exit(1);
 			}
+#endif
 		}
 	} else outStream = nullptr;
 
@@ -569,7 +525,7 @@ int main(int argc, char** argv){
 		if(command==""){
 			auto t = files.size()-1;
 			files.push_back(files[t]);
-			files[t]=file;
+			files[t]=inputFile;
 		}
 		else{
 			cerr << "Commands not supported yet!" << endl << flush;
@@ -581,9 +537,9 @@ int main(int argc, char** argv){
 		}
 	}
 	else{
-		lexer.execFiles(true,files, nullptr, -1);
+		lexer.execFiles(true,files, nullptr, -2);
 		Statement* n;
-		Stream st(file, true);
+		Stream st(inputFile, true);
 		lexer.f = &st;
 		//std::cout << convertClass(void,&LANG_M)->getName() << endl << flush;
 		//std::cout << convertClass(bool,&LANG_M)->getName() << endl << flush;

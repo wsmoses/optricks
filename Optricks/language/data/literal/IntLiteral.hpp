@@ -3,6 +3,7 @@
 #include "Literal.hpp"
 #include "FloatLiteral.hpp"
 #include "../../class/literal/IntLiteralClass.hpp"
+#include "../../class/builtin/BigIntClass.hpp"
 class IntLiteral:public Literal{
 private:
 public:
@@ -31,7 +32,7 @@ public:
 		exit(1);
 	}
 	const Data* castTo(RData& r, const AbstractClass* const right, PositionID id) const override final;
-	llvm::Constant* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
+	llvm::Value* castToV(RData& r, const AbstractClass* const right, const PositionID id) const override final{
 		switch(right->classType){
 		case CLASS_INT:{
 			IntClass* ic = (IntClass*)right;
@@ -44,6 +45,9 @@ public:
 		case CLASS_COMPLEX:{
 			ComplexClass* cc = (ComplexClass*)right;
 			return cc->getValue(id,value);
+		}
+		case CLASS_BIGINT:{
+			return bigIntClass.getValue(r, value);
 		}
 
 		case CLASS_INTLITERAL:{

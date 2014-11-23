@@ -79,18 +79,15 @@ const Data* Scopable::fixClosure(PositionID id, std::pair<std::map<llvm::Value*,
 			if(dat->type==R_DEC){
 				auto d = (DeclarationData*)dat;
 				assert(d);
-				assert(dynamic_cast<const DeclarationData*>(dat));
 				L = d->value->fastEvaluate();
 			} else {
 				assert(dat->type==R_LOC);
-				assert(dynamic_cast<const LocationData*>(dat));
 				auto d = (LocationData*)dat;
 				assert(d);
 				L = d->value;
 			}
 			assert(L);
 			if(L->isGlobal){
-				assert(L!=nullptr && dynamic_cast<LazyLocation*>(L)==nullptr);
 				return dat;
 			}
 			//removed check llvm::isa<llvm::Constant> of rawpointer
@@ -103,7 +100,8 @@ const Data* Scopable::fixClosure(PositionID id, std::pair<std::map<llvm::Value*,
 				return new ConstantData(V, dat->getReturnType());
 			} else if(llvm::isa<llvm::LoadInst>(V) && llvm::isa<llvm::Constant>(((llvm::LoadInst*)V)->getPointerOperand()) &&
 					L->isPointerEqual( ((llvm::LoadInst*)V)->getPointerOperand() ) ){
-				assert(L!=nullptr && dynamic_cast<LazyLocation*>(L)==nullptr);
+				assert(L);
+				//assert(dynamic_cast<LazyLocation*>(L)==nullptr);
 				return dat;
 			} else {
 				auto find = tp->first.find(V);

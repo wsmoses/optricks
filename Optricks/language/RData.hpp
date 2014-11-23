@@ -175,16 +175,15 @@ struct RData{
 		llvm::IRBuilder<> builder;
 		llvm::FunctionPassManager fpm;
 		llvm::PassManager mpm;
-		llvm::TargetMachine* target;
 		bool debug;
 		int optLevel;
+		llvm::EngineBuilder* engineBuilder;
 		RData(bool b): enableAsserts(false),enablePNACL(false),lmod(new llvm::Module("main",llvm::getGlobalContext())),builder(llvm::getGlobalContext())
-		,fpm(lmod),mpm(){
+		,fpm(lmod),mpm(),engineBuilder(nullptr){
 			//lmod->setDataLayout("p:64:64:64");
 			dlayout = new llvm::DataLayout(lmod);
 			optLevel = 3;//TODO CHANGE DEFAULT
 			exec=nullptr;
-			target = nullptr;
 			LLVM_REALLOC = nullptr;
 			LLVM_CALLOC = nullptr;
 			LLVM_FREE = nullptr;
@@ -204,67 +203,20 @@ struct RData{
 			debug = false;
 
 		};
-
-		void setTarget(String MCPU="native",String MARCH=""){
-
-			llvm::InitializeNativeTarget();
-			llvm::InitializeAllTargets();
-			llvm::InitializeNativeTargetAsmPrinter();
-			llvm::Triple TheTriple(llvm::sys::getDefaultTargetTriple());
-			std::string Error;
-			if(MCPU=="native")
-				MCPU = llvm::sys::getHostCPUName();
-			const llvm::Target* TheTarget = llvm::TargetRegistry::lookupTarget(MARCH,TheTriple,Error);
-
-			llvm::TargetRegistry::printRegisteredTargetsForVersion ();
-			fflush(0);
-			if(!TheTarget){
-				llvm::errs() << "Target error: " << Error;
-				exit(1);
-			}
-			llvm::CodeGenOpt::Level OLvl;
-			if(optLevel==0)
-				OLvl = llvm::CodeGenOpt::Level::None;
-			else if(optLevel==1)
-				OLvl = llvm::CodeGenOpt::Level::Less;
-			else if(optLevel==3)
-				OLvl = llvm::CodeGenOpt::Level::Aggressive;
-			else  // 2
-				OLvl = llvm::CodeGenOpt::Level::Default;
-
-			  llvm::TargetOptions Options;
-			  Options.LessPreciseFPMADOption = EnableFPMAD;
-			  Options.NoFramePointerElim = DisableFPElim;
-			  Options.AllowFPOpFusion = FuseFPOps;
-			  Options.UnsafeFPMath = EnableUnsafeFPMath;
-			  Options.NoInfsFPMath = EnableNoInfsFPMath;
-			  Options.NoNaNsFPMath = EnableNoNaNsFPMath;
-			  Options.HonorSignDependentRoundingFPMathOption =
-				  EnableHonorSignDependentRoundingFPMath;
-			  Options.UseSoftFloat = GenerateSoftFloatCalls;
-			  if (FloatABIForCalls != FloatABI::Default)
-				Options.FloatABIType = FloatABIForCalls;
-			  Options.NoZerosInBSS = DontPlaceZerosInBSS;
-			  Options.GuaranteedTailCallOpt = EnableGuaranteedTailCallOpt;
-			  Options.DisableTailCalls = DisableTailCalls;
-			  Options.StackAlignmentOverride = OverrideStackAlignment;
-			  Options.TrapFuncName = TrapFuncName;
-			  Options.PositionIndependentExecutable = EnablePIE;
-		  //Options.UseInitArray = UseInitArray;
-			String FeaturesStr="";
-
-#if defined(WIN32) || defined(_WIN32)
-			target = TheTarget->createTargetMachine(TheTriple.getTriple()+"-elf",MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
-#else
-			target = TheTarget->createTargetMachine(TheTriple.getTriple(),MCPU,FeaturesStr,Options,RelocModel,CMModel,OLvl);
-#endif
-		}
 		llvm::ExecutionEngine* getExec(){
 			if(exec) return exec;
 			else{
 				String erS;
-				assert(target);
-				exec = llvm::EngineBuilder(std::unique_ptr<Module>(lmod)).setErrorStr(& erS).create(target);
+				llvm::InitializeNativeTarget();
+				llvm::InitializeAllTargets();
+				llvm::InitializeNativeTargetAsmPrinter();
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=4
+				engineBuilder = new llvm::EngineBuilder(lmod);
+#else
+				engineBuilder = new llvm::EngineBuilder(std::unique_ptr<Module>(lmod));
+#endif
+				exec = engineBuilder->setErrorStr(& erS).create();
+
 				if(!exec){
 					cerr << "Could not create engine: " << erS << endl << flush;
 					assert(0);
@@ -282,9 +234,11 @@ struct RData{
 					exec->updateGlobalMapping(LLVM_SPRINTF,(void*)(& std::sprintf));
 				if(LLVM_FPRINTF)
 					exec->updateGlobalMapping(LLVM_FPRINTF,(void*)(& std::fprintf));
-				if(LLVM_PRINTF)
+				if(LLVM_PRINTF){
+					assert(LLVM_PRINTF->getType());
 					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
-
+					assert(LLVM_PRINTF->getType());
+				}
 				return exec;
 			}
 		}
@@ -335,8 +289,29 @@ struct RData{
 				assert(FT->getParamType(i));
 			auto G = lmod->getOrInsertFunction(llvm::StringRef(name), FT);
 			assert(G);
-			//getExec();
-if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
+			if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
+			if(lib.length()>0){
+				lib = "lib"+lib+".so";
+				getExec();
+				static std::map<String, llvm::sys::DynamicLibrary> libs;
+				auto find = libs.find(lib);
+				String error;
+				if(find==libs.end()){
+					auto find2 = libs.insert(std::pair<String, llvm::sys::DynamicLibrary>(lib, llvm::sys::DynamicLibrary::getPermanentLibrary(lib.c_str(), &error)));
+					if(error.length()>0){
+						cerr << "Error loading library '" << lib << "' " << error << endl << flush;
+					}
+					find = find2.first;
+				}
+
+				assert(find->second.isValid());
+				auto sn=find->second.getAddressOfSymbol(name.c_str());
+				if(sn==nullptr){
+					cerr << "Error finding function '" << name << "' in library '" << lib << "' " << error << endl << flush;
+				}
+				exec->updateGlobalMapping(F, sn);
+				//cerr << "found function " << name << " in lib " << lib << " " << sn << endl << flush;
+			} else {
 			if(false){}
 #define MAP(X) else if(name==#X){ assert((void*)(&X)); if(!exec) toPut[F] = (void*)(&X); else exec->updateGlobalMapping(F,(void*)(&X)); }
 			MAP(stat)
@@ -384,6 +359,7 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 #endif
 #undef MAP
 		}
+			}
 			return G;
 		}
 		inline llvm::Value* getConstantCString(String name){
@@ -825,6 +801,11 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
+				assert(LLVM_PRINTF->getType());
+			}
+			assert(LLVM_PRINTF->getType());
+			for(auto& a: args){
+				assert(a->getType());
 			}
 			return builder.CreateCall(LLVM_PRINTF, args);
 		}
@@ -843,8 +824,13 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				if(exec)
 					exec->updateGlobalMapping(LLVM_PRINTF,(void*)(& std::printf));
+				assert(LLVM_PRINTF->getType());
 			}
 			args.insert(++ args.begin(), getConstantCString(fmt));
+			assert(LLVM_PRINTF->getType());
+			for(auto& a: args){
+				assert(a->getType());
+			}
 			return builder.CreateCall(LLVM_PRINTF, args);
 		}
 
@@ -896,7 +882,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& std::perror));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& std::perror));
+				else toPut[F] = (void*)(& std::perror);
 			}
 			auto vs = V.size();
 			llvm::SmallVector<llvm::Value*,4> a_args(vs+4);
@@ -936,7 +923,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 				F->addFnAttr(llvm::Attribute::AttrKind::NoReturn);
 
-				getExec()->updateGlobalMapping(F,(void*)(& FatalAppExit));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& FatalAppExit));
+				else toPut[F] = (void*)(& FatalAppExit)
 			}
 /*
 			static llvm::Function* F=nullptr;
@@ -1008,7 +996,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				//F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& ::pthread_create));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& ::pthread_create));
+				else toPut[F] = (void*)(& ::pthread_create);
 			}
 			auto C = builder.CreateCall4(F, threadPos, llvm::ConstantPointerNull::get(C_POINTERTYPE),toRun,arg);
 			//todo opt_assert(C==0)
@@ -1036,7 +1025,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				//F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& ::pthread_join));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& ::pthread_join));
+				else toPut[F] = (void*)(& ::pthread_join);
 			}
 			auto C = builder.CreateCall2(F, threadID, ret_p);
 			//todo opt_assert(C==0)
@@ -1060,7 +1050,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& ::closedir));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& ::closedir));
+				else toPut[F] = (void*)(& ::closedir);
 			}
 			return builder.CreateCall(F, dir);
 		}
@@ -1095,7 +1086,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& ::readdir));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& ::readdir));
+				else toPut[F] = (void*)(& ::readdir);
 			}
 			return builder.CreateCall(F, dir);
 		}
@@ -1114,7 +1106,8 @@ if(llvm::Function* F = llvm::dyn_cast<llvm::Function>(G)){
 
 				F->addFnAttr(llvm::Attribute::AttrKind::ReadOnly);
 
-				getExec()->updateGlobalMapping(F,(void*)(& ::opendir));
+				if(exec) exec->updateGlobalMapping(F,(void*)(& ::opendir));
+				else toPut[F] = (void*)(&::opendir);
 			}
 			auto CC = builder.CreateCall(F, V);
 

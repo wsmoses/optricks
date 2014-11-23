@@ -36,7 +36,7 @@ UserClass::UserClass(const Scopable* sc, String nam, const AbstractClass* const 
 			if(t!=PRIMITIVE_LAYOUT) assert(T==nullptr);
 			if(T) final=true;
 			if(superClass){
-				assert(dynamic_cast<const UserClass*>(superClass));
+//				assert(dynamic_cast<const UserClass*>(superClass));
 				((UserClass*)superClass)->children.push_back(this);
 			}
 			if(isObject){

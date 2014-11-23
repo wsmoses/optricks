@@ -108,6 +108,7 @@ public:
 			IntClass* nex = (IntClass*)toCast;
 			return nex->getWidth()>=getWidth();
 		}
+		case CLASS_BIGINT:
 		case CLASS_FLOAT:
 		case CLASS_RATIONAL:
 		case CLASS_COMPLEX:

@@ -22,6 +22,9 @@
 		case CLASS_FLOATLITERAL:{
 			return new FloatLiteral(value);
 		}
+		case CLASS_BIGINT:{
+			return new ConstantData(bigIntClass.getValue(r, value), &bigIntClass);
+		}
 		case CLASS_INT:{
 			const IntClass* ic = (const IntClass*)right;
 			return new ConstantData(ic->getValue(id,value), right);

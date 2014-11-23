@@ -32,6 +32,7 @@ public:
 		case CLASS_FLOAT:{
 			return true;
 		}
+		case CLASS_BIGINT: return true;
 		case CLASS_INTLITERAL: return toCast==this;
 		case CLASS_INT: return true;
 		case CLASS_RATIONAL:
@@ -52,6 +53,8 @@ public:
 		else if(b->classType==CLASS_INTLITERAL) return 1;
 		if(a->classType==CLASS_INT) return (b->classType==CLASS_INT)?0:-1;
 		else if(b->classType==CLASS_INT) return 1;
+		if(a->classType==CLASS_BIGINT) return (b->classType==CLASS_BIGINT)?0:-1;
+		else if(b->classType==CLASS_BIGINT) return 1;
 		if(a->classType==CLASS_FLOATLITERAL) return (b->classType==CLASS_FLOATLITERAL)?0:-1;
 		else if(b->classType==CLASS_FLOATLITERAL) return 1;
 		if(a->classType==CLASS_FLOAT) return (b->classType==CLASS_FLOAT)?0:-1;

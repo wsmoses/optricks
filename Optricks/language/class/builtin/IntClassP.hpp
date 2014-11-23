@@ -188,6 +188,23 @@ inline llvm::Value* IntClass::castTo(const AbstractClass* const toCast, RData& r
 		return valueToCast;
 		//}
 	}
+	case CLASS_BIGINT:{
+		llvm::Value* A = r.allocate(((llvm::PointerType*)type)->getElementType());
+		//TODO reference counting
+		r.builder.CreateStore(getInt32(0), r.builder.CreateConstGEP2_32(A, 0, 0));
+		if(getWidth()<=8*sizeof(long int)){
+			llvm::SmallVector<llvm::Type*,1> args(2);
+			args[0] = MPZ_POINTER;
+			args[1] = C_LONGTYPE;
+			auto CU = r.getExtern("__gmpz_init_set_ui",llvm::FunctionType::get(VOIDTYPE,args,false), "gmp");
+			r.builder.CreateCall2(CU, (r.builder.CreateConstGEP2_32(A, 0, 1)), r.builder.CreateSExtOrBitCast(valueToCast, C_LONGTYPE));
+		} else {
+			//TODO
+			cerr << "Cannot support cast from this large int to bigint" << endl<<flush;
+			assert(0 && "Cannot support cast from this large int to bigint");
+		}
+		return A;
+	}
 	case CLASS_FLOAT:{
 		assert(((FloatClass*)toCast)->type);
 		llvm::Type* T = valueToCast->getType();

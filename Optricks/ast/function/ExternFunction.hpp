@@ -11,8 +11,9 @@
 #include "../../language/basic_functions.h"
 class ExternFunction : public E_FUNCTION{
 public:
-	ExternFunction(PositionID id, OModule* o,String n):
-		E_FUNCTION(id,OModule(o),n){
+	String library;
+	ExternFunction(PositionID id, OModule* o,String n,String lib):
+		E_FUNCTION(id,OModule(o),n),library(lib){
 		returnV=nullptr;
 	}
 	void reset() const override final{
@@ -40,7 +41,7 @@ public:
 		}
 		assert(returnV);
 		const AbstractClass* returnType = returnV->getMyClass(filePos);
-		myFunction = new ExternalFunction(new FunctionProto(name, ad, returnType), ""/*lib*/);
+		myFunction = new ExternalFunction(new FunctionProto(name, ad, returnType), library);
 		module.surroundingScope->addFunction(filePos, name)->add(myFunction, filePos);
 		for(auto& d: declaration) d->registerFunctionPrototype(a);
 	}

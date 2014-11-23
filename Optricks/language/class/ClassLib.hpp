@@ -13,6 +13,7 @@
 #include "./builtin/NamedTupleClass.hpp"
 #include "./builtin/TupleClass.hpp"
 #include "./builtin/IntClass.hpp"
+#include "./builtin/BigIntClass.hpp"
 #include "./builtin/FloatClass.hpp"
 #include "./literal/IntLiteralClass.hpp"
 
@@ -31,6 +32,7 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 				getMin(((ComplexClass*)a)->innerClass,b, id) );
 	} else if(a->classType==CLASS_INT){
 		if(b->classType==CLASS_INTLITERAL) return a;
+		else if(b->classType==CLASS_BIGINT) return b;
 		else if(b->classType==CLASS_FLOAT) return b;
 		else if(b->classType==CLASS_INT){
 			auto at = ((const IntClass*)a)->getWidth();
@@ -38,6 +40,17 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 			if(at<=bt) return a;
 			else return b;
 		} else if(b->classType==CLASS_COMPLEX){
+			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
+		}
+		else{
+			id.compilerError("GetMin 2-1a has not been implemented");
+			exit(1);
+		}
+	} else if(a->classType==CLASS_BIGINT){
+		if(b->classType==CLASS_INTLITERAL) return a;
+		else if(b->classType==CLASS_INT) return a;
+		else if(b->classType==CLASS_BIGINT) return a;
+		else if(b->classType==CLASS_COMPLEX){
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
 		}
 		else{
@@ -63,6 +76,7 @@ const AbstractClass* getMin(const AbstractClass* a, const AbstractClass* b, Posi
 	} else if(a->classType==CLASS_INTLITERAL){
 		if(b->classType==CLASS_FLOATLITERAL) return b;
 		else if(b->classType==CLASS_INT) return b;
+		else if(b->classType==CLASS_BIGINT) return b;
 		else if(b->classType==CLASS_FLOAT) return b;
 		else if(b->classType==CLASS_COMPLEX){
 			return ComplexClass::get((const RealClass*)getMin(a, ((const ComplexClass*)b)->innerClass, id));
