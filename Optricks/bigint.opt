@@ -1,0 +1,10 @@
+bigint a=1
+bigint b=1
+for(bigint j=0; j<20; j = j+1){
+	bigint tmp = a;
+	a = b
+	b = tmp+b
+//	println(a)
+	println(j)
+}
+println(b)

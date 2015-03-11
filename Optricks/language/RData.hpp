@@ -173,8 +173,8 @@ struct RData{
 		llvm::Module* lmod;
 		llvm::DataLayout* dlayout;
 		llvm::IRBuilder<> builder;
-		llvm::FunctionPassManager fpm;
-		llvm::PassManager mpm;
+		llvm::legacy::FunctionPassManager fpm;
+		llvm::legacy::PassManager mpm;
 		bool debug;
 		int optLevel;
 		llvm::EngineBuilder* engineBuilder;
@@ -210,13 +210,17 @@ struct RData{
 				llvm::InitializeNativeTarget();
 				llvm::InitializeAllTargets();
 				llvm::InitializeNativeTargetAsmPrinter();
-#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=4
+				//llvm::TargetRegistry::printRegisteredTargetsForVersion ();
+
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=5
 				engineBuilder = new llvm::EngineBuilder(lmod);
 #else
 				engineBuilder = new llvm::EngineBuilder(std::unique_ptr<Module>(lmod));
 #endif
+				engineBuilder->setEngineKind( llvm::EngineKind::JIT );
+				//engineBuilder->setMArch("native");
+				//engineBuilder->setMCPU("native");
 				exec = engineBuilder->setErrorStr(& erS).create();
-
 				if(!exec){
 					cerr << "Could not create engine: " << erS << endl << flush;
 					assert(0);

@@ -31,6 +31,12 @@
 #define NDEBUG
 #endif
 
+#define STRINGIFY(s) XSTRINGIFY(s)
+#define XSTRINGIFY(s) #s
+
+//#pragma message "LLVM_VERSION_MAJOR=" STRINGIFY(LLVM_VERSION_MAJOR)
+//#pragma message "LLVM_VERSION_MINOR=" STRINGIFY(LLVM_VERSION_MINOR)
+
 #include <unistd.h>
 #include <cassert>
 #include <dirent.h>
@@ -92,7 +98,11 @@
 #include <llvm/IR/Module.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=5
 #include <llvm/PassManager.h>
+#else
+#include <llvm/IR/LegacyPassManager.h>
+#endif
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>

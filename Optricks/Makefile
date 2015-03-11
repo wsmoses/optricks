@@ -5,7 +5,7 @@ CC = $(GCC)
 
 FLAGS = -lmpfr -lgmp ${CPPFLAGS} ${CFLAGS} ${LDFLAGS}
 
-LLVM = `llvm-config --cppflags --libs all` `llvm-config --ldflags` -lm -lz
+LLVM = `~/instllvm/llvm/bin/llvm-config --cppflags --libs all --ldflags` -lm -lz -ldl -lpthread -ltinfo
 
 UNAME := $(shell uname)
 

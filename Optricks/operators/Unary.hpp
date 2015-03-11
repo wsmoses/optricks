@@ -25,6 +25,7 @@ inline const AbstractClass* getPreopReturnType(PositionID filePos, const Abstrac
 		const VectorClass* vc = (const VectorClass*)cc;
 		return VectorClass::get(getPreopReturnType(filePos, vc->inner, operation), vc->len);
 	}
+	case CLASS_BIGINT:
 	case CLASS_INT:{
 		if(operation==":str") return &stringLiteralClass;
 		if(operation=="+") return cc;
@@ -181,6 +182,82 @@ inline const Data* getPreop(RData& r, PositionID filePos, const String operation
 		if(operation=="+") return value->toValue(r, filePos);
 		else if(operation=="-"){
 			return new ConstantData(r.builder.CreateNeg(value->getValue(r, filePos)), cc);
+		}
+		else if(operation=="~"){
+			return new ConstantData(r.builder.CreateNot(value->getValue(r, filePos)), cc);
+		}
+		else if(operation=="++"){
+			const RealClass* ic = (const RealClass*)cc;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate();
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			llvm::Value* toR = L->getValue(r, filePos);
+			L->setValue(r.builder.CreateAdd(toR, ic->getOne(filePos)), r);
+			return new ConstantData(toR, cc);
+		}
+		else if(operation=="--"){
+			const RealClass* ic = (const RealClass*)cc;
+			Location* L;
+			if(value->type==R_LOC)
+				L = ((const LocationData*)value)->value;
+			else if(value->type==R_DEC)
+				L = ((const DeclarationData*)value)->value->fastEvaluate();
+			else
+				filePos.error("Cannot use non-variable for pre operator "+operation+" in class '"+ic->getName()+"'");
+			llvm::Value* toR = L->getValue(r, filePos);
+			L->setValue(r.builder.CreateSub(toR, ic->getOne(filePos)), r);
+			return new ConstantData(toR, cc);
+		}
+		else{
+			filePos.error("Could not find unary pre-operation '"+operation+"' in class '"+cc->getName()+"'");
+			exit(1);
+		}
+	}
+	case CLASS_BIGINT:{
+		if(operation==":str"){
+			//llvm::Value* V = value->getValue(r, filePos);
+			//if(auto C = llvm::dyn_cast<llvm::ConstantInt>(V)){
+			//	return new StringLiteral(C->getValue().toString(10,true));
+			//}
+		}
+
+		else if(operation=="-"){
+			auto R = new IntLiteral(0,0,0);
+			mpz_neg(R->value, il->value);
+			return R;
+		}
+		else if(operation=="~"){
+			auto R = new IntLiteral(0,0,0);
+			mpz_add_ui(R->value, il->value, 1);
+			mpz_neg(R->value, R->value);
+			return R;
+		}
+
+		if(operation=="+") return value->toValue(r, filePos);
+
+		llvm::Value* A = r.allocate(((llvm::PointerType*) bigIntClass.type)->getElementType());
+		//TODO reference counting
+		r.builder.CreateStore(getInt32(0), r.builder.CreateConstGEP2_32(A, 0, 0));
+		llvm::Value* L;
+
+		{llvm::SmallVector<llvm::Type*,1> args(1);
+		args[0] = MPZ_POINTER;
+		auto CU = r.getExtern("__gmpz_init",llvm::FunctionType::get(VOIDTYPE,args,false), "gmp");
+		r.builder.CreateCall(CU, L=(r.builder.CreateConstGEP2_32(A, 0, 1)));
+		}
+
+		llvm::SmallVector<llvm::Type*,1> args(2);
+		args[0] = MPZ_POINTER;
+		args[1] = MPZ_POINTER;
+
+		if(operation=="-"){
+			auto CU = r.getExtern("__gmpz_neg",llvm::FunctionType::get(VOIDTYPE,args,false), "gmp");
+			auto res = r.builder.CreateCall2(CU, L, r.builder.CreateConstGEP2_32(value->getValue(r, filePos), 0, 1));
+			return new ConstantData(res, cc);
 		}
 		else if(operation=="~"){
 			return new ConstantData(r.builder.CreateNot(value->getValue(r, filePos)), cc);
@@ -429,6 +506,7 @@ inline const AbstractClass* getPostopReturnType(PositionID filePos, const Abstra
 	case CLASS_FLOAT:
 	case CLASS_RATIONAL:
 	case CLASS_CHAR:
+	case CLASS_BIGINT:
 	case CLASS_INT:{
 		if(operation=="++") return cc;
 		else if(operation=="--") return cc;

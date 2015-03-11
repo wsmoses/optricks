@@ -422,8 +422,12 @@ int main(int argc, char** argv){
 		return new IntLiteral(s);
 		//const Data* D = args[0]->evaluate(r);
 	}), PositionID(0,0,"#int"));
-	StringMap<cl::Option*> Map;
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=6
+	llvm::StringMap< llvm::cl::Option * > Map;
 	cl::getRegisteredOptions(Map);
+#else
+	llvm::StringMap< llvm::cl::Option * > & Map = cl::getRegisteredOptions();
+#endif
 	for(auto& a: Map){
 		if(a.first()=="debug"){
 			a.second->setArgStr("llvmdebug");
@@ -480,7 +484,7 @@ int main(int argc, char** argv){
 			outputFile = "-";
 		}
 		else{
-#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=4
+#if LLVM_VERSION_MAJOR<=3 && LLVM_VERSION_MINOR<=5
 			String error;
 			outStream = new llvm::raw_fd_ostream(outputFile.c_str(), error, llvm::sys::fs::OpenFlags::F_None);
 			if(error.size()!=0){
